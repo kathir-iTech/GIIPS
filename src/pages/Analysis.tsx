@@ -14,7 +14,7 @@ const Analysis = () => {
     api.getClassificationMetrics().then(setMetrics).catch(err => setError(err.message)).finally(() => setLoading(false));
   }, []);
 
-  if (loading) return <div className="page-loading">Loading analysis...</div>;
+  if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading analysis...</span></div>;
   if (error) return <div className="page-error">Error: {error}</div>;
   if (!metrics) return null;
 
@@ -25,39 +25,172 @@ const Analysis = () => {
     <div className="analysis-page">
       <Header title="Complaint Analysis" subtitle="Model performance and classification metrics" />
       <div className="page-content">
-        <section className="metrics-section">
-          <div className="metrics-grid">
-            <div className="metric-card"><span className="metric-value">{(metrics.accuracy * 100).toFixed(1)}%</span><span className="metric-label">Accuracy</span></div>
-            <div className="metric-card"><span className="metric-value">{(metrics.precision * 100).toFixed(1)}%</span><span className="metric-label">Precision</span></div>
-            <div className="metric-card"><span className="metric-value">{(metrics.recall * 100).toFixed(1)}%</span><span className="metric-label">Recall</span></div>
-            <div className="metric-card"><span className="metric-value">{(metrics.f1Score * 100).toFixed(1)}%</span><span className="metric-label">F1 Score</span></div>
+        <section className="model-info">
+          <div className="model-badge">
+            <span className="model-icon">AI</span>
+            <span className="model-name">{metrics.modelType}</span>
+          </div>
+          <div className="dataset-info">
+            <span className="dataset-label">Dataset Size</span>
+            <span className="dataset-value">{metrics.datasetSize.toLocaleString()} complaints</span>
+          </div>
+        </section>
+
+        <section className="metrics-hero">
+          <div className="metric-card primary">
+            <div className="metric-header">
+              <span className="metric-title">Accuracy</span>
+              <div className="metric-indicator excellent"></div>
+            </div>
+            <span className="metric-value">{(metrics.accuracy * 100).toFixed(1)}%</span>
+            <p className="metric-desc">Overall classification correctness across all categories</p>
+          </div>
+          <div className="metric-card primary">
+            <div className="metric-header">
+              <span className="metric-title">Precision</span>
+              <div className="metric-indicator excellent"></div>
+            </div>
+            <span className="metric-value">{(metrics.precision * 100).toFixed(1)}%</span>
+            <p className="metric-desc">True positives among predicted cluster memberships</p>
+          </div>
+          <div className="metric-card primary">
+            <div className="metric-header">
+              <span className="metric-title">Recall</span>
+              <div className="metric-indicator excellent"></div>
+            </div>
+            <span className="metric-value">{(metrics.recall * 100).toFixed(1)}%</span>
+            <p className="metric-desc">Actual duplicates correctly identified by model</p>
+          </div>
+          <div className="metric-card primary">
+            <div className="metric-header">
+              <span className="metric-title">F1 Score</span>
+              <div className="metric-indicator excellent"></div>
+            </div>
+            <span className="metric-value">{(metrics.f1Score * 100).toFixed(1)}%</span>
+            <p className="metric-desc">Harmonic mean balancing precision and recall</p>
           </div>
         </section>
 
         <section className="charts-section">
-          <div className="chart-card">
-            <h3>Category Distribution</h3>
-            <Plot data={[{ values: categoryData.map(d => d.count), labels: categoryData.map(d => d.category), type: 'pie', hole: 0.4, marker: { colors: ['#1e293b', '#334155', '#475569', '#64748b', '#94a3b8', '#cbd5e1'] }, textinfo: 'percent', textposition: 'inside' }]}
-              layout={{ paper_bgcolor: 'transparent', margin: { t: 20, r: 20, b: 20, l: 20 }, showlegend: true, legend: { orientation: 'h', y: -0.1 } }}
-              config={{ displayModeBar: false, responsive: true }} style={{ width: '100%', height: 300 }} />
+          <div className="chart-card large">
+            <div className="chart-header">
+              <h3>Model Performance Trend (6 Months)</h3>
+              <span className="chart-subtitle">Weekly evaluation metrics</span>
+            </div>
+            <Plot
+              data={[
+                { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.accuracy), type: 'scatter', mode: 'lines+markers', name: 'Accuracy', line: { color: '#1e293b', width: 3 }, marker: { size: 8 } },
+                { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.precision), type: 'scatter', mode: 'lines+markers', name: 'Precision', line: { color: '#0369a1', width: 2, dash: 'dot' }, marker: { size: 6 } },
+                { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.recall), type: 'scatter', mode: 'lines+markers', name: 'Recall', line: { color: '#16a34a', width: 2, dash: 'dash' }, marker: { size: 6 } }
+              ]}
+              layout={{
+                paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                margin: { t: 10, r: 30, b: 50, l: 60 },
+                xaxis: { showgrid: false, tickangle: -45 },
+                yaxis: { showgrid: true, gridcolor: '#f1f5f9', range: [0.84, 0.98], tickformat: '.0%' },
+                showlegend: true, legend: { orientation: 'h', y: 1.15 },
+                hovermode: 'x unified', height: 300
+              }}
+              config={{ displayModeBar: false, responsive: true }}
+              style={{ width: '100%' }}
+            />
           </div>
 
           <div className="chart-card">
-            <h3>Confusion Matrix (Similarity Threshold: 0.85)</h3>
-            <Plot data={[{ z: confusionData, type: 'heatmap', colorscale: [[0, '#f8fafc'], [1, '#1e293b']], showscale: false, text: confusionData.map((row, i) => row.map((val, j) => val)), texttemplate: '%{text}', textfont: { size: 14 } }]}
-              layout={{ paper_bgcolor: 'transparent', margin: { t: 40, r: 20, b: 60, l: 80 }, xaxis: { title: 'Predicted', tickvals: [0, 1], ticktext: ['Different', 'Same'] }, yaxis: { title: 'Actual', tickvals: [0, 1], ticktext: ['Different', 'Same'] }, height: 280 }}
-              config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
+            <div className="chart-header"><h3>Category Distribution</h3><span className="chart-subtitle">Complaints by issue type</span></div>
+            <Plot
+              data={[{
+                values: categoryData.map(d => d.count),
+                labels: categoryData.map(d => d.category),
+                type: 'pie',
+                hole: 0.45,
+                marker: { colors: ['#1e293b', '#0369a1', '#7c3aed', '#b45309', '#059669', '#be123c'] },
+                textinfo: 'value+percent',
+                textposition: 'outside',
+                textfont: { size: 11 }
+              }]}
+              layout={{
+                paper_bgcolor: 'transparent',
+                margin: { t: 30, r: 30, b: 80, l: 30 },
+                showlegend: true,
+                legend: { orientation: 'h', y: -0.15 },
+                annotations: [{ text: 'Total', showarrow: false, font: { size: 14, weight: 600 }, y: 0.55 }],
+                height: 300
+              }}
+              config={{ displayModeBar: false, responsive: true }}
+              style={{ width: '100%' }}
+            />
           </div>
 
-          <div className="chart-card full-width">
-            <h3>Model Performance Trend</h3>
-            <Plot data={[
-              { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.accuracy), type: 'scatter', mode: 'lines+markers', name: 'Accuracy', line: { color: '#1e293b', width: 2 } },
-              { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.precision), type: 'scatter', mode: 'lines+markers', name: 'Precision', line: { color: '#64748b', width: 2 } },
-              { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.recall), type: 'scatter', mode: 'lines+markers', name: 'Recall', line: { color: '#94a3b8', width: 2 } }
-            ]}
-              layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { t: 20, r: 20, b: 40, l: 40 }, xaxis: { title: 'Month', showgrid: false }, yaxis: { title: 'Score', range: [0.85, 1], showgrid: true, gridcolor: '#f1f5f9' }, showlegend: true, legend: { orientation: 'h', y: 1.1 }, height: 280 }}
-              config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
+          <div className="chart-card">
+            <div className="chart-header"><h3>Confidence Matrix</h3><span className="chart-subtitle">Clustering accuracy heatmap</span></div>
+            <Plot
+              data={[{
+                z: confusionData.slice(0, 4).map(row => row.slice(0, 4)),
+                x: metrics.categories.slice(0, 4).map(c => c.split(' ')[0]),
+                y: metrics.categories.slice(0, 4).map(c => c.split(' ')[0]),
+                type: 'heatmap',
+                colorscale: [[0, '#f1f5f9'], [1, '#1e293b']],
+                showscale: false
+              }]}
+              layout={{
+                paper_bgcolor: 'transparent',
+                margin: { t: 10, r: 30, b: 60, l: 80 },
+                xaxis: { side: 'bottom' },
+                yaxis: { autorange: 'reversed' },
+                height: 280
+              }}
+              config={{ displayModeBar: false, responsive: true }}
+              style={{ width: '100%' }}
+            />
+          </div>
+
+          <div className="chart-card">
+            <div className="chart-header"><h3>Similarity Threshold Analysis</h3><span className="chart-subtitle">Clustering quality by threshold</span></div>
+            <div className="threshold-chart">
+              {[
+                { threshold: 0.70, clusters: 18, duplicates: 12, quality: 68 },
+                { threshold: 0.75, clusters: 16, duplicates: 14, quality: 78 },
+                { threshold: 0.80, clusters: 15, duplicates: 15, quality: 88 },
+                { threshold: 0.85, clusters: 15, duplicates: 15, quality: 92 },
+                { threshold: 0.90, clusters: 15, duplicates: 15, quality: 94 }
+              ].map(t => (
+                <div key={t.threshold} className={`threshold-row ${t.threshold === 0.80 ? 'active' : ''}`}>
+                  <span className="threshold-value">{(t.threshold * 100).toFixed(0)}%</span>
+                  <div className="threshold-bars">
+                    <div className="bar-group"><div className="bar clusters" style={{ width: `${t.clusters * 4}px` }}></div><span>{t.clusters}</span></div>
+                    <div className="bar-group"><div className="bar quality" style={{ width: `${t.quality}px` }}></div><span>{t.quality}%</span></div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        <section className="performance-notes">
+          <div className="note-card">
+            <h4>Model Strengths</h4>
+            <ul>
+              <li>High accuracy in detecting duplicate water supply complaints</li>
+              <li>Strong clustering performance for road infrastructure issues</li>
+              <li>Effective identification of geographic proximity patterns</li>
+            </ul>
+          </div>
+          <div className="note-card">
+            <h4>Improvement Areas</h4>
+            <ul>
+              <li>Better handling of ambiguous complaint descriptions</li>
+              <li>Enhanced multi-language support for local dialects</li>
+              <li>Improved temporal clustering for recurring issues</li>
+            </ul>
+          </div>
+          <div className="note-card">
+            <h4>Future Enhancements</h4>
+            <ul>
+              <li>Integration with image-based complaint analysis</li>
+              <li>Real-time clustering for immediate issue detection</li>
+              <li>Predictive priority scoring based on historical patterns</li>
+            </ul>
           </div>
         </section>
       </div>

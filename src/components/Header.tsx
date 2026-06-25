@@ -1,11 +1,11 @@
 import type React from 'react';
-import { Bell, User } from 'lucide-react';
 import './Header.css';
 
 interface HeaderProps { title: string; subtitle?: string; }
 
 const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
   const currentDate = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+  const currentTime = new Date().toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
   return (
     <header className="header">
       <div className="header-left">
@@ -13,10 +13,13 @@ const Header: React.FC<HeaderProps> = ({ title, subtitle }) => {
         {subtitle && <span className="page-subtitle">{subtitle}</span>}
       </div>
       <div className="header-right">
-        <span className="current-date">{currentDate}</span>
-        <div className="header-actions">
-          <button className="header-btn"><Bell size={20} /><span className="notification-badge">3</span></button>
-          <button className="header-btn user-btn"><User size={20} /><span className="user-name">Municipal Commissioner</span></button>
+        <div className="header-datetime">
+          <span className="current-date">{currentDate}</span>
+          <span className="current-time">{currentTime}</span>
+        </div>
+        <div className="header-badge">
+          <span className="badge-label">System Status</span>
+          <span className="badge-value online">Operational</span>
         </div>
       </div>
     </header>

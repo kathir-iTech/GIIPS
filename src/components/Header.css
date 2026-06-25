@@ -1,13 +1,15 @@
-.header { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 32px; background: var(--bg-white); border-bottom: 1px solid var(--bg-border); }
+.header { display: flex; justify-content: space-between; align-items: center; padding: 20px 32px; background: white; border-bottom: 1px solid #e2e8f0; }
 .header-left { display: flex; flex-direction: column; gap: 4px; }
-.page-title { font-size: 24px; font-weight: 600; margin: 0; }
-.page-subtitle { font-size: 14px; color: var(--text-secondary); }
-.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
-.current-date { font-size: 13px; color: var(--text-muted); }
-.header-actions { display: flex; align-items: center; gap: 12px; }
-.header-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg-gray); color: var(--text-secondary); position: relative; }
-.header-btn:hover { background: var(--primary-200); color: var(--text-primary); }
-.notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--critical); color: white; font-size: 11px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
-.user-btn { padding: 8px 16px; }
-.user-name { font-size: 13px; font-weight: 500; }
-@media (max-width: 1024px) { .header { padding: 16px 20px; } .header-right { display: none; } }
+.page-title { font-size: 22px; font-weight: 600; margin: 0; color: #1e293b; }
+.page-subtitle { font-size: 13px; color: #64748b; }
+.header-right { display: flex; align-items: center; gap: 32px; }
+.header-datetime { display: flex; flex-direction: column; align-items: flex-end; gap: 2px; }
+.current-date { font-size: 13px; color: #475569; font-weight: 500; }
+.current-time { font-size: 12px; color: #94a3b8; }
+.header-badge { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.badge-label { font-size: 10px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.5px; }
+.badge-value { font-size: 12px; font-weight: 600; padding: 4px 10px; border-radius: 4px; }
+.badge-value.online { background: #dcfce7; color: #166534; }
+
+@media (max-width: 1024px) { .header { padding: 16px 20px; } .header-right { gap: 20px; } .header-datetime { display: none; } }
+@media (max-width: 768px) { .header-badge { display: none; } }

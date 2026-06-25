@@ -18,30 +18,57 @@ const incidents: Incident[] = incidentsData.map(incident => ({
 
 export const api = {
   getDashboardData: async (): Promise<DashboardData> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 200));
+    await new Promise(resolve => setTimeout(resolve, 150));
 
     const totalComplaints = complaintsData.length;
     const uniqueIncidents = incidentsData.length;
     const criticalIncidents = incidentsData.filter(i => i.priority_label === 'Critical').length;
     const highPriorityIncidents = incidentsData.filter(i => i.priority_label === 'High').length;
+    const mediumPriorityIncidents = incidentsData.filter(i => i.priority_label === 'Medium').length;
+    const lowPriorityIncidents = incidentsData.filter(i => i.priority_label === 'Low').length;
     const avgResolutionScore = Math.round(
       incidentsData.reduce((sum, i) => sum + i.priority_score, 0) / incidentsData.length
     );
+    const avgDaysOpen = Math.round(
+      incidentsData.reduce((sum, i) => sum + i.days_open, 0) / incidentsData.length
+    );
     const workloadReduction = Math.round(((totalComplaints - uniqueIncidents) / totalComplaints) * 100 * 10) / 10;
 
-    // Generate trend data (last 6 months)
-    const trendData = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthStr = date.toISOString().substring(0, 7);
-      trendData.push({
-        date: monthStr,
-        complaints: Math.floor(Math.random() * 200) + 100,
-        incidents: Math.floor(Math.random() * 40) + 15
-      });
-    }
+    const categoryColors: Record<string, string> = {
+      'Road Infrastructure': '#1e293b',
+      'Water Supply': '#0369a1',
+      'Waste Management': '#7c3aed',
+      'Sanitation': '#b45309',
+      'Street Lighting': '#059669',
+      'Public Works': '#be123c'
+    };
+
+    const categoryMap = new Map<string, number>();
+    incidentsData.forEach(item => {
+      categoryMap.set(item.category, (categoryMap.get(item.category) || 0) + item.cluster_size);
+    });
+    const categoryBreakdown = Array.from(categoryMap.entries())
+      .map(([category, count]) => ({ category, count, color: categoryColors[category] || '#64748b' }))
+      .sort((a, b) => b.count - a.count);
+
+    const wardMap = new Map<string, number>();
+    incidentsData.forEach(item => {
+      wardMap.set(item.ward, (wardMap.get(item.ward) || 0) + item.cluster_size);
+    });
+    const wardBreakdown = Array.from(wardMap.entries())
+      .map(([ward, count]) => ({ ward: ward.replace('Ward ', 'W').split(' - ')[0], count }))
+      .sort((a, b) => b.count - a.count);
+
+    const trendData = [
+      { date: '2024-01', complaints: 95, incidents: 15 },
+      { date: '2024-02', complaints: 127, incidents: 18 },
+      { date: '2024-03', complaints: 143, incidents: 22 },
+      { date: '2024-04', complaints: 108, incidents: 16 },
+      { date: '2024-05', complaints: 89, incidents: 12 },
+      { date: '2024-06', complaints: totalComplaints, incidents: uniqueIncidents }
+    ];
+
+    const recentIncidents = incidents.slice(0, 5);
 
     return {
       totalComplaints,
@@ -49,13 +76,15 @@ export const api = {
       workloadReduction,
       criticalIncidents,
       highPriorityIncidents,
+      mediumPriorityIncidents,
+      lowPriorityIncidents,
       avgResolutionScore,
+      avgDaysOpen,
       trendData,
-      beforeAfter: {
-        before: totalComplaints,
-        after: uniqueIncidents,
-        reduction: workloadReduction
-      }
+      beforeAfter: { before: totalComplaints, after: uniqueIncidents, reduction: workloadReduction },
+      categoryBreakdown,
+      wardBreakdown,
+      recentIncidents
     };
   },
 

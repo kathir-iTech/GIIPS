@@ -4,9 +4,15 @@ export interface DashboardData {
   workloadReduction: number;
   criticalIncidents: number;
   highPriorityIncidents: number;
+  mediumPriorityIncidents: number;
+  lowPriorityIncidents: number;
   avgResolutionScore: number;
+  avgDaysOpen: number;
   trendData: { date: string; complaints: number; incidents: number; }[];
   beforeAfter: { before: number; after: number; reduction: number; };
+  categoryBreakdown: { category: string; count: number; color: string; }[];
+  wardBreakdown: { ward: string; count: number; }[];
+  recentIncidents: Incident[];
 }
 
 export interface Incident {
