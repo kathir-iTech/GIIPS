@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { ChevronDown, ChevronUp, AlertTriangle, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';

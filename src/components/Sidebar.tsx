@@ -1,6 +1,6 @@
 import type React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, BarChart3, GitBranch, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FileText, ChartBar as BarChart3, GitBranch, BookOpen } from 'lucide-react';
 import './Sidebar.css';
 
 const navItems = [

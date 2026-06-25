@@ -1,4 +1,4 @@
-import { FileText, Group, BarChart3, ArrowRight, AlertTriangle, CheckCircle } from 'lucide-react';
+import { FileText, Group, ChartBar as BarChart3, ArrowRight, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle } from 'lucide-react';
 import Header from '../components/Header';
 import './Methodology.css';
 
