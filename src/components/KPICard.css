@@ -1,0 +1,7 @@
+.kpi-card { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; gap: 8px; }
+.kpi-title { font-size: 13px; font-weight: 500; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.kpi-value { font-size: 32px; font-weight: 700; color: var(--text-primary); line-height: 1.1; }
+.kpi-subtitle { font-size: 13px; color: var(--text-muted); }
+.kpi-card--critical .kpi-value { color: var(--critical); }
+.kpi-card--success .kpi-value { color: var(--low); }
+@media (max-width: 768px) { .kpi-card { padding: 16px; } .kpi-value { font-size: 28px; } }

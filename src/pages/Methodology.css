@@ -1,0 +1,50 @@
+.methodology-page { min-height: 100vh; background: var(--bg-gray); }
+
+.methodology-intro { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+.methodology-intro h2 { font-size: 18px; font-weight: 600; margin: 0 0 12px 0; color: var(--text-primary); }
+.methodology-intro p { font-size: 14px; color: var(--text-secondary); line-height: 1.7; margin: 0 0 20px 0; max-width: 700px; }
+
+.efficiency-demo { display: flex; align-items: center; justify-content: center; gap: 48px; padding: 24px 0; }
+.efficiency-stat { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.before-icon { color: var(--critical); }
+.after-icon { color: var(--low); }
+.before-value { font-size: 42px; font-weight: 700; color: var(--critical); }
+.after-value { font-size: 42px; font-weight: 700; color: var(--low); }
+.before-label, .after-label { font-size: 12px; color: var(--text-muted); }
+.arrow-icon { color: var(--text-muted); }
+
+.pipeline-section { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; padding: 24px; margin-bottom: 24px; }
+.pipeline-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 24px; }
+.pipeline-header h3 { font-size: 16px; font-weight: 600; margin: 0; }
+.pipeline-badge { background: var(--primary-100); color: var(--primary-700); font-size: 12px; font-weight: 500; padding: 4px 10px; border-radius: 4px; }
+
+.pipeline-steps { display: flex; flex-direction: column; gap: 20px; }
+.pipeline-step { position: relative; background: var(--bg-gray); border-radius: 8px; padding: 20px; }
+.step-header { display: flex; align-items: center; gap: 12px; margin-bottom: 12px; }
+.step-number { width: 28px; height: 28px; background: var(--primary-600); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 600; flex-shrink: 0; }
+.step-icon { color: var(--text-secondary); }
+.step-header h4 { font-size: 15px; font-weight: 600; margin: 0; color: var(--text-primary); }
+.step-description { font-size: 13px; color: var(--text-secondary); line-height: 1.6; margin: 0 0 16px 0; }
+.step-details { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; }
+.step-inputs, .step-outputs { background: var(--bg-white); padding: 12px 16px; border-radius: 6px; border: 1px solid var(--bg-border); }
+.detail-label { display: block; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; margin-bottom: 8px; }
+.step-details ul { margin: 0; padding-left: 16px; }
+.step-details li { font-size: 12px; color: var(--text-secondary); margin-bottom: 4px; }
+.step-connector { position: absolute; left: 34px; bottom: -20px; width: 2px; height: 20px; background: var(--bg-border); }
+
+.metrics-section { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; padding: 24px; }
+.metrics-header h3 { font-size: 16px; font-weight: 600; margin: 0 0 20px 0; }
+.metrics-explanation { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.metric-explanation-item { background: var(--bg-gray); padding: 16px; border-radius: 6px; }
+.metric-name { display: block; font-size: 13px; font-weight: 600; color: var(--primary-600); margin-bottom: 8px; }
+.metric-explanation-item p { font-size: 12px; color: var(--text-secondary); line-height: 1.5; margin: 0; }
+
+@media (max-width: 1280px) {
+  .step-details { grid-template-columns: 1fr; gap: 12px; }
+  .metrics-explanation { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 768px) {
+  .efficiency-demo { flex-direction: column; gap: 24px; }
+  .arrow-icon { transform: rotate(90deg); }
+  .metrics-explanation { grid-template-columns: 1fr; }
+}

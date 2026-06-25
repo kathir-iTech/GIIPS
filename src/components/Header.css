@@ -1,0 +1,13 @@
+.header { display: flex; justify-content: space-between; align-items: flex-start; padding: 24px 32px; background: var(--bg-white); border-bottom: 1px solid var(--bg-border); }
+.header-left { display: flex; flex-direction: column; gap: 4px; }
+.page-title { font-size: 24px; font-weight: 600; margin: 0; }
+.page-subtitle { font-size: 14px; color: var(--text-secondary); }
+.header-right { display: flex; flex-direction: column; align-items: flex-end; gap: 12px; }
+.current-date { font-size: 13px; color: var(--text-muted); }
+.header-actions { display: flex; align-items: center; gap: 12px; }
+.header-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; border-radius: 6px; background: var(--bg-gray); color: var(--text-secondary); position: relative; }
+.header-btn:hover { background: var(--primary-200); color: var(--text-primary); }
+.notification-badge { position: absolute; top: -4px; right: -4px; width: 18px; height: 18px; background: var(--critical); color: white; font-size: 11px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+.user-btn { padding: 8px 16px; }
+.user-name { font-size: 13px; font-weight: 500; }
+@media (max-width: 1024px) { .header { padding: 16px 20px; } .header-right { display: none; } }

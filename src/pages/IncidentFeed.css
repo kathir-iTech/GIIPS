@@ -1,0 +1,58 @@
+.incident-feed-page { min-height: 100vh; background: var(--bg-gray); }
+.feed-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+.filter-tabs { display: flex; gap: 8px; }
+.filter-tab { padding: 8px 16px; border: 1px solid var(--bg-border); background: var(--bg-white); border-radius: 6px; font-size: 13px; font-weight: 500; color: var(--text-secondary); cursor: pointer; transition: all 0.15s ease; }
+.filter-tab:hover { background: var(--primary-50); border-color: var(--primary-200); }
+.filter-tab.active { background: var(--primary-600); border-color: var(--primary-600); color: white; }
+.incident-count { font-size: 13px; color: var(--text-muted); }
+
+.incidents-table-container { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; overflow: hidden; }
+.incidents-table { width: 100%; border-collapse: collapse; }
+.incidents-table th { padding: 12px 16px; text-align: left; font-size: 12px; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; background: var(--bg-gray); border-bottom: 1px solid var(--bg-border); cursor: pointer; user-select: none; white-space: nowrap; }
+.incidents-table th:hover { background: var(--primary-50); }
+.incidents-table th svg { vertical-align: middle; margin-left: 4px; }
+.incidents-table td { padding: 12px 16px; font-size: 13px; color: var(--text-primary); border-bottom: 1px solid var(--bg-border); }
+.incident-row { cursor: pointer; transition: background 0.15s ease; }
+.incident-row:hover { background: var(--bg-gray); }
+.incident-row.priority-critical { border-left: 3px solid var(--critical); }
+.incident-row.priority-high { border-left: 3px solid var(--high); }
+.incident-row.priority-medium { border-left: 3px solid var(--medium); }
+.incident-row.priority-low { border-left: 3px solid var(--low); }
+
+.expand-cell { width: 40px; text-align: center; color: var(--text-muted); }
+.incident-id-cell { font-family: monospace; font-weight: 500; }
+.cluster-size-cell { color: var(--text-secondary); }
+.score-cell { font-weight: 600; }
+.priority-cell { display: flex; align-items: center; gap: 6px; }
+.priority-icon { flex-shrink: 0; }
+.priority-icon.critical { color: var(--critical); }
+.priority-icon.high { color: var(--high); }
+.priority-icon.medium { color: var(--medium); }
+.priority-icon.low { color: var(--low); }
+.action-cell { max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; color: var(--text-secondary); }
+
+.expanded-row { background: var(--bg-gray); }
+.expanded-row td { padding: 0; border-bottom: 1px solid var(--bg-border); }
+.expanded-content { padding: 20px; display: grid; grid-template-columns: 1fr 2fr; gap: 24px; }
+.expanded-summary h4, .expanded-complaints h4 { font-size: 13px; font-weight: 600; margin: 0 0 8px 0; color: var(--text-primary); }
+.expanded-summary p { font-size: 13px; color: var(--text-secondary); margin: 0; line-height: 1.6; }
+
+.complaints-nested-table { width: 100%; border-collapse: collapse; background: var(--bg-white); border-radius: 6px; overflow: hidden; }
+.complaints-nested-table th { padding: 10px 12px; text-align: left; font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; background: var(--bg-gray); border-bottom: 1px solid var(--bg-border); }
+.complaints-nested-table td { padding: 10px 12px; font-size: 12px; color: var(--text-primary); border-bottom: 1px solid var(--bg-border); }
+.similarity-score { font-family: monospace; font-weight: 500; color: var(--primary-600); }
+.complaint-text { max-width: 300px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+@media (max-width: 1280px) {
+  .incidents-table th:nth-child(9), .incidents-table td:nth-child(9) { display: none; }
+  .expanded-content { grid-template-columns: 1fr; }
+}
+@media (max-width: 1024px) {
+  .incidents-table-container { overflow-x: auto; }
+  .incidents-table { min-width: 900px; }
+  .incidents-table th:nth-child(9), .incidents-table td:nth-child(9) { display: table-cell; }
+}
+@media (max-width: 768px) {
+  .filter-tabs { flex-wrap: wrap; }
+  .filter-tab { padding: 6px 12px; font-size: 12px; }
+}

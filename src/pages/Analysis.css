@@ -1,0 +1,21 @@
+.analysis-page { min-height: 100vh; background: var(--bg-gray); }
+
+.metrics-section { margin-bottom: 24px; }
+.metrics-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+.metric-card { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; padding: 20px; display: flex; flex-direction: column; align-items: center; gap: 8px; }
+.metric-value { font-size: 28px; font-weight: 700; color: var(--primary-600); }
+.metric-label { font-size: 13px; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; }
+
+.charts-section { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.chart-card { background: var(--bg-white); border: 1px solid var(--bg-border); border-radius: 8px; padding: 20px; }
+.chart-card.full-width { grid-column: span 2; }
+.chart-card h3 { font-size: 14px; font-weight: 600; margin: 0 0 16px 0; color: var(--text-primary); }
+
+@media (max-width: 1280px) {
+  .chart-card.full-width { grid-column: span 1; }
+  .charts-section { grid-template-columns: 1fr; }
+}
+@media (max-width: 768px) {
+  .metrics-grid { grid-template-columns: repeat(2, 1fr); }
+  .metric-value { font-size: 24px; }
+}

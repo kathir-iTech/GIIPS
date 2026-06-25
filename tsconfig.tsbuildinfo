@@ -1,0 +1,1 @@
+{"root":["./src/App.tsx","./src/main.tsx","./src/vite-env.d.ts","./src/components/Header.tsx","./src/components/KPICard.tsx","./src/components/Sidebar.tsx","./src/pages/Analysis.tsx","./src/pages/Clusters.tsx","./src/pages/IncidentFeed.tsx","./src/pages/Methodology.tsx","./src/pages/Overview.tsx","./src/services/api.ts","./src/types/index.ts"],"version":"6.0.3"}
