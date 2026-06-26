@@ -1,0 +1,26 @@
+complaint_id,date_received,ward,category,text,Problem,Problem Detail
+CMP-001,2024-01-15, Ward 1 - Central,Road Infrastructure,Large pothole on MG Road near the traffic signal causing accidents,Large pothole on MG Road,Near traffic signal causing vehicle damage
+CMP-002,2024-01-15, Ward 1 - Central,Road Infrastructure,Big hole in the road on MG Road by signal very dangerous,Pothole on MG Road,Traffic signal area hazardous
+CMP-003,2024-01-15, Ward 1 - Central,Road Infrastructure,Missing manhole cover on MG Road creating safety hazard,Manhole cover missing,MG Road near traffic signal
+CMP-004,2024-01-16, Ward 3 - Lakshmipuram,Water Supply,No water supply in Lakshmipuram for 3 days entire area affected,Water supply disruption,Lakshmipuram area no water
+CMP-005,2024-01-16, Ward 3 - Lakshmipuram,Water Supply,Water not coming since Monday Lakshmipuram facing shortage,Water supply issue,Lakshmipuram area shortage
+CMP-006,2024-01-17, Ward 2 - Gandhi Nagar,Road Infrastructure,Drain cover missing on Gandhi Nagar main road dangerous,Missing drain cover,Gandhi Nagar main road
+CMP-007,2024-01-17, Ward 2 - Gandhi Nagar,Road Infrastructure,Open drain on Gandhi Nagar road near bus stop,Exposed drainage,Gandhi Nagar near bus stop
+CMP-008,2024-01-18, Ward 4 - Indira Colony,Waste Management,Garbage not collected for 2 weeks in Indira Colony bins overflowing,Missed garbage collection,Indira Colony area
+CMP-009,2024-01-18, Ward 4 - Indira Colony,Waste Management,Waste collection missed again Indira Colony garbage spreading,Missed waste pickup,Indira Colony bins full
+CMP-010,2024-01-19, Ward 6 - Shivaji Park,Street Lighting,Street lights not working near Shivaji Park very dark at night,Street lights out,Shivaji Park area dark
+CMP-011,2024-01-19, Ward 6 - Shivaji Park,Street Lighting,Multiple street lamps out near Shivaji Park safety concern,Non-working street lamps,Shivaji Park entrance area
+CMP-012,2024-01-20, Ward 5 - Raja Nagar,Road Infrastructure,Speed breaker too high on Hospital Road damaging vehicles,Non-standard speed breaker,Hospital Road hazardous
+CMP-013,2024-01-20, Ward 5 - Raja Nagar,Road Infrastructure,Hospital Road speed hump causing accidents too tall,Overheight speed breaker,Hospital Road dangerous
+CMP-014,2024-01-21, Ward 7 - Subhash Nagar,Sanitation,Open drain overflow in Subhash Nagar roads flooded during rain,Drainage overflow,Subhash Nagar flooded
+CMP-015,2024-01-21, Ward 7 - Subhash Nagar,Sanitation,Sewage on Subhash Nagar streets health hazard,Open sewage,Subhash Nagar mosquito breeding
+CMP-016,2024-01-22, Ward 1 - Central,Road Infrastructure,Road broken on Market Street footpath tiles damaged,Footpath damage,Market Street walkway unsafe
+CMP-017,2024-01-22, Ward 1 - Central,Road Infrastructure,Broken footpath tiles on Market Street someone tripped,Walking path damaged,Market Street tiles loose
+CMP-018,2024-01-23, Ward 8 - Patel Nagar,Road Infrastructure,Big pothole near Patel Nagar school junction,Deep pothole,Patel Nagar school area
+CMP-019,2024-01-23, Ward 8 - Patel Nagar,Road Infrastructure,Road surface broken at Patel Nagar school crossing,Road deterioration,Patel Nagar near school
+CMP-020,2024-01-24, Ward 2 - Gandhi Nagar,Water Supply,Dirty brown water coming from taps in Gandhi Nagar,Contaminated water supply,Gandhi Nagar water quality
+CMP-021,2024-01-24, Ward 2 - Gandhi Nagar,Water Supply,Brown colored water from taps Gandhi Nagar area illness reported,Water contamination,Gandhi Nagar residents sick
+CMP-022,2024-01-25, Ward 3 - Lakshmipuram,Street Lighting,Street pole sparking on Temple Street dangerous,Faulty street pole,Temple Street electrical hazard
+CMP-023,2024-01-25, Ward 3 - Lakshmipuram,Street Lighting,Electric pole sparking wires exposed Temple Street,Exposed electrical wiring,Temple Street safety issue
+CMP-024,2024-01-26, Ward 5 - Raja Nagar,Waste Management,Construction debris dumped blocking service road Raja Nagar,Illegal dumping,Raja Nagar service road blocked
+CMP-025,2024-01-26, Ward 5 - Raja Nagar,Waste Management,Building material dumped on Raja Nagar road debris blocking,Debris on road,Raja Nagar obstruction
