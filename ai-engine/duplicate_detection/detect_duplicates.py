@@ -5,15 +5,17 @@ Detect duplicate complaints using FAISS similarity search.
 
 This script:
 1. Loads FAISS index and embeddings
-2. Searches for similar complaints above threshold
-3. Clusters duplicates together
-4. Outputs duplicate clusters with similarity scores
+2. Searches for similar complaints above threshold (default: 0.85)
+3. Clusters duplicates together using Union-Find algorithm
+4. Outputs duplicate clusters with similarity scores to ai-engine/outputs/
 
 Author: GIIPS AI Engine
+Version: 1.0.0
 """
 
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -21,6 +23,17 @@ from typing import List, Dict, Optional, Tuple, Set
 from collections import defaultdict
 
 import numpy as np
+from tqdm import tqdm
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # FAISS for similarity search
 try:
@@ -28,6 +41,9 @@ try:
     FAISS_AVAILABLE = True
 except ImportError:
     FAISS_AVAILABLE = False
+    logger.error("FAISS not installed. Install with: pip install faiss-cpu")
+
+from .utils import UnionFind, load_metadata_file
 
 
 class DuplicateDetector:
@@ -66,9 +82,9 @@ class DuplicateDetector:
         if not FAISS_AVAILABLE:
             raise ImportError("FAISS is required. Install with: pip install faiss-cpu")
 
-        print(f"[INFO] Loading FAISS index from: {index_path}")
+        logger.info(f"Loading FAISS index from: {index_path}")
         self.index = faiss.read_index(str(index_path))
-        print(f"[INFO] Index loaded. Total vectors: {self.index.ntotal}")
+        logger.info(f"Index loaded. Total vectors: {self.index.ntotal}")
 
     def load_embeddings(self, embeddings_path: Path) -> None:
         """
@@ -77,9 +93,9 @@ class DuplicateDetector:
         Args:
             embeddings_path: Path to embeddings file
         """
-        print(f"[INFO] Loading embeddings from: {embeddings_path}")
+        logger.info(f"Loading embeddings from: {embeddings_path}")
         self.embeddings = np.load(embeddings_path).astype(np.float32)
-        print(f"[INFO] Embeddings shape: {self.embeddings.shape}")
+        logger.info(f"Embeddings shape: {self.embeddings.shape}")
 
     def load_metadata(self, metadata_path: Path) -> None:
         """
@@ -88,10 +104,10 @@ class DuplicateDetector:
         Args:
             metadata_path: Path to metadata JSON file
         """
-        print(f"[INFO] Loading metadata from: {metadata_path}")
-        with open(metadata_path, 'r') as f:
-            self.metadata = json.load(f)
-        print(f"[INFO] Loaded metadata for {len(self.metadata.get('metadata', []))} complaints")
+        self.metadata = load_metadata_file(metadata_path)
+        if self.metadata:
+            meta_list = self.metadata.get('metadata', [])
+            logger.info(f"Loaded metadata for {len(meta_list)} complaints")
 
     def search_similar(
         self,
@@ -129,16 +145,21 @@ class DuplicateDetector:
         if self.index is None or self.embeddings is None:
             raise ValueError("Index and embeddings must be loaded first")
 
-        print(f"[INFO] Searching for duplicates (threshold={self.similarity_threshold})...")
+        logger.info(f"Searching for duplicates (threshold={self.similarity_threshold})...")
 
         n_vectors = len(self.embeddings)
         k = min(self.max_neighbors, n_vectors)
 
         # Batch search for efficiency
-        batch_size = 1000
         all_duplicates = defaultdict(list)
 
-        for start in range(0, n_vectors, batch_size):
+        # Process in batches with progress bar
+        batch_size = 1000
+        for start in tqdm(
+            range(0, n_vectors, batch_size),
+            desc="Searching for duplicates",
+            unit="batch"
+        ):
             end = min(start + batch_size, n_vectors)
             batch = self.embeddings[start:end]
 
@@ -157,10 +178,7 @@ class DuplicateDetector:
                             'similarity': float(dist)
                         })
 
-            if (start // batch_size) % 10 == 0:
-                print(f"[INFO] Processed {end}/{n_vectors} vectors...")
-
-        print(f"[INFO] Found {len(all_duplicates)} complaints with potential duplicates")
+        logger.info(f"Found {len(all_duplicates)} complaints with potential duplicates")
         return dict(all_duplicates)
 
     def build_clusters(self, duplicates: Dict[int, List[Dict]]) -> List[List[int]]:
@@ -173,37 +191,24 @@ class DuplicateDetector:
         Returns:
             List of clusters (each cluster is a list of indices)
         """
-        print("[INFO] Building duplicate clusters...")
+        logger.info("Building duplicate clusters...")
 
-        # Union-Find
         n_vectors = len(self.embeddings)
-        parent = list(range(n_vectors))
-        rank = [0] * n_vectors
-
-        def find(x):
-            if parent[x] != x:
-                parent[x] = find(parent[x])
-            return parent[x]
-
-        def union(x, y):
-            px, py = find(x), find(y)
-            if px == py:
-                return
-            if rank[px] < rank[py]:
-                px, py = py, px
-            parent[py] = px
-            if rank[px] == rank[py]:
-                rank[px] += 1
+        uf = UnionFind(n_vectors)
 
         # Union all duplicate pairs
-        for idx, dup_list in duplicates.items():
+        for idx, dup_list in tqdm(
+            duplicates.items(),
+            desc="Building clusters",
+            unit="pairs"
+        ):
             for dup in dup_list:
-                union(idx, dup['index'])
+                uf.union(idx, dup['index'])
 
         # Group by root
         clusters = defaultdict(list)
         for i in range(n_vectors):
-            root = find(i)
+            root = uf.find(i)
             clusters[root].append(i)
 
         # Filter to clusters with min size
@@ -215,7 +220,7 @@ class DuplicateDetector:
         # Sort by cluster size (descending)
         valid_clusters.sort(key=len, reverse=True)
 
-        print(f"[INFO] Built {len(valid_clusters)} duplicate clusters")
+        logger.info(f"Built {len(valid_clusters)} duplicate clusters")
         return valid_clusters
 
     def format_cluster(
@@ -242,7 +247,7 @@ class DuplicateDetector:
                     member_meta = meta_list[idx].copy()
                     members.append(member_meta)
                 else:
-                    members.append({'index': idx})
+                    members.append({'index': idx, 'id': f'unknown-{idx}'})
 
         # Calculate cluster statistics
         # Get pairwise similarities within cluster
@@ -250,15 +255,23 @@ class DuplicateDetector:
         pairwise = np.dot(cluster_embeddings, cluster_embeddings.T)
 
         # Exclude diagonal and get average
-        mask = ~np.eye(len(cluster_indices), dtype=bool)
-        avg_similarity = np.mean(pairwise[mask]) if mask.any() else 1.0
-        min_similarity = np.min(pairwise[mask]) if mask.any() else 1.0
+        n = len(cluster_indices)
+        if n > 1:
+            mask = ~np.eye(n, dtype=bool)
+            avg_similarity = float(np.mean(pairwise[mask]))
+            min_similarity = float(np.min(pairwise[mask]))
+            max_similarity = float(np.max(pairwise[mask]))
+        else:
+            avg_similarity = 1.0
+            min_similarity = 1.0
+            max_similarity = 1.0
 
         return {
             'cluster_id': cluster_id,
             'size': len(cluster_indices),
-            'avg_similarity': float(avg_similarity),
-            'min_similarity': float(min_similarity),
+            'avg_similarity': round(avg_similarity, 4),
+            'min_similarity': round(min_similarity, 4),
+            'max_similarity': round(max_similarity, 4),
             'members': members,
             'indices': cluster_indices
         }
@@ -284,33 +297,40 @@ class DuplicateDetector:
 
         # Format clusters
         formatted_clusters = []
-        for i, cluster_indices in enumerate(clusters):
+        for i, cluster_indices in enumerate(
+            tqdm(clusters, desc="Formatting clusters", unit="cluster")
+        ):
             formatted = self.format_cluster(cluster_indices, i)
             formatted_clusters.append(formatted)
 
         # Build results
         total_duplicates = sum(len(c) for c in clusters)
         unique_complaints = self.index.ntotal - total_duplicates + len(clusters)
-        deduplication_rate = (1 - unique_complaints / self.index.ntotal) * 100
+        deduplication_rate = (
+            (1 - unique_complaints / self.index.ntotal) * 100
+            if self.index.ntotal > 0 else 0
+        )
 
         results = {
-            'total_complaints': int(self.index.ntotal),
-            'total_duplicates': total_duplicates,
-            'unique_incidents': len(clusters) + (self.index.ntotal - total_duplicates),
-            'duplicate_clusters': len(clusters),
-            'deduplication_rate': round(deduplication_rate, 2),
-            'similarity_threshold': self.similarity_threshold,
-            'clusters': formatted_clusters,
-            'created_at': datetime.now().isoformat()
+            'summary': {
+                'total_complaints': int(self.index.ntotal),
+                'total_duplicates': total_duplicates,
+                'unique_incidents': len(clusters) + (self.index.ntotal - total_duplicates),
+                'duplicate_clusters': len(clusters),
+                'deduplication_rate': round(deduplication_rate, 2),
+                'similarity_threshold': self.similarity_threshold,
+                'created_at': datetime.now().isoformat()
+            },
+            'clusters': formatted_clusters
         }
 
         # Save if output path
         if output_path:
             output_path = Path(output_path)
             output_path.parent.mkdir(parents=True, exist_ok=True)
-            with open(output_path, 'w') as f:
+            with open(output_path, 'w', encoding='utf-8') as f:
                 json.dump(results, f, indent=2)
-            print(f"[SAVED] Results: {output_path}")
+            logger.info(f"Saved results: {output_path}")
 
         return results
 
@@ -331,9 +351,14 @@ class DuplicateDetector:
         Returns:
             List of potential duplicates with similarity scores
         """
-        from sentence_transformers import SentenceTransformer
+        try:
+            from sentence_transformers import SentenceTransformer
+        except ImportError:
+            logger.error("sentence-transformers required for this operation")
+            return []
 
         # Load model
+        logger.info(f"Loading model for query embedding: {model_name}")
         model = SentenceTransformer(model_name)
 
         # Generate embedding
@@ -352,7 +377,7 @@ class DuplicateDetector:
             if dist >= self.similarity_threshold:
                 dup_info = {
                     'index': int(idx),
-                    'similarity': float(dist)
+                    'similarity': round(float(dist), 4)
                 }
                 if self.metadata and 'metadata' in self.metadata:
                     if idx < len(self.metadata['metadata']):
@@ -388,14 +413,14 @@ def main():
     parser.add_argument(
         '--output', '-o',
         type=str,
-        default='ai-engine/duplicate_detection/duplicate_clusters.json',
+        default='ai-engine/outputs/duplicate_clusters.json',
         help='Path to save results'
     )
     parser.add_argument(
         '--threshold', '-t',
         type=float,
         default=0.85,
-        help='Similarity threshold for duplicates'
+        help='Similarity threshold for duplicates (0-1)'
     )
     parser.add_argument(
         '--max-neighbors',
@@ -420,58 +445,82 @@ def main():
 
     # Resolve paths
     project_root = Path(__file__).parent.parent.parent
-    index_path = Path(args.index) if Path(args.index).is_absolute() else project_root / args.index
-    embeddings_path = Path(args.embeddings) if Path(args.embeddings).is_absolute() else project_root / args.embeddings
-    metadata_path = Path(args.metadata) if Path(args.metadata).is_absolute() else project_root / args.metadata
-    output_path = Path(args.output) if Path(args.output).is_absolute() else project_root / args.output
+    index_path = Path(args.index)
+    if not index_path.is_absolute():
+        index_path = project_root / args.index
+
+    embeddings_path = Path(args.embeddings)
+    if not embeddings_path.is_absolute():
+        embeddings_path = project_root / args.embeddings
+
+    metadata_path = Path(args.metadata)
+    if not metadata_path.is_absolute():
+        metadata_path = project_root / args.metadata
+
+    output_path = Path(args.output)
+    if not output_path.is_absolute():
+        output_path = project_root / args.output
 
     # Check files exist
     for p, name in [(index_path, 'index'), (embeddings_path, 'embeddings')]:
         if not p.exists():
-            print(f"[ERROR] {name} file not found: {p}")
-            print(f"[INFO] Run build_index.py first")
+            logger.error(f"{name} file not found: {p}")
+            logger.info(f"Run build_faiss.py first to create the {name}")
             sys.exit(1)
 
-    metadata_path = Path(args.metadata) if Path(args.metadata).is_absolute() else project_root / args.metadata
+    # Check FAISS is available
+    if not FAISS_AVAILABLE:
+        logger.error("FAISS not installed")
+        logger.info("Install with: pip install faiss-cpu")
+        sys.exit(1)
 
-    # Initialize detector
-    detector = DuplicateDetector(
-        similarity_threshold=args.threshold,
-        max_neighbors=args.max_neighbors,
-        min_cluster_size=args.min_cluster_size
-    )
+    try:
+        # Initialize detector
+        detector = DuplicateDetector(
+            similarity_threshold=args.threshold,
+            max_neighbors=args.max_neighbors,
+            min_cluster_size=args.min_cluster_size
+        )
 
-    # Load files
-    detector.load_index(index_path)
-    detector.load_embeddings(embeddings_path)
-    if metadata_path.exists():
-        detector.load_metadata(metadata_path)
+        # Load files
+        detector.load_index(index_path)
+        detector.load_embeddings(embeddings_path)
+        if metadata_path.exists():
+            detector.load_metadata(metadata_path)
+        else:
+            logger.warning(f"Metadata file not found: {metadata_path}")
 
-    # Handle query mode
-    if args.query:
-        print(f"\n[INFO] Searching for duplicates to: {args.query}")
-        duplicates = detector.find_duplicates_for_complaint(args.query)
+        # Handle query mode
+        if args.query:
+            logger.info(f"\nSearching for duplicates to: {args.query[:80]}...")
+            duplicates = detector.find_duplicates_for_complaint(args.query)
 
-        print(f"\n[RESULTS] Found {len(duplicates)} potential duplicates:")
-        for dup in duplicates[:5]:
-            print(f"  - Similarity: {dup['similarity']:.2%}")
-            if 'text' in dup:
-                print(f"    Text: {dup['text'][:80]}...")
-        return
+            print(f"\n[RESULTS] Found {len(duplicates)} potential duplicates:")
+            for dup in duplicates[:5]:
+                print(f"  - Similarity: {dup['similarity']:.2%}")
+                if 'id' in dup:
+                    print(f"    ID: {dup['id']}")
+            return
 
-    # Run detection
-    results = detector.detect(output_path)
+        # Run detection
+        results = detector.detect(output_path)
 
-    # Print summary
-    print("\n" + "=" * 60)
-    print("DUPLICATE DETECTION RESULTS")
-    print("=" * 60)
-    print(f"Total complaints: {results['total_complaints']}")
-    print(f"Unique incidents: {results['unique_incidents']}")
-    print(f"Duplicate clusters: {results['duplicate_clusters']}")
-    print(f"Deduplication rate: {results['deduplication_rate']}%")
-    print(f"Similarity threshold: {results['similarity_threshold']}")
-    print(f"\nOutput: {output_path}")
+        # Print summary
+        summary = results['summary']
+        print("\n" + "=" * 60)
+        print("DUPLICATE DETECTION RESULTS")
+        print("=" * 60)
+        print(f"Total complaints: {summary['total_complaints']}")
+        print(f"Duplicate clusters: {summary['duplicate_clusters']}")
+        print(f"Complaints in clusters: {summary['total_duplicates']}")
+        print(f"Unique incidents: {summary['unique_incidents']}")
+        print(f"Deduplication rate: {summary['deduplication_rate']}%")
+        print(f"Similarity threshold: {summary['similarity_threshold']}")
+        print(f"\nOutput: {output_path}")
+
+    except Exception as e:
+        logger.error(f"Error during duplicate detection: {e}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':

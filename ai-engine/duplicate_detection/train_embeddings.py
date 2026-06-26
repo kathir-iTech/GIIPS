@@ -10,10 +10,12 @@ This script:
 4. Saves embeddings and metadata for indexing
 
 Author: GIIPS AI Engine
+Version: 1.0.0
 """
 
 import argparse
 import json
+import logging
 import sys
 from pathlib import Path
 from datetime import datetime
@@ -21,9 +23,25 @@ from typing import List, Dict, Optional, Tuple
 
 import numpy as np
 import pandas as pd
+from tqdm import tqdm
+
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    handlers=[
+        logging.StreamHandler(sys.stdout)
+    ]
+)
+logger = logging.getLogger(__name__)
 
 # Sentence Transformers for embeddings
-from sentence_transformers import SentenceTransformer
+try:
+    from sentence_transformers import SentenceTransformer
+    SENTENCE_TRANSFORMERS_AVAILABLE = True
+except ImportError:
+    SENTENCE_TRANSFORMERS_AVAILABLE = False
+    logger.error("sentence-transformers not installed. Install with: pip install sentence-transformers")
 
 
 class EmbeddingTrainer:
@@ -54,15 +72,21 @@ class EmbeddingTrainer:
         self.model = None
         self.embedding_dim = None
 
+        if not SENTENCE_TRANSFORMERS_AVAILABLE:
+            raise ImportError(
+                "sentence-transformers is required. "
+                "Install with: pip install sentence-transformers"
+            )
+
     def load_model(self) -> None:
         """Load the SentenceTransformer model."""
         if self.model is None:
-            print(f"[INFO] Loading SentenceTransformer model: {self.model_name}")
+            logger.info(f"Loading SentenceTransformer model: {self.model_name}")
             self.model = SentenceTransformer(self.model_name, device=self.device)
             self.embedding_dim = self.model.get_sentence_embedding_dimension()
             device_info = self.device or "auto-detected"
-            print(f"[INFO] Model loaded. Embedding dimension: {self.embedding_dim}")
-            print(f"[INFO] Device: {device_info}")
+            logger.info(f"Model loaded. Embedding dimension: {self.embedding_dim}")
+            logger.info(f"Device: {device_info}")
 
     def preprocess_text(self, text: str) -> str:
         """
@@ -91,8 +115,8 @@ class EmbeddingTrainer:
     def prepare_complaints(
         self,
         df: pd.DataFrame,
-        text_columns: List[str] = None,
-        id_column: str = 'id'
+        text_columns: Optional[List[str]] = None,
+        id_column: str = 'complaint_id'
     ) -> Tuple[List[str], List[Dict]]:
         """
         Prepare complaint texts and metadata for embedding.
@@ -106,26 +130,39 @@ class EmbeddingTrainer:
             Tuple of (texts, metadata_list)
         """
         if text_columns is None:
-            # Default columns to use
+            # Default columns to use - check common column names
             text_columns = []
-            for col in ['text', 'complaint_text', 'description', 'Problem', 'Problem Detail', 'Descriptor']:
+            candidates = ['text', 'complaint_text', 'description', 'Problem', 'Problem Detail', 'Descriptor']
+            for col in candidates:
                 if col in df.columns:
                     text_columns.append(col)
 
         if not text_columns:
-            raise ValueError("No valid text columns found in DataFrame")
+            raise ValueError(
+                "No valid text columns found in DataFrame. "
+                f"Available columns: {list(df.columns)}"
+            )
 
-        print(f"[INFO] Using text columns: {text_columns}")
+        logger.info(f"Using text columns: {text_columns}")
 
         texts = []
         metadata = []
 
-        for idx, row in df.iterrows():
-            # Combine text columns
-            combined_text = ' '.join(
-                str(row.get(col, '')) for col in text_columns
-                if pd.notna(row.get(col, ''))
-            )
+        # Use tqdm for progress bar
+        for idx, row in tqdm(
+            df.iterrows(),
+            total=len(df),
+            desc="Preparing complaints",
+            unit="rows"
+        ):
+            # Combine text columns, handling missing values
+            combined_parts = []
+            for col in text_columns:
+                val = row.get(col)
+                if pd.notna(val) and str(val).strip():
+                    combined_parts.append(str(val))
+
+            combined_text = ' '.join(combined_parts)
 
             # Preprocess
             cleaned_text = self.preprocess_text(combined_text)
@@ -135,18 +172,19 @@ class EmbeddingTrainer:
 
                 # Store metadata
                 meta = {
-                    'id': row.get(id_column, idx),
+                    'id': row.get(id_column, idx) if pd.notna(row.get(id_column)) else f"cmp-{idx}",
                     'index': len(texts) - 1,
                 }
 
-                # Add additional useful fields
-                for col in ['date_received', 'ward', 'category', 'Problem', 'complaint_number']:
-                    if col in row:
-                        meta[col] = row.get(col)
+                # Add additional useful fields with missing value handling
+                for col in ['date_received', 'ward', 'category', 'Problem']:
+                    val = row.get(col)
+                    if pd.notna(val):
+                        meta[col] = str(val)
 
                 metadata.append(meta)
 
-        print(f"[INFO] Prepared {len(texts)} complaints for embedding")
+        logger.info(f"Prepared {len(texts)} complaints for embedding")
         return texts, metadata
 
     def generate_embeddings(
@@ -166,8 +204,9 @@ class EmbeddingTrainer:
         """
         self.load_model()
 
-        print(f"[INFO] Generating embeddings for {len(texts)} texts...")
+        logger.info(f"Generating embeddings for {len(texts)} texts...")
 
+        # Generate embeddings with progress bar
         embeddings = self.model.encode(
             texts,
             batch_size=self.batch_size,
@@ -176,7 +215,7 @@ class EmbeddingTrainer:
             normalize_embeddings=self.normalize
         )
 
-        print(f"[INFO] Embeddings generated. Shape: {embeddings.shape}")
+        logger.info(f"Embeddings generated. Shape: {embeddings.shape}")
 
         return embeddings
 
@@ -184,8 +223,8 @@ class EmbeddingTrainer:
         self,
         input_path: Path,
         output_dir: Path,
-        text_columns: List[str] = None,
-        id_column: str = 'id',
+        text_columns: Optional[List[str]] = None,
+        id_column: str = 'complaint_id',
         sample_size: Optional[int] = None
     ) -> Dict:
         """
@@ -205,17 +244,29 @@ class EmbeddingTrainer:
         output_dir.mkdir(parents=True, exist_ok=True)
 
         # Load dataset
-        print(f"[INFO] Loading dataset from: {input_path}")
+        logger.info(f"Loading dataset from: {input_path}")
         df = pd.read_csv(input_path)
-        print(f"[INFO] Loaded {len(df)} records")
+        logger.info(f"Loaded {len(df)} records")
+
+        # Handle missing values in text columns
+        text_cols_to_check = text_columns if text_columns else ['text', 'Problem', 'Problem Detail', 'Descriptor']
+        for col in text_cols_to_check:
+            if col in df.columns:
+                missing_count = df[col].isna().sum()
+                if missing_count > 0:
+                    logger.warning(f"Column '{col}' has {missing_count} missing values - will be handled")
+                    df[col] = df[col].fillna('')
 
         # Sample if requested
         if sample_size and len(df) > sample_size:
             df = df.sample(n=sample_size, random_state=42)
-            print(f"[INFO] Sampled {sample_size} records")
+            logger.info(f"Sampled {sample_size} records")
 
         # Prepare texts
         texts, metadata = self.prepare_complaints(df, text_columns, id_column)
+
+        if not texts:
+            raise ValueError("No valid texts found after preprocessing")
 
         # Generate embeddings
         embeddings = self.generate_embeddings(texts)
@@ -223,11 +274,11 @@ class EmbeddingTrainer:
         # Save embeddings
         embeddings_path = output_dir / 'embeddings.npy'
         np.save(embeddings_path, embeddings)
-        print(f"[SAVED] Embeddings: {embeddings_path}")
+        logger.info(f"Saved embeddings: {embeddings_path}")
 
         # Save metadata
         metadata_path = output_dir / 'embedding_metadata.json'
-        with open(metadata_path, 'w') as f:
+        with open(metadata_path, 'w', encoding='utf-8') as f:
             json.dump({
                 'num_embeddings': len(texts),
                 'embedding_dim': self.embedding_dim,
@@ -236,13 +287,13 @@ class EmbeddingTrainer:
                 'created_at': datetime.now().isoformat(),
                 'metadata': metadata
             }, f, indent=2)
-        print(f"[SAVED] Metadata: {metadata_path}")
+        logger.info(f"Saved metadata: {metadata_path}")
 
         # Save texts for reference
         texts_path = output_dir / 'complaint_texts.json'
-        with open(texts_path, 'w') as f:
+        with open(texts_path, 'w', encoding='utf-8') as f:
             json.dump(texts, f, indent=2)
-        print(f"[SAVED] Texts: {texts_path}")
+        logger.info(f"Saved texts: {texts_path}")
 
         return {
             'num_embeddings': len(texts),
@@ -266,7 +317,7 @@ def main():
         '--output', '-o',
         type=str,
         default='ai-engine/duplicate_detection',
-        help='Output directory'
+        help='Output directory for embeddings'
     )
     parser.add_argument(
         '--model', '-m',
@@ -310,35 +361,40 @@ def main():
 
     output_dir = Path(args.output)
     if not output_dir.is_absolute():
-        output_dir = project_root / output_dir
+        output_dir = project_root / args.output
 
     # Check input exists
     if not input_path.exists():
-        print(f"[ERROR] Input file not found: {input_path}")
-        print("[INFO] Please place nyc311_filtered.csv in ai-engine/data/")
+        logger.error(f"Input file not found: {input_path}")
+        logger.info("Please place nyc311_filtered.csv in ai-engine/data/")
         sys.exit(1)
 
-    # Initialize trainer
-    trainer = EmbeddingTrainer(
-        model_name=args.model,
-        batch_size=args.batch_size,
-        device=args.device
-    )
+    try:
+        # Initialize trainer
+        trainer = EmbeddingTrainer(
+            model_name=args.model,
+            batch_size=args.batch_size,
+            device=args.device
+        )
 
-    # Process dataset
-    stats = trainer.process_dataset(
-        input_path=input_path,
-        output_dir=output_dir,
-        text_columns=args.text_columns,
-        sample_size=args.sample
-    )
+        # Process dataset
+        stats = trainer.process_dataset(
+            input_path=input_path,
+            output_dir=output_dir,
+            text_columns=args.text_columns,
+            sample_size=args.sample
+        )
 
-    print("\n" + "=" * 60)
-    print("EMBEDDING TRAINING COMPLETE")
-    print("=" * 60)
-    print(f"Embeddings: {stats['num_embeddings']}")
-    print(f"Dimensions: {stats['embedding_dim']}")
-    print(f"Output: {stats['output_dir']}")
+        print("\n" + "=" * 60)
+        print("EMBEDDING TRAINING COMPLETE")
+        print("=" * 60)
+        print(f"Embeddings: {stats['num_embeddings']}")
+        print(f"Dimensions: {stats['embedding_dim']}")
+        print(f"Output: {stats['output_dir']}")
+
+    except Exception as e:
+        logger.error(f"Error during embedding training: {e}")
+        sys.exit(1)
 
 
 if __name__ == '__main__':
