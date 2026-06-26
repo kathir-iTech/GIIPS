@@ -90,40 +90,40 @@ def preprocess_data(df: pd.DataFrame) -> tuple[pd.Series, pd.Series]:
 
     # Rename columns if they have the old names
     column_mapping = {}
-    if 'Complaint Type' in df.columns and 'Problem' not in df.columns:
-        column_mapping['Complaint Type'] = 'Problem'
-    if 'Descriptor' in df.columns and 'Problem Detail' not in df.columns:
-        column_mapping['Descriptor'] = 'Problem Detail'
+    if 'Complaint Type' in df.columns and 'Problem (formerly Complaint Type)' not in df.columns:
+        column_mapping['Complaint Type'] = 'Problem (formerly Complaint Type)'
+    if 'Descriptor' in df.columns and 'Problem Detail (formerly Descriptor)' not in df.columns:
+        column_mapping['Descriptor'] = 'Problem Detail (formerly Descriptor)'
 
     if column_mapping:
         df = df.rename(columns=column_mapping)
         print(f"[INFO] Renamed columns: {column_mapping}")
 
     # Verify required columns exist
-    required_columns = ['Problem', 'Problem Detail']
+    required_columns = ['Problem (formerly Complaint Type)', 'Problem Detail (formerly Descriptor)']
     for col in required_columns:
         if col not in df.columns:
             raise ValueError(f"Required column '{col}' not found in dataset. Available columns: {list(df.columns)}")
 
     # Combine Problem and Problem Detail into a single text column
     # This gives more context for classification
-    df['combined_text'] = df['Problem'].astype(str) + ' ' + df['Problem Detail'].astype(str)
+    df['combined_text'] = df['Problem (formerly Complaint Type)'].astype(str) + ' ' + df['Problem Detail (formerly Descriptor)'].astype(str)
 
     # Remove rows where either column had missing values
     # Check for 'nan' strings which can occur from astype(str) on NaN values
     initial_count = len(df)
     df = df[
-        (df['Problem'].notna()) &
-        (df['Problem Detail'].notna()) &
-        (df['Problem'] != 'nan') &
-        (df['Problem Detail'] != 'nan')
+        (df['Problem (formerly Complaint Type)'].notna()) &
+        (df['Problem Detail (formerly Descriptor)'].notna()) &
+        (df['Problem (formerly Complaint Type)'] != 'nan') &
+        (df['Problem Detail (formerly Descriptor)'] != 'nan')
     ]
     removed_count = initial_count - len(df)
     print(f"[INFO] Removed {removed_count} rows with missing values")
     print(f"[INFO] Remaining records: {len(df)}")
 
     # Return the combined text and the category (using Problem as the category label)
-    return df['combined_text'], df['Problem']
+    return df['combined_text'], df['Problem (formerly Complaint Type)']
 
 
 def encode_labels(labels: pd.Series) -> tuple[np.ndarray, LabelEncoder]:
@@ -198,7 +198,7 @@ def train_classifier(
     classifier = LogisticRegression(
         max_iter=max_iter,
         random_state=random_state,
-        multi_class='multinomial',
+        
         solver='lbfgs'
     )
     classifier.fit(X_train, y_train)
@@ -340,7 +340,7 @@ def main():
     print()
 
     # Configuration
-    DATA_FILE = 'nyc311_working.csv'
+    DATA_FILE = 'nyc311_filtered.csv'
     MODELS_DIR = 'models'
     TEST_SIZE = 0.2  # 20% for testing
     RANDOM_STATE = 42
