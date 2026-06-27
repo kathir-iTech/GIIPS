@@ -3,61 +3,111 @@ GIIPS FastAPI Backend Application.
 
 Exposes REST endpoints for complaint classification, clustering,
 priority scoring, and dashboard data.
+
+Author: GIIPS AI Engine
+Version: 1.0.0
 """
 
 import json
+import pickle
+import logging
 import sys
 from pathlib import Path
 from datetime import datetime
 from typing import List, Dict, Optional, Any
 from contextlib import asynccontextmanager
+from collections import defaultdict
 
-from fastapi import FastAPI, HTTPException, Depends
+import numpy as np
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
 
-# Add parent to path for imports
-sys.path.insert(0, str(Path(__file__).parent.parent))
+# Configure logging
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s'
+)
+logger = logging.getLogger(__name__)
 
-from classification.train import ComplaintClassifier
-from clustering.cluster import ComplaintClusterer
-from priority.priority import PriorityEngine, PriorityResult
+# === Configuration ===
+PROJECT_ROOT = Path(__file__).parent.parent.parent
+MODELS_DIR = PROJECT_ROOT / 'ai-engine' / 'models' / 'classification'
+OUTPUTS_DIR = PROJECT_ROOT / 'ai-engine' / 'outputs'
+DATA_DIR = PROJECT_ROOT / 'ai-engine' / 'data'
 
-
-# Global model instances
+# === Global State ===
 _models: Dict[str, Any] = {}
 
+
+# === Model Loading ===
+
+def load_classifier():
+    """Load the trained classifier models."""
+    try:
+        classifier_path = MODELS_DIR / 'classifier.pkl'
+        vectorizer_path = MODELS_DIR / 'vectorizer.pkl'
+        encoder_path = MODELS_DIR / 'label_encoder.pkl'
+
+        if not all(p.exists() for p in [classifier_path, vectorizer_path, encoder_path]):
+            logger.warning("Model files not found, classifier will use fallback")
+            return None
+
+        with open(vectorizer_path, 'rb') as f:
+            vectorizer = pickle.load(f)
+
+        with open(classifier_path, 'rb') as f:
+            classifier = pickle.load(f)
+
+        with open(encoder_path, 'rb') as f:
+            label_encoder = pickle.load(f)
+
+        logger.info("Classification models loaded successfully")
+        return {
+            'vectorizer': vectorizer,
+            'classifier': classifier,
+            'label_encoder': label_encoder
+        }
+    except Exception as e:
+        logger.error(f"Failed to load classifier: {e}")
+        return None
+
+
+# === Lifespan Management ===
 
 @asynccontextmanager
 async def lifespan(app: FastAPI):
     """Manage application lifespan - load models on startup."""
-    print("[STARTUP] Loading AI models...")
+    logger.info("[STARTUP] Initializing GIIPS Backend...")
 
-    models_dir = Path(__file__).parent.parent / 'models'
-
-    # Try to load classification model
-    classification_dir = models_dir / 'classification'
-    if classification_dir.exists() and (classification_dir / 'classifier.pkl').exists():
-        try:
-            _models['classifier'] = ComplaintClassifier.load(classification_dir)
-            print("[STARTUP] Classification model loaded")
-        except Exception as e:
-            print(f"[WARNING] Could not load classification model: {e}")
-
-    # Initialize clusterer
-    _models['clusterer'] = ComplaintClusterer(eps=0.3, min_samples=2)
-    print("[STARTUP] Clustering model initialized")
+    # Load classifier
+    _models['classifier'] = load_classifier()
+    if _models['classifier']:
+        logger.info("[STARTUP] Classification model loaded")
+    else:
+        logger.warning("[STARTUP] Using fallback classifier")
 
     # Initialize priority engine
-    _models['priority_engine'] = PriorityEngine()
-    print("[STARTUP] Priority engine initialized")
+    try:
+        from priority.priority import PriorityEngine
+        _models['priority_engine'] = PriorityEngine()
+        logger.info("[STARTUP] Priority engine initialized")
+    except ImportError:
+        # Inline priority engine
+        _models['priority_engine'] = None
+        logger.info("[STARTUP] Using inline priority engine")
+
+    # Ensure outputs directory exists
+    OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
     yield
 
     # Cleanup
     _models.clear()
-    print("[SHUTDOWN] Models unloaded")
+    logger.info("[SHUTDOWN] Models unloaded")
 
+
+# === FastAPI App ===
 
 app = FastAPI(
     title="GIIPS API",
@@ -66,7 +116,7 @@ app = FastAPI(
     lifespan=lifespan
 )
 
-# Enable CORS for frontend
+# Enable CORS
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -79,31 +129,29 @@ app.add_middleware(
 # === Request/Response Models ===
 
 class ClassifyRequest(BaseModel):
-    """Request for single complaint classification."""
+    """Request for complaint classification."""
     text: str = Field(..., description="Complaint text to classify")
     detail: Optional[str] = Field(None, description="Additional detail text")
 
 
 class ClassifyResponse(BaseModel):
-    """Response for classification request."""
+    """Response for classification."""
     predicted_category: str
     confidence: float
     top_predictions: List[Dict[str, Any]]
 
 
 class ClusterRequest(BaseModel):
-    """Request for clustering complaints."""
-    complaints: List[Dict[str, Any]] = Field(..., description="List of complaints to cluster")
+    """Request for clustering."""
+    complaints: List[Dict[str, Any]] = Field(..., description="List of complaints")
     text_key: str = Field("text", description="Key for text field")
-    eps: Optional[float] = Field(0.3, description="DBSCAN epsilon parameter")
 
 
 class ClusterResponse(BaseModel):
-    """Response for clustering request."""
+    """Response for clustering."""
     n_clusters: int
     n_noise: int
     cluster_assignments: List[Dict[str, Any]]
-    cluster_details: Dict[str, Any]
 
 
 class PriorityRequest(BaseModel):
@@ -136,286 +184,300 @@ class DashboardResponse(BaseModel):
     priority_distribution: Dict[str, int]
 
 
-# === API Endpoints ===
+# === Helper Functions ===
 
-@app.get("/")
-async def root():
-    """Root endpoint with API information."""
+FALLBACK_CATEGORIES = {
+    'pothole': 'Road Infrastructure',
+    'road': 'Road Infrastructure',
+    'street': 'Road Infrastructure',
+    'water': 'Water Supply',
+    'pipe': 'Water Supply',
+    'leak': 'Water Supply',
+    'garbage': 'Waste Management',
+    'waste': 'Waste Management',
+    'trash': 'Waste Management',
+    'light': 'Street Lighting',
+    'lamp': 'Street Lighting',
+    'dark': 'Street Lighting',
+    'drain': 'Sanitation',
+    'sewage': 'Sanitation',
+    'toilet': 'Sanitation',
+}
+
+def fallback_classify(text: str) -> tuple:
+    """Simple keyword-based classification fallback."""
+    text_lower = text.lower()
+    for keyword, category in FALLBACK_CATEGORIES.items():
+        if keyword in text_lower:
+            return category, 0.75
+    return 'Public Works', 0.5
+
+
+def calculate_priority_score(
+    cluster_size: int,
+    days_open: int,
+    category: str,
+    location_hints: List[str]
+) -> Dict:
+    """Calculate priority score and explanation."""
+    # Category weights
+    category_weights = {
+        'Water Supply': 0.90,
+        'Road Infrastructure': 0.85,
+        'Sanitation': 0.80,
+        'Waste Management': 0.65,
+        'Street Lighting': 0.60,
+        'Public Works': 0.50,
+    }
+
+    # Location weights
+    location_weight = 0.5
+    for hint in location_hints:
+        hint_lower = hint.lower()
+        if any(kw in hint_lower for kw in ['school', 'hospital', 'emergency']):
+            location_weight = 0.95
+            break
+        elif any(kw in hint_lower for kw in ['market', 'transit', 'bus']):
+            location_weight = 0.80
+            break
+
+    # Calculate components
+    size_score = min(cluster_size / 20, 1.0) * 30
+    age_score = min(days_open / 30, 1.0) * 25
+    cat_score = category_weights.get(category, 0.5) * 25
+    loc_score = location_weight * 20
+
+    total_score = size_score + age_score + cat_score + loc_score
+
+    if total_score >= 90:
+        label = 'Critical'
+    elif total_score >= 75:
+        label = 'High'
+    elif total_score >= 50:
+        label = 'Medium'
+    else:
+        label = 'Low'
+
     return {
-        "name": "GIIPS API",
-        "version": "1.0.0",
-        "status": "operational",
-        "endpoints": [
-            "/classify",
-            "/cluster",
-            "/priority",
-            "/dashboard",
-            "/health"
+        'score': round(total_score, 1),
+        'label': label,
+        'factors': [
+            {'name': 'cluster_size', 'value': cluster_size, 'contribution': round(size_score, 1)},
+            {'name': 'age', 'value': days_open, 'contribution': round(age_score, 1)},
+            {'name': 'category', 'value': category, 'contribution': round(cat_score, 1)},
+            {'name': 'location', 'value': location_weight, 'contribution': round(loc_score, 1)},
         ]
     }
 
 
-@app.get("/health")
-async def health_check():
-    """Health check endpoint."""
-    loaded = {
-        "classifier": "classifier" in _models,
-        "clusterer": "clusterer" in _models,
-        "priority_engine": "priority_engine" in _models
+def group_by_similarity(complaints: List[Dict], text_key: str) -> List[List[int]]:
+    """Simple text-based grouping for clustering."""
+    buckets = defaultdict(list)
+
+    for i, c in enumerate(complaints):
+        text = str(c.get(text_key, '') or c.get('text', ''))
+        # Extract key words for matching
+        words = text.lower().split()[:5]
+        key = ' '.join(words)
+        buckets[key].append(i)
+
+    # Also check for similar texts
+    n = len(complaints)
+    used = set()
+
+    for i in range(n):
+        if i in used:
+            continue
+        text_i = str(complaints[i].get(text_key, '') or complaints[i].get('text', '')).lower()
+        words_i = set(text_i.split())
+
+        for j in range(i + 1, n):
+            if j in used:
+                continue
+            text_j = str(complaints[j].get(text_key, '') or complaints[j].get('text', '')).lower()
+            words_j = set(text_j.split())
+
+            # Jaccard similarity
+            intersection = len(words_i & words_j)
+            union = len(words_i | words_j)
+            if union > 0 and intersection / union > 0.3:
+                # Combine into same bucket
+                found_key = None
+                for k, v in buckets.items():
+                    if i in v or j in v:
+                        found_key = k
+                        break
+                if found_key:
+                    if i not in buckets[found_key]:
+                        buckets[found_key].append(i)
+                    if j not in buckets[found_key]:
+                        buckets[found_key].append(j)
+                else:
+                    buckets[f'sim_{i}'] = [i, j]
+                used.add(i)
+                used.add(j)
+
+    # Convert to clusters (only groups with 2+ items)
+    clusters = [indices for indices in buckets.values() if len(indices) >= 2]
+    return clusters
+
+
+# === API Endpoints ===
+
+@app.get("/")
+async def root():
+    """Root endpoint."""
+    return {
+        "name": "GIIPS API",
+        "version": "1.0.0",
+        "status": "operational",
+        "endpoints": ["/classify", "/cluster", "/priority", "/dashboard", "/health"]
     }
 
+
+@app.get("/health")
+async def health():
+    """Health check endpoint."""
     return {
-        "status": "healthy" if all(loaded.values()) else "degraded",
-        "models_loaded": loaded,
+        "status": "healthy",
+        "models_loaded": {
+            "classifier": _models.get('classifier') is not None
+        },
         "timestamp": datetime.now().isoformat()
     }
 
 
 @app.post("/classify", response_model=ClassifyResponse)
-async def classify_complaint(request: ClassifyRequest):
-    """
-    Classify a single complaint into a category.
-
-    Uses the trained TF-IDF + Logistic Regression classifier.
-    """
-    classifier = _models.get('classifier')
-
-    if classifier is None:
-        # Fallback: simple keyword matching
-        return await _fallback_classify(request)
-
-    # Combine text fields
+async def classify(request: ClassifyRequest):
+    """Classify a complaint into a category."""
     combined_text = request.text
     if request.detail:
         combined_text += f" {request.detail}"
 
-    try:
-        prediction = classifier.predict([combined_text])[0]
-        probabilities = classifier.predict_proba([combined_text])[0]
+    classifier_data = _models.get('classifier')
 
-        # Get top 5 predictions
-        import numpy as np
-        top_indices = np.argsort(probabilities)[::-1][:5]
-        top_predictions = [
-            {
-                "category": classifier.classes_[idx],
-                "confidence": float(probabilities[idx])
-            }
-            for idx in top_indices
-        ]
+    if classifier_data:
+        try:
+            vectorizer = classifier_data['vectorizer']
+            classifier = classifier_data['classifier']
+            label_encoder = classifier_data['label_encoder']
 
-        confidence = float(probabilities[classifier.classes_.tolist().index(prediction)])
+            # Vectorize
+            X = vectorizer.transform([combined_text])
 
-        return ClassifyResponse(
-            predicted_category=prediction,
-            confidence=confidence,
-            top_predictions=top_predictions
-        )
+            # Predict
+            y_pred = classifier.predict(X)[0]
+            y_proba = classifier.predict_proba(X)[0]
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Classification failed: {str(e)}")
+            # Decode
+            category = label_encoder.inverse_transform([y_pred])[0]
+            confidence = float(y_proba[y_pred])
 
+            # Top predictions
+            top_indices = np.argsort(y_proba)[::-1][:5]
+            top_predictions = [
+                {
+                    "category": label_encoder.inverse_transform([idx])[0],
+                    "confidence": float(y_proba[idx])
+                }
+                for idx in top_indices
+            ]
 
-async def _fallback_classify(request: ClassifyRequest) -> ClassifyResponse:
-    """Fallback classification when model not loaded."""
-    # Simple keyword matching
-    text_lower = request.text.lower()
-    category_scores = {
-        'Road Infrastructure': any(kw in text_lower for kw in ['pothole', 'road', 'street', 'pavement', 'speed breaker']),
-        'Water Supply': any(kw in text_lower for kw in ['water', 'pipe', 'leak', 'supply', 'tap']),
-        'Waste Management': any(kw in text_lower for kw in ['garbage', 'waste', 'trash', 'rubbish', 'bin']),
-        'Sanitation': any(kw in text_lower for kw in ['drain', 'sewage', 'toilet', 'sanitation']),
-        'Street Lighting': any(kw in text_lower for kw in ['light', 'lamp', 'street light', 'bulb']),
-    }
+            return ClassifyResponse(
+                predicted_category=category,
+                confidence=confidence,
+                top_predictions=top_predictions
+            )
+        except Exception as e:
+            logger.error(f"Classification error: {e}")
 
-    predicted = 'Public Works'
-    max_conf = 0.5
-
-    for cat, match in category_scores.items():
-        if match:
-            predicted = cat
-            max_conf = 0.8
-            break
-
+    # Fallback
+    category, confidence = fallback_classify(combined_text)
     return ClassifyResponse(
-        predicted_category=predicted,
-        confidence=max_conf,
-        top_predictions=[{"category": predicted, "confidence": max_conf}]
+        predicted_category=category,
+        confidence=confidence,
+        top_predictions=[{"category": category, "confidence": confidence}]
     )
 
 
 @app.post("/cluster", response_model=ClusterResponse)
-async def cluster_complaints(request: ClusterRequest):
-    """
-    Cluster complaints into incidents using semantic similarity.
-
-    Uses SentenceTransformer embeddings and DBSCAN clustering.
-    """
-    clusterer = _models.get('clusterer')
-
+async def cluster(request: ClusterRequest):
+    """Cluster complaints into duplicate incidents."""
     if not request.complaints:
         raise HTTPException(status_code=400, detail="No complaints provided")
 
-    # Use fallback if clusterer not properly initialized
-    if clusterer is None:
-        return await _fallback_cluster(request)
+    clusters = group_by_similarity(request.complaints, request.text_key)
 
-    try:
-        # Update clusterer params if specified
-        if request.eps:
-            clusterer.eps = request.eps
+    # Build assignments
+    all_indices = list(range(len(request.complaints)))
+    assigned = set()
+    for cluster in clusters:
+        assigned.update(cluster)
 
-        # Run clustering
-        result = clusterer.cluster_with_ward_separation(
-            request.complaints,
-            text_key=request.text_key
-        )
-
-        # Build cluster assignments
-        assignments = []
-        for i, label in enumerate(result.get('labels', [])):
+    assignments = []
+    cluster_id = 0
+    for cluster in clusters:
+        for idx in cluster:
             assignments.append({
-                "complaint_id": request.complaints[i].get('id', i),
-                "cluster_label": int(label),
-                "is_noise": label == -1
+                "complaint_id": request.complaints[idx].get('id', idx),
+                "cluster_label": cluster_id,
+                "is_noise": False
+            })
+        cluster_id += 1
+
+    # Noise points
+    for idx in all_indices:
+        if idx not in assigned:
+            assignments.append({
+                "complaint_id": request.complaints[idx].get('id', idx),
+                "cluster_label": -1,
+                "is_noise": True
             })
 
-        # Build cluster details
-        cluster_details = {}
-        for label, members in result.get('clusters', {}).items():
-            cluster_details[str(label)] = {
-                "size": len(members),
-                "sample_complaints": [m.get('text', '')[:100] for m in members[:3]]
-            }
-
-        return ClusterResponse(
-            n_clusters=result['n_clusters'],
-            n_noise=result['n_noise'],
-            cluster_assignments=assignments,
-            cluster_details=cluster_details
-        )
-
-    except Exception as e:
-        # Return fallback on error
-        return await _fallback_cluster(request)
-
-
-async def _fallback_cluster(request: ClusterRequest) -> ClusterResponse:
-    """Simple fallback clustering when model unavailable."""
-    # Group by similar text (first 50 chars as simple bucketing)
-    from collections import defaultdict
-
-    buckets = defaultdict(list)
-    assignments = []
-
-    for i, complaint in enumerate(request.complaints):
-        text = complaint.get(request.text_key, '') or complaint.get('text', '')
-        bucket_key = text[:50].lower() if text else 'empty'
-        buckets[bucket_key].append(i)
-
-    # Convert to clusters
-    cluster_labels = {}
-    cluster_id = 0
-
-    for key, indices in buckets.items():
-        if len(indices) >= 2:  # Only create clusters for duplicates
-            for idx in indices:
-                cluster_labels[idx] = cluster_id
-            cluster_id += 1
-        else:
-            for idx in indices:
-                cluster_labels[idx] = -1  # Noise
-
-    assignments = [
-        {
-            "complaint_id": request.complaints[i].get('id', i),
-            "cluster_label": cluster_labels.get(i, -1),
-            "is_noise": cluster_labels.get(i, -1) == -1
-        }
-        for i in range(len(request.complaints))
-    ]
-
     return ClusterResponse(
-        n_clusters=cluster_id,
-        n_noise=sum(1 for a in assignments if a['is_noise']),
-        cluster_assignments=assignments,
-        cluster_details={}
+        n_clusters=len(clusters),
+        n_noise=len(assigned) - sum(len(c) for c in clusters) + len(all_indices) - len(assigned),
+        cluster_assignments=assignments
     )
 
 
 @app.post("/priority", response_model=PriorityResponse)
 async def calculate_priority(request: PriorityRequest):
-    """
-    Calculate priority score for an incident.
-
-    Uses explainable scoring based on cluster size, age,
-    category severity, and location importance.
-    """
-    engine = _models.get('priority_engine')
-
-    if engine is None:
-        engine = PriorityEngine()
-
+    """Calculate priority score for an incident."""
     try:
-        result = engine.compute(
-            incident_id=request.incident_id,
-            cluster_size=request.cluster_size,
-            first_complaint_date=request.first_complaint_date,
-            last_complaint_date=request.last_complaint_date,
-            category=request.category,
-            location_hints=request.location_hints
-        )
+        first_date = datetime.fromisoformat(request.first_complaint_date.split('T')[0])
+        days_open = max(0, (datetime.now() - first_date).days)
+    except (ValueError, TypeError):
+        days_open = 0
 
-        return PriorityResponse(
-            incident_id=result.incident_id,
-            priority_score=result.priority_score,
-            priority_label=result.priority_label,
-            factors=[{
-                "name": f.name,
-                "raw_value": f.raw_value,
-                "normalized_value": f.normalized_value,
-                "weight": f.weight,
-                "contribution": f.contribution,
-                "description": f.description
-            } for f in result.factors],
-            explanation=result.explanation
-        )
+    result = calculate_priority_score(
+        cluster_size=request.cluster_size,
+        days_open=days_open,
+        category=request.category,
+        location_hints=request.location_hints
+    )
 
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Priority calculation failed: {str(e)}")
+    # Build explanation
+    explanation = f"Incident with {request.cluster_size} complaints, "
+    explanation += f"open for {days_open} days. "
+    explanation += f"Category: {request.category}. "
+    if request.location_hints:
+        explanation += f"Location: {', '.join(request.location_hints[:2])}."
 
-
-@app.post("/batch_priority")
-async def calculate_batch_priority(incidents: List[PriorityRequest]):
-    """Calculate priority for multiple incidents."""
-    engine = _models.get('priority_engine') or PriorityEngine()
-
-    results = []
-    for incident in incidents:
-        result = engine.compute(
-            incident_id=incident.incident_id,
-            cluster_size=incident.cluster_size,
-            first_complaint_date=incident.first_complaint_date,
-            last_complaint_date=incident.last_complaint_date,
-            category=incident.category,
-            location_hints=incident.location_hints
-        )
-        results.append(result.to_dict())
-
-    return {"results": results, "count": len(results)}
+    return PriorityResponse(
+        incident_id=request.incident_id,
+        priority_score=result['score'],
+        priority_label=result['label'],
+        factors=result['factors'],
+        explanation=explanation
+    )
 
 
 @app.get("/dashboard", response_model=DashboardResponse)
-async def get_dashboard_data():
-    """
-    Get dashboard summary statistics.
-
-    Returns key metrics for the main dashboard view.
-    """
+async def get_dashboard():
+    """Get dashboard summary data."""
     # Try to load saved data
-    outputs_dir = Path(__file__).parent.parent / 'outputs'
-    data_file = outputs_dir / 'dashboard_data.json'
-
+    data_file = OUTPUTS_DIR / 'dashboard_data.json'
     if data_file.exists():
         try:
             with open(data_file, 'r') as f:
@@ -424,7 +486,7 @@ async def get_dashboard_data():
         except Exception:
             pass
 
-    # Return sample data if no saved data
+    # Default sample data
     return DashboardResponse(
         total_complaints=100,
         unique_incidents=15,
@@ -448,36 +510,27 @@ async def get_dashboard_data():
 
 
 @app.post("/similar")
-async def find_similar_complaints(
-    text: str,
-    existing_complaints: List[Dict[str, Any]],
-    threshold: float = 0.8
-):
-    """
-    Find similar complaints for duplicate detection.
+async def find_similar(text: str, complaints: List[Dict], threshold: float = 0.8):
+    """Find similar complaints (simple keyword matching)."""
+    text_words = set(text.lower().split()[:10])
+    similar = []
 
-    Uses semantic similarity to find potential duplicates.
-    """
-    clusterer = _models.get('clusterer')
+    for c in complaints:
+        ct = str(c.get('text', ''))
+        ct_words = set(ct.lower().split()[:10])
+        overlap = len(text_words & ct_words) / max(len(text_words), 1)
 
-    if clusterer is None:
-        # Simple keyword fallback
-        text_keywords = set(text.lower().split()[:5])
-        similar = []
-        for complaint in existing_complaints:
-            ct = complaint.get('text', '').lower()
-            ct_keywords = set(ct.split()[:5])
-            overlap = len(text_keywords & ct_keywords) / max(len(text_keywords), 1)
-            if overlap >= threshold * 0.5:
-                similar.append({**complaint, "similarity": overlap})
-        return {"similar_complaints": similar[:5]}
+        if overlap >= threshold * 0.5:
+            similar.append({
+                "id": c.get('id'),
+                "text": ct[:100],
+                "similarity": round(overlap, 3)
+            })
 
-    try:
-        duplicates = clusterer.find_duplicates(text, existing_complaints, threshold=threshold)
-        return {"similar_complaints": duplicates}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f"Similarity search failed: {str(e)}")
+    return {"similar_complaints": similar[:5]}
 
+
+# === Main Entry Point ===
 
 if __name__ == '__main__':
     import uvicorn
@@ -487,11 +540,11 @@ if __name__ == '__main__':
     print("=" * 60)
     print("\nStarting server at http://localhost:8000")
     print("API docs: http://localhost:8000/docs")
-    print("\n")
 
     uvicorn.run(
         "app:app",
         host="0.0.0.0",
         port=8000,
-        reload=True
+        reload=False,
+        log_level="info"
     )
