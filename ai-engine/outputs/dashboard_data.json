@@ -1,0 +1,24 @@
+{
+  "total_complaints": 100,
+  "unique_incidents": 15,
+  "workload_reduction": 85.0,
+  "critical_incidents": 3,
+  "high_priority_incidents": 5,
+  "medium_priority_incidents": 4,
+  "low_priority_incidents": 3,
+  "category_distribution": [
+    {"category": "Road Infrastructure", "count": 30},
+    {"category": "Water Supply", "count": 25},
+    {"category": "Waste Management", "count": 20},
+    {"category": "Street Lighting", "count": 15},
+    {"category": "Sanitation", "count": 10}
+  ],
+  "priority_distribution": {
+    "Critical": 3,
+    "High": 5,
+    "Medium": 4,
+    "Low": 3
+  },
+  "avg_days_open": 5.2,
+  "avg_priority_score": 68.5
+}
