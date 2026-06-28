@@ -1,2 +1,6 @@
 node_modules/
 .env
+
+ai-engine/data/giips.db
+__pycache__/
+*.pyc

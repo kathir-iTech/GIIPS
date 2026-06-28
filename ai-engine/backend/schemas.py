@@ -1,0 +1,74 @@
+"""
+Pydantic schemas for data validation and serialization.
+
+Contains schemas for request validation and response formatting
+for both Complaints and Incidents, supporting both Pydantic v1 and v2.
+"""
+
+from pydantic import BaseModel, Field
+from typing import List, Optional
+from datetime import datetime
+
+
+# === Complaint Schemas ===
+
+class ComplaintBase(BaseModel):
+    """Base fields shared across all Complaint schemas."""
+    title: str = Field(..., description="Short title of the complaint", min_length=1)
+    description: str = Field(..., description="Detailed description of the issue", min_length=1)
+    location: str = Field(..., description="Specific physical location or address", min_length=1)
+    ward: str = Field(..., description="Municipal ward identifier", min_length=1)
+    image_path: Optional[str] = Field(None, description="Optional file path to uploaded image")
+    predicted_category: Optional[str] = Field(None, description="AI-predicted category")
+    confidence: Optional[float] = Field(None, description="AI classification confidence score", ge=0.0, le=1.0)
+    priority: Optional[str] = Field(None, description="Priority classification (Critical, High, Medium, Low)")
+    incident_id: Optional[str] = Field(None, description="Optional foreign key linking to an aggregated Incident")
+
+
+class ComplaintCreate(ComplaintBase):
+    """Schema used when creating/submitting a new complaint."""
+    id: str = Field(..., description="Unique custom or UUID identifier for the new complaint")
+
+
+class ComplaintResponse(ComplaintBase):
+    """Schema returned in API responses for Complaint data."""
+    id: str
+    created_at: datetime
+
+    class Config:
+        # Pydantic v1 support
+        orm_mode = True
+        # Pydantic v2 support
+        from_attributes = True
+
+
+# === Incident Schemas ===
+
+class IncidentBase(BaseModel):
+    """Base fields shared across all Incident schemas."""
+    incident_number: str = Field(..., description="Unique human-readable incident ID, e.g. INC-2024-0001")
+    category: str = Field(..., description="Unified municipal category for the incident cluster")
+    ward: str = Field(..., description="Municipal ward where the incident resides")
+    cluster_size: int = Field(1, description="Number of grouped citizen complaints", ge=1)
+    priority_score: float = Field(0.0, description="Calculated priority score (0-100)", ge=0.0, le=100.0)
+    priority_label: str = Field("Low", description="Priority level (Critical, High, Medium, Low)")
+    summary: Optional[str] = Field(None, description="AI-generated summary of the incident")
+    status: str = Field("open", description="Resolution status (open, in-progress, closed)")
+
+
+class IncidentCreate(IncidentBase):
+    """Schema used when initializing a new aggregated Incident."""
+    id: str = Field(..., description="Unique UUID identifier for the incident")
+
+
+class IncidentResponse(IncidentBase):
+    """Schema returned in API responses for Incident data (including linked complaints)."""
+    id: str
+    created_at: datetime
+    complaints: List[ComplaintResponse] = []
+
+    class Config:
+        # Pydantic v1 support
+        orm_mode = True
+        # Pydantic v2 support
+        from_attributes = True

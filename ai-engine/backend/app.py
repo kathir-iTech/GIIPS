@@ -97,6 +97,15 @@ async def lifespan(app: FastAPI):
         _models['priority_engine'] = None
         logger.info("[STARTUP] Using inline priority engine")
 
+    # Initialize SQLite Database and create tables automatically on startup
+    try:
+        from database import Base, engine
+        logger.info("[STARTUP] Initializing SQLite database and auto-creating tables...")
+        Base.metadata.create_all(bind=engine)
+        logger.info("[STARTUP] SQLite database tables created/verified successfully")
+    except Exception as e:
+        logger.error(f"[STARTUP] SQLite database auto-creation failed: {e}")
+
     # Ensure outputs directory exists
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 

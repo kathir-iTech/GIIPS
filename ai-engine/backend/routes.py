@@ -20,7 +20,6 @@ from services import (
     DashboardService
 )
 
-
 # Create routers
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
