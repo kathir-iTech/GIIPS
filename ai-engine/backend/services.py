@@ -9,6 +9,8 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
+from database import SessionLocal, Complaint, Incident
+import uuid
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -416,3 +418,102 @@ class DashboardService:
             if incident.id == incident_id or incident.incident_number == incident_id:
                 return incident
         return None
+
+class ComplaintService:
+    """Service to handle complaint submission workflow."""
+
+    def __init__(self):
+        self.db = SessionLocal()
+        self.classifier = ClassificationService()
+        self.clusterer = ClusteringService()
+        self.priority = PriorityService()
+
+    async def submit_complaint(self, complaint_data: Dict[str, Any]) -> Dict[str, Any]:
+        """Process new complaint: classify, find/create incident, calculate priority, save."""
+        
+        # 1. AI Classification
+        classify_res = await self.classifier.classify(ClassifyRequest(
+            text=complaint_data['title'],
+            detail=complaint_data['description']
+        ))
+        category = classify_res.predicted_category
+        confidence = classify_res.confidence
+
+        # 2. Duplicate Detection
+        existing_complaints = self.db.query(Complaint).all()
+        complaints_dict = [{"id": c.id, "text": f"{c.title} {c.description}"} for c in existing_complaints]
+        
+        similar = await self.clusterer.find_similar(
+            f"{complaint_data['title']} {complaint_data['description']}",
+            complaints_dict,
+            threshold=0.8
+        )
+
+        incident = None
+        is_duplicate = False
+
+        if similar:
+            most_similar_id = similar[0]['id']
+            existing_c = self.db.query(Complaint).filter(Complaint.id == most_similar_id).first()
+            if existing_c and existing_c.incident_id:
+                incident = self.db.query(Incident).filter(Incident.id == existing_c.incident_id).first()
+                is_duplicate = True
+
+        if not incident:
+            # Create new incident
+            incident = Incident(
+                id=str(uuid.uuid4()),
+                incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}",
+                category=category,
+                ward=complaint_data['ward'],
+                cluster_size=1,
+                priority_score=0.0,
+                priority_label="Low",
+                summary=complaint_data['title']
+            )
+            self.db.add(incident)
+        else:
+            # Link to existing incident and increment size
+            incident.cluster_size += 1
+
+        # 3. Calculate Priority
+        priority_res = await self.priority.calculate(PriorityRequest(
+            incident_id=incident.id,
+            cluster_size=incident.cluster_size,
+            first_complaint_date=datetime.utcnow().isoformat(),
+            last_complaint_date=datetime.utcnow().isoformat(),
+            category=category,
+            location_hints=[complaint_data['location']]
+        ))
+
+        incident.priority_score = priority_res.priority_score
+        incident.priority_label = priority_res.priority_label
+
+        # 4. Save Complaint
+        new_complaint = Complaint(
+            id=str(uuid.uuid4()),
+            title=complaint_data['title'],
+            description=complaint_data['description'],
+            location=complaint_data['location'],
+            ward=complaint_data['ward'],
+            image_path=complaint_data.get('image_path'),
+            predicted_category=category,
+            confidence=confidence,
+            priority=priority_res.priority_label,
+            incident=incident
+        )
+        
+        self.db.add(new_complaint)
+        self.db.commit()
+        self.db.refresh(new_complaint)
+        self.db.refresh(incident)
+
+        return {
+            "complaintId": new_complaint.id,
+            "incidentId": incident.id,
+            "predictedCategory": category,
+            "priority": priority_res.priority_label,
+            "confidence": confidence,
+            "duplicate": is_duplicate,
+            "message": "Complaint submitted successfully"
+        }

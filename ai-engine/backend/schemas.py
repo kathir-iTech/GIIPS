@@ -10,7 +10,24 @@ from typing import List, Optional
 from datetime import datetime
 
 
-# === Complaint Schemas ===
+# === New Submission Schemas ===
+
+class ComplaintCreate(BaseModel):
+    title: str
+    description: str
+    location: str
+    ward: str
+    image_path: Optional[str] = None
+
+class ComplaintSubmissionResponse(BaseModel):
+    complaintId: str
+    incidentId: str
+    predictedCategory: str
+    priority: str
+    confidence: float
+    duplicate: bool
+    message: str
+
 
 class ComplaintBase(BaseModel):
     """Base fields shared across all Complaint schemas."""
@@ -23,11 +40,6 @@ class ComplaintBase(BaseModel):
     confidence: Optional[float] = Field(None, description="AI classification confidence score", ge=0.0, le=1.0)
     priority: Optional[str] = Field(None, description="Priority classification (Critical, High, Medium, Low)")
     incident_id: Optional[str] = Field(None, description="Optional foreign key linking to an aggregated Incident")
-
-
-class ComplaintCreate(ComplaintBase):
-    """Schema used when creating/submitting a new complaint."""
-    id: str = Field(..., description="Unique custom or UUID identifier for the new complaint")
 
 
 class ComplaintResponse(ComplaintBase):

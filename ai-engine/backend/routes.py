@@ -13,11 +13,13 @@ from models import (
     PriorityRequest, PriorityResponse,
     IncidentResponse, ComplaintResponse
 )
+from schemas import ComplaintCreate, ComplaintSubmissionResponse
 from services import (
     ClassificationService,
     ClusteringService,
     PriorityService,
-    DashboardService
+    DashboardService,
+    ComplaintService
 )
 
 # Create routers
@@ -26,6 +28,16 @@ cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
 priority_router = APIRouter(prefix="/priority", tags=["Priority"])
 dashboard_router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 incident_router = APIRouter(prefix="/incidents", tags=["Incidents"])
+complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
+
+
+# === Complaint Submission Routes ===
+
+@complaint_router.post("", response_model=ComplaintSubmissionResponse)
+async def submit_complaint(request: ComplaintCreate):
+    """Submit a new citizen complaint through the pipeline."""
+    service = ComplaintService()
+    return await service.submit_complaint(request.dict())
 
 
 # === Classification Routes ===
