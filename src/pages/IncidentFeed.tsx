@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, Fragment } from 'react';
 import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
@@ -20,7 +20,16 @@ const IncidentFeed = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    api.getIncidents(sortField).then(setAllIncidents).catch(err => setError(err.message)).finally(() => setLoading(false));
+    // Note: getIncidents in api.ts currently has a signature that is not fully implemented 
+    // to support sortField in the request to the backend, but we use the returned list.
+    api.getIncidents(sortField)
+      .then((data: any) => {
+        // If the backend returns data in a wrapper or a different format, we adapt here.
+        // Based on previous tasks, backend Incidents typically match the Incident type.
+        setAllIncidents(data || []);
+      })
+      .catch(err => setError(err.message))
+      .finally(() => setLoading(false));
   }, []);
 
   const categories = useMemo(() => {
@@ -30,15 +39,15 @@ const IncidentFeed = () => {
 
   const filteredAndSorted = useMemo(() => {
     let result = [...allIncidents];
-    if (priorityFilter !== 'all') result = result.filter(i => i.priority_label.toLowerCase() === priorityFilter);
+    if (priorityFilter !== 'all') result = result.filter(i => i.priority_label?.toLowerCase() === priorityFilter);
     if (categoryFilter !== 'all') result = result.filter(i => i.category === categoryFilter);
     if (searchQuery.trim()) {
       const q = searchQuery.toLowerCase();
       result = result.filter(i =>
-        i.incident_number.toLowerCase().includes(q) ||
-        i.ward.toLowerCase().includes(q) ||
-        i.summary.toLowerCase().includes(q) ||
-        i.category.toLowerCase().includes(q)
+        (i.incident_number || '').toLowerCase().includes(q) ||
+        (i.ward || '').toLowerCase().includes(q) ||
+        (i.summary || '').toLowerCase().includes(q) ||
+        (i.category || '').toLowerCase().includes(q)
       );
     }
     result.sort((a, b) => {
@@ -46,7 +55,7 @@ const IncidentFeed = () => {
       const bVal = b[sortField];
       const modifier = sortDirection === 'asc' ? 1 : -1;
       if (typeof aVal === 'number' && typeof bVal === 'number') return (aVal - bVal) * modifier;
-      return String(aVal).localeCompare(String(bVal)) * modifier;
+      return String(aVal || '').localeCompare(String(bVal || '')) * modifier;
     });
     return result;
   }, [allIncidents, priorityFilter, categoryFilter, searchQuery, sortField, sortDirection]);
@@ -116,7 +125,7 @@ const IncidentFeed = () => {
                 <th onClick={() => handleSort('ward')} className={sortField === 'ward' ? 'active' : ''}>
                   Ward {sortField === 'ward' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
-                <th onClick={() => handleSort('days_open')} className={sortField === 'days_open' ? 'active' : ''}>
+                <th onClick={() => handleSort('days_open')} className={sortField === 'days_open' ? 'active' : ''} >
                   Days {sortField === 'days_open' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th onClick={() => handleSort('priority_score')} className={sortField === 'priority_score' ? 'active' : ''}>
@@ -128,16 +137,16 @@ const IncidentFeed = () => {
             </thead>
             <tbody>
               {pagedIncidents.map(incident => (
-                <>
-                  <tr key={incident.id} className={`incident-row priority-${incident.priority_label.toLowerCase()}`} onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>
+                <Fragment key={incident.id}>
+                  <tr key={incident.id} className={`incident-row priority-${incident.priority_label?.toLowerCase()}`} onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>
                     <td className="expand-cell">{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
                     <td className="incident-id">{incident.incident_number}</td>
                     <td><span className="category-badge">{incident.category}</span></td>
                     <td className="cluster-size"><span className="cluster-badge">{incident.cluster_size}</span></td>
-                    <td className="ward-cell">{incident.ward.replace('Ward ', 'W').split(' - ')[0]}</td>
+                    <td className="ward-cell">{incident.ward?.replace('Ward ', 'W').split(' - ')[0]}</td>
                     <td className="days-cell">{incident.days_open}d</td>
                     <td className="score-cell"><span className="score-badge">{incident.priority_score}</span></td>
-                    <td className="priority-cell">{getPriorityIcon(incident.priority_label)}<span>{incident.priority_label}</span></td>
+                    <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || 'Low'}</span></td>
                     <td className="action-cell">{incident.recommended_action}</td>
                   </tr>
                   {expandedId === incident.id && (
@@ -151,30 +160,34 @@ const IncidentFeed = () => {
                             </div>
                             <div className="detail-block">
                               <h4>Clustering Reasoning</h4>
-                              <p className="reasoning">{incident.complaints[0]?.similarity_score ? `Complaints clustered with ${(incident.complaints[0].similarity_score * 100).toFixed(0)}% average similarity.` : ''}</p>
+                              <p className="reasoning">
+                                {incident.complaints && incident.complaints.length > 0 && incident.complaints[0]?.similarity_score 
+                                  ? `Complaints clustered with ${(incident.complaints[0].similarity_score * 100).toFixed(0)}% average similarity.` 
+                                  : 'Clustering based on semantic similarity of reported issues.'}
+                              </p>
                             </div>
                           </div>
                           <div className="expanded-right">
-                            <h4>Linked Complaints ({incident.complaints.length})</h4>
+                            <h4>Linked Complaints ({incident.complaints?.length || 0})</h4>
                             <div className="complaints-list">
-                              {incident.complaints.slice(0, 5).map(c => (
+                              {incident.complaints?.slice(0, 5).map(c => (
                                 <div key={c.id} className="complaint-item">
                                   <div className="complaint-header">
                                     <span className="complaint-id">{c.complaint_number}</span>
                                     <span className="complaint-date">{c.date_received}</span>
-                                    <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${c.similarity_score * 100}%` }}></div><span>{(c.similarity_score * 100).toFixed(0)}%</span></div>
+                                    <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{(c.similarity_score || 0 * 100).toFixed(0)}%</span></div>
                                   </div>
                                   <p className="complaint-text">{c.text}</p>
                                 </div>
                               ))}
-                              {incident.complaints.length > 5 && <div className="more-complaints">+{incident.complaints.length - 5} more complaints</div>}
+                              {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">+{incident.complaints.length - 5} more complaints</div>}
                             </div>
                           </div>
                         </div>
                       </td>
                     </tr>
                   )}
-                </>
+                </Fragment>
               ))}
             </tbody>
           </table>

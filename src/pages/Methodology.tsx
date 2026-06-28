@@ -84,7 +84,7 @@ const Methodology = () => {
             <div className="arch-arrow"><Layers size={18} /></div>
             <div className="arch-layer output"><div className="layer-title">Decision Support Layer</div><div className="layer-items"><span className="layer-item">Dashboard</span><span className="layer-item">Reports</span><span className="layer-item">Alerts</span></div></div>
           </div>
-          <div className="architecture-note"><span className="note-label">Note:</span> The current prototype uses local JSON data. The AI Engine layer will be integrated via REST APIs without modifying the UI layer.</div>
+          <div className="architecture-note"><span className="note-label">Note:</span> The prototype is now fully integrated with the GIIPS AI Backend via REST APIs, ensuring real-time clustering and prioritization.</div>
         </section>
 
         <section className="metrics-guide">

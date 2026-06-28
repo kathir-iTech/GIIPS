@@ -1,0 +1,22 @@
+# Duplicate Detection Module Requirements
+# ========================================
+# GIIPS AI Engine - Duplicate Detection
+
+# Sentence Transformers for embeddings
+sentence-transformers>=2.2.0
+
+# PyTorch (sentence-transformers dependency)
+torch>=2.0.0
+
+# FAISS for fast similarity search (CPU version)
+faiss-cpu>=1.7.4
+# For GPU support, replace with: faiss-gpu>=1.7.4
+
+# Data processing
+numpy>=1.24.0
+pandas>=2.0.0
+
+# Progress bars
+tqdm>=4.65.0
+
+# Python 3.13 compatible

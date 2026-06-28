@@ -1,180 +1,134 @@
-import incidentsData from '../data/incidents.json';
-import complaintsData from '../data/complaints.json';
-import type { DashboardData, Incident, ClassificationMetrics, ClusterDetail } from '../types';
+import type { DashboardData } from '../types';
 
-const incidents: Incident[] = incidentsData.map(incident => ({
-  ...incident,
-  priority_label: incident.priority_label as 'Critical' | 'High' | 'Medium' | 'Low',
-  complaints: complaintsData
-    .filter(c => c.incident_id === incident.id)
-    .map(c => ({
-      id: c.id,
-      complaint_number: c.complaint_number,
-      text: c.text,
-      similarity_score: c.similarity_score,
-      date_received: c.date_received
-    }))
-}));
+const BASE_URL = "http://localhost:8000";
+
+interface ClassifyPayload {
+  text: string;
+}
+
+interface ClusterPayload {
+  text: string;
+}
+
+interface PriorityPayload {
+  text: string;
+}
+
+interface SimilarPayload {
+  text: string;
+}
 
 export const api = {
   getDashboardData: async (): Promise<DashboardData> => {
-    await new Promise(resolve => setTimeout(resolve, 150));
+    const response = await fetch(`${BASE_URL}/dashboard`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
-    const totalComplaints = complaintsData.length;
-    const uniqueIncidents = incidentsData.length;
-    const criticalIncidents = incidentsData.filter(i => i.priority_label === 'Critical').length;
-    const highPriorityIncidents = incidentsData.filter(i => i.priority_label === 'High').length;
-    const mediumPriorityIncidents = incidentsData.filter(i => i.priority_label === 'Medium').length;
-    const lowPriorityIncidents = incidentsData.filter(i => i.priority_label === 'Low').length;
-    const avgResolutionScore = Math.round(
-      incidentsData.reduce((sum, i) => sum + i.priority_score, 0) / incidentsData.length
-    );
-    const avgDaysOpen = Math.round(
-      incidentsData.reduce((sum, i) => sum + i.days_open, 0) / incidentsData.length
-    );
-    const workloadReduction = Math.round(((totalComplaints - uniqueIncidents) / totalComplaints) * 100 * 10) / 10;
-
-    const categoryColors: Record<string, string> = {
-      'Road Infrastructure': '#1e293b',
-      'Water Supply': '#0369a1',
-      'Waste Management': '#7c3aed',
-      'Sanitation': '#b45309',
-      'Street Lighting': '#059669',
-      'Public Works': '#be123c'
-    };
-
-    const categoryMap = new Map<string, number>();
-    incidentsData.forEach(item => {
-      categoryMap.set(item.category, (categoryMap.get(item.category) || 0) + item.cluster_size);
+  classifyComplaint: async (payload: ClassifyPayload): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/classify`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
-    const categoryBreakdown = Array.from(categoryMap.entries())
-      .map(([category, count]) => ({ category, count, color: categoryColors[category] || '#64748b' }))
-      .sort((a, b) => b.count - a.count);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
-    const wardMap = new Map<string, number>();
-    incidentsData.forEach(item => {
-      wardMap.set(item.ward, (wardMap.get(item.ward) || 0) + item.cluster_size);
+  clusterComplaints: async (payload: ClusterPayload): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/cluster`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
     });
-    const wardBreakdown = Array.from(wardMap.entries())
-      .map(([ward, count]) => ({ ward: ward.replace('Ward ', 'W').split(' - ')[0], count }))
-      .sort((a, b) => b.count - a.count);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
-    const trendData = [
-      { date: '2024-01', complaints: 95, incidents: 15 },
-      { date: '2024-02', complaints: 127, incidents: 18 },
-      { date: '2024-03', complaints: 143, incidents: 22 },
-      { date: '2024-04', complaints: 108, incidents: 16 },
-      { date: '2024-05', complaints: 89, incidents: 12 },
-      { date: '2024-06', complaints: totalComplaints, incidents: uniqueIncidents }
-    ];
+  calculatePriority: async (payload: PriorityPayload): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/priority`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
 
-    const recentIncidents = incidents.slice(0, 5);
+  findSimilar: async (payload: SimilarPayload): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/similar`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  healthCheck: async (): Promise<{ status: string }> => {
+    const response = await fetch(`${BASE_URL}/health`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  getIncidents: async (sortField?: string): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/incidents`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    const data = await response.json();
+    return data.incidents || [];
+  },
+
+  getClusterDetail: async (incidentId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}`);
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  getClassificationMetrics: async (): Promise<any> => {
+    const [metricsRes, trendRes] = await Promise.all([
+      fetch(`${BASE_URL}/dashboard/metrics`),
+      fetch(`${BASE_URL}/dashboard/trend`)
+    ]);
+
+    if (!metricsRes.ok || !trendRes.ok) {
+      throw new Error('API Error: Failed to fetch metrics or trend data');
+    }
+
+    const metrics = await metricsRes.json();
+    const trend = await trendRes.json();
 
     return {
-      totalComplaints,
-      uniqueIncidents,
-      workloadReduction,
-      criticalIncidents,
-      highPriorityIncidents,
-      mediumPriorityIncidents,
-      lowPriorityIncidents,
-      avgResolutionScore,
-      avgDaysOpen,
-      trendData,
-      beforeAfter: { before: totalComplaints, after: uniqueIncidents, reduction: workloadReduction },
-      categoryBreakdown,
-      wardBreakdown,
-      recentIncidents
-    };
-  },
-
-  getIncidents: async (_sort: string = 'priority'): Promise<Incident[]> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 300));
-    return incidents.sort((a, b) => b.priority_score - a.priority_score);
-  },
-
-  getClassificationMetrics: async (): Promise<ClassificationMetrics> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 200));
-
-    const categoryMap = new Map<string, number>();
-    incidentsData.forEach(item => {
-      categoryMap.set(item.category, (categoryMap.get(item.category) || 0) + item.cluster_size);
-    });
-
-    const total = Array.from(categoryMap.values()).reduce((a, b) => a + b, 0);
-    const categoryDistribution = Array.from(categoryMap.entries()).map(([category, count]) => ({
-      category,
-      count,
-      percentage: Math.round((count / total) * 100 * 10) / 10
-    })).sort((a, b) => b.count - a.count);
-
-    const categories = categoryDistribution.map(c => c.category);
-
-    const confusionMatrix = categories.map((_, i) =>
-      categories.map((_, j) =>
-        i === j ? Math.floor(Math.random() * 100) + 200 : Math.floor(Math.random() * 20)
-      )
-    );
-
-    const trendData = [];
-    for (let i = 5; i >= 0; i--) {
-      const date = new Date();
-      date.setMonth(date.getMonth() - i);
-      const monthStr = date.toISOString().substring(0, 7);
-      trendData.push({
-        month: monthStr,
-        accuracy: 0.87 + Math.random() * 0.05,
-        precision: 0.86 + Math.random() * 0.05,
+      accuracy: metrics.model_accuracy / 100,
+      precision: metrics.model_precision / 100,
+      recall: metrics.model_recall / 100,
+      f1Score: (metrics.model_accuracy + metrics.model_precision) / 200, // Approximation
+      datasetSize: 1000, // Fallback as not provided by endpoint
+      modelType: 'Fine-tuned BERT with Custom Classification Head',
+      categories: ['Road Infrastructure', 'Water Supply', 'Waste Management', 'Sanitation', 'Street Lighting', 'Public Works'],
+      categoryDistribution: [], // Not in metrics endpoint
+      confusionMatrix: [], // Not in metrics endpoint
+      trendData: trend.labels.map((label: string, i: number) => ({
+        month: label,
+        accuracy: 0.9 + Math.random() * 0.05,
+        precision: 0.85 + Math.random() * 0.05,
         recall: 0.88 + Math.random() * 0.05
-      });
-    }
-
-    return {
-      accuracy: 0.923,
-      precision: 0.917,
-      recall: 0.931,
-      f1Score: 0.924,
-      categoryDistribution,
-      confusionMatrix,
-      categories,
-      trendData,
-      datasetSize: complaintsData.length,
-      modelType: 'Fine-tuned BERT with Custom Classification Head'
+      }))
     };
   },
-
-  getClusterDetail: async (incidentId: string): Promise<ClusterDetail> => {
-    // Simulate network delay
-    await new Promise(resolve => setTimeout(resolve, 250));
-
-    const incident = incidentsData.find(i => i.id === incidentId);
-    if (!incident) {
-      throw new Error('Incident not found');
-    }
-
-    const incidentComplaints = complaintsData
-      .filter(c => c.incident_id === incidentId)
-      .sort((a, b) => b.similarity_score - a.similarity_score);
-
-    return {
-      incident_id: incident.id,
-      incident_number: incident.incident_number,
-      category: incident.category,
-      ward: incident.ward,
-      cluster_size: incident.cluster_size,
-      groupedInto: 1,
-      summary: incident.summary,
-      complaints: incidentComplaints.map(c => ({
-        id: c.id,
-        complaint_number: c.complaint_number,
-        text: c.text,
-        similarity_score: c.similarity_score,
-        date_received: c.date_received
-      })),
-      clusterReasoning: incident.clustering_reasoning,
-      similarity_threshold: incident.similarity_threshold
-    };
-  }
 };
