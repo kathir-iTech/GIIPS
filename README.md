@@ -1,47 +1,44 @@
-# GIIPS - Governance Incident Intelligence & Prioritization System
+# GIIPS: Governance Incident Intelligence & Prioritization System
 
-GIIPS is an advanced AI-powered intelligence layer designed to transform raw citizen grievance data into actionable, prioritized incidents. By utilizing Natural Language Processing (NLP) and semantic clustering, GIIPS eliminates administrative redundancy and ensures that critical public issues are addressed first.
+GIIPS is an advanced AI-powered intelligence layer designed to transform raw, high-volume citizen grievance data into actionable, prioritized municipal incidents. By utilizing Natural Language Processing (NLP) and semantic clustering, GIIPS eliminates administrative redundancy and ensures that critical public issues are addressed with data-driven urgency.
 
 ## 🚩 Problem Statement
-Municipalities are often overwhelmed by thousands of individual complaints. Many of these are duplicates describing the same incident (e.g., 50 people reporting the same burst pipe), leading to:
-- Massive duplication of administrative effort.
-- Delayed response times due to workload volume.
-- Inconsistent prioritization of urgent issues.
-- Resource wastage in triage.
-
-## ✅ The Solution
-GIIPS introduces an intelligence pipeline that:
-1. **Ingests** raw complaints from multiple sources.
-2. **Clusters** semantically similar complaints into a single "Incident" using AI embeddings.
-3. **Scores** each incident based on severity, urgency, and public impact.
-4. **Prioritizes** the workload for municipal officers through a high-signal dashboard.
+Municipalities are routinely overwhelmed by thousands of individual complaints. Many of these reports describe the same underlying incident (e.g., 50 residents reporting the same burst water pipe), leading to:
+- **Administrative Redundancy**: Massive duplication of effort in triage and processing.
+- **Delayed Response Times**: High volume leads to critical issues getting buried.
+- **Inconsistent Prioritization**: Lack of a standardized, objective scoring mechanism.
+- **Resource Wastage**: Inefficient allocation of municipal field teams.
 
 ## ✨ Key Features
-- **AI-Powered Clustering**: Automatically groups duplicate complaints into unique incidents.
-- **Priority Intelligence**: Calculates a priority score using a weighted multi-factor engine.
-- **Incident Explorer**: Deep-dive into clusters to see linked complaints and similarity scores.
-- **Executive Dashboard**: High-level overview of workload reduction and critical hotspots.
-- **Real-time Classification**: Automatically categorizes complaints into infrastructure types.
+- **AI-Powered Semantic Clustering**: Automatically groups duplicate complaints into unique, actionable incidents.
+- **Dynamic Priority Intelligence**: Calculates an objective priority score based on severity, urgency, and public impact (location/category/age).
+- **Executive Intelligence Dashboard**: High-level overview of workload reduction metrics and city-wide health scores.
+- **Spatial Intelligence**: Geospatial visualization of incident hotspots and future demand forecasting.
+- **Decision Support**: Automated recommendation system for field team allocation.
+
+## 🤖 AI Pipeline
+1. **Ingestion**: Complaints enter via web/mobile/call-center APIs.
+2. **Classification**: NLP models categorize issues (e.g., "Water Supply", "Sanitation").
+3. **Clustering**: Semantic similarity matching groups duplicate reports into single incident objects.
+4. **Scoring**: A weighted engine calculates incident priority based on cluster size, age, category, and infrastructure proximity.
 
 ## 🛠 Tech Stack
 ### Frontend
-- **React (TypeScript)**: UI Framework
-- **Plotly.js**: Data visualization and network graphs
-- **Lucide React**: Iconography
-- **CSS3**: Custom modern styling
+- **React (TypeScript + Vite)**: High-performance administrative UI.
+- **Plotly.js**: Advanced data visualization (pie charts, bar charts, scatter plots).
+- **Lucide React**: Modern iconography.
 
 ### Backend
-- **FastAPI (Python)**: High-performance REST API
-- **Scikit-learn**: Machine Learning for classification
-- **Pydantic**: Data validation and schema enforcement
-- **Uvicorn**: ASGI server
+- **FastAPI (Python)**: High-performance, asynchronous REST API.
+- **Scikit-learn**: Machine Learning pipeline for classification & clustering.
+- **SQLAlchemy (SQLite)**: Robust ORM for data persistence.
+- **Pydantic**: Strict data validation & schema enforcement.
 
-## 🚀 Installation & Setup
+## 🚀 Installation
 
 ### Prerequisites
 - Python 3.9+
 - Node.js 18+
-- npm / yarn
 
 ### Backend Setup
 ```bash
@@ -49,31 +46,21 @@ cd ai-engine/backend
 pip install -r requirements.txt
 python app.py
 ```
-The backend will start at `http://localhost:8000`.
+*(Backend runs at `http://localhost:8000`)*
 
 ### Frontend Setup
 ```bash
 npm install
 npm run dev
 ```
-The dashboard will be available at `http://localhost:5173`.
+*(Frontend runs at `http://localhost:5173`)*
 
-## 📁 Project Structure
-- `src/`: React frontend source code.
-- `ai-engine/backend/`: FastAPI server and business logic.
-- `ai-engine/models/`: Trained ML models and encoders.
-- `ai-engine/data/`: Dataset and filtered CSVs.
-
-## 📡 API Endpoints (Summary)
-- `GET /dashboard`: Summary metrics and distribution.
-- `POST /classify`: Categorize complaint text.
-- `POST /cluster`: Group complaints into incidents.
-- `POST /priority`: Calculate priority score.
-- `GET /incidents`: List prioritized incidents.
-- `GET /incidents/{id}`: Detailed cluster view.
+## 📸 Screenshots (Placeholders)
+- *[Placeholder: Dashboard Overview with Workload Reduction Metric]*
+- *[Placeholder: Incident Feed with Priority Scoring]*
+- *[Placeholder: Spatial Intelligence Heatmap]*
 
 ## 🔮 Future Scope
-- **Image Analysis**: Integration of computer vision to verify complaint photos.
-- **Geo-spatial Mapping**: Integration with GIS for heat-map visualizations.
-- **Automated Dispatch**: API hooks to notify field officers automatically.
-- **Multi-lingual Support**: Support for local regional dialects using multilingual LLMs.
+- **Computer Vision Integration**: Automatic verification of complaint photos (e.g., verifying a pothole).
+- **GIS Integration**: Deep integration with municipal GIS platforms.
+- **Multi-lingual LLM support**: Support for regional dialects via fine-tuned LLMs.

@@ -1,61 +1,30 @@
-# API Documentation
+# API_DOCUMENTATION.md
 
-All endpoints are prefixed with `http://localhost:8000`.
+GIIPS exposes a RESTful API built with FastAPI for intelligence processing and data retrieval.
 
-## 📊 Dashboard & Metrics
+| Endpoint | Method | Purpose |
+| :--- | :--- | :--- |
+| `/dashboard` | GET | Returns summary metrics for the executive dashboard. |
+| `/classify` | POST | Classifies a new complaint text into a category. |
+| `/cluster` | POST | Groups a list of complaints into incident clusters. |
+| `/priority` | POST | Calculates priority score for an incident object. |
+| `/incidents` | GET | Retrieves a list of prioritized incidents. |
+| `/incidents/{id}` | GET | Returns detailed view of a specific incident cluster. |
+| `/spatial/heatmap` | GET | Returns ward-wise incident distribution for spatial visualization. |
+| `/spatial/forecast` | GET | Returns forecasted incident volumes (time-series). |
+| `/complaints` | POST | Submits a new citizen complaint for processing. |
 
-### `GET /dashboard`
-Returns high-level summary statistics for the executive view.
-- **Response**:
-  - `totalComplaints`: Total raw reports.
-  - `uniqueIncidents`: Total unique issues identified.
-  - `workloadReduction`: Percentage reduction in reports.
-  - `criticalIncidents`: Count of Critical priority issues.
-  - `categoryDistribution`: List of category counts.
+## Detailed Endpoint Specifications
 
-### `GET /dashboard/metrics`
-Returns model performance data.
-- **Response**: Accuracy, Precision, Recall, and F1 Score.
+### 1. Submit Complaint
+- **URL**: `/complaints`
+- **Method**: `POST`
+- **Request Body**: `{ "title": "string", "description": "string", "location": "string", "ward": "string" }`
+- **Response**: `{ "complaintId": "uuid", "incidentId": "uuid", "predictedCategory": "string", "priority": "string", "duplicate": boolean }`
+- **Purpose**: Ingests new complaints and triggers the automated AI processing pipeline.
 
-### `GET /dashboard/trend`
-Returns historical trend data for visualization.
-- **Response**: Monthly counts of complaints and incidents.
-
-## 🤖 AI Processing
-
-### `POST /classify`
-Categorizes a complaint based on its text.
-- **Payload**: `{ "text": "string", "detail": "string" }`
-- **Response**: Predicted category and confidence score.
-
-### `POST /cluster`
-Groups a list of complaints into unique incidents.
-- **Payload**: `{ "complaints": [...], "text_key": "text" }`
-- **Response**: Mapping of complaint IDs to cluster labels.
-
-### `POST /priority`
-Calculates a priority score for a specific incident.
-- **Payload**: `{ "incident_id": "string", "cluster_size": int, ... }`
-- **Response**: Priority score, label (Critical/High/Medium/Low), and contributing factors.
-
-### `POST /similar`
-Finds similar complaints to a given text.
-- **Payload**: `{ "text": "string", "complaints": [...], "threshold": float }`
-- **Response**: List of similar complaints with similarity scores.
-
-## 📋 Incident Management
-
-### `GET /incidents`
-Returns a list of all identified incidents.
-- **Query Params**: `priority`, `category`, `limit`.
-- **Response**: List of Incident objects including priority scores and summaries.
-
-### `GET /incidents/{incident_id}`
-Returns detailed information about a specific cluster.
-- **Response**: Full incident details and the list of all linked complaints.
-
-## 🛠 System
-
-### `GET /health`
-Check backend operational status.
-- **Response**: Status and model loading confirmation.
+### 2. Dashboard Metrics
+- **URL**: `/dashboard`
+- **Method**: `GET`
+- **Response**: `{ "totalComplaints": int, "uniqueIncidents": int, "workloadReduction": float, ... }`
+- **Purpose**: Provides high-level metrics for dashboard visualization.
