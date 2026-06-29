@@ -103,14 +103,25 @@ const Clusters = () => {
               </div>
 
               <div className="reasoning-section">
-                <h3>Why These Complaints Belong Together</h3>
+                <h3>AI Explanation Panel</h3>
                 <div className="reasoning-content">
-                  <div className="reasoning-point"><span className="point-dot location"></span><span className="point-text">All complaints reference the same geographic location ({clusterDetail.ward.split(' - ')[1] || 'local area'})</span></div>
-                  <div className="reasoning-point"><span className="point-dot category"></span><span className="point-text">Related to the same issue category: {clusterDetail.category}</span></div>
-                  <div className="reasoning-point"><span className="point-dot time"></span><span className="point-text">Complaints received within a similar time frame</span></div>
-                  <div className="reasoning-point"><span className="point-dot semantic"></span><span className="point-text">Semantic analysis indicates {(avgSimilarity * 100).toFixed(0)}% text similarity</span></div>
+                  <div className="reasoning-point"><span className="point-dot semantic"></span><span className="point-text">Semantic match: {(avgSimilarity * 100).toFixed(1)}%</span></div>
+                  <div className="reasoning-point"><span className="point-dot location"></span><span className="point-text">Location cluster: {clusterDetail.ward}</span></div>
+                  <p>{clusterDetail.clusterReasoning}</p>
                 </div>
-                {selectedIncident && <p className="cluster-summary">{selectedIncident.summary}</p>}
+              </div>
+            </div>
+
+            <div className="priority-history-section">
+              <h3>Priority History</h3>
+              <div className="timeline">
+                {clusterDetail.priority_history.map(h => (
+                  <div key={h.id} className="history-item">
+                    <span className="hist-date">{new Date(h.changed_at).toLocaleString()}</span>
+                    <span className="hist-score">{h.old_score} &rarr; {h.new_score}</span>
+                    <span className="hist-reason">{h.reason}</span>
+                  </div>
+                ))}
               </div>
             </div>
 
@@ -123,6 +134,7 @@ const Clusters = () => {
                     <div className="timeline-content">
                       <div className="timeline-header"><span className="timeline-id">{c.complaint_number}</span><span className="timeline-date">{c.date_received}</span></div>
                       <p className="timeline-text">{c.text}</p>
+                      <p className="merge-reason"><strong>Merge Reason:</strong> {c.merge_reason || 'N/A'}</p>
                       <div className="timeline-meta">
                         <div className="similarity-meter"><div className="meter-fill" style={{ width: `${c.similarity_score * 100}%` }}></div></div>
                         <span className="similarity-value">{(c.similarity_score * 100).toFixed(1)}% match</span>

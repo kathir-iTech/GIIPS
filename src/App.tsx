@@ -5,6 +5,7 @@ import IncidentFeed from './pages/IncidentFeed';
 import Analysis from './pages/Analysis';
 import Clusters from './pages/Clusters';
 import Methodology from './pages/Methodology';
+import CitizenPortal from './pages/CitizenPortal';
 import './App.css';
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
             <Route path="/analysis" element={<Analysis />} />
             <Route path="/clusters" element={<Clusters />} />
             <Route path="/methodology" element={<Methodology />} />
+            <Route path="/citizen" element={<CitizenPortal />} />
           </Routes>
         </main>
       </div>

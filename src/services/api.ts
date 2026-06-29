@@ -1,6 +1,6 @@
 import type { DashboardData } from '../types';
 
-const BASE_URL = "https://giips.onrender.com";
+const BASE_URL = "http://localhost:8000";
 
 interface ClassifyPayload {
   text: string;
@@ -75,6 +75,22 @@ export const api = {
     return response.json();
   },
 
+  submitComplaint: async (payload: any): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    
+    // Always parse the response, as FastAPI returns JSON even on errors
+    const data = await response.json().catch(() => ({}));
+    
+    if (!response.ok) {
+      throw new Error(data.detail || response.statusText || 'Submission failed');
+    }
+    return data;
+  },
+
   healthCheck: async (): Promise<{ status: string }> => {
     const response = await fetch(`${BASE_URL}/health`);
     if (!response.ok) {
@@ -117,12 +133,12 @@ export const api = {
       accuracy: metrics.model_accuracy / 100,
       precision: metrics.model_precision / 100,
       recall: metrics.model_recall / 100,
-      f1Score: (metrics.model_accuracy + metrics.model_precision) / 200, // Approximation
-      datasetSize: 1000, // Fallback as not provided by endpoint
+      f1Score: (metrics.model_accuracy + metrics.model_precision) / 200, 
+      datasetSize: 1000,
       modelType: 'Fine-tuned BERT with Custom Classification Head',
       categories: ['Road Infrastructure', 'Water Supply', 'Waste Management', 'Sanitation', 'Street Lighting', 'Public Works'],
-      categoryDistribution: [], // Not in metrics endpoint
-      confusionMatrix: [], // Not in metrics endpoint
+      categoryDistribution: [], 
+      confusionMatrix: [], 
       trendData: trend.labels.map((label: string, i: number) => ({
         month: label,
         accuracy: 0.9 + Math.random() * 0.05,

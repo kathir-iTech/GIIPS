@@ -15,6 +15,15 @@ export interface DashboardData {
   recentIncidents: Incident[];
 }
 
+export interface PriorityHistory {
+  id: string;
+  incident_id: string;
+  old_score: number;
+  new_score: number;
+  reason: string;
+  changed_at: string;
+}
+
 export interface Incident {
   id: string;
   incident_number: string;
@@ -28,6 +37,7 @@ export interface Incident {
   summary: string;
   complaints: Complaint[];
   status: string;
+  priority_history: PriorityHistory[];
 }
 
 export interface Complaint {
@@ -36,6 +46,7 @@ export interface Complaint {
   text: string;
   similarity_score: number;
   date_received: string;
+  merge_reason?: string;
 }
 
 export interface ClassificationMetrics {
@@ -59,6 +70,7 @@ export interface ClusterDetail {
   cluster_size: number;
   groupedInto: number;
   complaints: Complaint[];
+  priority_history: PriorityHistory[];
   clusterReasoning: string;
   similarity_threshold: number;
   summary: string;
