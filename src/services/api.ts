@@ -160,4 +160,17 @@ export const api = {
       }))
     };
   },
+  
+  getExecutiveSummary: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/executive/summary`);
+    return response.json();
+  },
+  getWardHealth: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/executive/ward-health`);
+    return response.json();
+  },
+  getDeptWorkload: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/executive/department-workload`);
+    return response.json();
+  },
 };
