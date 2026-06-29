@@ -46,6 +46,8 @@ class ComplaintResponse(ComplaintBase):
     """Schema returned in API responses for Complaint data."""
     id: str
     created_at: datetime
+    similarity_score: Optional[float] = None
+    merge_reason: Optional[str] = None
 
     class Config:
         # Pydantic v1 support
@@ -53,6 +55,17 @@ class ComplaintResponse(ComplaintBase):
         # Pydantic v2 support
         from_attributes = True
 
+class PriorityHistoryResponse(BaseModel):
+    id: str
+    incident_id: str
+    old_score: float
+    new_score: float
+    reason: str
+    changed_at: datetime
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
 
 # === Incident Schemas ===
 
@@ -78,6 +91,7 @@ class IncidentResponse(IncidentBase):
     id: str
     created_at: datetime
     complaints: List[ComplaintResponse] = []
+    priority_history: List[PriorityHistoryResponse] = []
 
     class Config:
         # Pydantic v1 support

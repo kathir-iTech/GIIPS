@@ -9,7 +9,7 @@ import sys
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime
-from database import SessionLocal, Complaint, Incident
+from database import SessionLocal, Complaint, Incident, PriorityHistory
 import uuid
 
 # Add parent to path
@@ -331,7 +331,10 @@ class DashboardService:
 
     async def get_incident_by_id(self, incident_id: str) -> Optional[Incident]:
         """Get a specific incident by ID."""
-        return self.db.query(Incident).filter(Incident.id == incident_id).first()
+        return self.db.query(Incident).options(
+            joinedload(Incident.complaints),
+            joinedload(Incident.priority_history)
+        ).filter(Incident.id == incident_id).first()
 
 class ComplaintService:
     """Service to handle complaint submission workflow."""
@@ -372,7 +375,10 @@ class ComplaintService:
             if existing_c and existing_c.incident_id:
                 incident = self.db.query(Incident).filter(Incident.id == existing_c.incident_id).first()
                 is_duplicate = True
-
+                
+                # Sprint 5: Add explainability
+                new_complaint_similarity = similar[0].get('similarity', 0.0)
+                
         if not incident:
             # Create new incident
             incident = Incident(
@@ -400,6 +406,17 @@ class ComplaintService:
             location_hints=[complaint_data['location']]
         ))
 
+        # Track history if score changes
+        if incident.priority_score != priority_res.priority_score:
+            hist = PriorityHistory(
+                id=str(uuid.uuid4()),
+                incident_id=incident.id,
+                old_score=incident.priority_score,
+                new_score=priority_res.priority_score,
+                reason="Automatic update from new complaint"
+            )
+            self.db.add(hist)
+
         incident.priority_score = priority_res.priority_score
         incident.priority_label = priority_res.priority_label
 
@@ -414,7 +431,11 @@ class ComplaintService:
             predicted_category=category,
             confidence=confidence,
             priority=priority_res.priority_label,
-            incident=incident
+            incident=incident,
+            # Sprint 5: Explainability
+            similarity_score=new_complaint_similarity if is_duplicate else None,
+            merge_reason=f"Matched with {most_similar_id}" if is_duplicate else None,
+            merged_at=datetime.utcnow() if is_duplicate else None
         )
         
         self.db.add(new_complaint)

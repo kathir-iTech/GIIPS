@@ -48,6 +48,7 @@ class Incident(Base):
 
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
+    priority_history = relationship("PriorityHistory", backref="incident")
 
 
 class Complaint(Base):
@@ -65,6 +66,22 @@ class Complaint(Base):
     priority = Column(String, nullable=True)
     incident_id = Column(String, ForeignKey("incidents.id"), nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    
+    # Sprint 5: Explainability fields
+    similarity_score = Column(Float, nullable=True)
+    merge_reason = Column(Text, nullable=True)
+    merged_at = Column(DateTime, nullable=True)
 
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")
+
+class PriorityHistory(Base):
+    """ORM model for incident priority change history."""
+    __tablename__ = "priority_history"
+
+    id = Column(String, primary_key=True, index=True)
+    incident_id = Column(String, ForeignKey("incidents.id"), index=True, nullable=False)
+    old_score = Column(Float, nullable=False)
+    new_score = Column(Float, nullable=False)
+    reason = Column(Text, nullable=False)
+    changed_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
