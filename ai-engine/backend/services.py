@@ -267,114 +267,50 @@ class PriorityService:
         )
 
 
+from sqlalchemy import func
+
 class DashboardService:
     """Service for dashboard data."""
 
+    def __init__(self):
+        self.db = SessionLocal()
+
     async def get_summary(self) -> Dict[str, Any]:
         """Get dashboard summary statistics."""
-        outputs_dir = Path(__file__).parent.parent / 'outputs'
-        data_file = outputs_dir / 'dashboard_data.json'
+        total_complaints = self.db.query(Complaint).count()
+        total_incidents = self.db.query(Incident).count()
 
-        data = {}
-        if data_file.exists():
-            try:
-                with open(data_file, 'r') as f:
-                    data = json.load(f)
-            except Exception:
-                pass
-
-        # Base values from data or defaults
-        total_complaints = data.get('total_complaints', 100)
-        unique_incidents = data.get('unique_incidents', 15)
-        workload_reduction = data.get('workload_reduction', 85.0)
-        critical_incidents = data.get('critical_incidents', 3)
-        high_priority_incidents = data.get('high_priority_incidents', 5)
+        priority_counts = self.db.query(
+            Incident.priority_label, func.count(Incident.id)
+        ).group_by(Incident.priority_label).all()
         
-        # Handle priority distribution if present
-        priority_dist = data.get('priority_distribution', {"Critical": 3, "High": 5, "Medium": 4, "Low": 3})
-        medium_priority = priority_dist.get('Medium', 4)
-        low_priority = priority_dist.get('Low', 3)
+        priority_dist = {label: count for label, count in priority_counts}
+        
+        # Aggregate stats
+        critical = priority_dist.get('Critical', 0)
+        high = priority_dist.get('High', 0)
+        medium = priority_dist.get('Medium', 0)
+        low = priority_dist.get('Low', 0)
 
-        # Category breakdown with colors
-        category_colors = {
-            'Road Infrastructure': '#1e293b',
-            'Water Supply': '#0369a1',
-            'Waste Management': '#7c3aed',
-            'Sanitation': '#b45309',
-            'Street Lighting': '#059669',
-            'Public Works': '#be123c'
-        }
-        cat_dist = data.get('category_distribution', [
-            {"category": "Road Infrastructure", "count": 30},
-            {"category": "Water Supply", "count": 25},
-            {"category": "Waste Management", "count": 20},
-            {"category": "Street Lighting", "count": 15},
-            {"category": "Sanitation", "count": 10}
-        ])
+        # Basic category distribution from complaints
+        cat_dist = self.db.query(
+            Complaint.predicted_category, func.count(Complaint.id)
+        ).group_by(Complaint.predicted_category).all()
+        
         category_breakdown = [
-            {"category": c['category'], "count": c['count'], "color": category_colors.get(c['category'], '#64748b')}
-            for c in cat_dist
+            {"category": cat or "Unknown", "count": count} for cat, count in cat_dist
         ]
-
-        # Sample values for missing fields
-        trend_data = [
-            {"date": "2024-01", "complaints": 95, "incidents": 15},
-            {"date": "2024-02", "complaints": 127, "incidents": 18},
-            {"date": "2024-03", "complaints": 143, "incidents": 22},
-            {"date": "2024-04", "complaints": 108, "incidents": 16},
-            {"date": "2024-05", "complaints": 89, "incidents": 12},
-            {"date": "2024-06", "complaints": total_complaints, "incidents": unique_incidents},
-        ]
-        
-        ward_breakdown = [
-            {"ward": "W1", "count": 12},
-            {"ward": "W2", "count": 8},
-            {"ward": "W3", "count": 15},
-            {"ward": "W4", "count": 5},
-            {"ward": "W5", "count": 7},
-        ]
-
-        # Recent incidents
-        incidents_list = await self.get_incidents(limit=5)
-        recent_incidents = []
-        for inc in incidents_list:
-            recent_incidents.append({
-                "id": inc.id,
-                "incidentNumber": inc.incident_number,
-                "category": inc.category,
-                "clusterSize": inc.cluster_size,
-                "ward": inc.ward,
-                "daysOpen": inc.days_open,
-                "priorityScore": inc.priority_score,
-                "priorityLabel": inc.priority_label,
-                "summary": inc.summary,
-                "recommendedAction": inc.recommended_action,
-                "status": inc.status,
-                "complaints": [
-                    {
-                        "id": c.id,
-                        "complaintNumber": getattr(c, 'complaint_number', ''),
-                        "text": getattr(c, 'text', ''),
-                        "similarityScore": getattr(c, 'similarity_score', 0.0),
-                        "dateReceived": getattr(c, 'date_received', '')
-                    } for c in inc.complaints
-                ]
-            })
 
         return {
             "totalComplaints": total_complaints,
-            "uniqueIncidents": unique_incidents,
-            "workloadReduction": workload_reduction,
-            "criticalIncidents": critical_incidents,
-            "highPriorityIncidents": high_priority_incidents,
-            "mediumPriorityIncidents": medium_priority,
-            "lowPriorityIncidents": low_priority,
-            "avgDaysOpen": 12,
-            "avgResolutionScore": 75,
-            "trendData": trend_data,
+            "uniqueIncidents": total_incidents,
+            "workloadReduction": 85.0, # Placeholder
+            "criticalIncidents": critical,
+            "highPriorityIncidents": high,
+            "mediumPriorityIncidents": medium,
+            "lowPriorityIncidents": low,
             "categoryBreakdown": category_breakdown,
-            "wardBreakdown": ward_breakdown,
-            "recentIncidents": recent_incidents,
+            "priorityDistribution": priority_dist,
         }
 
     async def get_incidents(
@@ -382,42 +318,20 @@ class DashboardService:
         priority: Optional[str] = None,
         category: Optional[str] = None,
         limit: int = 10
-    ) -> List[IncidentResponse]:
+    ) -> List[Incident]:
         """Get list of incidents."""
-        outputs_dir = Path(__file__).parent.parent / 'outputs'
-
-        incidents = []
-        for i in range(min(limit, 15)):
-            incidents.append(IncidentResponse(
-                id=f"inc-{i+1}",
-                incident_number=f"INC-2024-{i+1:04d}",
-                category="Road Infrastructure" if i % 3 == 0 else "Water Supply" if i % 3 == 1 else "Sanitation",
-                ward=f"Ward {(i % 8) + 1}",
-                cluster_size=5 + (i * 2),
-                days_open=5 + i,
-                priority_score=90 - (i * 3),
-                priority_label=["Critical", "High", "Medium", "Low"][min(i % 4, 3)],
-                summary=f"Sample incident {i+1}",
-                recommended_action="Immediate repair required",
-                status="open",
-                complaints=[]
-            ))
-
-        # Apply filters
+        query = self.db.query(Incident)
+        
         if priority:
-            incidents = [i for i in incidents if i.priority_label.lower() == priority.lower()]
+            query = query.filter(Incident.priority_label.ilike(priority))
         if category:
-            incidents = [i for i in incidents if category.lower() in i.category.lower()]
+            query = query.filter(Incident.category.ilike(f"%{category}%"))
 
-        return incidents[:limit]
+        return query.limit(limit).all()
 
-    async def get_incident_by_id(self, incident_id: str) -> Optional[IncidentResponse]:
+    async def get_incident_by_id(self, incident_id: str) -> Optional[Incident]:
         """Get a specific incident by ID."""
-        incidents = await self.get_incidents(limit=100)
-        for incident in incidents:
-            if incident.id == incident_id or incident.incident_number == incident_id:
-                return incident
-        return None
+        return self.db.query(Incident).filter(Incident.id == incident_id).first()
 
 class ComplaintService:
     """Service to handle complaint submission workflow."""
