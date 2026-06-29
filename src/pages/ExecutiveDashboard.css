@@ -1,0 +1,8 @@
+.exec-dashboard { padding: 2rem; background: #f8fafc; min-height: 100vh; }
+.morning-brief { margin-bottom: 2rem; }
+.brief-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
+.brief-card { background: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
+.brief-card.critical { border-left: 4px solid #ef4444; }
+.brief-card.recommendation { border-left: 4px solid #2563eb; }
+.analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+.card { background: white; padding: 1.5rem; border-radius: 1rem; }

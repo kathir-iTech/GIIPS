@@ -1,6 +1,6 @@
 import type React from 'react';
 import { NavLink } from 'react-router-dom';
-import { LayoutDashboard, FileText, ChartBar as BarChart3, GitBranch, BookOpen } from 'lucide-react';
+import { LayoutDashboard, FileText, ChartBar as BarChart3, GitBranch, BookOpen, Map } from 'lucide-react';
 import './Sidebar.css';
 
 const navItems = [
@@ -8,6 +8,7 @@ const navItems = [
   { path: '/incidents', label: 'Incident Feed', icon: FileText },
   { path: '/analysis', label: 'Complaint Analysis', icon: BarChart3 },
   { path: '/clusters', label: 'Cluster Explorer', icon: GitBranch },
+  { path: '/spatial', label: 'Spatial Intelligence', icon: Map },
   { path: '/methodology', label: 'Methodology', icon: BookOpen },
 ];
 

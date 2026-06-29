@@ -91,11 +91,24 @@ export const api = {
     return data;
   },
 
-  healthCheck: async (): Promise<{ status: string }> => {
-    const response = await fetch(`${BASE_URL}/health`);
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
+  getHeatmap: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/spatial/heatmap`);
+    return response.json();
+  },
+  getHotspots: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/spatial/hotspots`);
+    return response.json();
+  },
+  getForecast: async (days: number): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/spatial/forecast?days=${days}`);
+    return response.json();
+  },
+  getRiskAnalysis: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/spatial/risk`);
+    return response.json();
+  },
+  simulateResources: async (additional_teams: number): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/spatial/simulate?additional_teams=${additional_teams}`, { method: 'POST' });
     return response.json();
   },
 

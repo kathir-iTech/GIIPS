@@ -19,10 +19,50 @@ from services import (
     ClusteringService,
     PriorityService,
     DashboardService,
-    ComplaintService
+    ComplaintService,
+    DecisionService,
+    SpatialService
 )
 
-# Create routers
+# ... (router definitions)
+spatial_router = APIRouter(prefix="/spatial", tags=["Spatial"])
+
+@spatial_router.get("/heatmap")
+async def get_heatmap():
+    return await SpatialService().get_heatmap()
+
+@spatial_router.get("/hotspots")
+async def get_hotspots():
+    return await SpatialService().get_hotspots()
+
+@spatial_router.get("/forecast")
+async def get_forecast(days: int = 7):
+    return await SpatialService().get_forecast(days)
+
+@spatial_router.get("/risk")
+async def get_risk():
+    return await SpatialService().get_risk_analysis()
+
+@spatial_router.post("/simulate")
+async def simulate(additional_teams: int):
+    return await SpatialService().simulate_resources(additional_teams)
+executive_router = APIRouter(prefix="/executive", tags=["Executive"])
+
+@executive_router.get("/summary")
+async def get_executive_summary():
+    service = DecisionService()
+    return await service.get_executive_summary()
+
+@executive_router.get("/ward-health")
+async def get_ward_health():
+    service = DecisionService()
+    return await service.get_ward_health()
+
+@executive_router.get("/department-workload")
+async def get_dept_workload():
+    service = DecisionService()
+    return await service.get_dept_workload()
+
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
 priority_router = APIRouter(prefix="/priority", tags=["Priority"])
