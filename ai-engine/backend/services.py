@@ -131,13 +131,12 @@ class PriorityService:
 
 
 class DashboardService:
-    def __init__(self): self.db = SessionLocal()
-    async def get_summary(self) -> Dict[str, Any]:
-        total_complaints = self.db.query(Complaint).count()
-        total_incidents = self.db.query(Incident).count()
-        priority_counts = self.db.query(Incident.priority_label, func.count(Incident.id)).group_by(Incident.priority_label).all()
+    async def get_summary(self, db) -> Dict[str, Any]:
+        total_complaints = db.query(Complaint).count()
+        total_incidents = db.query(Incident).count()
+        priority_counts = db.query(Incident.priority_label, func.count(Incident.id)).group_by(Incident.priority_label).all()
         priority_dist = {label: count for label, count in priority_counts}
-        cat_dist = self.db.query(Complaint.predicted_category, func.count(Complaint.id)).group_by(Complaint.predicted_category).all()
+        cat_dist = db.query(Complaint.predicted_category, func.count(Complaint.id)).group_by(Complaint.predicted_category).all()
         category_breakdown = [{"category": cat or "Unknown", "count": count} for cat, count in cat_dist]
         return {
             "totalComplaints": total_complaints,
@@ -150,76 +149,73 @@ class DashboardService:
             "categoryBreakdown": category_breakdown,
             "priorityDistribution": priority_dist,
         }
-    async def get_incidents(self, priority: Optional[str] = None, category: Optional[str] = None, limit: int = 10) -> List[Incident]:
-        query = self.db.query(Incident)
+    async def get_incidents(self, db, priority: Optional[str] = None, category: Optional[str] = None, limit: int = 10) -> List[Incident]:
+        query = db.query(Incident)
         if priority: query = query.filter(Incident.priority_label.ilike(priority))
         if category: query = query.filter(Incident.category.ilike(f"%{category}%"))
         return query.limit(limit).all()
-    async def get_incident_by_id(self, incident_id: str) -> Optional[Incident]:
-        return self.db.query(Incident).options(joinedload(Incident.complaints), joinedload(Incident.priority_history)).filter(Incident.id == incident_id).first()
+    async def get_incident_by_id(self, db, incident_id: str) -> Optional[Incident]:
+        return db.query(Incident).options(joinedload(Incident.complaints), joinedload(Incident.priority_history)).filter(Incident.id == incident_id).first()
 
 
 class DecisionService:
-    def __init__(self): self.db = SessionLocal()
-    async def get_executive_summary(self) -> Dict[str, Any]:
-        critical_count = self.db.query(Incident).filter(Incident.priority_label == 'Critical').count()
-        worst_ward = self.db.query(Incident.ward, func.count(Incident.id)).group_by(Incident.ward).order_by(func.count(Incident.id).desc()).first()
-        emerging = self.db.query(Complaint.predicted_category, func.count(Complaint.id)).filter(Complaint.created_at > datetime.utcnow() - timedelta(days=7)).group_by(Complaint.predicted_category).order_by(func.count(Complaint.id).desc()).first()
+    async def get_executive_summary(self, db) -> Dict[str, Any]:
+        critical_count = db.query(Incident).filter(Incident.priority_label == 'Critical').count()
+        worst_ward = db.query(Incident.ward, func.count(Incident.id)).group_by(Incident.ward).order_by(func.count(Incident.id).desc()).first()
+        emerging = db.query(Complaint.predicted_category, func.count(Complaint.id)).filter(Complaint.created_at > datetime.utcnow() - timedelta(days=7)).group_by(Complaint.predicted_category).order_by(func.count(Complaint.id).desc()).first()
         return {
             "criticalIncidentCount": critical_count,
             "worstPerformingWard": worst_ward[0] if worst_ward else "N/A",
             "emergingIssueCategory": emerging[0] if emerging else "None",
             "topRecommendation": f"Allocate resources to {worst_ward[0] if worst_ward else 'high-load areas'}."
         }
-    async def get_ward_health(self) -> List[Dict[str, Any]]:
-        wards = self.db.query(Incident.ward).distinct().all()
-        return [{"ward": w[0], "healthScore": max(0, 100 - self.db.query(Incident).filter(Incident.ward == w[0]).count() * 10)} for w in wards]
-    async def get_dept_workload(self) -> List[Dict[str, Any]]:
-        data = self.db.query(Incident.category, func.count(Incident.id)).filter(Incident.status != 'resolved').group_by(Incident.category).all()
+    async def get_ward_health(self, db) -> List[Dict[str, Any]]:
+        wards = db.query(Incident.ward).distinct().all()
+        return [{"ward": w[0], "healthScore": max(0, 100 - db.query(Incident).filter(Incident.ward == w[0]).count() * 10)} for w in wards]
+    async def get_dept_workload(self, db) -> List[Dict[str, Any]]:
+        data = db.query(Incident.category, func.count(Incident.id)).filter(Incident.status != 'resolved').group_by(Incident.category).all()
         return [{"department": cat, "activeIncidents": count} for cat, count in data]
 
 class SpatialService:
-    def __init__(self): self.db = SessionLocal()
-    async def get_heatmap(self) -> List[Dict[str, Any]]:
-        data = self.db.query(Complaint.ward, func.count(Complaint.id)).group_by(Complaint.ward).all()
+    async def get_heatmap(self, db) -> List[Dict[str, Any]]:
+        data = db.query(Complaint.ward, func.count(Complaint.id)).group_by(Complaint.ward).all()
         return [{"ward": w, "count": c} for w, c in data]
-    async def get_hotspots(self) -> List[Dict[str, Any]]:
-        wards = await self.get_heatmap()
+    async def get_hotspots(self, db) -> List[Dict[str, Any]]:
+        wards = await self.get_heatmap(db)
         return [{"ward": w["ward"], "growth": 15.5, "severity": "High"} for w in wards]
     async def get_forecast(self, days: int) -> List[Dict[str, Any]]:
         return [{"date": (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d"), "forecast": 10 + i} for i in range(days)]
-    async def get_risk_analysis(self) -> List[Dict[str, Any]]:
-        wards = await self.get_heatmap()
+    async def get_risk_analysis(self, db) -> List[Dict[str, Any]]:
+        wards = await self.get_heatmap(db)
         return [{"ward": w["ward"], "riskScore": 75} for w in wards]
     async def simulate_resources(self, additional_teams: int) -> Dict[str, Any]:
         return {"projectedImpact": f"Resolution speed increased by {additional_teams * 20}%", "estimatedReduction": 5 * additional_teams}
 
 class ComplaintService:
     def __init__(self):
-        self.db = SessionLocal()
         self.classifier = ClassificationService()
         self.clusterer = ClusteringService()
         self.priority = PriorityService()
-    async def submit_complaint(self, complaint_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def submit_complaint(self, db, complaint_data: Dict[str, Any]) -> Dict[str, Any]:
         classify_res = await self.classifier.classify(ClassifyRequest(text=complaint_data['title'], detail=complaint_data['description']))
         category, confidence = classify_res.predicted_category, classify_res.confidence
-        existing_complaints = self.db.query(Complaint).all()
+        existing_complaints = db.query(Complaint).all()
         similar = await self.clusterer.find_similar(f"{complaint_data['title']} {complaint_data['description']}", [{"id": c.id, "text": f"{c.title} {c.description}"} for c in existing_complaints], threshold=0.8)
         incident, is_duplicate = None, False
         if similar:
-            existing_c = self.db.query(Complaint).filter(Complaint.id == similar[0]['id']).first()
+            existing_c = db.query(Complaint).filter(Complaint.id == similar[0]['id']).first()
             if existing_c and existing_c.incident_id:
-                incident = self.db.query(Incident).filter(Incident.id == existing_c.incident_id).first()
+                incident = db.query(Incident).filter(Incident.id == existing_c.incident_id).first()
                 is_duplicate = True
                 new_complaint_similarity = similar[0].get('similarity', 0.0)
         if not incident:
             incident = Incident(id=str(uuid.uuid4()), incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}", category=category, ward=complaint_data['ward'], cluster_size=1, priority_score=0.0, priority_label="Low", summary=complaint_data['title'])
-            self.db.add(incident)
+            db.add(incident)
         else: incident.cluster_size += 1
         priority_res = await self.priority.calculate(PriorityRequest(incident_id=incident.id, cluster_size=incident.cluster_size, first_complaint_date=datetime.utcnow().isoformat(), last_complaint_date=datetime.utcnow().isoformat(), category=category, location_hints=[complaint_data['location']]))
         if incident.priority_score != priority_res.priority_score:
-            self.db.add(PriorityHistory(id=str(uuid.uuid4()), incident_id=incident.id, old_score=incident.priority_score, new_score=priority_res.priority_score, reason="Automatic update"))
+            db.add(PriorityHistory(id=str(uuid.uuid4()), incident_id=incident.id, old_score=incident.priority_score, new_score=priority_res.priority_score, reason="Automatic update"))
         incident.priority_score, incident.priority_label = priority_res.priority_score, priority_res.priority_label
         new_complaint = Complaint(id=str(uuid.uuid4()), title=complaint_data['title'], description=complaint_data['description'], location=complaint_data['location'], ward=complaint_data['ward'], image_path=complaint_data.get('image_path'), predicted_category=category, confidence=confidence, priority=priority_res.priority_label, incident=incident, similarity_score=new_complaint_similarity if is_duplicate else None, merge_reason=f"Matched with {similar[0]['id']}" if is_duplicate else None, merged_at=datetime.utcnow() if is_duplicate else None)
-        self.db.add(new_complaint); self.db.commit(); self.db.refresh(new_complaint); self.db.refresh(incident)
+        db.add(new_complaint); db.commit(); db.refresh(new_complaint); db.refresh(incident)
         return {"complaintId": new_complaint.id, "incidentId": incident.id, "predictedCategory": category, "priority": priority_res.priority_label, "confidence": confidence, "duplicate": is_duplicate, "message": "Complaint submitted successfully"}

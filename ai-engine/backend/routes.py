@@ -3,10 +3,12 @@ API route definitions for GIIPS backend.
 """
 
 from fastapi import APIRouter, HTTPException, Depends, Query
+from sqlalchemy.orm import Session
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
+from database import get_db
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse,
@@ -28,40 +30,41 @@ from services import (
 spatial_router = APIRouter(prefix="/spatial", tags=["Spatial"])
 
 @spatial_router.get("/heatmap")
-async def get_heatmap():
-    return await SpatialService().get_heatmap()
+async def get_heatmap(db: Session = Depends(get_db)):
+    return await SpatialService().get_heatmap(db)
 
 @spatial_router.get("/hotspots")
-async def get_hotspots():
-    return await SpatialService().get_hotspots()
+async def get_hotspots(db: Session = Depends(get_db)):
+    return await SpatialService().get_hotspots(db)
 
 @spatial_router.get("/forecast")
 async def get_forecast(days: int = 7):
     return await SpatialService().get_forecast(days)
 
 @spatial_router.get("/risk")
-async def get_risk():
-    return await SpatialService().get_risk_analysis()
+async def get_risk(db: Session = Depends(get_db)):
+    return await SpatialService().get_risk_analysis(db)
 
 @spatial_router.post("/simulate")
 async def simulate(additional_teams: int):
     return await SpatialService().simulate_resources(additional_teams)
+
 executive_router = APIRouter(prefix="/executive", tags=["Executive"])
 
 @executive_router.get("/summary")
-async def get_executive_summary():
+async def get_executive_summary(db: Session = Depends(get_db)):
     service = DecisionService()
-    return await service.get_executive_summary()
+    return await service.get_executive_summary(db)
 
 @executive_router.get("/ward-health")
-async def get_ward_health():
+async def get_ward_health(db: Session = Depends(get_db)):
     service = DecisionService()
-    return await service.get_ward_health()
+    return await service.get_ward_health(db)
 
 @executive_router.get("/department-workload")
-async def get_dept_workload():
+async def get_dept_workload(db: Session = Depends(get_db)):
     service = DecisionService()
-    return await service.get_dept_workload()
+    return await service.get_dept_workload(db)
 
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
@@ -74,10 +77,10 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 # === Complaint Submission Routes ===
 
 @complaint_router.post("", response_model=ComplaintSubmissionResponse)
-async def submit_complaint(request: ComplaintCreate):
+async def submit_complaint(request: ComplaintCreate, db: Session = Depends(get_db)):
     """Submit a new citizen complaint through the pipeline."""
     service = ComplaintService()
-    return await service.submit_complaint(request.dict())
+    return await service.submit_complaint(db, request.dict())
 
 
 # === Classification Routes ===
@@ -174,10 +177,10 @@ async def get_priority_rules():
 # === Dashboard Routes ===
 
 @dashboard_router.get("")
-async def get_dashboard():
+async def get_dashboard(db: Session = Depends(get_db)):
     """Get dashboard summary data."""
     service = DashboardService()
-    return await service.get_summary()
+    return await service.get_summary(db)
 
 
 @dashboard_router.get("/metrics")
@@ -207,21 +210,22 @@ async def get_trend_data():
 
 @incident_router.get("")
 async def list_incidents(
+    db: Session = Depends(get_db),
     priority: Optional[str] = None,
     category: Optional[str] = None,
     limit: int = Query(10, ge=1, le=100)
 ):
     """List incidents with optional filters."""
     service = DashboardService()
-    incidents = await service.get_incidents(priority, category, limit)
+    incidents = await service.get_incidents(db, priority, category, limit)
     return {"incidents": incidents, "count": len(incidents)}
 
 
 @incident_router.get("/{incident_id}")
-async def get_incident(incident_id: str):
+async def get_incident(incident_id: str, db: Session = Depends(get_db)):
     """Get incident details by ID."""
     service = DashboardService()
-    incident = await service.get_incident_by_id(incident_id)
+    incident = await service.get_incident_by_id(db, incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
     return incident

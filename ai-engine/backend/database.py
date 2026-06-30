@@ -20,8 +20,12 @@ DB_PATH = DB_DIR / 'giips.db'
 DATABASE_URL = f"sqlite:///{DB_PATH}"
 
 # Create the engine with connect_args for SQLite multi-thread support
+# Added pooling configuration for Render deployment
 engine = create_engine(
-    DATABASE_URL, connect_args={"check_same_thread": False}
+    DATABASE_URL, 
+    connect_args={"check_same_thread": False},
+    pool_pre_ping=True,
+    pool_recycle=300
 )
 
 # Create the session local session factory
@@ -29,6 +33,15 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 # Declarative base class for models
 Base = declarative_base()
+
+# Dependency for database session
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 
 class Incident(Base):
