@@ -4,8 +4,8 @@ import { LayoutDashboard, FileText, ChartBar as BarChart3, GitBranch, BookOpen, 
 import './Sidebar.css';
 
 const navItems = [
-  { path: '/', label: 'Overview', icon: LayoutDashboard },
-  { path: '/incidents', label: 'Incident Feed', icon: FileText },
+  { path: '/officer', label: 'Dashboard', icon: LayoutDashboard },
+  { path: '/incident-feed', label: 'Incident Feed', icon: FileText },
   { path: '/analysis', label: 'Complaint Analysis', icon: BarChart3 },
   { path: '/clusters', label: 'Cluster Explorer', icon: GitBranch },
   { path: '/spatial', label: 'Spatial Intelligence', icon: Map },

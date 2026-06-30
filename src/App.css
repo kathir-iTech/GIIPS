@@ -13,6 +13,14 @@
   background: var(--bg-gray);
 }
 
+.full-content {
+  flex: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  background: var(--bg-gray);
+}
+
 @media (max-width: 1024px) {
   .main-content {
     margin-left: 72px;

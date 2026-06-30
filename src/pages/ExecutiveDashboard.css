@@ -1,8 +1,15 @@
-.exec-dashboard { padding: 2rem; background: #f8fafc; min-height: 100vh; }
-.morning-brief { margin-bottom: 2rem; }
-.brief-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; }
-.brief-card { background: white; padding: 1.5rem; border-radius: 1rem; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.1); }
-.brief-card.critical { border-left: 4px solid #ef4444; }
-.brief-card.recommendation { border-left: 4px solid #2563eb; }
-.analytics-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-.card { background: white; padding: 1.5rem; border-radius: 1rem; }
+.exec-dashboard { padding: 32px; display: flex; flex-direction: column; gap: 24px; }
+.kpi-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
+.dashboard-grid { display: grid; grid-template-columns: 2fr 1fr; gap: 24px; }
+.main-panel { display: flex; flex-direction: column; gap: 24px; }
+.side-panel { display: flex; flex-direction: column; gap: 24px; }
+.card { padding: 24px; }
+.workload-list { display: flex; flex-direction: column; gap: 16px; margin-top: 16px; }
+.workload-item { display: flex; align-items: center; gap: 16px; }
+.dept-name { flex: 1; font-weight: 500; font-size: 14px; }
+.progress-track { flex: 2; height: 8px; background: rgba(0,0,0,0.05); border-radius: 4px; overflow: hidden; }
+.progress-fill { height: 100%; background: #3b82f6; border-radius: 4px; }
+.dept-count { font-weight: 700; min-width: 30px; }
+.ai-panel { border-left: 4px solid #3b82f6; }
+.alert-panel { border-left: 4px solid #ef4444; }
+.alert-row { padding: 12px; background: rgba(239, 68, 68, 0.05); color: #991b1b; border-radius: var(--radius-sm); font-size: 13px; font-weight: 600; }

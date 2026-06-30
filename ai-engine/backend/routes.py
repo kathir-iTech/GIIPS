@@ -217,14 +217,12 @@ async def list_incidents(
     return {"incidents": incidents, "count": len(incidents)}
 
 
-@incident_router.patch("/{incident_id}/status")
-async def update_incident_status(incident_id: str, status: str = Query(..., enum=["open", "in-progress", "resolved"])):
-    """Update incident status."""
+@incident_router.get("/{incident_id}")
+async def get_incident(incident_id: str):
+    """Get incident details by ID."""
     service = DashboardService()
     incident = await service.get_incident_by_id(incident_id)
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    
-    incident.status = status
-    service.db.commit()
-    return {"message": f"Incident status updated to {status}"}
+    return incident
+

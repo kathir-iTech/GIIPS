@@ -3,6 +3,8 @@ import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import type { Incident, ClusterDetail } from '../types';
 import Header from '../components/Header';
+import KPICard from '../components/KPICard';
+import { Target, GitBranch, AlertTriangle } from 'lucide-react';
 import './Clusters.css';
 
 const Clusters = () => {
@@ -12,7 +14,6 @@ const Clusters = () => {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [sortBy, setSortBy] = useState<'date' | 'similarity'>('similarity');
 
   useEffect(() => {
     api.getIncidents().then(data => {
@@ -28,122 +29,68 @@ const Clusters = () => {
     }
   }, [selectedId]);
 
-  const sortedComplaints = useMemo(() => {
-    if (!clusterDetail) return [];
-    const complaints = [...clusterDetail.complaints];
-    if (sortBy === 'similarity') complaints.sort((a, b) => b.similarity_score - a.similarity_score);
-    else complaints.sort((a, b) => b.date_received.localeCompare(a.date_received));
-    return complaints;
-  }, [clusterDetail, sortBy]);
-
-  if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading clusters...</span></div>;
+  if (loading) return <div className="page-loading">Loading cluster data...</div>;
   if (error) return <div className="page-error">Error: {error}</div>;
 
-  const selectedIncident = incidents.find(i => i.id === selectedId);
   const avgSimilarity = clusterDetail ? clusterDetail.complaints.reduce((sum, c) => sum + c.similarity_score, 0) / clusterDetail.complaints.length : 0;
 
   return (
     <div className="clusters-page">
-      <Header title="Cluster Explorer" subtitle="Visualize complaint clustering relationships" />
+      <Header title="Cluster Explorer" subtitle="Analyze AI-driven incident grouping" />
       <div className="page-content">
         <div className="cluster-controls">
-          <div className="incident-selector">
-            <label>Select Incident to Explore</label>
-            <select value={selectedId} onChange={e => setSelectedId(e.target.value)}>
-              {incidents.map(i => <option key={i.id} value={i.id}>{i.incident_number} - {i.category}</option>)}
-            </select>
-          </div>
-          <div className="sort-toggle">
-            <label>Sort By</label>
-            <div className="toggle-btns">
-              <button className={sortBy === 'similarity' ? 'active' : ''} onClick={() => setSortBy('similarity')}>Similarity</button>
-              <button className={sortBy === 'date' ? 'active' : ''} onClick={() => setSortBy('date')}>Date</button>
-            </div>
-          </div>
+          <select value={selectedId} onChange={e => setSelectedId(e.target.value)}>
+            {incidents.map(i => <option key={i.id} value={i.id}>{i.incident_number} - {i.category}</option>)}
+          </select>
         </div>
 
-        {detailLoading ? <div className="page-loading"><div className="spinner"></div></div> : clusterDetail && (
+        {detailLoading ? <div className="page-loading">Refreshing cluster details...</div> : clusterDetail && (
           <div className="cluster-content">
-            <div className="cluster-header-section">
-              <div className="cluster-badge-area">
-                <span className="cluster-size-badge">{clusterDetail.cluster_size} Complaints Merged</span>
-                <span className="cluster-category">{clusterDetail.category}</span>
-              </div>
+            <section className="cluster-header-section">
               <h2 className="cluster-title">{clusterDetail.incident_number}</h2>
-              <p className="cluster-location">{clusterDetail.ward}</p>
-            </div>
+              <p className="cluster-location">{clusterDetail.category} • {clusterDetail.ward}</p>
+            </section>
 
-            <div className="cluster-stats-row">
-              <div className="stat-card"><span className="stat-value">{(avgSimilarity * 100).toFixed(1)}%</span><span className="stat-label">Avg Similarity</span></div>
-              <div className="stat-card"><span className="stat-value">{(clusterDetail.similarity_threshold * 100).toFixed(0)}%</span><span className="stat-label">Threshold</span></div>
-              <div className="stat-card"><span className="stat-value">{sortedComplaints.filter(c => c.similarity_score >= 0.9).length}</span><span className="stat-label">High Confidence</span></div>
-              <div className="stat-card"><span className="stat-value">{sortedComplaints.length}</span><span className="stat-label">Total Merged</span></div>
-            </div>
+            <section className="cluster-stats-row">
+              <KPICard title="Complaints Merged" value={clusterDetail.cluster_size} icon={GitBranch} />
+              <KPICard title="Avg Similarity" value={`${(avgSimilarity * 100).toFixed(1)}%`} icon={Target} />
+              <KPICard title="Confidence" value="High" icon={AlertTriangle} variant="success" />
+            </section>
 
-            <div className="cluster-main">
-              <div className="network-section">
-                <div className="network-header">
-                  <h3>Clustering Visualization</h3>
-                  <p className="network-desc">Visual representation of complaint relationships based on semantic similarity</p>
-                </div>
+            <section className="cluster-main">
+              <div className="card">
+                <h3>Clustering Visualization</h3>
                 <Plot
                   data={[{
                     type: 'sankey',
-                    node: {
-                      label: [clusterDetail.incident_number, ...sortedComplaints.slice(0, 8).map(c => c.complaint_number.replace('CMP-', ''))],
-                      color: ['#1e293b', ...sortedComplaints.slice(0, 8).map(c => c.similarity_score >= 0.9 ? '#16a34a' : c.similarity_score >= 0.8 ? '#ca8a04' : '#94a3b8')],
-                      pad: 20, thickness: 25, line: { color: '#f1f5f9', width: 2 }
-                    },
-                    link: { source: [0, 0, 0, 0, 0, 0, 0, 0, 0], target: [1, 2, 3, 4, 5, 6, 7, 8, 9], value: sortedComplaints.slice(0, 8).map(c => c.similarity_score), color: sortedComplaints.slice(0, 8).map(c => `rgba(30, 41, 59, ${c.similarity_score * 0.5 + 0.15})`) }
+                    node: { label: [clusterDetail.incident_number, ...clusterDetail.complaints.slice(0, 5).map(c => c.complaint_number)], color: ['#1e293b', '#0369a1', '#0369a1', '#0369a1', '#0369a1', '#0369a1'], pad: 20, thickness: 20 },
+                    link: { source: [0, 0, 0, 0, 0], target: [1, 2, 3, 4, 5], value: clusterDetail.complaints.slice(0, 5).map(c => c.similarity_score) }
                   }]}
-                  layout={{ paper_bgcolor: 'transparent', margin: { t: 40, r: 40, b: 40, l: 40 }, height: 320, font: { family: 'Inter, sans-serif', size: 11 } }}
+                  layout={{ paper_bgcolor: 'transparent', margin: { t: 20, r: 20, b: 20, l: 20 }, height: 250 }}
                   config={{ displayModeBar: false, responsive: true }}
                   style={{ width: '100%' }}
                 />
               </div>
-
-              <div className="reasoning-section">
-                <h3>AI Explanation Panel</h3>
-                <div className="reasoning-content">
-                  <div className="reasoning-point"><span className="point-dot semantic"></span><span className="point-text">Semantic match: {(avgSimilarity * 100).toFixed(1)}%</span></div>
-                  <div className="reasoning-point"><span className="point-dot location"></span><span className="point-text">Location cluster: {clusterDetail.ward}</span></div>
-                  <p>{clusterDetail.clusterReasoning}</p>
-                </div>
+              <div className="card">
+                <h3>AI Reasoning</h3>
+                <p>{clusterDetail.clusterReasoning}</p>
               </div>
-            </div>
+            </section>
 
-            <div className="priority-history-section">
-              <h3>Priority History</h3>
+            <section className="card">
+              <h3>Complaint Timeline</h3>
               <div className="timeline">
-                {clusterDetail.priority_history.map(h => (
-                  <div key={h.id} className="history-item">
-                    <span className="hist-date">{new Date(h.changed_at).toLocaleString()}</span>
-                    <span className="hist-score">{h.old_score} &rarr; {h.new_score}</span>
-                    <span className="hist-reason">{h.reason}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className="complaints-section">
-              <div className="complaints-header"><h3>Linked Complaints Timeline</h3><span className="complaints-count">{sortedComplaints.length} complaints</span></div>
-              <div className="timeline">
-                {sortedComplaints.map((c, i) => (
+                {clusterDetail.complaints.map((c, i) => (
                   <div key={c.id} className="timeline-item">
-                    <div className="timeline-marker"><span className="marker-num">{i + 1}</span></div>
+                    <div className="timeline-marker">{i + 1}</div>
                     <div className="timeline-content">
-                      <div className="timeline-header"><span className="timeline-id">{c.complaint_number}</span><span className="timeline-date">{c.date_received}</span></div>
-                      <p className="timeline-text">{c.text}</p>
-                      <p className="merge-reason"><strong>Merge Reason:</strong> {c.merge_reason || 'N/A'}</p>
-                      <div className="timeline-meta">
-                        <div className="similarity-meter"><div className="meter-fill" style={{ width: `${c.similarity_score * 100}%` }}></div></div>
-                        <span className="similarity-value">{(c.similarity_score * 100).toFixed(1)}% match</span>
-                      </div>
+                      <strong>{c.complaint_number}</strong>
+                      <p>{c.text}</p>
                     </div>
                   </div>
                 ))}
               </div>
-            </div>
+            </section>
           </div>
         )}
       </div>

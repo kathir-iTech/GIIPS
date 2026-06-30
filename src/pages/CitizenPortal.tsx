@@ -1,89 +1,67 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
+import Header from '../components/Header';
+import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles } from 'lucide-react';
 import './CitizenPortal.css';
 
 const CitizenPortal = () => {
   const navigate = useNavigate();
+  const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({ title: '', description: '', location: '', ward: '', image_path: '' });
-  const [imageFile, setImageFile] = useState<File | null>(null);
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
 
-  const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      setImageFile(file);
-      setImagePreview(URL.createObjectURL(file));
-      setFormData({...formData, image_path: 'Prototype Preview: ' + file.name});
-    }
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     setLoading(true);
     try {
       const response = await api.submitComplaint(formData);
-
-console.log("API Response:", response);
-
-setResult(response);
-
-console.log("Result state being set:", response);
-    } catch (error: any) {
-      alert(error.message);
-    } finally {
-      setLoading(false);
-    }
+      setResult(response);
+    } catch (error: any) { alert(error.message); } finally { setLoading(false); }
   };
-console.log("Current result:", result);
-  if (result) {
-    return (
-      <div className="portal-container">
-        <div className="success-card">
-          <h2>Complaint Submitted</h2>
-          <div className="card-grid">
-            <p><strong>Complaint ID:</strong> {result.complaintId}</p>
-            <p><strong>Incident ID:</strong> {result.incidentId}</p>
-            <p><strong>Category:</strong> {result.predictedCategory}</p>
-            <p><strong>Priority:</strong> {result.priority}</p>
-            <p><strong>Confidence:</strong> {(result.confidence * 100).toFixed(1)}%</p>
-            <p><strong>Duplicate:</strong> {result.duplicate ? 'Yes' : 'No'}</p>
-            <p><strong>Status:</strong> Under Review</p>
-          </div>
-          <div className="button-group">
-            <button onClick={() => navigate('/')}>View Dashboard</button>
-            <button onClick={() => {setResult(null); setImagePreview(null);}}>Submit Another Complaint</button>
-          </div>
+
+  const steps = ['Details', 'Complaint', 'Location', 'Upload', 'Review', 'AI Preview', 'Success'];
+
+  if (result) return (
+    <div className="portal-container success">
+      <div className="glass-card success-card">
+        <CheckCircle size={64} className="success-icon" />
+        <h2>Submission Received</h2>
+        <p>Your complaint has been processed by the AI pipeline.</p>
+        <div className="summary-card">
+          <p><strong>Complaint ID:</strong> {result.complaintId}</p>
+          <p><strong>Priority:</strong> {result.priority}</p>
         </div>
+        <button onClick={() => navigate('/')}>Return to Dashboard</button>
       </div>
-    );
-  }
+    </div>
+  );
 
   return (
     <div className="portal-container">
-      {loading ? (
-        <div className="loading-state">🤖 AI is analysing your complaint...</div>
-      ) : (
-        <form onSubmit={handleSubmit} className="complaint-form">
-          <h2>Submit Complaint</h2>
-          <input type="text" placeholder="Title" required onChange={(e) => setFormData({...formData, title: e.target.value})} />
-          <textarea placeholder="Description" required onChange={(e) => setFormData({...formData, description: e.target.value})} />
-          <input type="text" placeholder="Location" required onChange={(e) => setFormData({...formData, location: e.target.value})} />
-          <input type="text" placeholder="Ward" required onChange={(e) => setFormData({...formData, ward: e.target.value})} />
-          
-          <div className="file-upload">
-            <label>Upload Image (JPG/PNG):</label>
-            <input type="file" accept="image/png, image/jpeg" onChange={handleFileChange} />
-            {imagePreview && <img src={imagePreview} alt="Preview" className="preview-img" />}
-          </div>
-          
-          <button type="submit">Submit Complaint</button>
-        </form>
-      )}
+      <Header title="Citizen Portal" subtitle="Submit grievance securely" />
+      <div className="wizard glass-card">
+        <div className="progress-bar-container">
+          <div className="progress-fill" style={{ width: `${(step / steps.length) * 100}%` }}></div>
+        </div>
+        <div className="steps-header">{steps[step - 1]}</div>
+        
+        <div className="form-content">
+          {step === 1 && <div className="form-step"><input type="text" placeholder="Personal Name" /> <input type="email" placeholder="Email" /></div>}
+          {step === 2 && <div className="form-step"><input type="text" placeholder="Complaint Title" onChange={e => setFormData({...formData, title: e.target.value})} /><textarea placeholder="Detailed Description" onChange={e => setFormData({...formData, description: e.target.value})} /></div>}
+          {step === 3 && <div className="form-step"><input type="text" placeholder="Location" onChange={e => setFormData({...formData, location: e.target.value})} /><input type="text" placeholder="Ward" onChange={e => setFormData({...formData, ward: e.target.value})} /></div>}
+          {step === 4 && <div className="form-step"><label className="upload-box"><Upload /> <input type="file" onChange={e => e.target.files && setImagePreview(URL.createObjectURL(e.target.files[0]))} /> Select Image</label>{imagePreview && <img src={imagePreview} className="preview" alt="Preview" />}</div>}
+          {step === 5 && <div className="form-step"><h3>Review Details</h3><p>{formData.title}</p><p>{formData.location}</p></div>}
+          {step === 6 && <div className="form-step"><Sparkles className="ai-icon" /><h3>AI Preview</h3><p>Analyzing priority and department...</p>{loading ? <Loader2 className="animate-spin" /> : <button onClick={handleSubmit}>Confirm Submission</button>}</div>}
+        </div>
+
+        <div className="wizard-controls">
+          <button disabled={step === 1} onClick={() => setStep(s => s - 1)}><ChevronLeft /> Back</button>
+          <button disabled={step === 6} onClick={() => setStep(s => s + 1)}>Next <ChevronRight /></button>
+        </div>
+      </div>
     </div>
   );
 };
-
 export default CitizenPortal;

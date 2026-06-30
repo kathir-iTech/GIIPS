@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
+import KPICard from '../components/KPICard';
+import { AlertTriangle, Clock, Activity, Target } from 'lucide-react';
 import './Overview.css';
 
 interface BackendDashboardData {
@@ -26,15 +28,31 @@ const Overview = () => {
   useEffect(() => {
     api.getDashboardData()
       .then((res: any) => setData(res))
-      .catch(err => setError(err.message))
+      .catch(err => {
+        console.error('Failed to fetch dashboard data:', err);
+        setError('Using offline mode - Data unavailable.');
+        // Setting mock data as a graceful fallback
+        setData({
+            totalComplaints: 0,
+            uniqueIncidents: 0,
+            workloadReduction: 0,
+            criticalIncidents: 0,
+            highPriorityIncidents: 0,
+            mediumPriorityIncidents: 0,
+            lowPriorityIncidents: 0,
+            trendData: [],
+            categoryBreakdown: [],
+            wardBreakdown: [],
+            recentIncidents: []
+        });
+        setLoading(false);
+      })
       .finally(() => setLoading(false));
   }, []);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading dashboard...</span></div>;
-  if (error) return <div className="page-error">Error: {error}</div>;
-  if (!data) return null;
+  if (!data) return <div className="page-error">Error: {error}</div>;
 
-  const priorityLabels = ['Critical', 'High', 'Medium', 'Low'];
   const priorityColors = {
     Critical: '#dc2626',
     High: '#ea580c',
@@ -75,10 +93,10 @@ const Overview = () => {
         </section>
 
         <section className="kpi-grid">
-          <div className="kpi-card critical"><div className="kpi-header"><span className="kpi-icon">!</span><span className="kpi-title">Critical</span></div><span className="kpi-value">{data.criticalIncidents}</span><span className="kpi-subtitle">Immediate attention</span></div>
-          <div className="kpi-card high"><div className="kpi-header"><span className="kpi-icon">!!</span><span className="kpi-title">High Priority</span></div><span className="kpi-value">{data.highPriorityIncidents}</span><span className="kpi-subtitle">Urgent action needed</span></div>
-          <div className="kpi-card medium"><div className="kpi-header"><span className="kpi-icon">III</span><span className="kpi-title">Medium</span></div><span className="kpi-value">{data.mediumPriorityIncidents}</span><span className="kpi-subtitle">Scheduled response</span></div>
-          <div className="kpi-card low"><div className="kpi-header"><span className="kpi-icon">IV</span><span className="kpi-title">Low</span></div><span className="kpi-value">{data.lowPriorityIncidents}</span><span className="kpi-subtitle">Routine handling</span></div>
+          <KPICard title="Critical" value={data.criticalIncidents} subtitle="Immediate attention" variant="critical" icon={AlertTriangle} />
+          <KPICard title="High Priority" value={data.highPriorityIncidents} subtitle="Urgent action needed" icon={Clock} />
+          <KPICard title="Medium" value={data.mediumPriorityIncidents} subtitle="Scheduled response" icon={Activity} />
+          <KPICard title="Low" value={data.lowPriorityIncidents} subtitle="Routine handling" icon={Target} variant="success" />
         </section>
 
         <section className="charts-grid">
@@ -94,6 +112,34 @@ const Overview = () => {
             <Plot data={[{ x: data.categoryBreakdown.map(d => d.count), y: data.categoryBreakdown.map(d => d.category), type: 'bar', orientation: 'h', marker: { color: data.categoryBreakdown.map(d => d.color) }, text: data.categoryBreakdown.map(d => d.count), textposition: 'outside' }]}
               layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { t: 20, r: 40, b: 30, l: 120 }, xaxis: { showgrid: true, gridcolor: '#f1f5f9' }, yaxis: { showgrid: false }, height: 280 }}
               config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
+          </div>
+        </section>
+        
+        <section className="recent-incidents-card">
+          <h3>Recent Incidents</h3>
+          <div className="table-container">
+            <table>
+              <thead>
+                <tr>
+                  <th>Incident ID</th>
+                  <th>Category</th>
+                  <th>Ward</th>
+                  <th>Priority</th>
+                  <th>Status</th>
+                </tr>
+              </thead>
+              <tbody>
+                {data.recentIncidents.map((inc: any) => (
+                  <tr key={inc.id}>
+                    <td>{inc.incident_number}</td>
+                    <td>{inc.category}</td>
+                    <td>{inc.ward}</td>
+                    <td><span className={`badge ${inc.priority_label.toLowerCase()}`}>{inc.priority_label}</span></td>
+                    <td>{inc.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>
