@@ -170,7 +170,7 @@ const IncidentFeed = () => {
                           <div className="expanded-right">
                             <h4>Linked Complaints ({incident.complaints?.length || 0})</h4>
                             <div className="complaints-list">
-                              {incident.complaints?.slice(0, 5).map(c => (
+                              {(incident.complaints?.slice(0, 5) ?? []).map(c => (
                                 <div key={c.id} className="complaint-item">
                                   <div className="complaint-header">
                                     <span className="complaint-id">{c.complaint_number}</span>

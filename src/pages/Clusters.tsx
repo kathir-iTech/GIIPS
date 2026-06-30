@@ -32,7 +32,8 @@ const Clusters = () => {
   if (loading) return <div className="page-loading">Loading cluster data...</div>;
   if (error) return <div className="page-error">Error: {error}</div>;
 
-  const avgSimilarity = clusterDetail ? clusterDetail.complaints.reduce((sum, c) => sum + c.similarity_score, 0) / clusterDetail.complaints.length : 0;
+  const complaints = clusterDetail?.complaints ?? [];
+  const avgSimilarity = complaints.length > 0 ? complaints.reduce((sum, c) => sum + (c.similarity_score || 0), 0) / complaints.length : 0;
 
   return (
     <div className="clusters-page">
@@ -40,7 +41,7 @@ const Clusters = () => {
       <div className="page-content">
         <div className="cluster-controls">
           <select value={selectedId} onChange={e => setSelectedId(e.target.value)}>
-            {incidents.map(i => <option key={i.id} value={i.id}>{i.incident_number} - {i.category}</option>)}
+            {(incidents ?? []).map(i => <option key={i.id} value={i.id}>{i.incident_number} - {i.category}</option>)}
           </select>
         </div>
 
@@ -63,8 +64,8 @@ const Clusters = () => {
                 <Plot
                   data={[{
                     type: 'sankey',
-                    node: { label: [clusterDetail.incident_number, ...clusterDetail.complaints.slice(0, 5).map(c => c.complaint_number)], color: ['#1e293b', '#0369a1', '#0369a1', '#0369a1', '#0369a1', '#0369a1'], pad: 20, thickness: 20 },
-                    link: { source: [0, 0, 0, 0, 0], target: [1, 2, 3, 4, 5], value: clusterDetail.complaints.slice(0, 5).map(c => c.similarity_score) }
+                    node: { label: [clusterDetail.incident_number, ...complaints.slice(0, 5).map(c => c.complaint_number)], color: ['#1e293b', '#0369a1', '#0369a1', '#0369a1', '#0369a1', '#0369a1'], pad: 20, thickness: 20 },
+                    link: { source: [0, 0, 0, 0, 0], target: [1, 2, 3, 4, 5], value: complaints.slice(0, 5).map(c => c.similarity_score || 0) }
                   }]}
                   layout={{ paper_bgcolor: 'transparent', margin: { t: 20, r: 20, b: 20, l: 20 }, height: 250 }}
                   config={{ displayModeBar: false, responsive: true }}
@@ -80,7 +81,7 @@ const Clusters = () => {
             <section className="card">
               <h3>Complaint Timeline</h3>
               <div className="timeline">
-                {clusterDetail.complaints.map((c, i) => (
+                {complaints.map((c, i) => (
                   <div key={c.id} className="timeline-item">
                     <div className="timeline-marker">{i + 1}</div>
                     <div className="timeline-content">
