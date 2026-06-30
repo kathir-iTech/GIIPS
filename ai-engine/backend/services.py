@@ -50,25 +50,38 @@ class ClassificationService:
             top_indices = np.argsort(probabilities)[::-1][:5]
             top_predictions = [{"category": str(classifier.classes_[idx]), "confidence": float(probabilities[idx])} for idx in top_indices]
             confidence = float(probabilities[classifier.classes_.tolist().index(prediction)])
-            return ClassifyResponse(predicted_category=str(prediction), confidence=confidence, top_predictions=top_predictions)
+            
+            # Explainability
+            reason = f"Classified as {prediction} with {confidence:.2%} confidence based on ML model content analysis."
+            keywords = {'Road': ['pothole', 'road', 'street'], 'Water': ['water', 'pipe', 'leak'], 'Waste': ['garbage', 'waste', 'trash']}
+            text_lower = combined_text.lower()
+            supporting_factors = []
+            for cat, words in keywords.items():
+                if cat in prediction:
+                    supporting_factors = [w for w in words if w in text_lower]
+                    break
+                    
+            return ClassifyResponse(predicted_category=str(prediction), confidence=confidence, top_predictions=top_predictions, reason=reason, supporting_factors=supporting_factors)
         except Exception: return await self._fallback_classify(request)
 
     async def _fallback_classify(self, request: ClassifyRequest) -> ClassifyResponse:
         text_lower = request.text.lower()
-        category_scores = {
-            'Road Infrastructure': any(kw in text_lower for kw in ['pothole', 'road', 'street']),
-            'Water Supply': any(kw in text_lower for kw in ['water', 'pipe', 'leak']),
-            'Waste Management': any(kw in text_lower for kw in ['garbage', 'waste', 'trash']),
-            'Sanitation': any(kw in text_lower for kw in ['sewage', 'toilet', 'sanitation']),
-            'Street Lighting': any(kw in text_lower for kw in ['light', 'lamp', 'bulb']),
+        keywords = {
+            'Road Infrastructure': ['pothole', 'road', 'street'],
+            'Water Supply': ['water', 'pipe', 'leak'],
+            'Waste Management': ['garbage', 'waste', 'trash'],
+            'Sanitation': ['sewage', 'toilet', 'sanitation'],
+            'Street Lighting': ['light', 'lamp', 'bulb'],
         }
-        predicted = 'Public Works'
-        confidence = 0.5
-        for cat, match in category_scores.items():
-            if match:
-                predicted, confidence = cat, 0.75
+        predicted, confidence = 'Public Works', 0.5
+        supporting_factors = []
+        for cat, words in keywords.items():
+            matched = [w for w in words if w in text_lower]
+            if matched:
+                predicted, confidence, supporting_factors = cat, 0.75, matched
                 break
-        return ClassifyResponse(predicted_category=predicted, confidence=confidence, top_predictions=[{"category": predicted, "confidence": confidence}])
+        reason = f"Classified as {predicted} using heuristic fallback based on detected keywords."
+        return ClassifyResponse(predicted_category=predicted, confidence=confidence, top_predictions=[{"category": predicted, "confidence": confidence}], reason=reason, supporting_factors=supporting_factors)
 
 
 class ClusteringService:
@@ -194,28 +207,78 @@ class SpatialService:
 class ComplaintService:
     def __init__(self):
         self.classifier = ClassificationService()
-        self.clusterer = ClusteringService()
+        self.duplicate_detector = DuplicateDetector()
         self.priority = PriorityService()
+
     async def submit_complaint(self, db, complaint_data: Dict[str, Any]) -> Dict[str, Any]:
+        # 1. Classify
         classify_res = await self.classifier.classify(ClassifyRequest(text=complaint_data['title'], detail=complaint_data['description']))
         category, confidence = classify_res.predicted_category, classify_res.confidence
+        
+        # 2. Duplicate Detection
         existing_complaints = db.query(Complaint).all()
-        similar = await self.clusterer.find_similar(f"{complaint_data['title']} {complaint_data['description']}", [{"id": c.id, "text": f"{c.title} {c.description}"} for c in existing_complaints], threshold=0.8)
-        incident, is_duplicate = None, False
-        if similar:
-            existing_c = db.query(Complaint).filter(Complaint.id == similar[0]['id']).first()
-            if existing_c and existing_c.incident_id:
-                incident = db.query(Incident).filter(Incident.id == existing_c.incident_id).first()
-                is_duplicate = True
-                new_complaint_similarity = similar[0].get('similarity', 0.0)
+        # Transform complaints for detector
+        formatted_existing = [{
+            'title': c.title, 'description': c.description, 
+            'lat': getattr(c, 'latitude', 0) or 0, 'lon': getattr(c, 'longitude', 0) or 0,
+            'category': c.predicted_category, 'ward': c.ward,
+            'incident_id': c.incident_id
+        } for c in existing_complaints]
+        
+        incident_id, dup_conf = self.duplicate_detector.detect_duplicates(complaint_data, formatted_existing)
+        
+        is_duplicate = dup_conf > 0.8
+        incident = None
+        
+        if is_duplicate and incident_id:
+            incident = db.query(Incident).filter(Incident.id == incident_id).first()
+            if incident:
+                incident.cluster_size += 1
+                merge_reason = f"Automated merge based on {dup_conf:.2%} confidence score."
+            else:
+                is_duplicate = False
+        
         if not incident:
-            incident = Incident(id=str(uuid.uuid4()), incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}", category=category, ward=complaint_data['ward'], cluster_size=1, priority_score=0.0, priority_label="Low", summary=complaint_data['title'])
+            incident = Incident(
+                id=str(uuid.uuid4()), 
+                incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}", 
+                category=category, 
+                ward=complaint_data['ward'], 
+                cluster_size=1, 
+                priority_score=0.0, 
+                priority_label="Low", 
+                summary=complaint_data['title']
+            )
             db.add(incident)
-        else: incident.cluster_size += 1
-        priority_res = await self.priority.calculate(PriorityRequest(incident_id=incident.id, cluster_size=incident.cluster_size, first_complaint_date=datetime.utcnow().isoformat(), last_complaint_date=datetime.utcnow().isoformat(), category=category, location_hints=[complaint_data['location']]))
+            merge_reason = "New incident created."
+            
+        priority_res = await self.priority.calculate(PriorityRequest(incident_id=incident.id, cluster_size=incident.cluster_size, first_complaint_date=datetime.utcnow().isoformat(), last_complaint_date=datetime.utcnow().isoformat(), category=category, location_hints=[complaint_data.get('location', '')]))
         if incident.priority_score != priority_res.priority_score:
             db.add(PriorityHistory(id=str(uuid.uuid4()), incident_id=incident.id, old_score=incident.priority_score, new_score=priority_res.priority_score, reason="Automatic update"))
         incident.priority_score, incident.priority_label = priority_res.priority_score, priority_res.priority_label
-        new_complaint = Complaint(id=str(uuid.uuid4()), title=complaint_data['title'], description=complaint_data['description'], location=complaint_data['location'], ward=complaint_data['ward'], image_path=complaint_data.get('image_path'), predicted_category=category, confidence=confidence, priority=priority_res.priority_label, incident=incident, similarity_score=new_complaint_similarity if is_duplicate else None, merge_reason=f"Matched with {similar[0]['id']}" if is_duplicate else None, merged_at=datetime.utcnow() if is_duplicate else None)
-        db.add(new_complaint); db.commit(); db.refresh(new_complaint); db.refresh(incident)
-        return {"complaintId": new_complaint.id, "incidentId": incident.id, "predictedCategory": category, "priority": priority_res.priority_label, "confidence": confidence, "duplicate": is_duplicate, "message": "Complaint submitted successfully"}
+        
+        new_complaint = Complaint(
+            id=str(uuid.uuid4()), 
+            title=complaint_data['title'], 
+            description=complaint_data['description'], 
+            location=complaint_data.get('location', ''), 
+            ward=complaint_data['ward'], 
+            predicted_category=category, 
+            confidence=confidence, 
+            incident=incident,
+            merge_reason=merge_reason if is_duplicate else None
+        )
+        db.add(new_complaint)
+        db.commit()
+        db.refresh(new_complaint)
+        db.refresh(incident)
+        
+        return {
+            "complaintId": new_complaint.id, 
+            "incidentId": incident.id, 
+            "predictedCategory": category, 
+            "priority": incident.priority_label, 
+            "confidence": dup_conf if is_duplicate else confidence, 
+            "duplicate": is_duplicate, 
+            "message": "Complaint processed successfully."
+        }

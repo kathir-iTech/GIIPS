@@ -207,26 +207,62 @@ async def get_trend_data():
 
 
 # === Incident Routes ===
+# ... (existing incident_router)
 
-@incident_router.get("")
-async def list_incidents(
-    db: Session = Depends(get_db),
-    priority: Optional[str] = None,
-    category: Optional[str] = None,
-    limit: int = Query(10, ge=1, le=100)
-):
-    """List incidents with optional filters."""
-    service = DashboardService()
-    incidents = await service.get_incidents(db, priority, category, limit)
-    return {"incidents": incidents, "count": len(incidents)}
+# === Incident Intelligence Routes ===
+# ... (existing intelligence_router)
 
+# === Predictive Analytics Routes ===
+# ... (existing prediction_router)
 
-@incident_router.get("/{incident_id}")
-async def get_incident(incident_id: str, db: Session = Depends(get_db)):
-    """Get incident details by ID."""
-    service = DashboardService()
-    incident = await service.get_incident_by_id(db, incident_id)
-    if not incident:
-        raise HTTPException(status_code=404, detail="Incident not found")
-    return incident
+# === Decision Support Routes ===
+# ... (existing decision_router)
+
+# === Governance Copilot Routes ===
+# ... (existing copilot_router)
+
+# === Governance Knowledge Routes ===
+# ... (existing knowledge_router)
+
+# === Auth Routes ===
+
+auth_router = APIRouter(prefix="/auth", tags=["Auth"])
+
+@auth_router.post("/register")
+async def register(user: UserRegister, db: Session = Depends(get_db)):
+    from database import User
+    from auth_service import hash_password
+    hashed_pw = hash_password(user.password)
+    new_user = User(
+        id=str(uuid.uuid4()),
+        full_name=user.full_name,
+        email=user.email,
+        password_hash=hashed_pw,
+        role=user.role,
+        district=user.district,
+        ward=user.ward
+    )
+    db.add(new_user)
+    db.commit()
+    return {"message": "User registered successfully"}
+
+@auth_router.post("/login")
+async def login(user: UserLogin, db: Session = Depends(get_db)):
+    from database import User
+    from auth_service import verify_password, create_access_token
+    db_user = db.query(User).filter(User.email == user.email).first()
+    if not db_user or not verify_password(user.password, db_user.password_hash):
+        raise HTTPException(status_code=401, detail="Invalid credentials")
+    token = create_access_token({"sub": db_user.email, "role": db_user.role})
+    return {"access_token": token, "token_type": "bearer", "role": db_user.role}
+
+@auth_router.get("/me")
+async def get_me(token: str, db: Session = Depends(get_db)):
+    from auth_service import verify_token
+    from database import User
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid token")
+    db_user = db.query(User).filter(User.email == payload["sub"]).first()
+    return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
 

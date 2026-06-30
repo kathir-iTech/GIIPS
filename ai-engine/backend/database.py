@@ -34,6 +34,54 @@ SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 # Declarative base class for models
 Base = declarative_base()
 
+import uuid
+import datetime
+
+# ... (rest of imports)
+
+# Declarative base class for models
+Base = declarative_base()
+
+# Add User Model
+class User(Base):
+    """ORM model representing a platform user."""
+    __tablename__ = "users"
+
+    id = Column(String, primary_key=True, index=True)
+    full_name = Column(String, nullable=False)
+    email = Column(String, unique=True, index=True, nullable=False)
+    phone = Column(String, nullable=True)
+    password_hash = Column(String, nullable=False)
+    district = Column(String, nullable=True)
+    ward = Column(String, nullable=True)
+    role = Column(String, nullable=False) # 'Citizen', 'Officer', 'Executive'
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    last_login = Column(DateTime, nullable=True)
+    status = Column(String, default="active", nullable=False)
+
+# Seed demo users
+def seed_demo_users():
+    from auth_service import hash_password
+    db = SessionLocal()
+    
+    users = [
+        {"full_name": "Government Officer", "email": "officer@giips.gov.in", "role": "Officer", "password": "password123"},
+        {"full_name": "District Collector", "email": "collector@giips.gov.in", "role": "Executive", "password": "password123"}
+    ]
+    
+    for user in users:
+        if not db.query(User).filter(User.email == user["email"]).first():
+            new_user = User(
+                id=str(uuid.uuid4()),
+                full_name=user["full_name"],
+                email=user["email"],
+                password_hash=hash_password(user["password"]),
+                role=user["role"]
+            )
+            db.add(new_user)
+    db.commit()
+    db.close()
+
 # Dependency for database session
 def get_db():
     db = SessionLocal()
@@ -41,6 +89,9 @@ def get_db():
         yield db
     finally:
         db.close()
+
+Base.metadata.create_all(bind=engine)
+seed_demo_users()
 
 
 

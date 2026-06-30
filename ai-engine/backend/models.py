@@ -18,6 +18,8 @@ class ClassifyResponse(BaseModel):
     predicted_category: str
     confidence: float = Field(..., ge=0.0, le=1.0)
     top_predictions: List[Dict[str, Any]]
+    reason: str
+    supporting_factors: List[str]
 
 
 class ComplaintModel(BaseModel):
@@ -154,3 +156,22 @@ class SimilarResult(BaseModel):
 class FindSimilarResponse(BaseModel):
     """Response for finding similar complaints."""
     similar_complaints: List[SimilarResult]
+
+class UserRegister(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    phone: Optional[str] = None
+    district: Optional[str] = None
+    ward: Optional[str] = None
+    role: str = "Citizen"
+
+class UserLogin(BaseModel):
+    email: str
+    password: str
+
+class UserResponse(BaseModel):
+    user_id: str
+    full_name: str
+    email: str
+    role: str
