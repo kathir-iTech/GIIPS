@@ -1,6 +1,6 @@
 import type { DashboardData } from '../types';
 
-const BASE_URL = "http://localhost:8000";
+const BASE_URL = "https://giips.onrender.com";
 
 interface ClassifyPayload {
   text: string;

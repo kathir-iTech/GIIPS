@@ -61,10 +61,10 @@ const Overview = () => {
   };
 
   const priorityChartData = [
-    { label: 'Critical', value: data.criticalIncidents, color: priorityColors.Critical },
-    { label: 'High', value: data.highPriorityIncidents, color: priorityColors.High },
-    { label: 'Medium', value: data.mediumPriorityIncidents, color: priorityColors.Medium },
-    { label: 'Low', value: data.lowPriorityIncidents, color: priorityColors.Low },
+    { label: 'Critical', value: data?.criticalIncidents ?? 0, color: priorityColors.Critical },
+    { label: 'High', value: data?.highPriorityIncidents ?? 0, color: priorityColors.High },
+    { label: 'Medium', value: data?.mediumPriorityIncidents ?? 0, color: priorityColors.Medium },
+    { label: 'Low', value: data?.lowPriorityIncidents ?? 0, color: priorityColors.Low },
   ];
 
   return (
@@ -109,7 +109,7 @@ const Overview = () => {
 
           <div className="chart-card">
             <h3>Category Breakdown</h3>
-            <Plot data={[{ x: data.categoryBreakdown.map(d => d.count), y: data.categoryBreakdown.map(d => d.category), type: 'bar', orientation: 'h', marker: { color: data.categoryBreakdown.map(d => d.color) }, text: data.categoryBreakdown.map(d => d.count), textposition: 'outside' }]}
+            <Plot data={[{ x: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.count), y: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.category), type: 'bar', orientation: 'h', marker: { color: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.color) }, text: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.count), textposition: 'outside' }]}
               layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { t: 20, r: 40, b: 30, l: 120 }, xaxis: { showgrid: true, gridcolor: '#f1f5f9' }, yaxis: { showgrid: false }, height: 280 }}
               config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
           </div>
@@ -118,28 +118,32 @@ const Overview = () => {
         <section className="recent-incidents-card">
           <h3>Recent Incidents</h3>
           <div className="table-container">
-            <table>
-              <thead>
-                <tr>
-                  <th>Incident ID</th>
-                  <th>Category</th>
-                  <th>Ward</th>
-                  <th>Priority</th>
-                  <th>Status</th>
-                </tr>
-              </thead>
-              <tbody>
-                {data.recentIncidents.map((inc: any) => (
-                  <tr key={inc.id}>
-                    <td>{inc.incident_number}</td>
-                    <td>{inc.category}</td>
-                    <td>{inc.ward}</td>
-                    <td><span className={`badge ${inc.priority_label.toLowerCase()}`}>{inc.priority_label}</span></td>
-                    <td>{inc.status}</td>
+            {Array.isArray(data?.recentIncidents) && data.recentIncidents.length > 0 ? (
+              <table>
+                <thead>
+                  <tr>
+                    <th>Incident ID</th>
+                    <th>Category</th>
+                    <th>Ward</th>
+                    <th>Priority</th>
+                    <th>Status</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
+                </thead>
+                <tbody>
+                  {data.recentIncidents.map((inc: any) => (
+                    <tr key={inc.id}>
+                      <td>{inc.incident_number}</td>
+                      <td>{inc.category}</td>
+                      <td>{inc.ward}</td>
+                      <td><span className={`badge ${inc.priority_label?.toLowerCase() ?? 'low'}`}>{inc.priority_label ?? 'N/A'}</span></td>
+                      <td>{inc.status}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            ) : (
+              <p>No recent incidents available.</p>
+            )}
           </div>
         </section>
       </div>
