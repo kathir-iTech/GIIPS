@@ -1,6 +1,28 @@
+# Node
 node_modules/
-.env
+dist/
+.vite/
 
-ai-engine/data/giips.db
+# Environment
+.env
+.env.*
+
+# Python
 __pycache__/
 *.pyc
+.venv/
+venv/
+
+# Database
+ai-engine/data/giips.db
+
+# IDE
+.vscode/
+.idea/
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Logs
+*.log
