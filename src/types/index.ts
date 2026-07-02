@@ -91,18 +91,6 @@ export interface CitizenComplaint {
   similarity_score: number | null;
   merge_reason: string | null;
   date_received: string;
-  incident: {
-    id: string | null;
-    incident_number: string | null;
-    category: string | null;
-    priority_label: string | null;
-    status: string | null;
-    cluster_size: number | null;
-    recommended_action: string | null;
-  } | null;
-}
-
-export interface ComplaintDetail extends CitizenComplaint {
   incident?: {
     id: string | null;
     incident_number: string | null;
@@ -121,3 +109,5 @@ export interface ComplaintDetail extends CitizenComplaint {
     }>;
   } | null;
 }
+
+export interface ComplaintDetail extends CitizenComplaint {}

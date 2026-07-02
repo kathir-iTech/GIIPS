@@ -27,7 +27,7 @@ const CitizenPortal = () => {
     setLoading(true);
     setSubmitError(null);
     try {
-      const response = await api.submitComplaint(formData, token);
+      const response = await api.submitComplaint(formData, token!);
       setResult(response);
     } catch (error: any) {
       setSubmitError(error.message);
