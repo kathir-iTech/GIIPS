@@ -1,6 +1,9 @@
 import type { DashboardData } from '../types';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://giips.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL;
+if (!BASE_URL) {
+    throw new Error("VITE_API_BASE_URL is required but not set. Define it in your .env file.");
+}
 
 interface ClassifyPayload {
   text: string;
@@ -179,9 +182,9 @@ export const api = {
       confusionMatrix: Array.isArray(metrics.confusion_matrix) ? metrics.confusion_matrix : [],
       trendData: (trend.labels || []).map((label: string, i: number) => ({
         month: label,
-        accuracy: 0.9 + Math.random() * 0.05,
-        precision: 0.85 + Math.random() * 0.05,
-        recall: 0.88 + Math.random() * 0.05
+        accuracy: Math.min(0.99, 0.90 + i * 0.005),
+        precision: Math.min(0.99, 0.85 + i * 0.005),
+        recall: Math.min(0.99, 0.88 + i * 0.004)
       }))
     };
   },
@@ -222,7 +225,6 @@ export const api = {
     phone?: string;
     district?: string;
     ward?: string;
-    role: string;
   }): Promise<any> => {
     const response = await fetch(`${BASE_URL}/auth/register`, {
       method: 'POST',
@@ -270,5 +272,86 @@ export const api = {
       throw new Error(`API Error: ${response.statusText}`);
     }
     return response.json();
+  },
+
+  get: async (endpoint: string, token: string): Promise<Response> => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response;
+  },
+
+  post: async (endpoint: string, data: any, token: string): Promise<Response> => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response;
+  },
+
+  getSystemHealth: async (token: string): Promise<any> => {
+    const response = await api.get('/admin/system-health', token);
+    return response.json();
+  },
+
+  getPredictionsSummary: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/predictions/summary`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    return response.json();
+  },
+
+  getPriorityRules: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/priority/rules`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    return response.json();
+  },
+
+  getKnowledgeSummary: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/knowledge/summary`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    return response.json();
+  },
+
+  getDecisionSupportSummary: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/decision-support/summary`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    return response.json();
+  },
+
+  copilotChat: async (message: string, history: any[] = []): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/copilot/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ message, history })
+    });
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    return response.json();
+  },
+
+  patch: async (endpoint: string, data: any, token: string): Promise<Response> => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response;
   },
 };

@@ -12,7 +12,6 @@ const Register = () => {
     phone: '',
     district: '',
     ward: '',
-    role: 'Citizen'
   });
   const [error, setError] = useState('');
   const { register, isLoading } = useAuth();
@@ -89,20 +88,6 @@ const Register = () => {
             </div>
           </div>
 
-          <div className="form-group">
-            <label htmlFor="role">Role</label>
-            <select
-              id="role"
-              value={formData.role}
-              onChange={e => setFormData({ ...formData, role: e.target.value })}
-              disabled={isLoading}
-            >
-              <option value="Citizen">Citizen</option>
-              <option value="Officer">Government Officer</option>
-              <option value="Executive">District Executive</option>
-            </select>
-          </div>
-
           <button type="submit" className="auth-button" disabled={isLoading}>
             {isLoading ? 'Creating Account...' : 'Create Account'}
           </button>
@@ -110,6 +95,7 @@ const Register = () => {
 
         <div className="auth-footer">
           <p>Already have an account? <Link to="/login">Sign in</Link></p>
+          <p><Link to="/citizen-services">Back to Citizen Services</Link></p>
         </div>
       </div>
     </div>

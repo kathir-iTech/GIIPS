@@ -13,11 +13,11 @@ from datetime import datetime
 # === New Submission Schemas ===
 
 class ComplaintCreate(BaseModel):
-    title: str
-    description: str
-    location: str
-    ward: str
-    image_path: Optional[str] = None
+    title: str = Field(..., min_length=1, max_length=200, description="Short title of the complaint")
+    description: str = Field(..., min_length=1, max_length=5000, description="Detailed description of the issue")
+    location: str = Field(..., min_length=1, max_length=500, description="Specific physical location or address")
+    ward: str = Field(..., min_length=1, max_length=100, description="Municipal ward identifier")
+    image_path: Optional[str] = Field(None, description="Optional file path to uploaded image")
 
 class ComplaintSubmissionResponse(BaseModel):
     complaintId: str
@@ -27,6 +27,7 @@ class ComplaintSubmissionResponse(BaseModel):
     confidence: float
     duplicate: bool
     message: str
+    processing_time_ms: float = 0.0
 
 
 class ComplaintBase(BaseModel):

@@ -10,7 +10,6 @@ import IncidentFeed from './pages/IncidentFeed';
 import Landing from './pages/Landing';
 import Methodology from './pages/Methodology';
 import Overview from './pages/Overview';
-import RoleSelection from './pages/RoleSelection';
 import SpatialIntelligence from './pages/SpatialIntelligence';
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -18,6 +17,13 @@ import Unauthorized from './pages/Unauthorized';
 import MyComplaints from './pages/MyComplaints';
 import ComplaintDetail from './pages/ComplaintDetail';
 import CitizenProfile from './pages/CitizenProfile';
+import CitizenServices from './pages/CitizenServices';
+import GovernmentPortal from './pages/GovernmentPortal';
+import OfficerManagement from './pages/OfficerManagement';
+import DepartmentManagement from './pages/DepartmentManagement';
+import SystemHealth from './pages/SystemHealth';
+import AuditLogs from './pages/AuditLogs';
+import Demo from './pages/Demo';
 import { ProtectedRoute, RoleGuard } from './components/ProtectedRoute';
 import './App.css';
 
@@ -27,7 +33,7 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
-const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register'];
+const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/demo'];
 
 function AppLayout() {
   const { user } = useAuth();
@@ -60,10 +66,11 @@ function AnimatedRoutes() {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
-        <Route path="/roles" element={<PageTransition><ProtectedRoute><RoleSelection /></ProtectedRoute></PageTransition>} />
         
         <Route path="/login" element={<PageTransition><AuthRedirect><Login /></AuthRedirect></PageTransition>} />
         <Route path="/register" element={<PageTransition><AuthRedirect><Register /></AuthRedirect></PageTransition>} />
+        <Route path="/citizen-services" element={<PageTransition><AuthRedirect><CitizenServices /></AuthRedirect></PageTransition>} />
+        <Route path="/government-portal" element={<PageTransition><AuthRedirect><GovernmentPortal /></AuthRedirect></PageTransition>} />
         
         <Route path="/citizen" element={
           <PageTransition>
@@ -151,6 +158,41 @@ function AnimatedRoutes() {
         <Route path="/unauthorized" element={
           <PageTransition>
             <Unauthorized />
+          </PageTransition>
+        } />
+
+        <Route path="/demo" element={
+          <PageTransition>
+            <Demo />
+          </PageTransition>
+        } />
+        
+        <Route path="/admin/officers" element={
+          <PageTransition>
+            <RoleGuard allowedRoles={['Executive']}>
+              <OfficerManagement />
+            </RoleGuard>
+          </PageTransition>
+        } />
+        <Route path="/admin/departments" element={
+          <PageTransition>
+            <RoleGuard allowedRoles={['Executive']}>
+              <DepartmentManagement />
+            </RoleGuard>
+          </PageTransition>
+        } />
+        <Route path="/admin/system-health" element={
+          <PageTransition>
+            <RoleGuard allowedRoles={['Executive']}>
+              <SystemHealth />
+            </RoleGuard>
+          </PageTransition>
+        } />
+        <Route path="/admin/audit-logs" element={
+          <PageTransition>
+            <RoleGuard allowedRoles={['Executive']}>
+              <AuditLogs />
+            </RoleGuard>
           </PageTransition>
         } />
       </Routes>

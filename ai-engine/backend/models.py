@@ -164,7 +164,6 @@ class UserRegister(BaseModel):
     phone: Optional[str] = None
     district: Optional[str] = None
     ward: Optional[str] = None
-    role: str = "Citizen"
 
 class UserLogin(BaseModel):
     email: str
@@ -175,3 +174,44 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     role: str
+
+
+class PredictionSummaryResponse(BaseModel):
+    timeframe: str
+    predicted_volume: float = Field(..., ge=0.0)
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    model: str
+    total_incidents: int
+    critical_count: int
+    high_priority_count: int
+    avg_days_open: float
+    recent_escalation_risks: List[Dict[str, Any]]
+    active_alerts: List[Dict[str, Any]]
+
+
+class KnowledgeSummaryResponse(BaseModel):
+    district_risk_index: Optional[int] = None
+    infrastructure_risk_index: Optional[int] = None
+    policy_recommendations: List[Dict[str, Any]]
+    worst_performing_ward: Optional[str] = None
+    root_causes: List[Dict[str, Any]]
+    cascade_chains: List[Dict[str, Any]]
+
+
+class DecisionSupportSummaryResponse(BaseModel):
+    district_rankings: List[Dict[str, Any]]
+    ward_rankings: Dict[str, Any]
+    top_critical_recommendation: Optional[Dict[str, Any]]
+    executive_report: str
+
+
+class CopilotChatRequest(BaseModel):
+    user_id: str
+    message: str
+
+
+class CopilotChatResponse(BaseModel):
+    response: str
+    confidence: float = Field(..., ge=0.0, le=1.0)
+    data_sources: List[str]
+    reasoning: str

@@ -26,7 +26,6 @@ interface RegisterData {
   phone?: string;
   district?: string;
   ward?: string;
-  role: string;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -75,14 +74,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       const response = await api.login(email, password);
       setToken(response.access_token);
-      setUser({
-        user_id: 'temp',
+      let userData: User = {
+        user_id: response.user_id || email,
         full_name: email.split('@')[0],
         email,
         role: response.role
-      });
+      };
+      setUser(userData);
       localStorage.setItem('giips_token', response.access_token);
-      // Navigate after state is committed
+      localStorage.setItem('giips_user', JSON.stringify(userData));
       setTimeout(() => navigateBasedOnRole(response.role), 0);
     } finally {
       setIsLoading(false);

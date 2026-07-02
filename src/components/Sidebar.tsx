@@ -11,11 +11,14 @@ import {
   LogOut,
   User,
   ShieldAlert,
-  LineChart,
   Building2,
   Gauge,
   FileText as FileTextIcon,
-  User as UserIcon
+  User as UserIcon,
+  Settings,
+  Users,
+  Database,
+  FileText as FileTextIcon2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -38,6 +41,13 @@ const EXECUTIVE_NAV = [
   { path: '/methodology', label: 'Methodology', icon: BookOpen },
 ];
 
+const EXECUTIVE_ADMIN = [
+  { path: '/admin/officers', label: 'Officer Management', icon: Users },
+  { path: '/admin/departments', label: 'Department Management', icon: Building2 },
+  { path: '/admin/system-health', label: 'System Health', icon: Database },
+  { path: '/admin/audit-logs', label: 'Audit Logs', icon: FileTextIcon2 },
+];
+
 const CITIZEN_NAV = [
   { path: '/citizen', label: 'Submit Complaint', icon: FileTextIcon },
   { path: '/my-complaints', label: 'My Complaints', icon: UserIcon },
@@ -49,7 +59,7 @@ const Sidebar: React.FC = () => {
 
   const navItems =
     user?.role === 'Executive'
-      ? EXECUTIVE_NAV
+      ? [...EXECUTIVE_NAV, { path: '/admin-divider', label: 'Administration', icon: Settings }, ...EXECUTIVE_ADMIN]
       : user?.role === 'Officer'
         ? OFFICER_NAV
         : user?.role === 'Citizen'
@@ -74,11 +84,16 @@ const Sidebar: React.FC = () => {
         </div>
       </div>
       <nav className="sidebar-nav">
-        {navItems.map(({ path, label, icon: Icon }) => (
-          <NavLink key={path} to={path} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-            <Icon size={20} /> <span>{label}</span>
-          </NavLink>
-        ))}
+        {navItems.map(({ path, label, icon: Icon }) => {
+          if (path === '/admin-divider') {
+            return <div key={path} className="nav-divider">{label}</div>;
+          }
+          return (
+            <NavLink key={path} to={path} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
+              <Icon size={20} /> <span>{label}</span>
+            </NavLink>
+          );
+        })}
       </nav>
       {user ? (
         <button onClick={logout} className="nav-item logout-btn">

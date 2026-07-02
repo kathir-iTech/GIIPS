@@ -12,12 +12,20 @@ class PredictiveEngine:
     def __init__(self):
         pass
 
-    def forecast_complaints(self, timeframe: str) -> Dict[str, Any]:
+    def forecast_complaints(self, timeframe: str, history: Optional[List[int]] = None) -> Dict[str, Any]:
         """Forecast complaint volume using linear extrapolation of historical trend."""
-        # Simulate history: last 5 days
-        history = np.array([10, 12, 15, 14, 18])
+        if history is None:
+            history = [10, 12, 15, 14, 18]
+        history = np.array(history, dtype=float)
+        if len(history) < 2:
+            return {
+                'timeframe': timeframe,
+                'predicted_volume': float(history[-1]) if len(history) else 0.0,
+                'confidence': 0.0,
+                'model': 'linear_trend'
+            }
         x = np.arange(len(history))
-        coeffs = np.polyfit(x, history, 1) # Simple linear trend
+        coeffs = np.polyfit(x, history, 1)
         
         days_ahead = 1 if timeframe == 'tomorrow' else 3
         future_x = np.arange(len(history), len(history) + days_ahead)

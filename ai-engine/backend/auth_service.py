@@ -4,12 +4,15 @@ Authentication service for GIIPS.
 Handles JWT token generation, verification, and password hashing.
 """
 
+import os
 import jwt
 import bcrypt
 from datetime import datetime, timedelta
 from typing import Optional
 
-SECRET_KEY = "giips-secret-key-12345"
+SECRET_KEY = os.environ.get("GIIPS_JWT_SECRET")
+if not SECRET_KEY:
+    raise RuntimeError("GIIPS_JWT_SECRET environment variable is not set. Backend startup aborted.")
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 60
 

@@ -169,14 +169,45 @@ class PriorityHistory(Base):
     reason = Column(Text, nullable=False)
     changed_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
+class AuditLog(Base):
+    """ORM model for audit log entries."""
+    __tablename__ = "audit_logs"
+
+    id = Column(String, primary_key=True, index=True)
+    timestamp = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    user_id = Column(String, nullable=True)
+    user_email = Column(String, nullable=True)
+    role = Column(String, nullable=True)
+    action = Column(String, nullable=False)
+    target = Column(String, nullable=True)
+    details = Column(Text, nullable=True)
+    status = Column(String, default="success", nullable=False)
+    ip_address = Column(String, nullable=True)
+
+class DepartmentMetrics(Base):
+    """ORM model for department-level metrics."""
+    __tablename__ = "department_metrics"
+
+    id = Column(String, primary_key=True, index=True)
+    department = Column(String, nullable=False)
+    open_incidents = Column(Integer, default=0, nullable=False)
+    critical_incidents = Column(Integer, default=0, nullable=False)
+    assigned_officers = Column(Integer, default=0, nullable=False)
+    avg_resolution_time = Column(Float, default=0.0, nullable=False)
+    completion_percentage = Column(Float, default=0.0, nullable=False)
+    workload_indicator = Column(Float, default=0.0, nullable=False)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
 # Seed demo users
 def seed_demo_users():
     from auth_service import hash_password
     db = SessionLocal()
     
     users = [
-        {"full_name": "Government Officer", "email": "officer@giips.gov.in", "role": "Officer", "password": "password123"},
         {"full_name": "District Collector", "email": "collector@giips.gov.in", "role": "Executive", "password": "password123"},
+        {"full_name": "Government Officer - Roads", "email": "officer1@giips.gov.in", "role": "Officer", "password": "password123"},
+        {"full_name": "Government Officer - Water", "email": "officer2@giips.gov.in", "role": "Officer", "password": "password123"},
+        {"full_name": "Government Officer - Sanitation", "email": "officer3@giips.gov.in", "role": "Officer", "password": "password123"},
         {"full_name": "Demo Citizen", "email": "citizen@giips.gov.in", "role": "Citizen", "password": "password123"}
     ]
     

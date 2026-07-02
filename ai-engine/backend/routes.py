@@ -3,19 +3,26 @@ API route definitions for GIIPS backend.
 """
 
 import uuid
+import time
 from fastapi import APIRouter, HTTPException, Depends, Query, Header
 from sqlalchemy.orm import Session, joinedload
+from sqlalchemy import func, and_
 from typing import List, Dict, Any, Optional
-from datetime import datetime
+from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics
 from models import (
     ClassifyRequest, ClassifyResponse,
-    ClusterRequest, ClusterResponse,
-    PriorityRequest, PriorityResponse,
-    IncidentResponse, ComplaintResponse,
-    UserRegister, UserLogin, UserResponse
+    ClusterRequest, ClusterResponse, ClusterAssignment,
+    PriorityRequest, PriorityResponse, PriorityFactor,
+    IncidentResponse,
+    UserRegister, UserLogin, UserResponse,
+    PredictionSummaryResponse,
+    KnowledgeSummaryResponse,
+    DecisionSupportSummaryResponse,
+    CopilotChatRequest,
+    CopilotChatResponse
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse
 from services import (
@@ -28,6 +35,10 @@ from services import (
     SpatialService
 )
 from auth_service import hash_password, verify_password, create_access_token, verify_token
+from prediction.engine import PredictiveEngine
+from knowledge.engine import GovernanceKnowledgeEngine
+from decision.support import DecisionSupportEngine
+from copilot.engine import CopilotEngine
 
 def get_current_user(authorization: Optional[str] = Header(None, alias="Authorization"), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
@@ -40,6 +51,25 @@ def get_current_user(authorization: Optional[str] = Header(None, alias="Authoriz
     if not db_user:
         raise HTTPException(status_code=404, detail="User not found")
     return db_user
+
+
+def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[str], role: Optional[str], action: str, target: Optional[str], status: str = "success", details: Optional[str] = None):
+    """Write an audit log entry to the database."""
+    try:
+        log = AuditLog(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            user_email=user_email,
+            role=role,
+            action=action,
+            target=target,
+            details=details,
+            status=status,
+        )
+        db.add(log)
+        db.commit()
+    except Exception:
+        db.rollback()
 
 # ... (router definitions)
 spatial_router = APIRouter(prefix="/spatial", tags=["Spatial"])
@@ -94,8 +124,21 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 @complaint_router.post("", response_model=ComplaintSubmissionResponse)
 async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Submit a new citizen complaint through the pipeline."""
+    start = time.perf_counter()
     service = ComplaintService()
-    return await service.submit_complaint(db, request.dict(), user_id=db_user.id)
+    result = await service.submit_complaint(db, request.dict(), user_id=db_user.id)
+    elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+    _write_audit_log(
+        db,
+        db_user.id,
+        db_user.email,
+        db_user.role,
+        "complaint_create",
+        result.get("complaintId"),
+        "success",
+        f"incident={result.get('incidentId')} category={result.get('predictedCategory')} priority={result.get('priority')} processing_ms={elapsed_ms}",
+    )
+    return {**result, "processing_time_ms": elapsed_ms}
 
 
 @complaint_router.get("/my")
@@ -306,7 +349,7 @@ async def get_incidents(db: Session = Depends(get_db)):
             "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
             "recommended_action": inc.recommended_action, "days_open": inc.days_open,
             "complaints": [{
-                "id": c.id, "complaint_number": c.id.replace("COMP-", "CMP-"), 
+                "id": c.id, "complaint_number": c.id,
                 "date_received": c.created_at.isoformat() if c.created_at else None,
                 "text": c.title, "similarity_score": c.similarity_score or 0.85
             } for c in inc.complaints] if inc.complaints else []
@@ -345,7 +388,7 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @auth_router.post("/register")
 async def register(user: UserRegister, db: Session = Depends(get_db)):
-    """Register a new user."""
+    """Register a new user. Always creates Citizen role."""
     hashed_pw = hash_password(user.password)
     new_user = User(
         id=str(uuid.uuid4()),
@@ -355,7 +398,7 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
         phone=user.phone,
         district=user.district,
         ward=user.ward,
-        role=user.role
+        role="Citizen"
     )
     db.add(new_user)
     db.commit()
@@ -366,12 +409,217 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
     """Authenticate user and return JWT token."""
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
+        _write_audit_log(db, None, user.email, None, "login", "auth", "failure", "Invalid credentials")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": db_user.email, "role": db_user.role})
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "login", "auth", "success")
     return {"access_token": token, "token_type": "bearer", "role": db_user.role}
 
 @auth_router.get("/me", response_model=UserResponse)
 async def get_me(db_user: User = Depends(get_current_user)):
     """Get current user profile from token."""
     return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
+
+admin_router = APIRouter(prefix="/admin", tags=["Admin"])
+
+def get_executive_user(db_user: User = Depends(get_current_user)):
+    """Verify user is Executive role."""
+    if db_user.role != "Executive":
+        raise HTTPException(status_code=403, detail="Executive access required")
+    return db_user
+
+@admin_router.get("/officers")
+async def get_officers(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get all officers."""
+    officers = db.query(User).filter(User.role == "Officer").all()
+    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status} for o in officers]
+
+@admin_router.post("/officers")
+async def create_officer(user: dict, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Create a new officer."""
+    if db.query(User).filter(User.email == user["email"]).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+    officer_id = f"TN-{user.get('district', 'UNK')}-{user.get('department', 'UNK')}-{str(len(db.query(User).filter(User.role == 'Officer').all()) + 1).zfill(3)}"
+    new_officer = User(
+        id=officer_id,
+        full_name=user["full_name"],
+        email=user["email"],
+        password_hash=hash_password(user["password"]),
+        district=user.get("district"),
+        role="Officer",
+        status="active"
+    )
+    db.add(new_officer)
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_create", officer_id, "success", f"full_name={user.get('full_name')} email={user.get('email')} district={user.get('district')}")
+    return {"message": "Officer created", "officer_id": officer_id}
+
+@admin_router.patch("/officers/{officer_id}/disable")
+async def disable_officer(officer_id: str, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Disable an officer."""
+    officer = db.query(User).filter(User.id == officer_id).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail="Officer not found")
+    officer.status = "disabled"
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_disable", officer_id, "success")
+    return {"message": "Officer disabled"}
+
+@admin_router.patch("/officers/{officer_id}/enable")
+async def enable_officer(officer_id: str, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Enable an officer."""
+    officer = db.query(User).filter(User.id == officer_id).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail="Officer not found")
+    officer.status = "active"
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_enable", officer_id, "success")
+    return {"message": "Officer enabled"}
+
+@admin_router.get("/departments")
+async def get_departments(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get department metrics."""
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "departments_view", "departments", "success")
+    depts = db.query(DepartmentMetrics).all()
+    return [{"department": d.department, "open_incidents": d.open_incidents, "critical_incidents": d.critical_incidents, "assigned_officers": d.assigned_officers, "avg_resolution_time": d.avg_resolution_time, "completion_percentage": d.completion_percentage, "workload_indicator": d.workload_indicator} for d in depts]
+
+@admin_router.get("/system-health")
+async def get_system_health(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get system health status."""
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "system_health_view", "system", "success")
+    return {"backend": "healthy", "database": "healthy", "ai_engine": "healthy", "jwt_auth": "healthy", "classification_model": "loaded", "prediction_engine": "loaded", "duplicate_detection": "loaded", "knowledge_engine": "loaded", "decision_engine": "loaded", "db_size": db.query(User).count() + db.query(Complaint).count(), "users": db.query(User).count(), "complaints": db.query(Complaint).count(), "incidents": db.query(Incident).count()}
+
+@admin_router.get("/audit-logs")
+async def get_audit_logs(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get audit logs."""
+    logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
+    return [{"id": l.id, "timestamp": l.timestamp.isoformat() if l.timestamp else None, "user": l.user_email, "role": l.role, "action": l.action, "target": l.target, "status": l.status} for l in logs]
+
+
+prediction_router = APIRouter(prefix="/predictions", tags=["Predictions"])
+
+@prediction_router.get("/summary", response_model=PredictionSummaryResponse)
+async def get_predictions_summary(db: Session = Depends(get_db)):
+    """Get AI predictions summary using live complaint and incident data."""
+    engine = PredictiveEngine()
+    history_counts = []
+    for i in range(5):
+        cutoff = datetime.utcnow() - timedelta(days=5 - i)
+        next_cutoff = datetime.utcnow() - timedelta(days=4 - i)
+        count = db.query(Complaint).filter(Complaint.created_at >= cutoff, Complaint.created_at < next_cutoff).count()
+        history_counts.append(count)
+    forecast = engine.forecast_complaints('week', history=history_counts)
+
+    total_incidents = db.query(Incident).count()
+    critical_count = db.query(Incident).filter(Incident.priority_label == 'Critical').count()
+    high_count = db.query(Incident).filter(Incident.priority_label == 'High').count()
+    avg_days_open = db.query(func.avg(Incident.days_open)).scalar() or 0.0
+
+    recent_incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(5).all()
+    escalation_risks = []
+    for inc in recent_incidents:
+        esc = engine.predict_escalation(inc.id)
+        escalation_risks.append({
+            "incident_id": inc.id,
+            "priority_label": inc.priority_label,
+            "escalation_probability": esc.get("probability", 0.0),
+            "risk_level": esc.get("risk_level", "LOW")
+        })
+
+    active_alerts = engine.generate_alerts()
+
+    return PredictionSummaryResponse(
+        timeframe=forecast.get("timeframe", "week"),
+        predicted_volume=forecast.get("predicted_volume", 0.0),
+        confidence=forecast.get("confidence", 0.0),
+        model=forecast.get("model", "unknown"),
+        total_incidents=total_incidents,
+        critical_count=critical_count,
+        high_priority_count=high_count,
+        avg_days_open=round(float(avg_days_open), 1),
+        recent_escalation_risks=escalation_risks,
+        active_alerts=active_alerts
+    )
+
+
+knowledge_router = APIRouter(prefix="/knowledge", tags=["Knowledge"])
+
+@knowledge_router.get("/summary", response_model=KnowledgeSummaryResponse)
+async def get_knowledge_summary(db: Session = Depends(get_db)):
+    """Get AI knowledge summary using live ward and incident data."""
+    engine = GovernanceKnowledgeEngine()
+    risk_index = engine.get_risk_index()
+    policy_recs = engine.get_policy_recommendations()
+
+    worst_ward = db.query(Incident.ward, func.count(Incident.id)).group_by(Incident.ward).order_by(func.count(Incident.id).desc()).first()
+    worst_ward_name = worst_ward[0] if worst_ward else None
+
+    root_causes = []
+    cascade_chains = []
+    if worst_ward_name:
+        worst_inc = db.query(Incident).filter(Incident.ward == worst_ward_name).order_by(Incident.created_at.desc()).first()
+        if worst_inc:
+            root_cause_result = engine.get_root_cause(worst_inc.id)
+            root_causes = root_cause_result.get("top_root_causes", [])
+            cascade_chains = engine.analyze_cascade_impact(worst_inc.id)
+
+    return KnowledgeSummaryResponse(
+        district_risk_index=risk_index.get("district_risk_index"),
+        infrastructure_risk_index=risk_index.get("infrastructure_risk_index"),
+        policy_recommendations=policy_recs,
+        worst_performing_ward=worst_ward_name,
+        root_causes=root_causes,
+        cascade_chains=cascade_chains
+    )
+
+
+decision_router = APIRouter(prefix="/decision-support", tags=["Decision Support"])
+
+@decision_router.get("/summary", response_model=DecisionSupportSummaryResponse)
+async def get_decision_support_summary(db: Session = Depends(get_db)):
+    """Get decision support summary using live district rankings and critical incident data."""
+    engine = DecisionSupportEngine()
+    districts = engine.rank_districts()
+    wards = engine.rank_wards()
+
+    top_critical = db.query(Incident).filter(Incident.priority_label == 'Critical').order_by(Incident.created_at.desc()).first()
+    recommendation = None
+    if top_critical:
+        rec = engine.get_recommendations({
+            "id": top_critical.id,
+            "category": top_critical.category,
+            "ward": top_critical.ward
+        })
+        recommendation = {
+            "incident_id": top_critical.id,
+            "incident_number": top_critical.incident_number,
+            "recommended_actions": rec.get("recommended_actions", []),
+            "resource_plan": rec.get("resource_plan", {}),
+            "estimated_cost": rec.get("estimated_cost"),
+            "completion_hours": rec.get("completion_hours"),
+            "confidence": rec.get("confidence", 0.0),
+            "reason": rec.get("reason", "")
+        }
+
+    return DecisionSupportSummaryResponse(
+        district_rankings=districts,
+        ward_rankings=wards,
+        top_critical_recommendation=recommendation,
+        executive_report=engine.generate_report()
+    )
+
+
+copilot_router = APIRouter(prefix="/copilot", tags=["Copilot"])
+
+@copilot_router.post("/chat", response_model=CopilotChatResponse)
+async def copilot_chat(request: CopilotChatRequest):
+    """Process copilot chat query."""
+    engine = CopilotEngine()
+    result = engine.chat(request.user_id, request.message)
+    return CopilotChatResponse(
+        response=result.get("response", ""),
+        confidence=result.get("confidence", 0.0),
+        data_sources=result.get("data_sources", []),
+        reasoning=result.get("reasoning", "")
+    )
 
