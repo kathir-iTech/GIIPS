@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo, Fragment } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
@@ -20,12 +20,8 @@ const IncidentFeed = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    // Note: getIncidents in api.ts currently has a signature that is not fully implemented 
-    // to support sortField in the request to the backend, but we use the returned list.
     api.getIncidents(sortField)
       .then((data: any) => {
-        // If the backend returns data in a wrapper or a different format, we adapt here.
-        // Based on previous tasks, backend Incidents typically match the Incident type.
         setAllIncidents(data || []);
       })
       .catch(err => setError(err.message))
@@ -136,8 +132,17 @@ const IncidentFeed = () => {
               </tr>
             </thead>
             <tbody>
-              {pagedIncidents.map(incident => (
-                <Fragment key={incident.id}>
+              {pagedIncidents.length === 0 ? (
+                <tr className="empty-row">
+                  <td colSpan={9}>
+                    <div className="empty-state">
+                      <AlertCircle size={32} />
+                      <p>No incidents match your current filters.</p>
+                    </div>
+                  </td>
+                </tr>
+              ) : (
+                pagedIncidents.map(incident => (
                   <tr key={incident.id} className={`incident-row priority-${incident.priority_label?.toLowerCase()}`} onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>
                     <td className="expand-cell">{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
                     <td className="incident-id">{incident.incident_number}</td>
@@ -147,47 +152,47 @@ const IncidentFeed = () => {
                     <td className="days-cell">{incident.days_open}d</td>
                     <td className="score-cell"><span className="score-badge">{incident.priority_score}</span></td>
                     <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || 'Low'}</span></td>
-                    <td className="action-cell">{incident.recommended_action}</td>
+                    <td className="action-cell" title={incident.recommended_action}>{incident.recommended_action}</td>
                   </tr>
-                  {expandedId === incident.id && (
-                    <tr className="expanded-row">
-                      <td colSpan={9}>
-                        <div className="expanded-content">
-                          <div className="expanded-left">
-                            <div className="detail-block">
-                              <h4>Summary</h4>
-                              <p>{incident.summary}</p>
-                            </div>
-                            <div className="detail-block">
-                              <h4>Clustering Reasoning</h4>
-                              <p className="reasoning">
-                                {incident.complaints && incident.complaints.length > 0 && incident.complaints[0]?.similarity_score 
-                                  ? `Complaints clustered with ${(incident.complaints[0].similarity_score * 100).toFixed(0)}% average similarity.` 
-                                  : 'Clustering based on semantic similarity of reported issues.'}
-                              </p>
-                            </div>
-                          </div>
-                          <div className="expanded-right">
-                            <h4>Linked Complaints ({incident.complaints?.length || 0})</h4>
-                            <div className="complaints-list">
-                              {(incident.complaints?.slice(0, 5) ?? []).map(c => (
-                                <div key={c.id} className="complaint-item">
-                                  <div className="complaint-header">
-                                    <span className="complaint-id">{c.complaint_number}</span>
-                                    <span className="complaint-date">{c.date_received}</span>
-                                    <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{(c.similarity_score || 0 * 100).toFixed(0)}%</span></div>
-                                  </div>
-                                  <p className="complaint-text">{c.text}</p>
-                                </div>
-                              ))}
-                              {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">+{incident.complaints.length - 5} more complaints</div>}
-                            </div>
-                          </div>
+                ))
+              )}
+              {expandedId && pagedIncidents.map(incident => expandedId === incident.id && (
+                <tr key={`expanded-${incident.id}`} className="expanded-row">
+                  <td colSpan={9}>
+                    <div className="expanded-content">
+                      <div className="expanded-left">
+                        <div className="detail-block">
+                          <h4>Summary</h4>
+                          <p>{incident.summary}</p>
                         </div>
-                      </td>
-                    </tr>
-                  )}
-                </Fragment>
+                        <div className="detail-block">
+                          <h4>Clustering Reasoning</h4>
+                          <p className="reasoning">
+                            {incident.complaints && incident.complaints.length > 0 && incident.complaints[0]?.similarity_score
+                              ? `Complaints clustered with ${(incident.complaints[0].similarity_score * 100).toFixed(0)}% average similarity.`
+                              : 'Clustering based on semantic similarity of reported issues.'}
+                          </p>
+                        </div>
+                      </div>
+                      <div className="expanded-right">
+                        <h4>Linked Complaints ({incident.complaints?.length || 0})</h4>
+                        <div className="complaints-list">
+                          {(incident.complaints?.slice(0, 5) ?? []).map(c => (
+                            <div key={c.id} className="complaint-item">
+                              <div className="complaint-header">
+                                <span className="complaint-id">{c.complaint_number}</span>
+                                <span className="complaint-date">{c.date_received}</span>
+                                <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{((c.similarity_score || 0) * 100).toFixed(0)}%</span></div>
+                              </div>
+                              <p className="complaint-text">{c.text}</p>
+                            </div>
+                          ))}
+                          {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">+{incident.complaints.length - 5} more complaints</div>}
+                        </div>
+                      </div>
+                    </div>
+                  </td>
+                </tr>
               ))}
             </tbody>
           </table>

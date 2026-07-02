@@ -26,13 +26,17 @@ const Overview = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    setLoading(true);
     api.getDashboardData()
-      .then((res: any) => setData(res))
+      .then((res: any) => {
+        if (!cancelled) setData(res);
+      })
       .catch(err => {
-        console.error('Failed to fetch dashboard data:', err);
-        setError('Using offline mode - Data unavailable.');
-        // Setting mock data as a graceful fallback
-        setData({
+        if (!cancelled) {
+          console.error('Failed to fetch dashboard data:', err);
+          setError('Using offline mode — Data unavailable.');
+          setData({
             totalComplaints: 0,
             uniqueIncidents: 0,
             workloadReduction: 0,
@@ -44,10 +48,13 @@ const Overview = () => {
             categoryBreakdown: [],
             wardBreakdown: [],
             recentIncidents: []
-        });
-        setLoading(false);
+          });
+        }
       })
-      .finally(() => setLoading(false));
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading dashboard...</span></div>;
@@ -66,6 +73,10 @@ const Overview = () => {
     { label: 'Medium', value: data?.mediumPriorityIncidents ?? 0, color: priorityColors.Medium },
     { label: 'Low', value: data?.lowPriorityIncidents ?? 0, color: priorityColors.Low },
   ];
+
+  const hasTrend = data.trendData && data.trendData.length > 0;
+  const hasCategory = data.categoryBreakdown && data.categoryBreakdown.length > 0;
+  const hasRecent = data.recentIncidents && data.recentIncidents.length > 0;
 
   return (
     <div className="overview-page">
@@ -109,16 +120,20 @@ const Overview = () => {
 
           <div className="chart-card">
             <h3>Category Breakdown</h3>
-            <Plot data={[{ x: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.count), y: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.category), type: 'bar', orientation: 'h', marker: { color: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.color) }, text: (Array.isArray(data?.categoryBreakdown) ? data.categoryBreakdown : []).map(d => d.count), textposition: 'outside' }]}
-              layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { t: 20, r: 40, b: 30, l: 120 }, xaxis: { showgrid: true, gridcolor: '#f1f5f9' }, yaxis: { showgrid: false }, height: 280 }}
-              config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
+            {hasCategory ? (
+              <Plot data={[{ x: data.categoryBreakdown.map(d => d.count), y: data.categoryBreakdown.map(d => d.category), type: 'bar', orientation: 'h', marker: { color: data.categoryBreakdown.map(d => d.color) }, text: data.categoryBreakdown.map(d => d.count), textposition: 'outside' }]}
+                layout={{ paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', margin: { t: 20, r: 40, b: 30, l: 120 }, xaxis: { showgrid: true, gridcolor: '#f1f5f9' }, yaxis: { showgrid: false }, height: 280 }}
+                config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
+            ) : (
+              <div className="empty-chart">No category data available.</div>
+            )}
           </div>
         </section>
         
         <section className="recent-incidents-card">
           <h3>Recent Incidents</h3>
           <div className="table-container">
-            {Array.isArray(data?.recentIncidents) && data.recentIncidents.length > 0 ? (
+            {hasRecent ? (
               <table>
                 <thead>
                   <tr>

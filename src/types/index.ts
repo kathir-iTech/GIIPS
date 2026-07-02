@@ -78,3 +78,46 @@ export interface ClusterDetail {
 
 export type SortDirection = 'asc' | 'desc';
 export type SortField = 'priority_score' | 'cluster_size' | 'days_open' | 'category' | 'incident_number' | 'ward';
+
+export interface CitizenComplaint {
+  id: string;
+  title: string;
+  description: string;
+  location: string;
+  ward: string;
+  predicted_category: string;
+  confidence: number;
+  priority: string;
+  similarity_score: number | null;
+  merge_reason: string | null;
+  date_received: string;
+  incident: {
+    id: string | null;
+    incident_number: string | null;
+    category: string | null;
+    priority_label: string | null;
+    status: string | null;
+    cluster_size: number | null;
+    recommended_action: string | null;
+  } | null;
+}
+
+export interface ComplaintDetail extends CitizenComplaint {
+  incident?: {
+    id: string | null;
+    incident_number: string | null;
+    category: string | null;
+    priority_label: string | null;
+    status: string | null;
+    cluster_size: number | null;
+    recommended_action: string | null;
+    summary: string | null;
+    priority_history: Array<{
+      id: string;
+      old_score: number;
+      new_score: number;
+      reason: string;
+      changed_at: string;
+    }>;
+  } | null;
+}

@@ -9,10 +9,14 @@
   --bg-app: #fcfcfd;
   --bg-card: rgba(255, 255, 255, 0.8);
   --bg-glass: rgba(255, 255, 255, 0.6);
+  --bg-white: #ffffff;
+  --bg-border: #e2e8f0;
   --border-subtle: rgba(0, 0, 0, 0.08);
   
   --primary-900: #0f172a;
   --primary-600: #334155;
+  --primary-100: #e2e8f0;
+  --primary-200: #cbd5e1;
   
   --text-primary: #0f172a;
   --text-secondary: #475569;
@@ -27,6 +31,7 @@
   --radius-lg: 16px;
   
   --sidebar-width: 260px;
+  --bg-gray: #f1f5f9;
   font-family: 'Inter', system-ui, -apple-system, sans-serif;
   font-size: 14px;
   line-height: 1.5;

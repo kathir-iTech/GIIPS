@@ -1,6 +1,6 @@
 import type { DashboardData } from '../types';
 
-const BASE_URL = "https://giips.onrender.com";
+const BASE_URL = import.meta.env.VITE_API_BASE_URL || "https://giips.onrender.com";
 
 interface ClassifyPayload {
   text: string;
@@ -17,6 +17,14 @@ interface PriorityPayload {
 interface SimilarPayload {
   text: string;
 }
+
+const safeJson = async (response: Response) => {
+  try {
+    return await response.json();
+  } catch {
+    return {};
+  }
+};
 
 export const api = {
   getDashboardData: async (): Promise<DashboardData> => {
@@ -75,16 +83,16 @@ export const api = {
     return response.json();
   },
 
-  submitComplaint: async (payload: any): Promise<any> => {
+  submitComplaint: async (payload: any, token: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/complaints`, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
       body: JSON.stringify(payload),
     });
-    
-    // Always parse the response, as FastAPI returns JSON even on errors
-    const data = await response.json().catch(() => ({}));
-    
+    const data = await safeJson(response);
     if (!response.ok) {
       throw new Error(data.detail || response.statusText || 'Submission failed');
     }
@@ -93,27 +101,35 @@ export const api = {
 
   getHeatmap: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/heatmap`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   getHotspots: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/hotspots`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   getForecast: async (days: number): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/forecast?days=${days}`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   getRiskAnalysis: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/risk`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   simulateResources: async (additional_teams: number): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/simulate?additional_teams=${additional_teams}`, { method: 'POST' });
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
 
   getIncidents: async (sortField?: string): Promise<any[]> => {
-    const response = await fetch(`${BASE_URL}/incidents`);
+    const url = sortField
+      ? `${BASE_URL}/incidents?sort=${encodeURIComponent(sortField)}`
+      : `${BASE_URL}/incidents`;
+    const response = await fetch(url);
     if (!response.ok) {
       throw new Error(`API Error: ${response.statusText}`);
     }
@@ -142,17 +158,26 @@ export const api = {
     const metrics = await metricsRes.json();
     const trend = await trendRes.json();
 
+    const accuracy = metrics.model_accuracy ?? 0;
+    const precision = metrics.model_precision ?? 0;
+    const recall = metrics.model_recall ?? 0;
+
+    const f1Score =
+      precision + recall > 0
+        ? (2 * precision * recall) / (precision + recall)
+        : 0;
+
     return {
-      accuracy: metrics.model_accuracy / 100,
-      precision: metrics.model_precision / 100,
-      recall: metrics.model_recall / 100,
-      f1Score: (metrics.model_accuracy + metrics.model_precision) / 200, 
-      datasetSize: 1000,
-      modelType: 'Fine-tuned BERT with Custom Classification Head',
-      categories: ['Road Infrastructure', 'Water Supply', 'Waste Management', 'Sanitation', 'Street Lighting', 'Public Works'],
-      categoryDistribution: [], 
-      confusionMatrix: [], 
-      trendData: trend.labels.map((label: string, i: number) => ({
+      accuracy: accuracy / 100,
+      precision: precision / 100,
+      recall: recall / 100,
+      f1Score,
+      datasetSize: metrics.dataset_size ?? 1000,
+      modelType: metrics.model_type || 'Fine-tuned BERT with Custom Classification Head',
+      categories: metrics.categories || ['Road Infrastructure', 'Water Supply', 'Waste Management', 'Sanitation', 'Street Lighting', 'Public Works'],
+      categoryDistribution: Array.isArray(metrics.category_distribution) ? metrics.category_distribution : [],
+      confusionMatrix: Array.isArray(metrics.confusion_matrix) ? metrics.confusion_matrix : [],
+      trendData: (trend.labels || []).map((label: string, i: number) => ({
         month: label,
         accuracy: 0.9 + Math.random() * 0.05,
         precision: 0.85 + Math.random() * 0.05,
@@ -163,14 +188,87 @@ export const api = {
   
   getExecutiveSummary: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/executive/summary`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   getWardHealth: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/executive/ward-health`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
     return response.json();
   },
   getDeptWorkload: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/executive/department-workload`);
+    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    return response.json();
+  },
+
+  login: async (email: string, password: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/login`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ email, password })
+    });
+    if (!response.ok) {
+      const error = await safeJson(response);
+      throw new Error(error.detail || 'Login failed');
+    }
+    return response.json();
+  },
+
+  register: async (data: {
+    full_name: string;
+    email: string;
+    password: string;
+    phone?: string;
+    district?: string;
+    ward?: string;
+    role: string;
+  }): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/register`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await safeJson(response);
+      throw new Error(error.detail || 'Registration failed');
+    }
+    return response.json();
+  },
+
+  getMe: async (token: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/me`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error('Failed to fetch user profile');
+    }
+    return response.json();
+  },
+
+  getMyComplaints: async (token: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/my`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  getComplaintDetail: async (complaintId: string, token: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
     return response.json();
   },
 };

@@ -1,0 +1,402 @@
+{
+  "totalComplaints": 10000,
+  "uniqueIncidents": 150,
+  "workloadReduction": 85.0,
+  "criticalIncidents": 16,
+  "highPriorityIncidents": 37,
+  "mediumPriorityIncidents": 68,
+  "lowPriorityIncidents": 29,
+  "categoryBreakdown": [
+    {
+      "category": "Drainage",
+      "count": 1437,
+      "color": "#10b981"
+    },
+    {
+      "category": "Electricity",
+      "count": 1448,
+      "color": "#eab308"
+    },
+    {
+      "category": "Garbage",
+      "count": 1397,
+      "color": "#8b5cf6"
+    },
+    {
+      "category": "Public Health",
+      "count": 1439,
+      "color": "#06b6d4"
+    },
+    {
+      "category": "Roads",
+      "count": 1325,
+      "color": "#ef4444"
+    },
+    {
+      "category": "Streetlights",
+      "count": 1401,
+      "color": "#f59e0b"
+    },
+    {
+      "category": "Water Supply",
+      "count": 1553,
+      "color": "#3b82f6"
+    }
+  ],
+  "wardBreakdown": [
+    {
+      "ward": "Ward 1",
+      "count": 533
+    },
+    {
+      "ward": "Ward 10",
+      "count": 524
+    },
+    {
+      "ward": "Ward 11",
+      "count": 471
+    },
+    {
+      "ward": "Ward 12",
+      "count": 520
+    },
+    {
+      "ward": "Ward 13",
+      "count": 471
+    },
+    {
+      "ward": "Ward 14",
+      "count": 483
+    },
+    {
+      "ward": "Ward 15",
+      "count": 505
+    },
+    {
+      "ward": "Ward 16",
+      "count": 478
+    },
+    {
+      "ward": "Ward 17",
+      "count": 474
+    },
+    {
+      "ward": "Ward 18",
+      "count": 546
+    },
+    {
+      "ward": "Ward 19",
+      "count": 492
+    },
+    {
+      "ward": "Ward 2",
+      "count": 528
+    },
+    {
+      "ward": "Ward 20",
+      "count": 538
+    },
+    {
+      "ward": "Ward 3",
+      "count": 459
+    },
+    {
+      "ward": "Ward 4",
+      "count": 439
+    },
+    {
+      "ward": "Ward 5",
+      "count": 535
+    },
+    {
+      "ward": "Ward 6",
+      "count": 495
+    },
+    {
+      "ward": "Ward 7",
+      "count": 500
+    },
+    {
+      "ward": "Ward 8",
+      "count": 475
+    },
+    {
+      "ward": "Ward 9",
+      "count": 534
+    }
+  ],
+  "recentIncidents": [
+    {
+      "id": "INC-000150",
+      "incident_number": "INC-000150",
+      "category": "Drainage",
+      "ward": "Ward 1",
+      "priority_score": 65.5,
+      "priority_label": "Critical",
+      "status": "in-progress",
+      "summary": "Cluster of drainage complaints in Ward 1",
+      "days_open": 14,
+      "recommended_action": "Deploy maintenance crew to address drainage"
+    },
+    {
+      "id": "INC-000149",
+      "incident_number": "INC-000149",
+      "category": "Drainage",
+      "ward": "Ward 7",
+      "priority_score": 59.3,
+      "priority_label": "Medium",
+      "status": "in-progress",
+      "summary": "Cluster of drainage complaints in Ward 7",
+      "days_open": 1,
+      "recommended_action": "Deploy maintenance crew to address drainage"
+    },
+    {
+      "id": "INC-000148",
+      "incident_number": "INC-000148",
+      "category": "Garbage",
+      "ward": "Ward 14",
+      "priority_score": 38.9,
+      "priority_label": "High",
+      "status": "in-progress",
+      "summary": "Cluster of garbage complaints in Ward 14",
+      "days_open": 4,
+      "recommended_action": "Deploy maintenance crew to address garbage"
+    },
+    {
+      "id": "INC-000147",
+      "incident_number": "INC-000147",
+      "category": "Garbage",
+      "ward": "Ward 13",
+      "priority_score": 45.0,
+      "priority_label": "Medium",
+      "status": "in-progress",
+      "summary": "Cluster of garbage complaints in Ward 13",
+      "days_open": 11,
+      "recommended_action": "Deploy maintenance crew to address garbage"
+    },
+    {
+      "id": "INC-000146",
+      "incident_number": "INC-000146",
+      "category": "Public Health",
+      "ward": "Ward 9",
+      "priority_score": 49.0,
+      "priority_label": "High",
+      "status": "open",
+      "summary": "Cluster of public health complaints in Ward 9",
+      "days_open": 27,
+      "recommended_action": "Deploy maintenance crew to address public health"
+    },
+    {
+      "id": "INC-000145",
+      "incident_number": "INC-000145",
+      "category": "Roads",
+      "ward": "Ward 4",
+      "priority_score": 51.4,
+      "priority_label": "Low",
+      "status": "in-progress",
+      "summary": "Cluster of roads complaints in Ward 4",
+      "days_open": 1,
+      "recommended_action": "Deploy maintenance crew to address roads"
+    },
+    {
+      "id": "INC-000144",
+      "incident_number": "INC-000144",
+      "category": "Streetlights",
+      "ward": "Ward 11",
+      "priority_score": 86.9,
+      "priority_label": "High",
+      "status": "open",
+      "summary": "Cluster of streetlights complaints in Ward 11",
+      "days_open": 9,
+      "recommended_action": "Deploy maintenance crew to address streetlights"
+    },
+    {
+      "id": "INC-000143",
+      "incident_number": "INC-000143",
+      "category": "Roads",
+      "ward": "Ward 7",
+      "priority_score": 92.0,
+      "priority_label": "Critical",
+      "status": "in-progress",
+      "summary": "Cluster of roads complaints in Ward 7",
+      "days_open": 14,
+      "recommended_action": "Deploy maintenance crew to address roads"
+    },
+    {
+      "id": "INC-000142",
+      "incident_number": "INC-000142",
+      "category": "Public Health",
+      "ward": "Ward 19",
+      "priority_score": 78.9,
+      "priority_label": "High",
+      "status": "in-progress",
+      "summary": "Cluster of public health complaints in Ward 19",
+      "days_open": 2,
+      "recommended_action": "Deploy maintenance crew to address public health"
+    },
+    {
+      "id": "INC-000141",
+      "incident_number": "INC-000141",
+      "category": "Electricity",
+      "ward": "Ward 8",
+      "priority_score": 77.2,
+      "priority_label": "Medium",
+      "status": "resolved",
+      "summary": "Cluster of electricity complaints in Ward 8",
+      "days_open": 28,
+      "recommended_action": "Deploy maintenance crew to address electricity"
+    }
+  ],
+  "trendData": [
+    {
+      "date": "2026-07-01",
+      "complaints": 97,
+      "incidents": 21
+    },
+    {
+      "date": "2026-06-30",
+      "complaints": 86,
+      "incidents": 11
+    },
+    {
+      "date": "2026-06-29",
+      "complaints": 92,
+      "incidents": 13
+    },
+    {
+      "date": "2026-06-28",
+      "complaints": 114,
+      "incidents": 24
+    },
+    {
+      "date": "2026-06-27",
+      "complaints": 146,
+      "incidents": 13
+    },
+    {
+      "date": "2026-06-26",
+      "complaints": 118,
+      "incidents": 10
+    },
+    {
+      "date": "2026-06-25",
+      "complaints": 82,
+      "incidents": 12
+    },
+    {
+      "date": "2026-06-24",
+      "complaints": 123,
+      "incidents": 16
+    },
+    {
+      "date": "2026-06-23",
+      "complaints": 101,
+      "incidents": 15
+    },
+    {
+      "date": "2026-06-22",
+      "complaints": 108,
+      "incidents": 12
+    },
+    {
+      "date": "2026-06-21",
+      "complaints": 109,
+      "incidents": 10
+    },
+    {
+      "date": "2026-06-20",
+      "complaints": 148,
+      "incidents": 25
+    },
+    {
+      "date": "2026-06-19",
+      "complaints": 113,
+      "incidents": 10
+    },
+    {
+      "date": "2026-06-18",
+      "complaints": 127,
+      "incidents": 25
+    },
+    {
+      "date": "2026-06-17",
+      "complaints": 124,
+      "incidents": 13
+    },
+    {
+      "date": "2026-06-16",
+      "complaints": 130,
+      "incidents": 24
+    },
+    {
+      "date": "2026-06-15",
+      "complaints": 145,
+      "incidents": 21
+    },
+    {
+      "date": "2026-06-14",
+      "complaints": 126,
+      "incidents": 17
+    },
+    {
+      "date": "2026-06-13",
+      "complaints": 96,
+      "incidents": 19
+    },
+    {
+      "date": "2026-06-12",
+      "complaints": 85,
+      "incidents": 14
+    },
+    {
+      "date": "2026-06-11",
+      "complaints": 84,
+      "incidents": 16
+    },
+    {
+      "date": "2026-06-10",
+      "complaints": 126,
+      "incidents": 25
+    },
+    {
+      "date": "2026-06-09",
+      "complaints": 99,
+      "incidents": 25
+    },
+    {
+      "date": "2026-06-08",
+      "complaints": 131,
+      "incidents": 19
+    },
+    {
+      "date": "2026-06-07",
+      "complaints": 102,
+      "incidents": 15
+    },
+    {
+      "date": "2026-06-06",
+      "complaints": 85,
+      "incidents": 16
+    },
+    {
+      "date": "2026-06-05",
+      "complaints": 147,
+      "incidents": 19
+    },
+    {
+      "date": "2026-06-04",
+      "complaints": 93,
+      "incidents": 13
+    },
+    {
+      "date": "2026-06-03",
+      "complaints": 83,
+      "incidents": 23
+    },
+    {
+      "date": "2026-06-02",
+      "complaints": 116,
+      "incidents": 17
+    }
+  ]
+}

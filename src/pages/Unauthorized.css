@@ -1,0 +1,53 @@
+.unauthorized-page {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bg-app);
+  padding: 40px 20px;
+}
+
+.unauthorized-card {
+  text-align: center;
+  max-width: 420px;
+  width: 100%;
+  background: var(--bg-card);
+  border: 1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  padding: 48px 32px;
+  box-shadow: var(--shadow-lg);
+}
+
+.unauthorized-icon {
+  color: #dc2626;
+  margin-bottom: 20px;
+}
+
+.unauthorized-card h1 {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 12px 0;
+}
+
+.unauthorized-card p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0 0 28px 0;
+  line-height: 1.6;
+}
+
+.back-link {
+  display: inline-block;
+  padding: 10px 20px;
+  background: var(--primary-900);
+  color: white;
+  text-decoration: none;
+  border-radius: var(--radius-sm);
+  font-weight: 600;
+  font-size: 14px;
+}
+
+.back-link:hover {
+  background: var(--primary-600);
+}

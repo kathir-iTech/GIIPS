@@ -22,6 +22,7 @@ Outputs:
     - duplicate_clusters.json (saved to ai-engine/outputs/)
 """
 
+from .engine import DuplicateDetector
 from .utils import (
     UnionFind,
     load_metadata_file,
@@ -35,6 +36,8 @@ from .utils import (
 )
 
 __all__ = [
+    # Main classes
+    'DuplicateDetector',
     # Utilities
     'UnionFind',
     'load_metadata_file',

@@ -22,7 +22,13 @@
 }
 
 @media (max-width: 1024px) {
-  .main-content {
+  .app-layout .main-content {
     margin-left: 72px;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-layout .main-content {
+    margin-left: 0;
   }
 }

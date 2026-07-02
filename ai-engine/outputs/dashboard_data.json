@@ -1,24 +1,50 @@
 {
-  "total_complaints": 100,
-  "unique_incidents": 15,
-  "workload_reduction": 85.0,
-  "critical_incidents": 3,
-  "high_priority_incidents": 5,
-  "medium_priority_incidents": 4,
-  "low_priority_incidents": 3,
-  "category_distribution": [
-    {"category": "Road Infrastructure", "count": 30},
-    {"category": "Water Supply", "count": 25},
-    {"category": "Waste Management", "count": 20},
-    {"category": "Street Lighting", "count": 15},
-    {"category": "Sanitation", "count": 10}
+  "totalComplaints": 10000,
+  "uniqueIncidents": 150,
+  "workloadReduction": 85.0,
+  "criticalIncidents": 16,
+  "highPriorityIncidents": 37,
+  "mediumPriorityIncidents": 68,
+  "lowPriorityIncidents": 29,
+  "categoryBreakdown": [
+    {"category": "Drainage", "count": 1437, "color": "#10b981"},
+    {"category": "Electricity", "count": 1448, "color": "#eab308"},
+    {"category": "Garbage", "count": 1397, "color": "#8b5cf6"},
+    {"category": "Public Health", "count": 1439, "color": "#06b6d4"},
+    {"category": "Roads", "count": 1325, "color": "#ef4444"},
+    {"category": "Streetlights", "count": 1401, "color": "#f59e0b"},
+    {"category": "Water Supply", "count": 1553, "color": "#3b82f6"}
   ],
-  "priority_distribution": {
-    "Critical": 3,
-    "High": 5,
-    "Medium": 4,
-    "Low": 3
-  },
-  "avg_days_open": 5.2,
-  "avg_priority_score": 68.5
+  "wardBreakdown": [
+    {"ward": "Ward 1", "count": 179},
+    {"ward": "Ward 2", "count": 188},
+    {"ward": "Ward 3", "count": 150},
+    {"ward": "Ward 4", "count": 81},
+    {"ward": "Ward 5", "count": 125},
+    {"ward": "Ward 6", "count": 121},
+    {"ward": "Ward 7", "count": 198},
+    {"ward": "Ward 8", "count": 82},
+    {"ward": "Ward 9", "count": 90},
+    {"ward": "Ward 10", "count": 171},
+    {"ward": "Ward 11", "count": 85},
+    {"ward": "Ward 12", "count": 198},
+    {"ward": "Ward 13", "count": 85},
+    {"ward": "Ward 4", "count": 95},
+    {"ward": "Ward 5", "count": 106},
+    {"ward": "Ward 6", "count": 80},
+    {"ward": "Ward 7", "count": 188},
+    {"ward": "Ward 8", "count": 184},
+    {"ward": "Ward 19", "count": 102},
+    {"ward": "Ward 20", "count": 112}
+  ],
+  "recentIncidents": [
+    {"id": "INC-000150", "incident_number": "INC-000150", "category": "Drainage", "ward": "Ward 4", "cluster_size": 10, "priority_score": 65.2, "priority_label": "Medium", "status": "open", "days_open": 22, "recommended_action": "Deploy maintenance crew to address drainage", "summary": "Cluster of drainage complaints in Ward 4"},
+    {"id": "INC-000149", "incident_number": "INC-000149", "category": "Roads", "ward": "Ward 10", "cluster_size": 15, "priority_score": 72.5, "priority_label": "High", "status": "open", "days_open": 15, "recommended_action": "Deploy maintenance crew to address roads", "summary": "Cluster of roads complaints in Ward 10"},
+    {"id": "INC-000148", "incident_number": "INC-000148", "category": "Garbage", "ward": "Ward 19", "cluster_size": 8, "priority_score": 58.3, "priority_label": "Medium", "status": "open", "days_open": 8, "recommended_action": "Deploy maintenance crew to address garbage", "summary": "Cluster of garbage complaints in Ward 19"}
+  ],
+  "trendData": [
+    {"date": "2026-07-01", "complaints": 100, "incidents": 15},
+    {"date": "2026-06-30", "complaints": 100, "incidents": 15},
+    {"date": "2026-06-29", "complaints": 100, "incidents": 15}
+  ]
 }

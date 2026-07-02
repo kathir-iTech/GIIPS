@@ -2,18 +2,20 @@
 API route definitions for GIIPS backend.
 """
 
-from fastapi import APIRouter, HTTPException, Depends, Query
-from sqlalchemy.orm import Session
+import uuid
+from fastapi import APIRouter, HTTPException, Depends, Query, Header
+from sqlalchemy.orm import Session, joinedload
 from typing import List, Dict, Any, Optional
 from datetime import datetime
 from pydantic import BaseModel
 
-from database import get_db
+from database import get_db, User, Incident
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse,
     PriorityRequest, PriorityResponse,
-    IncidentResponse, ComplaintResponse
+    IncidentResponse, ComplaintResponse,
+    UserRegister, UserLogin, UserResponse
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse
 from services import (
@@ -25,6 +27,19 @@ from services import (
     DecisionService,
     SpatialService
 )
+from auth_service import hash_password, verify_password, create_access_token, verify_token
+
+def get_current_user(authorization: Optional[str] = Header(None, alias="Authorization"), db: Session = Depends(get_db)) -> User:
+    if not authorization or not authorization.startswith("Bearer "):
+        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
+    token = authorization.split(" ")[1]
+    payload = verify_token(token)
+    if not payload:
+        raise HTTPException(status_code=401, detail="Invalid or expired token")
+    db_user = db.query(User).filter(User.email == payload["sub"]).first()
+    if not db_user:
+        raise HTTPException(status_code=404, detail="User not found")
+    return db_user
 
 # ... (router definitions)
 spatial_router = APIRouter(prefix="/spatial", tags=["Spatial"])
@@ -77,10 +92,83 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 # === Complaint Submission Routes ===
 
 @complaint_router.post("", response_model=ComplaintSubmissionResponse)
-async def submit_complaint(request: ComplaintCreate, db: Session = Depends(get_db)):
+async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Submit a new citizen complaint through the pipeline."""
     service = ComplaintService()
-    return await service.submit_complaint(db, request.dict())
+    return await service.submit_complaint(db, request.dict(), user_id=db_user.id)
+
+
+@complaint_router.get("/my")
+async def get_my_complaints(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get complaints for the current authenticated user."""
+    complaints = db.query(Complaint).filter(Complaint.user_id == db_user.id).order_by(Complaint.created_at.desc()).all()
+    result = []
+    for c in complaints:
+        incident = db.query(Incident).filter(Incident.id == c.incident_id).first() if c.incident_id else None
+        result.append({
+            "id": c.id,
+            "title": c.title,
+            "description": c.description,
+            "location": c.location,
+            "ward": c.ward,
+            "predicted_category": c.predicted_category,
+            "confidence": c.confidence,
+            "priority": c.priority,
+            "similarity_score": c.similarity_score,
+            "merge_reason": c.merge_reason,
+            "date_received": c.created_at.isoformat() if c.created_at else None,
+            "incident": {
+                "id": incident.id if incident else None,
+                "incident_number": incident.incident_number if incident else None,
+                "category": incident.category if incident else None,
+                "priority_label": incident.priority_label if incident else None,
+                "status": incident.status if incident else None,
+                "cluster_size": incident.cluster_size if incident else None,
+                "recommended_action": incident.recommended_action if incident else None,
+            } if incident else None
+        })
+    return {"complaints": result}
+
+
+@complaint_router.get("/{complaint_id}")
+async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get a single complaint detail for the current user."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    incident = db.query(Incident).options(joinedload(Incident.priority_history)).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
+    return {
+        "id": complaint.id,
+        "title": complaint.title,
+        "description": complaint.description,
+        "location": complaint.location,
+        "ward": complaint.ward,
+        "predicted_category": complaint.predicted_category,
+        "confidence": complaint.confidence,
+        "priority": complaint.priority,
+        "similarity_score": complaint.similarity_score,
+        "merge_reason": complaint.merge_reason,
+        "date_received": complaint.created_at.isoformat() if complaint.created_at else None,
+        "incident": {
+            "id": incident.id if incident else None,
+            "incident_number": incident.incident_number if incident else None,
+            "category": incident.category if incident else None,
+            "priority_label": incident.priority_label if incident else None,
+            "status": incident.status if incident else None,
+            "cluster_size": incident.cluster_size if incident else None,
+            "recommended_action": incident.recommended_action if incident else None,
+            "summary": incident.summary if incident else None,
+            "priority_history": [
+                {
+                    "id": ph.id,
+                    "old_score": ph.old_score,
+                    "new_score": ph.new_score,
+                    "reason": ph.reason,
+                    "changed_at": ph.changed_at.isoformat() if ph.changed_at else None,
+                } for ph in incident.priority_history
+            ] if incident else [],
+        } if incident else None
+    }
 
 
 # === Classification Routes ===
@@ -108,7 +196,7 @@ class PredictCategoryRequest(BaseModel):
 async def predict_category(request: PredictCategoryRequest):
     """Alias for classify endpoint."""
     service = ClassificationService()
-    return await service.classify(ClassifyRequest(text=request.get('text', '')))
+    return await service.classify(ClassifyRequest(text=request.text))
 
 
 # === Clustering Routes ===
@@ -206,8 +294,35 @@ async def get_trend_data():
     }
 
 
-# === Incident Routes ===
-# ... (existing incident_router)
+@incident_router.get("")
+async def get_incidents(db: Session = Depends(get_db)):
+    """Get all incidents."""
+    incidents = db.query(Incident).options(joinedload(Incident.complaints)).all()
+    result = []
+    for inc in incidents:
+        inc_dict = {
+            "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
+            "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
+            "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
+            "recommended_action": inc.recommended_action, "days_open": inc.days_open,
+            "complaints": [{
+                "id": c.id, "complaint_number": c.id.replace("COMP-", "CMP-"), 
+                "date_received": c.created_at.isoformat() if c.created_at else None,
+                "text": c.title, "similarity_score": c.similarity_score or 0.85
+            } for c in inc.complaints] if inc.complaints else []
+        }
+        result.append(inc_dict)
+    return {"incidents": result}
+
+
+@incident_router.get("/{incident_id}")
+async def get_incident(incident_id: str, db: Session = Depends(get_db)):
+    """Get incident by ID."""
+    service = DashboardService()
+    incident = service.get_incident_by_id(db, incident_id)
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    return incident
 
 # === Incident Intelligence Routes ===
 # ... (existing intelligence_router)
@@ -230,39 +345,33 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @auth_router.post("/register")
 async def register(user: UserRegister, db: Session = Depends(get_db)):
-    from database import User
-    from auth_service import hash_password
+    """Register a new user."""
     hashed_pw = hash_password(user.password)
     new_user = User(
         id=str(uuid.uuid4()),
         full_name=user.full_name,
         email=user.email,
         password_hash=hashed_pw,
-        role=user.role,
+        phone=user.phone,
         district=user.district,
-        ward=user.ward
+        ward=user.ward,
+        role=user.role
     )
     db.add(new_user)
     db.commit()
-    return {"message": "User registered successfully"}
+    return {"message": "User registered successfully", "user_id": new_user.id}
 
 @auth_router.post("/login")
 async def login(user: UserLogin, db: Session = Depends(get_db)):
-    from database import User
-    from auth_service import verify_password, create_access_token
+    """Authenticate user and return JWT token."""
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": db_user.email, "role": db_user.role})
     return {"access_token": token, "token_type": "bearer", "role": db_user.role}
 
-@auth_router.get("/me")
-async def get_me(token: str, db: Session = Depends(get_db)):
-    from auth_service import verify_token
-    from database import User
-    payload = verify_token(token)
-    if not payload:
-        raise HTTPException(status_code=401, detail="Invalid token")
-    db_user = db.query(User).filter(User.email == payload["sub"]).first()
+@auth_router.get("/me", response_model=UserResponse)
+async def get_me(db_user: User = Depends(get_current_user)):
+    """Get current user profile from token."""
     return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
 

@@ -25,15 +25,34 @@ const Clusters = () => {
   useEffect(() => {
     if (selectedId) {
       setDetailLoading(true);
-      api.getClusterDetail(selectedId).then(setClusterDetail).finally(() => setDetailLoading(false));
+      setError(null);
+      api.getClusterDetail(selectedId)
+        .then(setClusterDetail)
+        .catch(err => setError(err.message))
+        .finally(() => setDetailLoading(false));
     }
   }, [selectedId]);
 
   if (loading) return <div className="page-loading">Loading cluster data...</div>;
-  if (error) return <div className="page-error">Error: {error}</div>;
+  if (error && !clusterDetail) return <div className="page-error">Error: {error}</div>;
 
   const complaints = clusterDetail?.complaints ?? [];
   const avgSimilarity = complaints.length > 0 ? complaints.reduce((sum, c) => sum + (c.similarity_score || 0), 0) / complaints.length : 0;
+
+  const sankeyData = useMemo(() => {
+    const maxNodes = Math.min(complaints.length, 5);
+    const labels = [clusterDetail?.incident_number || 'Incident', ...complaints.slice(0, maxNodes).map(c => c.complaint_number)];
+    const colors = ['#1e293b', ...Array(maxNodes).fill('#0369a1')];
+    const source = Array(maxNodes).fill(0);
+    const target = Array.from({ length: maxNodes }, (_, i) => i + 1);
+    const values = complaints.slice(0, maxNodes).map(c => Math.max(c.similarity_score || 0.01, 0.01));
+
+    return {
+      type: 'sankey',
+      node: { label: labels, color: colors, pad: 20, thickness: 20 },
+      link: { source, target, value: values }
+    };
+  }, [clusterDetail, complaints]);
 
   return (
     <div className="clusters-page">
@@ -44,6 +63,8 @@ const Clusters = () => {
             {(incidents ?? []).map(i => <option key={i.id} value={i.id}>{i.incident_number} - {i.category}</option>)}
           </select>
         </div>
+
+        {error && <div className="page-error">Failed to load cluster detail: {error}</div>}
 
         {detailLoading ? <div className="page-loading">Refreshing cluster details...</div> : clusterDetail && (
           <div className="cluster-content">
@@ -61,36 +82,40 @@ const Clusters = () => {
             <section className="cluster-main">
               <div className="card">
                 <h3>Clustering Visualization</h3>
-                <Plot
-                  data={[{
-                    type: 'sankey',
-                    node: { label: [clusterDetail.incident_number, ...complaints.slice(0, 5).map(c => c.complaint_number)], color: ['#1e293b', '#0369a1', '#0369a1', '#0369a1', '#0369a1', '#0369a1'], pad: 20, thickness: 20 },
-                    link: { source: [0, 0, 0, 0, 0], target: [1, 2, 3, 4, 5], value: complaints.slice(0, 5).map(c => c.similarity_score || 0) }
-                  }]}
-                  layout={{ paper_bgcolor: 'transparent', margin: { t: 20, r: 20, b: 20, l: 20 }, height: 250 }}
-                  config={{ displayModeBar: false, responsive: true }}
-                  style={{ width: '100%' }}
-                />
+                {complaints.length > 0 ? (
+                  <Plot
+                    data={[sankeyData]}
+                    layout={{ paper_bgcolor: 'transparent', margin: { t: 20, r: 20, b: 20, l: 20 }, height: 250 }}
+                    config={{ displayModeBar: false, responsive: true }}
+                    style={{ width: '100%' }}
+                  />
+                ) : (
+                  <div className="empty-chart">No complaints linked to this cluster for visualization.</div>
+                )}
               </div>
               <div className="card">
                 <h3>AI Reasoning</h3>
-                <p>{clusterDetail.clusterReasoning}</p>
+                <p>{clusterDetail.clusterReasoning ?? 'No AI reasoning available for this cluster.'}</p>
               </div>
             </section>
 
             <section className="card">
               <h3>Complaint Timeline</h3>
-              <div className="timeline">
-                {complaints.map((c, i) => (
-                  <div key={c.id} className="timeline-item">
-                    <div className="timeline-marker">{i + 1}</div>
-                    <div className="timeline-content">
-                      <strong>{c.complaint_number}</strong>
-                      <p>{c.text}</p>
+              {complaints.length > 0 ? (
+                <div className="timeline">
+                  {complaints.map((c, i) => (
+                    <div key={c.id} className="timeline-item">
+                      <div className="timeline-marker">{i + 1}</div>
+                      <div className="timeline-content">
+                        <strong>{c.complaint_number}</strong>
+                        <p>{c.text}</p>
+                      </div>
                     </div>
-                  </div>
-                ))}
-              </div>
+                  ))}
+                </div>
+              ) : (
+                <div className="empty-state">No complaints in timeline.</div>
+              )}
             </section>
           </div>
         )}

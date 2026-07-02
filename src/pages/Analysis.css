@@ -20,6 +20,9 @@
 .metric-title { font-size: 13px; font-weight: 500; color: #64748b; text-transform: uppercase; letter-spacing: 0.3px; }
 .metric-indicator { width: 8px; height: 8px; border-radius: 50%; }
 .metric-indicator.excellent { background: #16a34a; }
+.metric-indicator.good { background: #3b82f6; }
+.metric-indicator.warning { background: #eab308; }
+.metric-indicator.poor { background: #dc2626; }
 .metric-card.primary .metric-value { font-size: 36px; font-weight: 700; color: #1e293b; line-height: 1; display: block; margin-bottom: 12px; }
 .metric-desc { font-size: 12px; color: #94a3b8; margin: 0; line-height: 1.5; }
 

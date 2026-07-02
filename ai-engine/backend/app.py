@@ -134,7 +134,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router
+from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router
 
 app.include_router(classify_router)
 app.include_router(cluster_router)
@@ -144,8 +144,7 @@ app.include_router(incident_router)
 app.include_router(complaint_router)
 app.include_router(executive_router)
 app.include_router(spatial_router)
-
-app.include_router(executive_router)
+app.include_router(auth_router)
 
 
 # === Request/Response Models ===

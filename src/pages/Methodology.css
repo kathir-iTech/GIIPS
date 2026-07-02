@@ -41,6 +41,7 @@
 .pipeline-badge { background: #dbeafe; color: #1e40af; font-size: 12px; font-weight: 600; padding: 4px 12px; border-radius: 20px; }
 .pipeline-visual { display: flex; gap: 12px; flex-wrap: wrap; }
 .pipeline-stage { flex: 1; min-width: 220px; background: #f8fafc; border-radius: 10px; padding: 20px; border: 1px solid #f1f5f9; }
+@media (max-width: 640px) { .pipeline-stage { min-width: 160px; padding: 14px; } .stage-icon { width: 32px; height: 32px; } .stage-content h3 { font-size: 13px; } }
 .stage-icon { width: 40px; height: 40px; background: linear-gradient(135deg, #1e293b, #334155); border-radius: 8px; display: flex; align-items: center; justify-content: center; color: white; margin-bottom: 16px; }
 .stage-content h3 { font-size: 14px; font-weight: 600; color: #1e293b; margin: 0 0 10px 0; }
 .stage-content p { font-size: 12px; color: #64748b; line-height: 1.6; margin: 0 0 14px 0; }

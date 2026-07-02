@@ -22,7 +22,6 @@ const ExecutiveDashboard = () => {
       setWorkload(work);
     }).catch(err => {
       console.error('Failed to fetch dashboard data:', err);
-      // Fallback data to prevent crashing
       setData({ criticalIncidentCount: 0, workloadReduction: 0, worstPerformingWard: 'N/A', topRecommendation: 'System operational with limited data.' });
       setHealth([{ ward: 'N/A', healthScore: 0 }]);
       setWorkload([{ department: 'N/A', activeIncidents: 0 }]);
@@ -73,7 +72,11 @@ const ExecutiveDashboard = () => {
           </div>
           <div className="card glass-card alert-panel">
             <h3><ShieldAlert size={18} /> Active Alerts</h3>
-            <div className="alert-row">Critical infrastructure failure in Ward 4 - Response active.</div>
+            {data.criticalIncidentCount > 0 ? (
+              <p>{data.criticalIncidentCount} critical incident{data.criticalIncidentCount > 1 ? 's' : ''} currently active across the district. Immediate attention recommended.</p>
+            ) : (
+              <p>No critical alerts at this time.</p>
+            )}
           </div>
         </div>
       </section>

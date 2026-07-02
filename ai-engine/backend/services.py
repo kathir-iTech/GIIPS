@@ -19,6 +19,7 @@ from database import SessionLocal, Complaint, Incident, PriorityHistory
 from classification.train import ComplaintClassifier
 from clustering.cluster import ComplaintClusterer
 from priority.priority import PriorityEngine
+from duplicate_detection.engine import DuplicateDetector
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -151,6 +152,13 @@ class DashboardService:
         priority_dist = {label: count for label, count in priority_counts}
         cat_dist = db.query(Complaint.predicted_category, func.count(Complaint.id)).group_by(Complaint.predicted_category).all()
         category_breakdown = [{"category": cat or "Unknown", "count": count} for cat, count in cat_dist]
+        recent = db.query(Incident).order_by(Incident.created_at.desc()).limit(10).all()
+        recent_incidents = [{
+            "id": i.id, "incident_number": i.incident_number, "category": i.category,
+            "ward": i.ward, "priority_score": i.priority_score, 
+            "priority_label": i.priority_label, "status": i.status,
+            "summary": i.summary, "days_open": i.days_open, "recommended_action": i.recommended_action
+        } for i in recent]
         return {
             "totalComplaints": total_complaints,
             "uniqueIncidents": total_incidents,
@@ -161,6 +169,7 @@ class DashboardService:
             "lowPriorityIncidents": priority_dist.get('Low', 0),
             "categoryBreakdown": category_breakdown,
             "priorityDistribution": priority_dist,
+            "recentIncidents": recent_incidents
         }
     async def get_incidents(self, db, priority: Optional[str] = None, category: Optional[str] = None, limit: int = 10) -> List[Incident]:
         query = db.query(Incident)
@@ -191,11 +200,11 @@ class DecisionService:
 
 class SpatialService:
     async def get_heatmap(self, db) -> List[Dict[str, Any]]:
-        data = db.query(Complaint.ward, func.count(Complaint.id)).group_by(Complaint.ward).all()
-        return [{"ward": w, "count": c} for w, c in data]
+        data = db.query(Complaint.ward, Complaint.latitude, Complaint.longitude, func.count(Complaint.id)).group_by(Complaint.ward).all()
+        return [{"ward": w, "count": c, "latitude": lat, "longitude": lon} for w, lat, lon, c in data if lat and lon]
     async def get_hotspots(self, db) -> List[Dict[str, Any]]:
         wards = await self.get_heatmap(db)
-        return [{"ward": w["ward"], "growth": 15.5, "severity": "High"} for w in wards]
+        return [{"ward": w["ward"], "latitude": w.get("latitude", 12.0), "longitude": w.get("longitude", 78.0), "count": w["count"], "growth": 15.5, "severity": "High"} for w in wards]
     async def get_forecast(self, days: int) -> List[Dict[str, Any]]:
         return [{"date": (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d"), "forecast": 10 + i} for i in range(days)]
     async def get_risk_analysis(self, db) -> List[Dict[str, Any]]:
@@ -210,7 +219,7 @@ class ComplaintService:
         self.duplicate_detector = DuplicateDetector()
         self.priority = PriorityService()
 
-    async def submit_complaint(self, db, complaint_data: Dict[str, Any]) -> Dict[str, Any]:
+    async def submit_complaint(self, db, complaint_data: Dict[str, Any], user_id: Optional[str] = None) -> Dict[str, Any]:
         # 1. Classify
         classify_res = await self.classifier.classify(ClassifyRequest(text=complaint_data['title'], detail=complaint_data['description']))
         category, confidence = classify_res.predicted_category, classify_res.confidence
@@ -266,7 +275,8 @@ class ComplaintService:
             predicted_category=category, 
             confidence=confidence, 
             incident=incident,
-            merge_reason=merge_reason if is_duplicate else None
+            merge_reason=merge_reason if is_duplicate else None,
+            user_id=user_id
         )
         db.add(new_complaint)
         db.commit()

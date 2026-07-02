@@ -11,3 +11,5 @@
 .timeline-item { position: relative; margin-bottom: 24px; }
 .timeline-marker { position: absolute; left: -40px; top: 0; width: 32px; height: 32px; background: var(--primary-900); color: white; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-weight: 700; }
 .timeline-content { background: var(--primary-100); padding: 20px; border-radius: var(--radius-md); }
+@media (max-width: 1024px) { .cluster-stats-row { grid-template-columns: repeat(2, 1fr); } .cluster-main { grid-template-columns: 1fr; } }
+@media (max-width: 640px) { .cluster-stats-row { grid-template-columns: 1fr; } .page-content { padding: 16px; } .cluster-header-section { padding: 24px; } }
