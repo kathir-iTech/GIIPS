@@ -13,3 +13,4 @@ bcrypt>=4.1.2
 passlib[bcrypt]>=1.7.4
 # sentence-transformers>=3.0.1
 # torch>=2.3.0
+geopy>=2.4.1
