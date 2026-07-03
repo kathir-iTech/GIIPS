@@ -10,8 +10,6 @@
 .hero-os { position: relative; z-index: 10; text-align: center; padding: 120px 20px; }
 .badge { display: inline-block; padding: 6px 16px; background: rgba(59, 130, 246, 0.2); border: 1px solid rgba(59, 130, 246, 0.4); border-radius: 20px; font-size: 12px; color: #60a5fa; margin-bottom: 20px; }
 .hero-os h1 { font-size: 64px; max-width: 900px; margin: 0 auto 20px; }
-@media (max-width: 768px) { .hero-os h1 { font-size: 36px; } .glass-nav { padding: 16px 24px; } .preview-box { width: 95%; height: 280px; } .btn-main { padding: 12px 24px; } }
-@media (max-width: 480px) { .hero-os h1 { font-size: 28px; } .hero-os p { font-size: 16px; } .preview-box { width: 100%; height: 220px; } }
 .hero-os p { font-size: 20px; color: #94a3b8; margin-bottom: 40px; }
 .hero-actions { display: flex; gap: 16px; justify-content: center; flex-wrap: wrap; }
 .btn-main { background: #3b82f6; color: white; padding: 16px 32px; border-radius: 12px; text-decoration: none; font-weight: 600; transition: all 0.2s; display: inline-flex; align-items: center; gap: 8px; }
@@ -24,3 +22,32 @@
 .red { background: #ef4444; } .yellow { background: #eab308; } .green { background: #22c55e; }
 .mock-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; height: 300px; }
 .mock-card { background: rgba(255,255,255,0.05); border-radius: 8px; }
+.brand { font-size: 20px; font-weight: 800; letter-spacing: -0.5px; }
+.nav-links { display: flex; gap: 24px; }
+.nav-link { color: #94a3b8; text-decoration: none; font-size: 14px; font-weight: 500; transition: color 0.2s; }
+.nav-link:hover { color: white; }
+
+@media (max-width: 768px) {
+  .hero-os h1 { font-size: 36px; }
+  .glass-nav { padding: 16px 20px; }
+  .preview-box { width: 95%; height: 280px; }
+  .btn-main { padding: 12px 24px; }
+  .mock-grid { grid-template-columns: 1fr; }
+  .blob-1 { width: 260px; height: 260px; top: -80px; left: -80px; }
+  .blob-2 { width: 200px; height: 200px; bottom: -40px; right: 60px; }
+  .blob-3 { width: 180px; height: 180px; top: 140px; right: -30px; }
+}
+
+@media (max-width: 480px) {
+  .hero-os h1 { font-size: 28px; }
+  .hero-os p { font-size: 16px; }
+  .preview-box { width: 100%; height: 220px; }
+  .glass-nav { padding: 14px 16px; }
+  .nav-links { gap: 16px; }
+  .nav-link { font-size: 13px; }
+  .brand { font-size: 18px; }
+  .mock-grid { grid-template-columns: 1fr; height: 240px; }
+  .blob-1 { width: 200px; height: 200px; top: -60px; left: -60px; }
+  .blob-2 { width: 160px; height: 160px; bottom: -30px; right: 40px; }
+  .blob-3 { width: 140px; height: 140px; top: 100px; right: -20px; }
+}
