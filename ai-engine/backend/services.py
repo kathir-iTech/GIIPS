@@ -5,12 +5,15 @@ Handles business logic and model interactions.
 
 import json
 import sys
+import logging
 from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import uuid
 from sqlalchemy import func, and_
 from sqlalchemy.orm import joinedload
+
+logger = logging.getLogger(__name__)
 
 # Add parent to path
 sys.path.insert(0, str(Path(__file__).parent.parent))
@@ -20,6 +23,11 @@ from classification.train import ComplaintClassifier
 from clustering.cluster import ComplaintClusterer
 from priority.priority import PriorityEngine
 from duplicate_detection.engine import DuplicateDetector
+_AI_DEPS_AVAILABLE = True
+try:
+    import sentence_transformers  # noqa: F401
+except ImportError:
+    _AI_DEPS_AVAILABLE = False
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -216,29 +224,36 @@ class SpatialService:
 class ComplaintService:
     def __init__(self):
         self.classifier = ClassificationService()
-        self.duplicate_detector = DuplicateDetector()
+        try:
+            self.duplicate_detector = DuplicateDetector()
+        except Exception as exc:
+            logger.warning("DuplicateDetector initialisation failed: %s. Duplicate detection disabled for this session.", exc)
+            self.duplicate_detector = None
         self.priority = PriorityService()
 
     async def submit_complaint(self, db, complaint_data: Dict[str, Any], user_id: Optional[str] = None) -> Dict[str, Any]:
-        # 1. Classify
         classify_res = await self.classifier.classify(ClassifyRequest(text=complaint_data['title'], detail=complaint_data['description']))
         category, confidence = classify_res.predicted_category, classify_res.confidence
-        
-        # 2. Duplicate Detection
-        existing_complaints = db.query(Complaint).all()
-        # Transform complaints for detector
-        formatted_existing = [{
-            'title': c.title, 'description': c.description, 
-            'lat': getattr(c, 'latitude', 0) or 0, 'lon': getattr(c, 'longitude', 0) or 0,
-            'category': c.predicted_category, 'ward': c.ward,
-            'incident_id': c.incident_id
-        } for c in existing_complaints]
-        
-        incident_id, dup_conf = self.duplicate_detector.detect_duplicates(complaint_data, formatted_existing)
-        
-        is_duplicate = dup_conf > 0.8
+
+        incident_id, dup_conf = None, 0.0
+        is_duplicate = False
+
+        if self.duplicate_detector is not None:
+            try:
+                existing_complaints = db.query(Complaint).all()
+                formatted_existing = [{
+                    'title': c.title, 'description': c.description,
+                    'lat': getattr(c, 'latitude', 0) or 0, 'lon': getattr(c, 'longitude', 0) or 0,
+                    'category': c.predicted_category, 'ward': c.ward,
+                    'incident_id': c.incident_id
+                } for c in existing_complaints]
+                incident_id, dup_conf = self.duplicate_detector.detect_duplicates(complaint_data, formatted_existing)
+                is_duplicate = dup_conf > 0.8
+            except Exception as exc:
+                logger.warning("Duplicate detection failed: %s. Continuing without duplicate detection.", exc)
+
         incident = None
-        
+
         if is_duplicate and incident_id:
             incident = db.query(Incident).filter(Incident.id == incident_id).first()
             if incident:
@@ -246,21 +261,21 @@ class ComplaintService:
                 merge_reason = f"Automated merge based on {dup_conf:.2%} confidence score."
             else:
                 is_duplicate = False
-        
+
         if not incident:
             incident = Incident(
-                id=str(uuid.uuid4()), 
-                incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}", 
-                category=category, 
-                ward=complaint_data['ward'], 
-                cluster_size=1, 
-                priority_score=0.0, 
-                priority_label="Low", 
+                id=str(uuid.uuid4()),
+                incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}",
+                category=category,
+                ward=complaint_data['ward'],
+                cluster_size=1,
+                priority_score=0.0,
+                priority_label="Low",
                 summary=complaint_data['title']
             )
             db.add(incident)
             merge_reason = "New incident created."
-            
+
         priority_res = await self.priority.calculate(PriorityRequest(incident_id=incident.id, cluster_size=incident.cluster_size, first_complaint_date=datetime.utcnow().isoformat(), last_complaint_date=datetime.utcnow().isoformat(), category=category, location_hints=[complaint_data.get('location', '')]))
         if incident.priority_score != priority_res.priority_score:
             db.add(PriorityHistory(id=str(uuid.uuid4()), incident_id=incident.id, old_score=incident.priority_score, new_score=priority_res.priority_score, reason="Automatic update"))
