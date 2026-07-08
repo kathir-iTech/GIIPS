@@ -1,0 +1,79 @@
+# docker-compose.yml
+# Brings up the full GIIPS stack locally:
+#   backend  — FastAPI on http://localhost:8000
+#   postgres  — on localhost:5432 (giips/giips / db=giips)
+#   redis     — on localhost:6379 (no auth, local dev only)
+
+services:
+
+  postgres:
+    image: postgres:16-alpine
+    container_name: giips-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: giips
+      POSTGRES_PASSWORD: giips
+      POSTGRES_DB: giips
+    ports:
+      - "127.0.0.1:5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U giips -d giips"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    container_name: giips-redis
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: giips-backend
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8000:8000"
+    environment:
+      # DATABASE_URL and REDIS_URL use the docker-compose service names
+      DATABASE_URL: postgresql://giips:giips@postgres:5432/giips
+      REDIS_URL: redis://redis:6379/0
+      GIIPS_JWT_SECRET: giips-docker-local-secret-change-in-production
+      GIIPS_ALLOWED_ORIGINS: "*"
+      AI_ENGINE_DATA_DIR: /app/ai-engine/data
+      AI_ENGINE_MODELS_DIR: /app/ai-engine/models
+    volumes:
+      # Mount the data dir so seeded SQLite / future artefacts persist
+      - ai_engine_data:/app/ai-engine/data
+      - ./ai-engine/models:/app/ai-engine/models
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD-SHELL", "python -c \"import urllib.request; urllib.request.urlopen('http://localhost:8000/health')\""]
+      interval: 15s
+      timeout: 10s
+      start_period: 30s
+      retries: 5
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+  ai_engine_data:
+    driver: local

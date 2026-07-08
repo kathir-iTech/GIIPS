@@ -2,6 +2,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import Analysis from './pages/Analysis';
 import CitizenPortal from './pages/CitizenPortal';
 import Clusters from './pages/Clusters';
@@ -44,7 +45,9 @@ function AppLayout() {
     <div className={showSidebar ? 'app-layout' : 'full-content'}>
       {showSidebar && <Sidebar />}
       <main className="main-content">
-        <AnimatedRoutes />
+        <ErrorBoundary>
+          <AnimatedRoutes />
+        </ErrorBoundary>
       </main>
     </div>
   );

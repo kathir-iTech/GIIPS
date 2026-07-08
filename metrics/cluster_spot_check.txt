@@ -1,0 +1,478 @@
+======================================================================
+GIIPS CLUSTER SPOT-CHECK (manual validation sample)
+Generated: 2026-07-03T21:26:14.521110
+Backend: tfidf
+Total clusters: 48
+Clustered complaints: 4,966
+Sampled clusters for validation: 20
+======================================================================
+For each cluster below, confirm: are these the SAME underlying incident written by different people, or merely similar wording about DIFFERENT incidents?  Mark each as SAME or DIFFERENT.
+
+Cluster 1 (label=0, size=4108)
+------------------------------------------------------------
+  [1] id=COMP-000004 | ward=Ward 18 | cat=Garbage
+      title: Garbage issue: Ward 18, Dharmapuri — COMP-000004
+      desc : Compost pit overflowing with mixed waste near ward office Trichy [COMP-000004 | Ward 18 | Dharmapuri]
+  [2] id=COMP-000005 | ward=Ward 4 | cat=Streetlights
+      title: Streetlights issue: Ward 4, Salem — COMP-000005
+      desc : Newly installed LED not working from day one at Anna Nagar East 2nd Avenue [COMP-000005 | Ward 4 | Salem]
+  [3] id=COMP-000008 | ward=Ward 6 | cat=Water Supply
+      title: Water Supply issue: Ward 6, Virudhunagar — COMP-000008
+      desc : Overhead tank overflowing because no telemetry system in our ward Washermanpet [COMP-000008 | Ward 6 | Virudhunagar]
+  [4] id=COMP-000009 | ward=Ward 15 | cat=Garbage
+      title: Garbage issue: Ward 15, Madurai — COMP-000009
+      desc : Overflowing bin near bus stop at Guindy international market very unhygienic [COMP-000009 | Ward 15 | Madurai]
+  [5] id=COMP-000010 | ward=Ward 10 | cat=Roads
+      title: Roads issue: Ward 10, Chengalpattu — COMP-000010
+      desc : Pothole on main road causing vehicle damage [COMP-000010 | Ward 10 | Chengalpattu]
+  [6] id=COMP-000011 | ward=Ward 9 | cat=Roads
+      title: Roads issue: Ward 9, Dindigul — COMP-000011
+      desc : Truck broke road while digging up newly laid bitumen at Vanagaram [COMP-000011 | Ward 9 | Dindigul]
+  ... and 4102 more members in this cluster
+
+Cluster 2 (label=23, size=24)
+------------------------------------------------------------
+  [1] id=COMP-000512 | ward=Ward 16 | cat=Electricity
+      title: Electricity issue: Ward 16, Theni — COMP-000512
+      desc : Underground cable snapped due road work near Ashok Nagar 4th Avenue outage 3 days [COMP-000512 | Ward 16 | Theni]
+  [2] id=COMP-000515 | ward=Ward 15 | cat=Electricity
+      title: Electricity issue: Ward 15, Coimbatore — COMP-000515
+      desc : Underground cable snapped due road work near Ashok Nagar 4th Avenue outage 3 days [COMP-000515 | Ward 15 | Coimbatore]
+  [3] id=COMP-002129 | ward=Ward 19 | cat=Electricity
+      title: Electricity issue: Ward 19, Kallakurichi — COMP-002129
+      desc : Underground cable snapped due road work near Ashok Nagar 4th Avenue outage 3 days [COMP-002129 | Ward 19 | Kallakurichi]
+  [4] id=COMP-002157 | ward=Ward 18 | cat=Electricity
+      title: Electricity issue: Ward 18, Virudhunagar — COMP-002157
+      desc : Underground cable snapped due road work near Ashok Nagar 4th Avenue outage 3 days [COMP-002157 | Ward 18 | Virudhunagar]
+  [5] id=COMP-002455 | ward=Ward 16 | cat=Electricity
+      title: Electricity issue: Ward 16, Tiruppur — COMP-002455
+      desc : Underground cable snapped due road work near Ashok Nagar 4th Avenue outage 3 days [COMP-002455 | Ward 16 | Tiruppur]
+  [6] id=COMP-003033 | ward=Ward 9 | cat=Electricity
+      title: Electricity issue: Ward 9, Viluppuram — COMP-003033
+      desc : Underground cable snapped due road work near Ashok Nagar 4th Avenue outage 3 days [COMP-003033 | Ward 9 | Viluppuram]
+  ... and 18 more members in this cluster
+
+Cluster 3 (label=18, size=14)
+------------------------------------------------------------
+  [1] id=COMP-000407 | ward=Ward 6 | cat=Streetlights
+      title: Streetlights issue: Ward 6, Kanyakumari — COMP-000407
+      desc : Glare from newly installed high mast too bright near school blinding drivers [COMP-000407 | Ward 6 | Kanyakumari]
+  [2] id=COMP-001740 | ward=Ward 13 | cat=Streetlights
+      title: Streetlights issue: Ward 13, Perambalur — COMP-001740
+      desc : Glare from newly installed high mast too bright near school blinding drivers [COMP-001740 | Ward 13 | Perambalur]
+  [3] id=COMP-002381 | ward=Ward 4 | cat=Streetlights
+      title: Streetlights issue: Ward 4, Salem — COMP-002381
+      desc : Glare from newly installed high mast too bright near school blinding drivers [COMP-002381 | Ward 4 | Salem]
+  [4] id=COMP-002583 | ward=Ward 11 | cat=Streetlights
+      title: Streetlights issue: Ward 11, Kallakurichi — COMP-002583
+      desc : Glare from newly installed high mast too bright near school blinding drivers [COMP-002583 | Ward 11 | Kallakurichi]
+  [5] id=COMP-003187 | ward=Ward 12 | cat=Streetlights
+      title: Streetlights issue: Ward 12, Coimbatore — COMP-003187
+      desc : Glare from newly installed high mast too bright near school blinding drivers [COMP-003187 | Ward 12 | Coimbatore]
+  [6] id=COMP-005301 | ward=Ward 15 | cat=Streetlights
+      title: Streetlights issue: Ward 15, Nilgiris — COMP-005301
+      desc : Glare from newly installed high mast too bright near school blinding drivers [COMP-005301 | Ward 15 | Nilgiris]
+  ... and 8 more members in this cluster
+
+Cluster 4 (label=34, size=19)
+------------------------------------------------------------
+  [1] id=COMP-000698 | ward=Ward 10 | cat=Drainage
+      title: Drainage issue: Ward 10, Tiruchirappalli — COMP-000698
+      desc : Silt in storm water drain not cleared from past year department unresponsive [COMP-000698 | Ward 10 | Tiruchirappalli]
+  [2] id=COMP-000724 | ward=Ward 15 | cat=Drainage
+      title: Drainage issue: Ward 15, Kanyakumari — COMP-000724
+      desc : Silt in storm water drain not cleared from past year department unresponsive [COMP-000724 | Ward 15 | Kanyakumari]
+  [3] id=COMP-000806 | ward=Ward 20 | cat=Drainage
+      title: Drainage issue: Ward 20, Trichy — COMP-000806
+      desc : Silt in storm water drain not cleared from past year department unresponsive [COMP-000806 | Ward 20 | Trichy]
+  [4] id=COMP-001257 | ward=Ward 19 | cat=Drainage
+      title: Drainage issue: Ward 19, Tiruchirappalli — COMP-001257
+      desc : Silt in storm water drain not cleared from past year department unresponsive [COMP-001257 | Ward 19 | Tiruchirappalli]
+  [5] id=COMP-001828 | ward=Ward 19 | cat=Drainage
+      title: Drainage issue: Ward 19, Chengalpattu — COMP-001828
+      desc : Silt in storm water drain not cleared from past year department unresponsive [COMP-001828 | Ward 19 | Chengalpattu]
+  [6] id=COMP-003347 | ward=Ward 5 | cat=Drainage
+      title: Drainage issue: Ward 5, Thoothukudi — COMP-003347
+      desc : Silt in storm water drain not cleared from past year department unresponsive [COMP-003347 | Ward 5 | Thoothukudi]
+  ... and 13 more members in this cluster
+
+Cluster 5 (label=21, size=32)
+------------------------------------------------------------
+  [1] id=COMP-000468 | ward=Ward 13 | cat=Electricity
+      title: Electricity issue: Ward 13, Salem — COMP-000468
+      desc : Frequent power cuts during evening hours affecting students in Anna Nagar West [COMP-000468 | Ward 13 | Salem]
+  [2] id=COMP-000474 | ward=Ward 16 | cat=Drainage
+      title: Drainage issue: Ward 16, Tiruchirappalli — COMP-000474
+      desc : Mosquito breeding in standing drain water near Thiruvanmiyur beach road [COMP-000474 | Ward 16 | Tiruchirappalli]
+  [3] id=COMP-001342 | ward=Ward 16 | cat=Drainage
+      title: Drainage issue: Ward 16, Madurai — COMP-001342
+      desc : Mosquito breeding in standing drain water near Thiruvanmiyur beach road [COMP-001342 | Ward 16 | Madurai]
+  [4] id=COMP-001653 | ward=Ward 12 | cat=Drainage
+      title: Drainage issue: Ward 12, Madurai — COMP-001653
+      desc : Mosquito breeding in standing drain water near Thiruvanmiyur beach road [COMP-001653 | Ward 12 | Madurai]
+  [5] id=COMP-001752 | ward=Ward 10 | cat=Electricity
+      title: Electricity issue: Ward 10, Perambalur — COMP-001752
+      desc : Frequent power cuts during evening hours affecting students in Anna Nagar West [COMP-001752 | Ward 10 | Perambalur]
+  [6] id=COMP-001836 | ward=Ward 8 | cat=Electricity
+      title: Electricity issue: Ward 8, Tenkasi — COMP-001836
+      desc : Frequent power cuts during evening hours affecting students in Anna Nagar West [COMP-001836 | Ward 8 | Tenkasi]
+  ... and 26 more members in this cluster
+
+Cluster 6 (label=33, size=16)
+------------------------------------------------------------
+  [1] id=COMP-000660 | ward=Ward 10 | cat=Garbage
+      title: Garbage issue: Ward 10, Tirunelveli — COMP-000660
+      desc : Private trash burning near residential area causing breathing problems near ECR [COMP-000660 | Ward 10 | Tirunelveli]
+  [2] id=COMP-000793 | ward=Ward 6 | cat=Garbage
+      title: Garbage issue: Ward 6, Viluppuram — COMP-000793
+      desc : Private trash burning near residential area causing breathing problems near ECR [COMP-000793 | Ward 6 | Viluppuram]
+  [3] id=COMP-001372 | ward=Ward 11 | cat=Garbage
+      title: Garbage issue: Ward 11, Dindigul — COMP-001372
+      desc : Private trash burning near residential area causing breathing problems near ECR [COMP-001372 | Ward 11 | Dindigul]
+  [4] id=COMP-001502 | ward=Ward 12 | cat=Garbage
+      title: Garbage issue: Ward 12, Madurai — COMP-001502
+      desc : Private trash burning near residential area causing breathing problems near ECR [COMP-001502 | Ward 12 | Madurai]
+  [5] id=COMP-001513 | ward=Ward 11 | cat=Garbage
+      title: Garbage issue: Ward 11, Dharmapuri — COMP-001513
+      desc : Private trash burning near residential area causing breathing problems near ECR [COMP-001513 | Ward 11 | Dharmapuri]
+  [6] id=COMP-002238 | ward=Ward 6 | cat=Garbage
+      title: Garbage issue: Ward 6, Virudhunagar — COMP-002238
+      desc : Private trash burning near residential area causing breathing problems near ECR [COMP-002238 | Ward 6 | Virudhunagar]
+  ... and 10 more members in this cluster
+
+Cluster 7 (label=13, size=20)
+------------------------------------------------------------
+  [1] id=COMP-000196 | ward=Ward 12 | cat=Electricity
+      title: Electricity issue: Ward 12, Sivagangai — COMP-000196
+      desc : Single power line serving 200 homes old infrastructure near Pammal area frequent fail [COMP-000196 | Ward 12 | Sivagangai]
+  [2] id=COMP-000648 | ward=Ward 15 | cat=Electricity
+      title: Electricity issue: Ward 15, Ranipet — COMP-000648
+      desc : Single power line serving 200 homes old infrastructure near Pammal area frequent fail [COMP-000648 | Ward 15 | Ranipet]
+  [3] id=COMP-000672 | ward=Ward 15 | cat=Electricity
+      title: Electricity issue: Ward 15, Ramanathapuram — COMP-000672
+      desc : Single power line serving 200 homes old infrastructure near Pammal area frequent fail [COMP-000672 | Ward 15 | Ramanathapuram]
+  [4] id=COMP-000804 | ward=Ward 1 | cat=Electricity
+      title: Electricity issue: Ward 1, Ariyalur — COMP-000804
+      desc : Single power line serving 200 homes old infrastructure near Pammal area frequent fail [COMP-000804 | Ward 1 | Ariyalur]
+  [5] id=COMP-000951 | ward=Ward 20 | cat=Electricity
+      title: Electricity issue: Ward 20, Chennai — COMP-000951
+      desc : Single power line serving 200 homes old infrastructure near Pammal area frequent fail [COMP-000951 | Ward 20 | Chennai]
+  [6] id=COMP-001515 | ward=Ward 4 | cat=Electricity
+      title: Electricity issue: Ward 4, Nagapattinam — COMP-001515
+      desc : Single power line serving 200 homes old infrastructure near Pammal area frequent fail [COMP-001515 | Ward 4 | Nagapattinam]
+  ... and 14 more members in this cluster
+
+Cluster 8 (label=46, size=12)
+------------------------------------------------------------
+  [1] id=COMP-001969 | ward=Ward 15 | cat=Public Health
+      title: Public Health issue: Ward 15, Tirunelveli — COMP-001969
+      desc : Dog population increasing alarmingly near market no catch van deployed Royapuram [COMP-001969 | Ward 15 | Tirunelveli]
+  [2] id=COMP-003163 | ward=Ward 5 | cat=Public Health
+      title: Public Health issue: Ward 5, Salem — COMP-003163
+      desc : Dog population increasing alarmingly near market no catch van deployed Royapuram [COMP-003163 | Ward 5 | Salem]
+  [3] id=COMP-003514 | ward=Ward 7 | cat=Public Health
+      title: Public Health issue: Ward 7, Cuddalore — COMP-003514
+      desc : Dog population increasing alarmingly near market no catch van deployed Royapuram [COMP-003514 | Ward 7 | Cuddalore]
+  [4] id=COMP-004219 | ward=Ward 10 | cat=Public Health
+      title: Public Health issue: Ward 10, Pudukkottai — COMP-004219
+      desc : Dog population increasing alarmingly near market no catch van deployed Royapuram [COMP-004219 | Ward 10 | Pudukkottai]
+  [5] id=COMP-005218 | ward=Ward 6 | cat=Public Health
+      title: Public Health issue: Ward 6, Chennai — COMP-005218
+      desc : Dog population increasing alarmingly near market no catch van deployed Royapuram [COMP-005218 | Ward 6 | Chennai]
+  [6] id=COMP-005459 | ward=Ward 8 | cat=Public Health
+      title: Public Health issue: Ward 8, Madurai — COMP-005459
+      desc : Dog population increasing alarmingly near market no catch van deployed Royapuram [COMP-005459 | Ward 8 | Madurai]
+  ... and 6 more members in this cluster
+
+Cluster 9 (label=38, size=13)
+------------------------------------------------------------
+  [1] id=COMP-001075 | ward=Ward 16 | cat=Public Health
+      title: Public Health issue: Ward 16, Perambalur — COMP-001075
+      desc : Unhygienic condition at Chennai Central platform toilets urgent cleaning needed [COMP-001075 | Ward 16 | Perambalur]
+  [2] id=COMP-001437 | ward=Ward 16 | cat=Public Health
+      title: Public Health issue: Ward 16, Chengalpattu — COMP-001437
+      desc : Unhygienic condition at Chennai Central platform toilets urgent cleaning needed [COMP-001437 | Ward 16 | Chengalpattu]
+  [3] id=COMP-002216 | ward=Ward 15 | cat=Public Health
+      title: Public Health issue: Ward 15, Ranipet — COMP-002216
+      desc : Unhygienic condition at Chennai Central platform toilets urgent cleaning needed [COMP-002216 | Ward 15 | Ranipet]
+  [4] id=COMP-004050 | ward=Ward 8 | cat=Public Health
+      title: Public Health issue: Ward 8, Kanchipuram — COMP-004050
+      desc : Unhygienic condition at Chennai Central platform toilets urgent cleaning needed [COMP-004050 | Ward 8 | Kanchipuram]
+  [5] id=COMP-004162 | ward=Ward 15 | cat=Public Health
+      title: Public Health issue: Ward 15, Nilgiris — COMP-004162
+      desc : Unhygienic condition at Chennai Central platform toilets urgent cleaning needed [COMP-004162 | Ward 15 | Nilgiris]
+  [6] id=COMP-005588 | ward=Ward 6 | cat=Public Health
+      title: Public Health issue: Ward 6, Ramanathapuram — COMP-005588
+      desc : Unhygienic condition at Chennai Central platform toilets urgent cleaning needed [COMP-005588 | Ward 6 | Ramanathapuram]
+  ... and 7 more members in this cluster
+
+Cluster 10 (label=30, size=15)
+------------------------------------------------------------
+  [1] id=COMP-000620 | ward=Ward 1 | cat=Electricity
+      title: Electricity issue: Ward 1, Viluppuram — COMP-000620
+      desc : Overloaded transformer sparking near vegetable market Madurai South danger area [COMP-000620 | Ward 1 | Viluppuram]
+  [2] id=COMP-002500 | ward=Ward 2 | cat=Electricity
+      title: Electricity issue: Ward 2, Dharmapuri — COMP-002500
+      desc : Overloaded transformer sparking near vegetable market Madurai South danger area [COMP-002500 | Ward 2 | Dharmapuri]
+  [3] id=COMP-003766 | ward=Ward 5 | cat=Electricity
+      title: Electricity issue: Ward 5, Kanchipuram — COMP-003766
+      desc : Overloaded transformer sparking near vegetable market Madurai South danger area [COMP-003766 | Ward 5 | Kanchipuram]
+  [4] id=COMP-003770 | ward=Ward 4 | cat=Electricity
+      title: Electricity issue: Ward 4, Viluppuram — COMP-003770
+      desc : Overloaded transformer sparking near vegetable market Madurai South danger area [COMP-003770 | Ward 4 | Viluppuram]
+  [5] id=COMP-004761 | ward=Ward 14 | cat=Electricity
+      title: Electricity issue: Ward 14, Chennai — COMP-004761
+      desc : Overloaded transformer sparking near vegetable market Madurai South danger area [COMP-004761 | Ward 14 | Chennai]
+  [6] id=COMP-005498 | ward=Ward 17 | cat=Electricity
+      title: Electricity issue: Ward 17, Theni — COMP-005498
+      desc : Overloaded transformer sparking near vegetable market Madurai South danger area [COMP-005498 | Ward 17 | Theni]
+  ... and 9 more members in this cluster
+
+Cluster 11 (label=4, size=23)
+------------------------------------------------------------
+  [1] id=COMP-000059 | ward=Ward 20 | cat=Electricity
+      title: Electricity issue: Ward 20, Coimbatore — COMP-000059
+      desc : Weak load current reaching end of line at Thanjavur North side fans running slow [COMP-000059 | Ward 20 | Coimbatore]
+  [2] id=COMP-000115 | ward=Ward 19 | cat=Electricity
+      title: Electricity issue: Ward 19, Dharmapuri — COMP-000115
+      desc : Weak load current reaching end of line at Thanjavur North side fans running slow [COMP-000115 | Ward 19 | Dharmapuri]
+  [3] id=COMP-000577 | ward=Ward 16 | cat=Electricity
+      title: Electricity issue: Ward 16, Namakkal — COMP-000577
+      desc : Weak load current reaching end of line at Thanjavur North side fans running slow [COMP-000577 | Ward 16 | Namakkal]
+  [4] id=COMP-000626 | ward=Ward 5 | cat=Electricity
+      title: Electricity issue: Ward 5, Salem — COMP-000626
+      desc : Weak load current reaching end of line at Thanjavur North side fans running slow [COMP-000626 | Ward 5 | Salem]
+  [5] id=COMP-000775 | ward=Ward 14 | cat=Electricity
+      title: Electricity issue: Ward 14, Thanjavur — COMP-000775
+      desc : Weak load current reaching end of line at Thanjavur North side fans running slow [COMP-000775 | Ward 14 | Thanjavur]
+  [6] id=COMP-000901 | ward=Ward 4 | cat=Electricity
+      title: Electricity issue: Ward 4, Salem — COMP-000901
+      desc : Weak load current reaching end of line at Thanjavur North side fans running slow [COMP-000901 | Ward 4 | Salem]
+  ... and 17 more members in this cluster
+
+Cluster 12 (label=2, size=19)
+------------------------------------------------------------
+  [1] id=COMP-000036 | ward=Ward 10 | cat=Public Health
+      title: Public Health issue: Ward 10, Thoothukudi — COMP-000036
+      desc : No sewerage connection in newly built apartments Mogappair West raw sewage seen [COMP-000036 | Ward 10 | Thoothukudi]
+  [2] id=COMP-000478 | ward=Ward 1 | cat=Public Health
+      title: Public Health issue: Ward 1, Perambalur — COMP-000478
+      desc : No sewerage connection in newly built apartments Mogappair West raw sewage seen [COMP-000478 | Ward 1 | Perambalur]
+  [3] id=COMP-001544 | ward=Ward 14 | cat=Public Health
+      title: Public Health issue: Ward 14, Thanjavur — COMP-001544
+      desc : No sewerage connection in newly built apartments Mogappair West raw sewage seen [COMP-001544 | Ward 14 | Thanjavur]
+  [4] id=COMP-002032 | ward=Ward 17 | cat=Public Health
+      title: Public Health issue: Ward 17, Virudhunagar — COMP-002032
+      desc : No sewerage connection in newly built apartments Mogappair West raw sewage seen [COMP-002032 | Ward 17 | Virudhunagar]
+  [5] id=COMP-002061 | ward=Ward 20 | cat=Public Health
+      title: Public Health issue: Ward 20, Ariyalur — COMP-002061
+      desc : No sewerage connection in newly built apartments Mogappair West raw sewage seen [COMP-002061 | Ward 20 | Ariyalur]
+  [6] id=COMP-002241 | ward=Ward 9 | cat=Public Health
+      title: Public Health issue: Ward 9, Tiruvannamalai — COMP-002241
+      desc : No sewerage connection in newly built apartments Mogappair West raw sewage seen [COMP-002241 | Ward 9 | Tiruvannamalai]
+  ... and 13 more members in this cluster
+
+Cluster 13 (label=45, size=26)
+------------------------------------------------------------
+  [1] id=COMP-001894 | ward=Ward 1 | cat=Water Supply
+      title: Water Supply issue: Ward 1, Tenkasi — COMP-001894
+      desc : Brownish muddy water coming from taps morning since last week Tambaram [COMP-001894 | Ward 1 | Tenkasi]
+  [2] id=COMP-001931 | ward=Ward 20 | cat=Water Supply
+      title: Water Supply issue: Ward 20, Ranipet — COMP-001931
+      desc : Brownish muddy water coming from taps morning since last week Tambaram [COMP-001931 | Ward 20 | Ranipet]
+  [3] id=COMP-002429 | ward=Ward 13 | cat=Water Supply
+      title: Water Supply issue: Ward 13, Pudukkottai — COMP-002429
+      desc : Brownish muddy water coming from taps morning since last week Tambaram [COMP-002429 | Ward 13 | Pudukkottai]
+  [4] id=COMP-002565 | ward=Ward 4 | cat=Water Supply
+      title: Water Supply issue: Ward 4, Kallakurichi — COMP-002565
+      desc : Brownish muddy water coming from taps morning since last week Tambaram [COMP-002565 | Ward 4 | Kallakurichi]
+  [5] id=COMP-002584 | ward=Ward 4 | cat=Water Supply
+      title: Water Supply issue: Ward 4, Tiruvannamalai — COMP-002584
+      desc : Brownish muddy water coming from taps morning since last week Tambaram [COMP-002584 | Ward 4 | Tiruvannamalai]
+  [6] id=COMP-002856 | ward=Ward 1 | cat=Water Supply
+      title: Water Supply issue: Ward 1, Salem — COMP-002856
+      desc : Brownish muddy water coming from taps morning since last week Tambaram [COMP-002856 | Ward 1 | Salem]
+  ... and 20 more members in this cluster
+
+Cluster 14 (label=26, size=24)
+------------------------------------------------------------
+  [1] id=COMP-000554 | ward=Ward 7 | cat=Drainage
+      title: Drainage issue: Ward 7, Tirupathur — COMP-000554
+      desc : Rats and vermin breeding in open solid waste drain near Vellore old bus stand [COMP-000554 | Ward 7 | Tirupathur]
+  [2] id=COMP-001260 | ward=Ward 12 | cat=Drainage
+      title: Drainage issue: Ward 12, Trichy — COMP-001260
+      desc : Rats and vermin breeding in open solid waste drain near Vellore old bus stand [COMP-001260 | Ward 12 | Trichy]
+  [3] id=COMP-001605 | ward=Ward 8 | cat=Drainage
+      title: Drainage issue: Ward 8, Pudukkottai — COMP-001605
+      desc : Rats and vermin breeding in open solid waste drain near Vellore old bus stand [COMP-001605 | Ward 8 | Pudukkottai]
+  [4] id=COMP-001608 | ward=Ward 5 | cat=Drainage
+      title: Drainage issue: Ward 5, Vellore — COMP-001608
+      desc : Rats and vermin breeding in open solid waste drain near Vellore old bus stand [COMP-001608 | Ward 5 | Vellore]
+  [5] id=COMP-002082 | ward=Ward 11 | cat=Drainage
+      title: Drainage issue: Ward 11, Dharmapuri — COMP-002082
+      desc : Rats and vermin breeding in open solid waste drain near Vellore old bus stand [COMP-002082 | Ward 11 | Dharmapuri]
+  [6] id=COMP-002366 | ward=Ward 12 | cat=Drainage
+      title: Drainage issue: Ward 12, Tiruchirappalli — COMP-002366
+      desc : Rats and vermin breeding in open solid waste drain near Vellore old bus stand [COMP-002366 | Ward 12 | Tiruchirappalli]
+  ... and 18 more members in this cluster
+
+Cluster 15 (label=35, size=17)
+------------------------------------------------------------
+  [1] id=COMP-000706 | ward=Ward 9 | cat=Streetlights
+      title: Streetlights issue: Ward 9, Kanyakumari — COMP-000706
+      desc : Kids cannot play safely outside due no working light at Ambattur housing board [COMP-000706 | Ward 9 | Kanyakumari]
+  [2] id=COMP-001438 | ward=Ward 9 | cat=Streetlights
+      title: Streetlights issue: Ward 9, Kanchipuram — COMP-001438
+      desc : Kids cannot play safely outside due no working light at Ambattur housing board [COMP-001438 | Ward 9 | Kanchipuram]
+  [3] id=COMP-001654 | ward=Ward 20 | cat=Streetlights
+      title: Streetlights issue: Ward 20, Vellore — COMP-001654
+      desc : Kids cannot play safely outside due no working light at Ambattur housing board [COMP-001654 | Ward 20 | Vellore]
+  [4] id=COMP-001831 | ward=Ward 18 | cat=Streetlights
+      title: Streetlights issue: Ward 18, Pudukkottai — COMP-001831
+      desc : Kids cannot play safely outside due no working light at Ambattur housing board [COMP-001831 | Ward 18 | Pudukkottai]
+  [5] id=COMP-002337 | ward=Ward 12 | cat=Streetlights
+      title: Streetlights issue: Ward 12, Madurai — COMP-002337
+      desc : Kids cannot play safely outside due no working light at Ambattur housing board [COMP-002337 | Ward 12 | Madurai]
+  [6] id=COMP-002718 | ward=Ward 3 | cat=Streetlights
+      title: Streetlights issue: Ward 3, Viluppuram — COMP-002718
+      desc : Kids cannot play safely outside due no working light at Ambattur housing board [COMP-002718 | Ward 3 | Viluppuram]
+  ... and 11 more members in this cluster
+
+Cluster 16 (label=17, size=16)
+------------------------------------------------------------
+  [1] id=COMP-000317 | ward=Ward 5 | cat=Roads
+      title: Roads issue: Ward 5, Salem — COMP-000317
+      desc : Half-hearted patch in front of Luz Corner mosque collapsed in two days [COMP-000317 | Ward 5 | Salem]
+  [2] id=COMP-001750 | ward=Ward 20 | cat=Roads
+      title: Roads issue: Ward 20, Madurai — COMP-001750
+      desc : Half-hearted patch in front of Luz Corner mosque collapsed in two days [COMP-001750 | Ward 20 | Madurai]
+  [3] id=COMP-002240 | ward=Ward 20 | cat=Roads
+      title: Roads issue: Ward 20, Thanjavur — COMP-002240
+      desc : Half-hearted patch in front of Luz Corner mosque collapsed in two days [COMP-002240 | Ward 20 | Thanjavur]
+  [4] id=COMP-002393 | ward=Ward 5 | cat=Roads
+      title: Roads issue: Ward 5, Tirupathur — COMP-002393
+      desc : Half-hearted patch in front of Luz Corner mosque collapsed in two days [COMP-002393 | Ward 5 | Tirupathur]
+  [5] id=COMP-003099 | ward=Ward 2 | cat=Roads
+      title: Roads issue: Ward 2, Nagapattinam — COMP-003099
+      desc : Half-hearted patch in front of Luz Corner mosque collapsed in two days [COMP-003099 | Ward 2 | Nagapattinam]
+  [6] id=COMP-003104 | ward=Ward 7 | cat=Roads
+      title: Roads issue: Ward 7, Tiruvil — COMP-003104
+      desc : Half-hearted patch in front of Luz Corner mosque collapsed in two days [COMP-003104 | Ward 7 | Tiruvil]
+  ... and 10 more members in this cluster
+
+Cluster 17 (label=37, size=21)
+------------------------------------------------------------
+  [1] id=COMP-000842 | ward=Ward 20 | cat=Electricity
+      title: Electricity issue: Ward 20, Nilgiris — COMP-000842
+      desc : Substation load shedding map incorrect published online tells 2 hrs we get 6 hrs [COMP-000842 | Ward 20 | Nilgiris]
+  [2] id=COMP-001642 | ward=Ward 18 | cat=Electricity
+      title: Electricity issue: Ward 18, Ariyalur — COMP-001642
+      desc : Substation load shedding map incorrect published online tells 2 hrs we get 6 hrs [COMP-001642 | Ward 18 | Ariyalur]
+  [3] id=COMP-002793 | ward=Ward 19 | cat=Electricity
+      title: Electricity issue: Ward 19, Kanyakumari — COMP-002793
+      desc : Substation load shedding map incorrect published online tells 2 hrs we get 6 hrs [COMP-002793 | Ward 19 | Kanyakumari]
+  [4] id=COMP-003311 | ward=Ward 18 | cat=Electricity
+      title: Electricity issue: Ward 18, Thoothukudi — COMP-003311
+      desc : Substation load shedding map incorrect published online tells 2 hrs we get 6 hrs [COMP-003311 | Ward 18 | Thoothukudi]
+  [5] id=COMP-003749 | ward=Ward 7 | cat=Electricity
+      title: Electricity issue: Ward 7, Thoothukudi — COMP-003749
+      desc : Substation load shedding map incorrect published online tells 2 hrs we get 6 hrs [COMP-003749 | Ward 7 | Thoothukudi]
+  [6] id=COMP-003850 | ward=Ward 1 | cat=Electricity
+      title: Electricity issue: Ward 1, Tirunelveli — COMP-003850
+      desc : Substation load shedding map incorrect published online tells 2 hrs we get 6 hrs [COMP-003850 | Ward 1 | Tirunelveli]
+  ... and 15 more members in this cluster
+
+Cluster 18 (label=24, size=20)
+------------------------------------------------------------
+  [1] id=COMP-000520 | ward=Ward 2 | cat=Electricity
+      title: Electricity issue: Ward 2, Erode — COMP-000520
+      desc : Generator noise from apartment near hospital at Kilpauk violating noise rules too [COMP-000520 | Ward 2 | Erode]
+  [2] id=COMP-001294 | ward=Ward 10 | cat=Electricity
+      title: Electricity issue: Ward 10, Vellore — COMP-001294
+      desc : Generator noise from apartment near hospital at Kilpauk violating noise rules too [COMP-001294 | Ward 10 | Vellore]
+  [3] id=COMP-001309 | ward=Ward 1 | cat=Electricity
+      title: Electricity issue: Ward 1, Tirupathur — COMP-001309
+      desc : Generator noise from apartment near hospital at Kilpauk violating noise rules too [COMP-001309 | Ward 1 | Tirupathur]
+  [4] id=COMP-001424 | ward=Ward 10 | cat=Electricity
+      title: Electricity issue: Ward 10, Tiruchirappalli — COMP-001424
+      desc : Generator noise from apartment near hospital at Kilpauk violating noise rules too [COMP-001424 | Ward 10 | Tiruchirappalli]
+  [5] id=COMP-001656 | ward=Ward 14 | cat=Electricity
+      title: Electricity issue: Ward 14, Sivagangai — COMP-001656
+      desc : Generator noise from apartment near hospital at Kilpauk violating noise rules too [COMP-001656 | Ward 14 | Sivagangai]
+  [6] id=COMP-002046 | ward=Ward 9 | cat=Electricity
+      title: Electricity issue: Ward 9, Salem — COMP-002046
+      desc : Generator noise from apartment near hospital at Kilpauk violating noise rules too [COMP-002046 | Ward 9 | Salem]
+  ... and 14 more members in this cluster
+
+Cluster 19 (label=6, size=19)
+------------------------------------------------------------
+  [1] id=COMP-000121 | ward=Ward 12 | cat=Public Health
+      title: Public Health issue: Ward 12, Ariyalur — COMP-000121
+      desc : Birth and death registration office always crowded no online system needed urgently [COMP-000121 | Ward 12 | Ariyalur]
+  [2] id=COMP-000755 | ward=Ward 20 | cat=Public Health
+      title: Public Health issue: Ward 20, Tiruvannamalai — COMP-000755
+      desc : Birth and death registration office always crowded no online system needed urgently [COMP-000755 | Ward 20 | Tiruvannamalai]
+  [3] id=COMP-001425 | ward=Ward 19 | cat=Public Health
+      title: Public Health issue: Ward 19, Thanjavur — COMP-001425
+      desc : Birth and death registration office always crowded no online system needed urgently [COMP-001425 | Ward 19 | Thanjavur]
+  [4] id=COMP-001487 | ward=Ward 19 | cat=Public Health
+      title: Public Health issue: Ward 19, Madurai — COMP-001487
+      desc : Birth and death registration office always crowded no online system needed urgently [COMP-001487 | Ward 19 | Madurai]
+  [5] id=COMP-001510 | ward=Ward 1 | cat=Public Health
+      title: Public Health issue: Ward 1, Tiruchirappalli — COMP-001510
+      desc : Birth and death registration office always crowded no online system needed urgently [COMP-001510 | Ward 1 | Tiruchirappalli]
+  [6] id=COMP-001598 | ward=Ward 13 | cat=Public Health
+      title: Public Health issue: Ward 13, Karur — COMP-001598
+      desc : Birth and death registration office always crowded no online system needed urgently [COMP-001598 | Ward 13 | Karur]
+  ... and 13 more members in this cluster
+
+Cluster 20 (label=29, size=23)
+------------------------------------------------------------
+  [1] id=COMP-000609 | ward=Ward 12 | cat=Electricity
+      title: Electricity issue: Ward 12, Cuddalore — COMP-000609
+      desc : Power cut scheduled at 2 AM unsuited for students in KK Nagar examination season [COMP-000609 | Ward 12 | Cuddalore]
+  [2] id=COMP-001560 | ward=Ward 5 | cat=Electricity
+      title: Electricity issue: Ward 5, Ariyalur — COMP-001560
+      desc : Power cut scheduled at 2 AM unsuited for students in KK Nagar examination season [COMP-001560 | Ward 5 | Ariyalur]
+  [3] id=COMP-001593 | ward=Ward 7 | cat=Electricity
+      title: Electricity issue: Ward 7, Kallakurichi — COMP-001593
+      desc : Power cut scheduled at 2 AM unsuited for students in KK Nagar examination season [COMP-001593 | Ward 7 | Kallakurichi]
+  [4] id=COMP-001965 | ward=Ward 14 | cat=Electricity
+      title: Electricity issue: Ward 14, Salem — COMP-001965
+      desc : Power cut scheduled at 2 AM unsuited for students in KK Nagar examination season [COMP-001965 | Ward 14 | Salem]
+  [5] id=COMP-002159 | ward=Ward 4 | cat=Electricity
+      title: Electricity issue: Ward 4, Tenkasi — COMP-002159
+      desc : Power cut scheduled at 2 AM unsuited for students in KK Nagar examination season [COMP-002159 | Ward 4 | Tenkasi]
+  [6] id=COMP-002247 | ward=Ward 18 | cat=Electricity
+      title: Electricity issue: Ward 18, Tenkasi — COMP-002247
+      desc : Power cut scheduled at 2 AM unsuited for students in KK Nagar examination season [COMP-002247 | Ward 18 | Tenkasi]
+  ... and 17 more members in this cluster
+
+======================================================================
+VALIDATION SUMMARY (fill in after manual review):
+======================================================================
+  Cluster | Same-incident? (Y/N) | Notes
+  ------- | ------------------- | -----
+        1 |                     |
+        2 |                     |
+        3 |                     |
+        4 |                     |
+        5 |                     |
+        6 |                     |
+        7 |                     |
+        8 |                     |
+        9 |                     |
+       10 |                     |
+       11 |                     |
+       12 |                     |
+       13 |                     |
+       14 |                     |
+       15 |                     |
+       16 |                     |
+       17 |                     |
+       18 |                     |
+       19 |                     |
+       20 |                     |
+
+Precision estimate (Y / 20): __________
+Notes: ________________________________________________

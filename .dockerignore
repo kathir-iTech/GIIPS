@@ -1,0 +1,24 @@
+# Docker ignore for GIIPS
+.git
+.gitignore
+node_modules
+dist
+build
+__pycache__
+*.pyc
+*.pyo
+.pytest_cache
+.coverage
+htmlcov
+.nyc_output
+.vscode
+.idea
+*.db
+*.sqlite
+*.sqlite3
+.env
+.env.*
+!.env.example
+metrics/cache
+ai-engine/outputs
+ai-engine/data/giips.db

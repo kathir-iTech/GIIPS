@@ -140,15 +140,15 @@ const SpatialIntelligence = () => {
     ]).then((results: any) => {
       if (cancelled) return;
       const errors: string[] = [];
-      if (results[0].status === 'fulfilled') setHeatmap(results[0].value || []);
+      if (results[0].status === 'fulfilled') setHeatmap(Array.isArray(results[0].value) ? results[0].value : []);
       else errors.push('heatmap');
-      if (results[1].status === 'fulfilled') setHotspots(results[1].value || []);
+      if (results[1].status === 'fulfilled') setHotspots(Array.isArray(results[1].value) ? results[1].value : []);
       else errors.push('hotspots');
-      if (results[2].status === 'fulfilled') setRiskData(results[2].value || []);
+      if (results[2].status === 'fulfilled') setRiskData(Array.isArray(results[2].value) ? results[2].value : []);
       else errors.push('risk');
       if (results[3].status === 'fulfilled') setForecast(results[3].value || null);
       else errors.push('forecast');
-      if (results[4].status === 'fulfilled') setIncidents(results[4].value || []);
+      if (results[4].status === 'fulfilled') setIncidents(Array.isArray(results[4].value) ? results[4].value : []);
       else errors.push('incidents');
       if (errors.length > 0) setError(`Some feeds offline: ${errors.join(', ')}. Showing best available data.`);
     }).finally(() => {
@@ -193,11 +193,11 @@ const SpatialIntelligence = () => {
       api.getForecast(timelineDays),
       api.getIncidents(),
     ]).then((results: any) => {
-      if (results[0].status === 'fulfilled') setHeatmap(results[0].value || []);
-      if (results[1].status === 'fulfilled') setHotspots(results[1].value || []);
-      if (results[2].status === 'fulfilled') setRiskData(results[2].value || []);
+      if (results[0].status === 'fulfilled') setHeatmap(Array.isArray(results[0].value) ? results[0].value : []);
+      if (results[1].status === 'fulfilled') setHotspots(Array.isArray(results[1].value) ? results[1].value : []);
+      if (results[2].status === 'fulfilled') setRiskData(Array.isArray(results[2].value) ? results[2].value : []);
       if (results[3].status === 'fulfilled') setForecast(results[3].value || null);
-      if (results[4].status === 'fulfilled') setIncidents(results[4].value || []);
+      if (results[4].status === 'fulfilled') setIncidents(Array.isArray(results[4].value) ? results[4].value : []);
     }).finally(() => setLoading(false));
   }, [timelineDays]);
 
