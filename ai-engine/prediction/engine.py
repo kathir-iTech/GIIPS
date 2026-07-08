@@ -4,7 +4,7 @@ Predictive Governance AI Engine.
 Forecasts future incidents using statistical trend analysis.
 """
 
-from typing import Dict, Any, List
+from typing import Dict, Any, List, Optional
 import numpy as np
 from datetime import datetime, timedelta
 
