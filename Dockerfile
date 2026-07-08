@@ -47,6 +47,7 @@ USER appuser
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
+    PYTHONPATH=/app/ai-engine/backend:$PYTHONPATH \
     AI_ENGINE_DATA_DIR=/app/ai-engine/data \
     AI_ENGINE_MODELS_DIR=/app/ai-engine/models
 
