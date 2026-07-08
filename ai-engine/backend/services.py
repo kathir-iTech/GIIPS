@@ -208,7 +208,7 @@ class DecisionService:
 
 class SpatialService:
     async def get_heatmap(self, db) -> List[Dict[str, Any]]:
-        data = db.query(Complaint.ward, Complaint.latitude, Complaint.longitude, func.count(Complaint.id)).group_by(Complaint.ward).all()
+        data = db.query(Complaint.ward, func.avg(Complaint.latitude), func.avg(Complaint.longitude), func.count(Complaint.id)).group_by(Complaint.ward).all()
         return [{"ward": w, "count": c, "latitude": lat, "longitude": lon} for w, lat, lon, c in data if lat and lon]
     async def get_hotspots(self, db) -> List[Dict[str, Any]]:
         wards = await self.get_heatmap(db)
