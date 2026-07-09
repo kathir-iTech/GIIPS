@@ -50,7 +50,9 @@ services:
       # DATABASE_URL and REDIS_URL use the docker-compose service names
       DATABASE_URL: postgresql://giips:giips@postgres:5432/giips
       REDIS_URL: redis://redis:6379/0
-      GIIPS_JWT_SECRET: giips-docker-local-secret-change-in-production
+      # WARNING: the fallback value below is INSECURE for production — always
+      # set GIIPS_JWT_SECRET in a .env file or export it before docker compose up.
+      GIIPS_JWT_SECRET: ${GIIPS_JWT_SECRET:-giips-docker-local-secret-change-in-production}
       GIIPS_ALLOWED_ORIGINS: "*"
       AI_ENGINE_DATA_DIR: /app/ai-engine/data
       AI_ENGINE_MODELS_DIR: /app/ai-engine/models

@@ -154,7 +154,7 @@ def cluster_keyword(complaints):
     }
 
 
-def cluster_tfidf(complaints):
+def cluster_tfidf(complaints, eps=0.55):
     """
     TF-IDF + L2-normalization + cosine-distance + DBSCAN clustering.
     No GPU needed.  For 10 K docs on CPU completes in ~90 s.
@@ -181,8 +181,8 @@ def cluster_tfidf(complaints):
     logger.info("Computing cosine distance matrix …")
     dist = pairwise_distances(tfidf, metric="cosine")
 
-    logger.info("Running DBSCAN (eps=0.55, min_samples=2) …")
-    db = DBSCAN(eps=0.55, min_samples=2, metric="precomputed")
+    logger.info("Running DBSCAN (eps=%s, min_samples=2) …", eps)
+    db = DBSCAN(eps=eps, min_samples=2, metric="precomputed")
     labels = db.fit_predict(dist)
 
     clusters = defaultdict(list)
@@ -203,7 +203,7 @@ def cluster_tfidf(complaints):
     }
 
 
-def cluster_sbert(complaints):
+def cluster_sbert(complaints, eps=0.17):
     """
     Full SBERT embeddings + DBSCAN clustering.
     Caches embeddings at metrics/cache/embeddings.npy so the 10-minute
@@ -234,8 +234,8 @@ def cluster_sbert(complaints):
     logger.info("Computing cosine distance matrix …")
     dist = cosine_distances(embeddings)
 
-    logger.info("Running DBSCAN (eps=0.30, min_samples=2) …")
-    db = DBSCAN(eps=0.30, min_samples=2, metric="precomputed")
+    logger.info("Running DBSCAN (eps=%s, min_samples=2) …", eps)
+    db = DBSCAN(eps=eps, min_samples=2, metric="precomputed")
     labels = db.fit_predict(dist)
 
     clusters = defaultdict(list)
@@ -473,6 +473,10 @@ def main():
         "--keyword", action="store_true",
         help="Use fast keyword-overlap clustering (fastest; conservative estimate)",
     )
+    parser.add_argument(
+        "--eps", type=float, default=None,
+        help="DBSCAN eps value (SBERT: ~0.17, TF-IDF: ~0.55, keyword: ignored)",
+    )
     args = parser.parse_args()
 
     if args.sbert:
@@ -515,8 +519,9 @@ def main():
     # 2. Cluster
     t0 = time.perf_counter()
     try:
-        if   mode == "sbert":  results = cluster_sbert(c_list)
-        elif mode == "tfidf":  results = cluster_tfidf(c_list)
+        eps = args.eps
+        if   mode == "sbert":  results = cluster_sbert(c_list, eps=eps or 0.17)
+        elif mode == "tfidf":  results = cluster_tfidf(c_list, eps=eps or 0.55)
         else:                  results = cluster_keyword(c_list)
     except Exception as exc:
         logger.error("Clustering failed (%s): %s", mode, exc)

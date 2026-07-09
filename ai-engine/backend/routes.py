@@ -6,7 +6,7 @@ import uuid
 import time
 from fastapi import APIRouter, HTTPException, Depends, Query, Header
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, extract
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
@@ -328,12 +328,37 @@ async def get_metrics():
 
 
 @dashboard_router.get("/trend")
-async def get_trend_data():
-    """Get trend data for charts."""
+async def get_trend_data(db: Session = Depends(get_db)):
+    """Get trend data for charts (complaints & incidents per month, last 6mo)."""
+    six_months_ago = datetime.now() - timedelta(days=180)
+    months = []
+    for i in range(5, -1, -1):
+        d = datetime.now() - timedelta(days=30 * i)
+        months.append((d.year, d.month, d.strftime("%b")))
+
+    comp_by_month = {
+        (r.year, r.month): r[2]
+        for r in db.query(
+            extract("year", Complaint.created_at).label("year"),
+            extract("month", Complaint.created_at).label("month"),
+            func.count(Complaint.id),
+        ).filter(Complaint.created_at >= six_months_ago)
+         .group_by("year", "month").all()
+    }
+    inc_by_month = {
+        (r.year, r.month): r[2]
+        for r in db.query(
+            extract("year", Incident.created_at).label("year"),
+            extract("month", Incident.created_at).label("month"),
+            func.count(Incident.id),
+        ).filter(Incident.created_at >= six_months_ago)
+         .group_by("year", "month").all()
+    }
+
     return {
-        "labels": ["Jan", "Feb", "Mar", "Apr", "May", "Jun"],
-        "complaints": [95, 127, 143, 108, 89, 115],
-        "incidents": [15, 18, 22, 16, 12, 15]
+        "labels": [m[2] for m in months],
+        "complaints": [comp_by_month.get((y, m), 0) for y, m, _ in months],
+        "incidents": [inc_by_month.get((y, m), 0) for y, m, _ in months],
     }
 
 

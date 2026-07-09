@@ -13,12 +13,10 @@ import {
   ShieldAlert,
   Building2,
   Gauge,
-  FileText as FileTextIcon,
   User as UserIcon,
   Settings,
   Users,
   Database,
-  FileText as FileTextIcon2
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -45,11 +43,11 @@ const EXECUTIVE_ADMIN = [
   { path: '/admin/officers', label: 'Officer Management', icon: Users },
   { path: '/admin/departments', label: 'Department Management', icon: Building2 },
   { path: '/admin/system-health', label: 'System Health', icon: Database },
-  { path: '/admin/audit-logs', label: 'Audit Logs', icon: FileTextIcon2 },
+  { path: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
 ];
 
 const CITIZEN_NAV = [
-  { path: '/citizen', label: 'Submit Complaint', icon: FileTextIcon },
+  { path: '/citizen', label: 'Submit Complaint', icon: FileText },
   { path: '/my-complaints', label: 'My Complaints', icon: UserIcon },
   { path: '/profile', label: 'Profile', icon: User },
 ];
