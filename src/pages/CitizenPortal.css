@@ -27,4 +27,11 @@
 .success-actions button { padding: 10px 20px; border-radius: var(--radius-sm); font-weight: 600; cursor: pointer; border: none; font-size: 14px; }
 .success-actions button:first-child { background: #3b82f6; color: white; }
 .success-actions button.secondary { background: white; color: var(--text-primary); border: 1px solid var(--border-subtle); }
+.processing-icon { color: #8b5cf6; margin-bottom: 12px; }
+.processing-status { display: flex; flex-direction: column; align-items: center; gap: 12px; margin: 24px 0; }
+.processing-status .spinner { animation: spin 1s linear infinite; color: #8b5cf6; }
+.status-text { font-size: 14px; color: var(--text-secondary); }
+.photo-done { color: #16a34a; }
+.field-error { color: #dc2626; font-size: 0.8rem; margin-top: -8px; }
+@keyframes spin { 100% { transform: rotate(360deg); } }
 @media (max-width: 640px) { .portal-container { padding: 20px; } .wizard { padding: 24px; } .review-grid { grid-template-columns: 1fr; } .success-actions { flex-direction: column; } }

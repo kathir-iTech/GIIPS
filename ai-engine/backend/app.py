@@ -134,11 +134,24 @@ async def lifespan(app: FastAPI):
     # Ensure outputs directory exists
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Initialize Redis pool for arq job queue
+    try:
+        from job_queue import init_redis_pool, close_redis_pool
+        await init_redis_pool()
+        logger.info("[STARTUP] Redis pool initialized for job queue")
+    except Exception as e:
+        logger.warning("[STARTUP] Redis pool init skipped: %s", e)
+
     yield
 
     # Cleanup
     _models.clear()
     logger.info("[SHUTDOWN] Models unloaded")
+    try:
+        await close_redis_pool()
+        logger.info("[SHUTDOWN] Redis pool closed")
+    except Exception:
+        pass
 
 
 # === FastAPI App ===

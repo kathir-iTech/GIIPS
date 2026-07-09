@@ -4,7 +4,7 @@ API route definitions for GIIPS backend.
 
 import uuid
 import time
-from fastapi import APIRouter, HTTPException, Depends, Query, Header
+from fastapi import APIRouter, HTTPException, Depends, Query, Header, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, extract
 from typing import List, Dict, Any, Optional
@@ -24,7 +24,8 @@ from models import (
     CopilotChatRequest,
     CopilotChatResponse
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
+from job_queue import enqueue_complaint_job, get_complaint_status
 from services import (
     ClassificationService,
     ClusteringService,
@@ -39,6 +40,7 @@ from prediction.engine import PredictiveEngine
 from knowledge.engine import GovernanceKnowledgeEngine
 from decision.support import DecisionSupportEngine
 from copilot.engine import CopilotEngine
+from storage import S3Storage, validate_file
 
 def get_current_user(authorization: Optional[str] = Header(None, alias="Authorization"), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
@@ -121,24 +123,78 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 
 # === Complaint Submission Routes ===
 
-@complaint_router.post("", response_model=ComplaintSubmissionResponse)
+@complaint_router.post("", status_code=202, response_model=SubmissionAcceptedResponse)
 async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Submit a new citizen complaint through the pipeline."""
-    start = time.perf_counter()
-    service = ComplaintService()
-    result = await service.submit_complaint(db, request.dict(), user_id=db_user.id)
-    elapsed_ms = round((time.perf_counter() - start) * 1000, 1)
+    """Submit a new citizen complaint. Enqueues ML pipeline for async processing."""
+    complaint_id = str(uuid.uuid4())
+    complaint = Complaint(
+        id=complaint_id,
+        title=request.title,
+        description=request.description,
+        location=request.location,
+        ward=request.ward,
+        image_path=request.image_path,
+        user_id=db_user.id,
+    )
+    db.add(complaint)
+    db.commit()
+
+    enqueued = await enqueue_complaint_job(complaint_id, db_user.id)
+
     _write_audit_log(
         db,
         db_user.id,
         db_user.email,
         db_user.role,
         "complaint_create",
-        result.get("complaintId"),
-        "success",
-        f"incident={result.get('incidentId')} category={result.get('predictedCategory')} priority={result.get('priority')} processing_ms={elapsed_ms}",
+        complaint_id,
+        "accepted" if enqueued else "accepted_no_worker",
+        f"async=true enqueued={enqueued}",
     )
-    return {**result, "processing_time_ms": elapsed_ms}
+    return SubmissionAcceptedResponse(
+        complaintId=complaint_id,
+        statusUrl=f"/complaints/{complaint_id}/status",
+        message="Complaint accepted for processing. Check status via the status URL."
+    )
+
+
+@complaint_router.get("/{complaint_id}/status", response_model=ComplaintProcessingStatus)
+async def get_complaint_processing_status(complaint_id: str, _: User = Depends(get_current_user)):
+    """Get async ML processing status for a complaint."""
+    status_data = await get_complaint_status(complaint_id)
+    if status_data is None:
+        return ComplaintProcessingStatus(status="pending", detail="Job not yet picked up by worker")
+    return ComplaintProcessingStatus(**status_data)
+
+
+@complaint_router.post("/{complaint_id}/upload")
+async def upload_complaint_photo(
+    complaint_id: str,
+    file: UploadFile = File(...),
+    db_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Upload a photo for complaint evidence (jpg/png, max 5MB)."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    data = await file.read()
+    err = validate_file(file.filename or "upload", file.content_type or "", len(data))
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+
+    try:
+        storage = S3Storage()
+        url = storage.upload(data, file.filename, file.content_type)
+    except Exception as e:
+        logger.error("S3 upload failed for complaint %s: %s", complaint_id, e)
+        raise HTTPException(status_code=502, detail=f"Storage upload failed: {e}")
+
+    complaint.image_path = url
+    db.commit()
+
+    return {"imageUrl": url, "complaintId": complaint_id, "message": "Photo uploaded successfully."}
 
 
 @complaint_router.get("/my")
@@ -186,6 +242,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
         "description": complaint.description,
         "location": complaint.location,
         "ward": complaint.ward,
+        "image_path": complaint.image_path,
         "predicted_category": complaint.predicted_category,
         "confidence": complaint.confidence,
         "priority": complaint.priority,

@@ -26,3 +26,6 @@ Thumbs.db
 
 # Logs
 *.log
+
+# Metrics cache (embeddings, etc.)
+metrics/cache/

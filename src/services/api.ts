@@ -104,6 +104,35 @@ export const api = {
     return data;
   },
 
+  getComplaintStatus: async (complaintId: string, token: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/status`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(`API Error: ${response.statusText}`);
+    }
+    return response.json();
+  },
+
+  uploadComplaintPhoto: async (complaintId: string, file: File, token: string): Promise<any> => {
+    const formData = new FormData();
+    formData.append('file', file);
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/upload`, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${token}`
+      },
+      body: formData,
+    });
+    const data = await safeJson(response);
+    if (!response.ok) {
+      throw new Error(data.detail || response.statusText || 'Upload failed');
+    }
+    return data;
+  },
+
   getHeatmap: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/heatmap`);
     if (!response.ok) throw new Error(`API Error: ${response.statusText}`);

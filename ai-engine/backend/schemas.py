@@ -6,7 +6,7 @@ for both Complaints and Incidents, supporting both Pydantic v1 and v2.
 """
 
 from pydantic import BaseModel, Field
-from typing import List, Optional
+from typing import List, Optional, Dict, Any
 from datetime import datetime
 
 
@@ -28,6 +28,17 @@ class ComplaintSubmissionResponse(BaseModel):
     duplicate: bool
     message: str
     processing_time_ms: float = 0.0
+
+class SubmissionAcceptedResponse(BaseModel):
+    complaintId: str
+    statusUrl: str
+    message: str
+
+class ComplaintProcessingStatus(BaseModel):
+    status: str
+    detail: str = ""
+    updated_at: Optional[str] = None
+    result: Optional[Dict[str, Any]] = None
 
 
 class ComplaintBase(BaseModel):
