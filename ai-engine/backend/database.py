@@ -579,29 +579,3 @@ def backfill_complaint_user_ids():
 # NOTE: All runtime initialization moved to app.py lifespan to avoid
 # import-time side effects. database.py must remain side-effect free
 # so that routes.py can safely import models at module load time.
-
-# Base.metadata.create_all(bind=engine)
-# seed_demo_users()
-# seed_synthetic_data()
-
-# def migrate_add_user_id():
-#     from sqlalchemy import inspect, text
-#     inspector = inspect(engine)
-#     try:
-#         cols = [c['name'] for c in inspector.get_columns('complaints')]
-#         if 'user_id' not in cols:
-#             with engine.connect() as conn:
-#                 conn.execute(text('ALTER TABLE complaints ADD COLUMN user_id VARCHAR'))
-#                 conn.commit()
-#     except Exception:
-#         pass
-
-# try:
-#     migrate_add_user_id()
-# except Exception:
-#     pass
-
-# try:
-#     backfill_complaint_user_ids()
-# except Exception:
-#     pass

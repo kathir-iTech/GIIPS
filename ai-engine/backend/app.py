@@ -121,14 +121,12 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Synthetic data seeding skipped: %s", exc)
 
-        # Run lightweight migrations and backfill
+        # Backfill any complaints missing user_id
         try:
-            from database import migrate_add_user_id, backfill_complaint_user_ids
-            migrate_add_user_id()
+            from database import backfill_complaint_user_ids
             backfill_complaint_user_ids()
-            logger.info("[STARTUP] Migration and backfill completed")
         except Exception as exc:
-            logger.warning("[STARTUP] Migration/backfill skipped: %s", exc)
+            logger.warning("[STARTUP] Complaint backfill skipped: %s", exc)
 
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
@@ -214,18 +212,24 @@ async def health():
     }
 
 
+class FindSimilarBody(BaseModel):
+    text: str
+    complaints: List[Dict] = []
+    threshold: float = 0.8
+
+
 @app.post("/similar")
-async def find_similar(text: str, complaints: List[Dict], threshold: float = 0.8):
+async def find_similar(body: FindSimilarBody):
     """Find similar complaints (simple keyword matching)."""
-    text_words = set(text.lower().split()[:10])
+    text_words = set(body.text.lower().split()[:10])
     similar = []
 
-    for c in complaints:
+    for c in body.complaints:
         ct = str(c.get('text', ''))
         ct_words = set(ct.lower().split()[:10])
         overlap = len(text_words & ct_words) / max(len(text_words), 1)
 
-        if overlap >= threshold * 0.5:
+        if overlap >= body.threshold * 0.5:
             similar.append({
                 "id": c.get('id'),
                 "text": ct[:100],

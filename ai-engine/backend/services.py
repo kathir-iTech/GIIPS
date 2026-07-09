@@ -10,7 +10,7 @@ from pathlib import Path
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 import uuid
-from sqlalchemy import func, and_
+from sqlalchemy import func, and_, or_
 from sqlalchemy.orm import joinedload
 
 logger = logging.getLogger(__name__)
@@ -240,7 +240,22 @@ class ComplaintService:
 
         if self.duplicate_detector is not None:
             try:
-                existing_complaints = db.query(Complaint).all()
+                ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+                existing_complaints = (
+                    db.query(Complaint)
+                    .filter(
+                        and_(
+                            Complaint.created_at >= ninety_days_ago,
+                            or_(
+                                Complaint.ward == complaint_data.get('ward'),
+                                Complaint.predicted_category == category,
+                            ),
+                        )
+                    )
+                    .order_by(Complaint.created_at.desc())
+                    .limit(1000)
+                    .all()
+                )
                 formatted_existing = [{
                     'title': c.title, 'description': c.description,
                     'lat': getattr(c, 'latitude', 0) or 0, 'lon': getattr(c, 'longitude', 0) or 0,

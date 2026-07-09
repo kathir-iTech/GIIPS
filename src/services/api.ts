@@ -19,6 +19,8 @@ interface PriorityPayload {
 
 interface SimilarPayload {
   text: string;
+  complaints?: any[];
+  threshold?: number;
 }
 
 const safeJson = async (response: Response) => {
