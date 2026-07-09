@@ -211,8 +211,75 @@ class SpatialService:
         data = db.query(Complaint.ward, func.avg(Complaint.latitude), func.avg(Complaint.longitude), func.count(Complaint.id)).group_by(Complaint.ward).all()
         return [{"ward": w, "count": c, "latitude": lat, "longitude": lon} for w, lat, lon, c in data if lat and lon]
     async def get_hotspots(self, db) -> List[Dict[str, Any]]:
-        wards = await self.get_heatmap(db)
-        return [{"ward": w["ward"], "latitude": w.get("latitude", 12.0), "longitude": w.get("longitude", 78.0), "count": w["count"], "growth": 15.5, "severity": "High"} for w in wards]
+        from collections import Counter
+
+        now = datetime.utcnow()
+        week_ago = now - timedelta(days=7)
+        two_weeks_ago = now - timedelta(days=14)
+
+        complaints = db.query(
+            Complaint.ward, Complaint.predicted_category,
+            Complaint.created_at, Complaint.latitude, Complaint.longitude,
+        ).filter(Complaint.ward.isnot(None)).all()
+
+        grouped: Dict[str, List] = {}
+        for c in complaints:
+            grouped.setdefault(c.ward, []).append(c)
+
+        priority = PriorityEngine()
+        results: List[Dict[str, Any]] = []
+
+        for ward, items in grouped.items():
+            n = len(items)
+            cat_counter = Counter(it.predicted_category for it in items)
+            modal_category = cat_counter.most_common(1)[0][0] if cat_counter else 'General Construction'
+
+            dates = [it.created_at for it in items if it.created_at]
+            first_date = min(dates).isoformat() if dates else now.isoformat()
+            last_date = max(dates).isoformat() if dates else now.isoformat()
+
+            # Severity via PriorityEngine (considers count + category + age)
+            ward_result = priority.compute(
+                incident_id=f"ward-{ward}",
+                cluster_size=n,
+                first_complaint_date=first_date,
+                last_complaint_date=last_date,
+                category=modal_category,
+                location_hints=[ward.lower()],
+            )
+
+            if ward_result.priority_score >= 75:
+                severity = "Critical"
+            elif ward_result.priority_score >= 55:
+                severity = "High"
+            elif ward_result.priority_score >= 35:
+                severity = "Medium"
+            else:
+                severity = "Low"
+
+            # Growth: week-over-week
+            recent = sum(1 for it in items if it.created_at and it.created_at >= week_ago)
+            prev = sum(1 for it in items if it.created_at and two_weeks_ago <= it.created_at < week_ago)
+            if prev > 0:
+                growth = round(((recent - prev) / prev) * 100.0, 1)
+            elif recent > 0:
+                growth = 100.0
+            else:
+                growth = 0.0
+
+            avg_lat = sum(it.latitude for it in items if it.latitude) / n
+            avg_lon = sum(it.longitude for it in items if it.longitude) / n
+
+            results.append({
+                "ward": ward,
+                "latitude": round(avg_lat, 6) if avg_lat else 12.0,
+                "longitude": round(avg_lon, 6) if avg_lon else 78.0,
+                "count": n,
+                "growth": growth,
+                "severity": severity,
+            })
+
+        return results
     async def get_forecast(self, days: int) -> List[Dict[str, Any]]:
         return [{"date": (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d"), "forecast": 10 + i} for i in range(days)]
     async def get_risk_analysis(self, db) -> List[Dict[str, Any]]:
