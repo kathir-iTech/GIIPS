@@ -182,6 +182,11 @@
   background: #0b1120 !important;
 }
 
+.command-map .leaflet-tile-pane {
+  filter: invert(0.9) hue-rotate(180deg) saturate(0.6) brightness(0.85) !important;
+  -webkit-filter: invert(0.9) hue-rotate(180deg) saturate(0.6) brightness(0.85) !important;
+}
+
 
 
 .map-overlay-info {
