@@ -62,6 +62,29 @@
 .footer-links a:hover { color: #94a3b8; }
 .footer-copy { font-size: 12px; color: #475569; }
 
+.demo-section { position: relative; z-index: 10; max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; }
+.demo-header { text-align: center; margin-bottom: 32px; }
+.demo-section-icon { color: #3b82f6; margin-bottom: 8px; }
+.demo-header h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
+.demo-header p { font-size: 15px; color: #94a3b8; }
+.demo-header p strong { color: #fbbf24; font-weight: 600; }
+.demo-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
+.demo-table { width: 100%; border-collapse: collapse; font-size: 14px; }
+.demo-table thead { background: rgba(255,255,255,0.04); }
+.demo-table th { padding: 12px 16px; text-align: left; font-weight: 600; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.06); }
+.demo-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
+.demo-table tbody tr:hover { background: rgba(255,255,255,0.03); }
+.demo-table tbody tr:last-child td { border-bottom: none; }
+.demo-role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid; }
+.demo-email { font-family: 'JetBrains Mono', 'Fira Code', monospace; color: #e2e8f0; font-size: 13px; }
+.demo-pw { font-family: 'JetBrains Mono', 'Fira Code', monospace; color: #fbbf24; font-size: 13px; }
+.demo-access { color: #94a3b8; font-size: 12px; max-width: 240px; }
+.demo-copy-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; }
+.demo-copy-btn:hover { background: rgba(255,255,255,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
+.demo-note { margin-top: 20px; font-size: 14px; color: #94a3b8; text-align: center; line-height: 1.6; }
+.demo-note a { color: #60a5fa; }
+.demo-note code { background: rgba(251,191,36,0.15); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
+
 @media (max-width: 768px) {
   .hero-os h1 { font-size: 32px; }
   .hero-os { padding: 60px 20px 40px; }

@@ -1,10 +1,26 @@
 import { Link } from 'react-router-dom';
-import { User, ShieldAlert, Play, LogIn, UserPlus, Building2, GitBranch, BarChart3, MapPin, Cpu, LogOut, LayoutDashboard } from 'lucide-react';
+import { User, ShieldAlert, Play, LogIn, UserPlus, Building2, GitBranch, BarChart3, MapPin, Cpu, LogOut, LayoutDashboard, Database, Copy, Check } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { useState } from 'react';
 import './Landing.css';
+
+const DEMO_ACCOUNTS = [
+  { role: 'Executive', email: 'collector@giips.gov.in', password: 'password123', icon: Building2, color: '#a78bfa' },
+  { role: 'Officer', email: 'officer1@giips.gov.in', password: 'password123', icon: ShieldAlert, color: '#34d399' },
+  { role: 'Officer', email: 'officer2@giips.gov.in', password: 'password123', icon: ShieldAlert, color: '#34d399' },
+  { role: 'Officer', email: 'officer3@giips.gov.in', password: 'password123', icon: ShieldAlert, color: '#34d399' },
+  { role: 'Citizen', email: 'citizen@giips.gov.in', password: 'password123', icon: User, color: '#60a5fa' },
+];
 
 const Landing = () => {
   const { user, logout } = useAuth();
+  const [copied, setCopied] = useState<string | null>(null);
+
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    setCopied(text);
+    setTimeout(() => setCopied(null), 2000);
+  };
 
   const dashboardPath = user?.role === 'Citizen' ? '/citizen'
     : user?.role === 'Officer' ? '/officer'
@@ -104,6 +120,59 @@ const Landing = () => {
             )}
           </div>
         </div>
+      </section>
+
+      <section className="demo-section">
+        <div className="demo-header">
+          <Database size={28} className="demo-section-icon" />
+          <h2>Demo Credentials</h2>
+          <p>Use these pre-seeded accounts to explore each role. The same password works for all: <strong>password123</strong></p>
+        </div>
+        <div className="demo-table-wrapper">
+          <table className="demo-table">
+            <thead>
+              <tr>
+                <th>Role</th>
+                <th>Email</th>
+                <th>Password</th>
+                <th>Can Access</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              {DEMO_ACCOUNTS.map((acc) => {
+                const Icon = acc.icon;
+                const portal = acc.role === 'Citizen' ? 'Citizen Portal / My Complaints'
+                  : acc.role === 'Officer' ? 'Officer Dashboard / Incident Feed / Analysis / Clusters / Spatial'
+                  : 'Executive Dashboard / Admin Panel / All Officer areas';
+                return (
+                  <tr key={acc.email}>
+                    <td>
+                      <span className="demo-role-badge" style={{ borderColor: acc.color, color: acc.color }}>
+                        <Icon size={14} /> {acc.role}
+                      </span>
+                    </td>
+                    <td className="demo-email">{acc.email}</td>
+                    <td className="demo-pw">{acc.password}</td>
+                    <td className="demo-access">{portal}</td>
+                    <td>
+                      <button
+                        className="demo-copy-btn"
+                        onClick={() => handleCopy(acc.email)}
+                        title="Copy email"
+                      >
+                        {copied === acc.email ? <Check size={14} /> : <Copy size={14} />}
+                      </button>
+                    </td>
+                  </tr>
+                );
+              })}
+            </tbody>
+          </table>
+        </div>
+        <p className="demo-note">
+          <strong>How to test:</strong> Click <Link to="/login">Sign In</Link>, paste an email above, enter <code>password123</code>, and you will be routed to the correct dashboard for that role. Each role sees only its own pages — a Citizen cannot access officer or executive routes.
+        </p>
       </section>
 
       <section className="features-section">

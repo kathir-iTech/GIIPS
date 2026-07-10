@@ -53,16 +53,6 @@ function AppLayout() {
   );
 }
 
-const AuthRedirect = ({ children }: { children: React.ReactNode }) => {
-  const { user } = useAuth();
-  if (user) {
-    if (user.role === 'Citizen') return <Navigate to="/citizen" replace />;
-    if (user.role === 'Officer') return <Navigate to="/officer" replace />;
-    if (user.role === 'Executive') return <Navigate to="/executive" replace />;
-  }
-  return <>{children}</>;
-};
-
 function AnimatedRoutes() {
   const location = useLocation();
   return (
