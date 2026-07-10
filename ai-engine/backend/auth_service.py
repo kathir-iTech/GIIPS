@@ -31,5 +31,5 @@ def create_access_token(data: dict) -> str:
 def verify_token(token: str) -> Optional[dict]:
     try:
         return jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-    except:
+    except Exception:
         return None

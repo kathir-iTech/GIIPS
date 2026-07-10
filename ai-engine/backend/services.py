@@ -372,7 +372,7 @@ class ComplaintService:
             predicted_category=category, 
             confidence=confidence, 
             incident=incident,
-            merge_reason=merge_reason if is_duplicate else None,
+            merge_reason=merge_reason,
             user_id=user_id
         )
         db.add(new_complaint)

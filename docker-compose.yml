@@ -72,7 +72,7 @@ services:
       # WARNING: the fallback value below is INSECURE for production — always
       # set GIIPS_JWT_SECRET in a .env file or export it before docker compose up.
       GIIPS_JWT_SECRET: ${GIIPS_JWT_SECRET:-giips-docker-local-secret-change-in-production}
-      GIIPS_ALLOWED_ORIGINS: "*"
+      GIIPS_ALLOWED_ORIGINS: ${GIIPS_ALLOWED_ORIGINS}
       AI_ENGINE_DATA_DIR: /app/ai-engine/data
       AI_ENGINE_MODELS_DIR: /app/ai-engine/models
       S3_ENDPOINT_URL: http://minio:9000

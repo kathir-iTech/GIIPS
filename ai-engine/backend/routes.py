@@ -4,6 +4,7 @@ API route definitions for GIIPS backend.
 
 import uuid
 import time
+import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, Header, UploadFile, File
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, extract
@@ -42,6 +43,8 @@ from decision.support import DecisionSupportEngine
 from copilot.engine import CopilotEngine
 from storage import S3Storage, validate_file
 
+logger = logging.getLogger(__name__)
+
 def get_current_user(authorization: Optional[str] = Header(None, alias="Authorization"), db: Session = Depends(get_db)) -> User:
     if not authorization or not authorization.startswith("Bearer "):
         raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
@@ -71,6 +74,7 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
         db.add(log)
         db.commit()
     except Exception:
+        logger.error("Audit log write failed for action=%s target=%s", action, target)
         db.rollback()
 
 # ... (router definitions)
