@@ -1,5 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../services/api';
 import { tamilNaduDistricts, districtCentroids } from '../data/tamil-nadu-districts';
@@ -44,6 +44,16 @@ const getPriorityColor = (priority: string): string => {
   }
 };
 
+const TileErrorListener = ({ onError }: { onError: () => void }) => {
+  const map = useMap();
+  useEffect(() => {
+    const handler = () => onError();
+    map.on('tileerror', handler);
+    return () => { map.off('tileerror', handler); };
+  }, [map, onError]);
+  return null;
+};
+
 const SpatialIntelligence = () => {
   const [heatmap, setHeatmap] = useState<any[]>([]);
   const [hotspots, setHotspots] = useState<any[]>([]);
@@ -57,6 +67,7 @@ const SpatialIntelligence = () => {
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
   const [mapKey, setMapKey] = useState(0);
+  const [tileError, setTileError] = useState(false);
 
   const [timelineDays, setTimelineDays] = useState<number>(7);
   const [layers, setLayers] = useState({
@@ -520,6 +531,7 @@ const SpatialIntelligence = () => {
               url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
               maxZoom={19}
             />
+            <TileErrorListener onError={() => setTileError(true)} />
 
             {layers.complaints && (
               <GeoJSON
@@ -534,7 +546,7 @@ const SpatialIntelligence = () => {
                     opacity: 0.9,
                     color: isForecast ? '#fbbf24' : selectedDistrict === districtName ? '#3b82f6' : 'rgba(255,255,255,0.3)',
                     dashArray: isForecast ? '5, 5' : undefined,
-                    fillOpacity: isForecast ? 0.3 : baseColor === 'transparent' ? 0.05 : 0.35,
+                    fillOpacity: isForecast ? 0.3 : baseColor === 'transparent' ? 0.05 : 0.2,
                   };
                 }}
                 onEachFeature={(feature: any, layer: any) => {
@@ -644,6 +656,7 @@ const SpatialIntelligence = () => {
           <div className="map-overlay-info">
             <span className="map-source">Base: CARTO Dark Matter</span>
             {error && <span className="map-warning"><AlertTriangle size={12} /> Partial data</span>}
+            {tileError && <span className="map-warning"><AlertTriangle size={12} /> Tile load error</span>}
           </div>
         </div>
 
