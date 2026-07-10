@@ -25,7 +25,7 @@ const MyComplaints = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     api.getMyComplaints(token)

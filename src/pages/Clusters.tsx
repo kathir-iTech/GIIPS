@@ -216,7 +216,7 @@ const Clusters = () => {
     if (search.trim()) {
       const q = search.toLowerCase();
       data = data.filter(i =>
-        i.incident_number.toLowerCase().includes(q) ||
+        (i.incident_number || '').toLowerCase().includes(q) ||
         i.category?.toLowerCase().includes(q) ||
         i.ward?.toLowerCase().includes(q) ||
         i.summary?.toLowerCase().includes(q) ||

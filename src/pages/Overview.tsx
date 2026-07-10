@@ -45,7 +45,7 @@ const Overview = () => {
   }, []);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading dashboard...</span></div>;
-  if (!data) return <div className="page-error">Error: {error}</div>;
+  if (!data) return <div className="page-error">Error: {error || 'Failed to load dashboard data'}</div>;
 
   const priorityColors = {
     Critical: '#dc2626',

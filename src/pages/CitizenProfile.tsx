@@ -16,7 +16,7 @@ const CitizenProfile = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) return;
+    if (!token) { setLoading(false); return; }
     setLoading(true);
     api.getMe(token)
       .then(res => {

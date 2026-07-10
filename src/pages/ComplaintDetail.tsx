@@ -24,7 +24,7 @@ const ComplaintDetail = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!id || !token) return;
+    if (!id || !token) { setLoading(false); return; }
     setLoading(true);
     setError(null);
     api.getComplaintDetail(id, token)
