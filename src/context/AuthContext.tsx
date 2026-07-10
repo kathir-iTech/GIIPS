@@ -49,6 +49,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (savedToken && savedUser) {
         setToken(savedToken);
         setUser(JSON.parse(savedUser));
+        api.getMe(savedToken).catch(() => {
+          localStorage.removeItem('giips_token');
+          localStorage.removeItem('giips_user');
+          setToken(null);
+          setUser(null);
+        });
       }
     } catch {
       localStorage.removeItem('giips_token');
@@ -94,8 +100,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (data: RegisterData) => {
     setIsLoading(true);
     try {
-      await api.register(data);
-      navigate('/login');
+      const res = await api.register(data);
+      if (res.role === 'Executive') {
+        navigate('/executive');
+      } else {
+        navigate('/login');
+      }
     } catch (err: any) {
       throw new Error(err.message || 'Registration failed');
     } finally {
