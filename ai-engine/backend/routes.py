@@ -188,8 +188,12 @@ async def upload_complaint_photo(
     if err:
         raise HTTPException(status_code=400, detail=err)
 
+    storage = S3Storage()
+    if not storage.available:
+        logger.warning("S3 not configured — skipping photo upload for complaint %s", complaint_id)
+        return {"imageUrl": "", "complaintId": complaint_id, "message": "Photo storage not configured. Complaint submitted without image."}
+
     try:
-        storage = S3Storage()
         url = storage.upload(data, file.filename, file.content_type)
     except Exception as e:
         logger.error("S3 upload failed for complaint %s: %s", complaint_id, e)

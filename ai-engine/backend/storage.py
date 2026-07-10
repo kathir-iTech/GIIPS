@@ -30,6 +30,10 @@ class S3Storage:
         self._client = None
 
     @property
+    def available(self) -> bool:
+        return os.environ.get("S3_ENDPOINT_URL") is not None
+
+    @property
     def client(self):
         if self._client is None:
             import boto3
