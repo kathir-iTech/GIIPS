@@ -170,6 +170,7 @@ function AnimatedRoutes() {
           </PageTransition>
         } />
         
+        <Route path="/admin" element={<Navigate to="/admin/officers" replace />} />
         <Route path="/admin/officers" element={
           <PageTransition>
             <RoleGuard allowedRoles={['Executive']}>
