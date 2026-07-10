@@ -30,8 +30,6 @@
 .btn-main:hover { background: #2563eb; transform: translateY(-1px); box-shadow: 0 8px 30px rgba(59,130,246,0.3); }
 .btn-main.btn-secondary { background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.15); }
 .btn-main.btn-secondary:hover { background: rgba(255,255,255,0.14); box-shadow: none; }
-.btn-demo { background: rgba(255,255,255,0.06); color: white; padding: 14px 28px; border-radius: 10px; text-decoration: none; font-weight: 600; font-size: 15px; transition: all 0.2s; border: 1px solid rgba(255,255,255,0.1); display: inline-flex; align-items: center; gap: 8px; }
-.btn-demo:hover { background: rgba(255,255,255,0.1); border-color: rgba(255,255,255,0.2); transform: translateY(-1px); }
 
 .role-cards { position: relative; z-index: 10; display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
 .role-card { padding: 36px 28px; text-align: center; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.03); border-radius: 16px; }
@@ -47,43 +45,12 @@
 .btn-role.secondary { background: rgba(255,255,255,0.08); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.1); }
 .btn-role.secondary:hover { background: rgba(255,255,255,0.14); }
 
-.features-section { position: relative; z-index: 10; max-width: 1000px; margin: 0 auto; padding: 0 20px 80px; }
-.features-section h2 { text-align: center; font-size: 32px; font-weight: 700; margin-bottom: 40px; }
-.features-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 20px; }
-.feature-card { padding: 28px 24px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); border-radius: 14px; }
-.feature-icon { color: #3b82f6; margin-bottom: 12px; }
-.feature-card h3 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
-.feature-card p { font-size: 14px; color: #94a3b8; line-height: 1.6; }
-
 .landing-footer { position: relative; z-index: 10; border-top: 1px solid rgba(255,255,255,0.06); padding: 32px 60px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 16px; }
 .footer-brand { font-size: 13px; color: #64748b; font-weight: 500; }
 .footer-links { display: flex; gap: 20px; }
 .footer-links a { color: #64748b; text-decoration: none; font-size: 13px; transition: color 0.2s; }
 .footer-links a:hover { color: #94a3b8; }
 .footer-copy { font-size: 12px; color: #475569; }
-
-.demo-section { position: relative; z-index: 10; max-width: 1000px; margin: 0 auto; padding: 0 20px 60px; }
-.demo-header { text-align: center; margin-bottom: 32px; }
-.demo-section-icon { color: #3b82f6; margin-bottom: 8px; }
-.demo-header h2 { font-size: 28px; font-weight: 700; margin-bottom: 8px; }
-.demo-header p { font-size: 15px; color: #94a3b8; }
-.demo-header p strong { color: #fbbf24; font-weight: 600; }
-.demo-table-wrapper { overflow-x: auto; border-radius: 12px; border: 1px solid rgba(255,255,255,0.06); background: rgba(255,255,255,0.02); }
-.demo-table { width: 100%; border-collapse: collapse; font-size: 14px; }
-.demo-table thead { background: rgba(255,255,255,0.04); }
-.demo-table th { padding: 12px 16px; text-align: left; font-weight: 600; color: #94a3b8; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid rgba(255,255,255,0.06); }
-.demo-table td { padding: 14px 16px; border-bottom: 1px solid rgba(255,255,255,0.04); vertical-align: middle; }
-.demo-table tbody tr:hover { background: rgba(255,255,255,0.03); }
-.demo-table tbody tr:last-child td { border-bottom: none; }
-.demo-role-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 10px; border-radius: 6px; font-size: 13px; font-weight: 600; border: 1px solid; }
-.demo-email { font-family: 'JetBrains Mono', 'Fira Code', monospace; color: #e2e8f0; font-size: 13px; }
-.demo-pw { font-family: 'JetBrains Mono', 'Fira Code', monospace; color: #fbbf24; font-size: 13px; }
-.demo-access { color: #94a3b8; font-size: 12px; max-width: 240px; }
-.demo-copy-btn { background: rgba(255,255,255,0.06); border: 1px solid rgba(255,255,255,0.1); color: #94a3b8; padding: 6px; border-radius: 6px; cursor: pointer; transition: all 0.2s; display: inline-flex; align-items: center; }
-.demo-copy-btn:hover { background: rgba(255,255,255,0.12); color: #60a5fa; border-color: rgba(59,130,246,0.3); }
-.demo-note { margin-top: 20px; font-size: 14px; color: #94a3b8; text-align: center; line-height: 1.6; }
-.demo-note a { color: #60a5fa; }
-.demo-note code { background: rgba(251,191,36,0.15); color: #fbbf24; padding: 2px 8px; border-radius: 4px; font-size: 13px; }
 
 @media (max-width: 768px) {
   .hero-os h1 { font-size: 32px; }
@@ -92,10 +59,8 @@
   .nav-links { gap: 4px; }
   .nav-link { font-size: 13px; padding: 6px 10px; }
   .role-cards { grid-template-columns: 1fr; max-width: 400px; padding-bottom: 60px; }
-  .features-grid { grid-template-columns: 1fr; }
-  .features-section h2 { font-size: 26px; }
   .landing-footer { padding: 24px 20px; flex-direction: column; text-align: center; }
-  .btn-main, .btn-demo { padding: 12px 20px; font-size: 14px; }
+  .btn-main { padding: 12px 20px; font-size: 14px; }
   .blob-1 { width: 260px; height: 260px; top: -80px; left: -80px; }
   .blob-2 { width: 200px; height: 200px; bottom: -40px; right: 60px; }
   .blob-3 { width: 180px; height: 180px; top: 140px; right: -30px; }
