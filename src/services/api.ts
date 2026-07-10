@@ -148,7 +148,7 @@ export const api = {
       accuracy: accuracy / 100,
       precision: precision / 100,
       recall: recall / 100,
-      f1Score,
+      f1Score: f1Score / 100,
       datasetSize: metrics.dataset_size ?? 0,
       modelType: metrics.model_type || '',
       categories: metrics.categories || [],
