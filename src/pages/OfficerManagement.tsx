@@ -17,6 +17,7 @@ const OfficerManagement = () => {
   const { token } = useAuth();
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '', district: '', department: '' });
@@ -28,12 +29,13 @@ const OfficerManagement = () => {
   const fetchOfficers = async () => {
     if (!token) return;
     setLoading(true);
+    setError(null);
     try {
       const response = await api.get('/admin/officers', token);
       const data = await response.json();
       setOfficers(data);
-    } catch (error) {
-      console.error(error);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to load officers');
     } finally {
       setLoading(false);
     }
@@ -117,6 +119,8 @@ const OfficerManagement = () => {
           <tbody>
             {loading ? (
               <tr><td colSpan={7} className="loading">Loading...</td></tr>
+            ) : error ? (
+              <tr><td colSpan={7} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchOfficers}>Retry</button></td></tr>
             ) : filteredOfficers.length === 0 ? (
               <tr><td colSpan={7} className="empty">No officers found</td></tr>
             ) : (

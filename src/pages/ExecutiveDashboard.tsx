@@ -7,7 +7,7 @@ import { useAuth } from '../context/AuthContext';
 import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
-  Minus, ChevronRight, Wrench, Droplets, Lightbulb, Trash2, Heart, ZapIcon,
+  Minus, ChevronRight, Wrench, Droplets, Lightbulb, Trash2, Heart,
   Road, Send, X, Loader2, Brain, Target, Compass, AlertTriangle, CheckCircle2,
   DollarSign, Calendar, Gauge, Sparkles, Bot, MessageSquare, Flame, ThermometerSun,
   Users2, ArrowRight
@@ -181,6 +181,8 @@ const ExecutiveDashboard = () => {
 
   const criticalIncidents = useMemo(() => incidents.filter((i: any) => i.priority_label?.toLowerCase() === 'critical').slice(0, 5), [incidents]);
   const highIncidents = useMemo(() => incidents.filter((i: any) => i.priority_label?.toLowerCase() === 'high').slice(0, 10), [incidents]);
+  const topDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 5), [wardHealth]);
+  const criticalDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 5), [wardHealth]);
 
   const totalComplaints = execSummary?.totalComplaints ?? execSummary?.todayComplaints ?? 0;
   const criticalCount = execSummary?.criticalIncidentCount ?? execSummary?.criticalIncidents ?? 0;
@@ -221,8 +223,6 @@ const ExecutiveDashboard = () => {
 
   const recommendations = decisionSupport?.recommendations || decisionSupport?.actions || [];
   const districtsAtRisk = wardHealth?.filter((w: any) => (w.healthScore || 100) < 60) || [];
-  const topDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 5), [wardHealth]);
-  const criticalDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 5), [wardHealth]);
 
   const copilotSuggestions = ['Which district needs immediate intervention?', 'Recommend resource allocation', 'Which department is overloaded?', 'Explain current road situation'];
 
@@ -436,7 +436,7 @@ const ExecutiveDashboard = () => {
           ]).map((dept: any, idx: number) => {
             const name = dept.department || dept.name || '';
             const efficiency = dept.efficiency ?? dept.score ?? 70;
-            const deptIcon = name.toLowerCase().includes('road') ? Road : name.toLowerCase().includes('water') ? Droplets : name.toLowerCase().includes('drainage') ? Droplets : name.toLowerCase().includes('electricity') ? ZapIcon : name.toLowerCase().includes('streetlight') ? Lightbulb : name.toLowerCase().includes('garbage') ? Trash2 : name.toLowerCase().includes('health') ? Heart : Wrench;
+            const deptIcon = name.toLowerCase().includes('road') ? Road : name.toLowerCase().includes('water') ? Droplets : name.toLowerCase().includes('drainage') ? Droplets : name.toLowerCase().includes('electricity') ? Zap : name.toLowerCase().includes('streetlight') ? Lightbulb : name.toLowerCase().includes('garbage') ? Trash2 : name.toLowerCase().includes('health') ? Heart : Wrench;
             const color = EXEC_DEPT_COLORS[name] || '#64748b';
             return (
               <div key={idx} className="dept-card" style={{ borderLeftColor: color }}>
