@@ -5,24 +5,6 @@ if (!BASE_URL) {
     throw new Error("VITE_API_BASE_URL is required but not set. Define it in your .env file.");
 }
 
-interface ClassifyPayload {
-  text: string;
-}
-
-interface ClusterPayload {
-  text: string;
-}
-
-interface PriorityPayload {
-  text: string;
-}
-
-interface SimilarPayload {
-  text: string;
-  complaints?: any[];
-  threshold?: number;
-}
-
 const safeJson = async (response: Response) => {
   try {
     return await response.json();
@@ -31,59 +13,20 @@ const safeJson = async (response: Response) => {
   }
 };
 
+const getErrorMessage = async (response: Response): Promise<string> => {
+  try {
+    const body = await response.json();
+    return body.detail || body.message || body.error || `HTTP ${response.status}`;
+  } catch {
+    return `HTTP ${response.status}`;
+  }
+};
+
 export const api = {
   getDashboardData: async (): Promise<DashboardData> => {
     const response = await fetch(`${BASE_URL}/dashboard`);
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  classifyComplaint: async (payload: ClassifyPayload): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/classify`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  clusterComplaints: async (payload: ClusterPayload): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/cluster`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  calculatePriority: async (payload: PriorityPayload): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/priority`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
-    }
-    return response.json();
-  },
-
-  findSimilar: async (payload: SimilarPayload): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/similar`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(payload),
-    });
-    if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
@@ -99,7 +42,7 @@ export const api = {
     });
     const data = await safeJson(response);
     if (!response.ok) {
-      throw new Error(data.detail || response.statusText || 'Submission failed');
+      throw new Error(data.detail || `HTTP ${response.status}` || 'Submission failed');
     }
     return data;
   },
@@ -111,7 +54,7 @@ export const api = {
       }
     });
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
@@ -128,34 +71,34 @@ export const api = {
     });
     const data = await safeJson(response);
     if (!response.ok) {
-      throw new Error(data.detail || response.statusText || 'Upload failed');
+      throw new Error(data.detail || `HTTP ${response.status}` || 'Upload failed');
     }
     return data;
   },
 
   getHeatmap: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/heatmap`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getHotspots: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/hotspots`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getForecast: async (days: number): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/forecast?days=${days}`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getRiskAnalysis: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/risk`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   simulateResources: async (additional_teams: number): Promise<any> => {
     const response = await fetch(`${BASE_URL}/spatial/simulate?additional_teams=${additional_teams}`, { method: 'POST' });
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
@@ -165,7 +108,7 @@ export const api = {
       : `${BASE_URL}/incidents`;
     const response = await fetch(url);
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     const data = await response.json();
     return data.incidents || [];
@@ -174,7 +117,7 @@ export const api = {
   getClusterDetail: async (incidentId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}`);
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
@@ -213,26 +156,25 @@ export const api = {
       confusionMatrix: Array.isArray(metrics.confusion_matrix) ? metrics.confusion_matrix : [],
       trendData: (trend.labels || []).map((label: string, i: number) => ({
         month: label,
-        accuracy: Math.min(0.99, 0.90 + i * 0.005),
-        precision: Math.min(0.99, 0.85 + i * 0.005),
-        recall: Math.min(0.99, 0.88 + i * 0.004)
+        complaints: (trend.complaints || [])[i] ?? 0,
+        incidents: (trend.incidents || [])[i] ?? 0
       }))
     };
   },
   
   getExecutiveSummary: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/executive/summary`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getWardHealth: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/executive/ward-health`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getDeptWorkload: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/executive/department-workload`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
@@ -288,7 +230,7 @@ export const api = {
       }
     });
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
@@ -300,7 +242,7 @@ export const api = {
       }
     });
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
@@ -312,7 +254,7 @@ export const api = {
       }
     });
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response;
   },
@@ -327,7 +269,7 @@ export const api = {
       body: JSON.stringify(data)
     });
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response;
   },
@@ -339,25 +281,25 @@ export const api = {
 
   getPredictionsSummary: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/predictions/summary`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   getPriorityRules: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/priority/rules`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   getKnowledgeSummary: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/knowledge/summary`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   getDecisionSupportSummary: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/decision-support/summary`);
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
@@ -367,7 +309,7 @@ export const api = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, history })
     });
-    if (!response.ok) throw new Error(`API Error: ${response.statusText}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
@@ -381,7 +323,7 @@ export const api = {
       body: JSON.stringify(data)
     });
     if (!response.ok) {
-      throw new Error(`API Error: ${response.statusText}`);
+      throw new Error(await getErrorMessage(response));
     }
     return response;
   },

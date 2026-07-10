@@ -78,21 +78,20 @@ const Analysis = () => {
         <section className="charts-section">
           <div className="chart-card large">
             <div className="chart-header">
-              <h3>Model Performance Trend (6 Months)</h3>
-              <span className="chart-subtitle">Weekly evaluation metrics</span>
+              <h3>Complaint & Incident Volume (6 Months)</h3>
+              <span className="chart-subtitle">Monthly totals from backend</span>
             </div>
             {metrics.trendData.length > 0 ? (
               <Plot
                 data={[
-                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.accuracy), type: 'scatter', mode: 'lines+markers', name: 'Accuracy', line: { color: '#1e293b', width: 3 }, marker: { size: 8 } },
-                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.precision), type: 'scatter', mode: 'lines+markers', name: 'Precision', line: { color: '#0369a1', width: 2, dash: 'dot' }, marker: { size: 6 } },
-                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.recall), type: 'scatter', mode: 'lines+markers', name: 'Recall', line: { color: '#16a34a', width: 2, dash: 'dash' }, marker: { size: 6 } }
+                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.complaints), type: 'scatter', mode: 'lines+markers', name: 'Complaints', line: { color: '#1e293b', width: 3 }, marker: { size: 8 } },
+                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.incidents), type: 'scatter', mode: 'lines+markers', name: 'Incidents', line: { color: '#0369a1', width: 2, dash: 'dot' }, marker: { size: 6 } },
                 ]}
                 layout={{
                   paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
                   margin: { t: 10, r: 30, b: 50, l: 60 },
                   xaxis: { showgrid: false, tickangle: -45 },
-                  yaxis: { showgrid: true, gridcolor: '#f1f5f9', range: [0.84, 0.98], tickformat: '.0%' },
+                  yaxis: { showgrid: true, gridcolor: '#f1f5f9' },
                   showlegend: true, legend: { orientation: 'h', y: 1.15 },
                   hovermode: 'x unified', height: 300
                 }}
@@ -162,8 +161,7 @@ const Analysis = () => {
           </div>
 
           <div className="chart-card">
-            <div className="chart-header"><h3>Similarity Threshold Analysis</h3><span className="chart-subtitle">Clustering quality by threshold</span></div>
-            {metrics.trendData.length > 0 ? (
+            <div className="chart-header"><h3>Similarity Threshold Analysis</h3><span className="chart-subtitle">Illustrative example — live data pending backend integration</span></div>
               <div className="threshold-chart">
                 {[
                   { threshold: 0.70, clusters: 18, duplicates: 12, quality: 68 },
@@ -181,9 +179,6 @@ const Analysis = () => {
                   </div>
                 ))}
               </div>
-            ) : (
-              <div className="empty-chart">Threshold analysis data not available.</div>
-            )}
           </div>
         </section>
       </div>

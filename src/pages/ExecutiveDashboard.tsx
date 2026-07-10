@@ -612,7 +612,7 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 10. Predictive Timeline */}
-      <SectionCard title="Predictive Timeline" subtitle="Forecasted governance outlook" icon={<Calendar size={18} />}>
+      <SectionCard title="Predictive Timeline" subtitle="Illustrative forecast — live data pending backend integration" icon={<Calendar size={18} />}>
         <div className="timeline-tabs">
           {[7, 15, 30].map(days => (
             <button key={days} className="timeline-tab active">{days} Days</button>

@@ -20,6 +20,7 @@ const OfficerManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchTerm, setSearchTerm] = useState('');
   const [showAddDialog, setShowAddDialog] = useState(false);
+  const [dialogError, setDialogError] = useState<string | null>(null);
   const [formData, setFormData] = useState({ full_name: '', email: '', password: '', district: '', department: '' });
 
   useEffect(() => {
@@ -49,21 +50,36 @@ const OfficerManagement = () => {
 
   const handleDisable = async (id: string) => {
     if (!token) return;
-    await api.patch(`/admin/officers/${id}/disable`, {}, token);
-    fetchOfficers();
+    try {
+      setError(null);
+      await api.patch(`/admin/officers/${id}/disable`, {}, token);
+      fetchOfficers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to disable officer');
+    }
   };
 
   const handleEnable = async (id: string) => {
     if (!token) return;
-    await api.patch(`/admin/officers/${id}/enable`, {}, token);
-    fetchOfficers();
+    try {
+      setError(null);
+      await api.patch(`/admin/officers/${id}/enable`, {}, token);
+      fetchOfficers();
+    } catch (err) {
+      setError(err instanceof Error ? err.message : 'Failed to enable officer');
+    }
   };
 
   const handleCreateOfficer = async () => {
     if (!token) return;
-    await api.post('/admin/officers', formData, token);
-    setShowAddDialog(false);
-    fetchOfficers();
+    try {
+      setDialogError(null);
+      await api.post('/admin/officers', formData, token);
+      setShowAddDialog(false);
+      fetchOfficers();
+    } catch (err) {
+      setDialogError(err instanceof Error ? err.message : 'Failed to create officer');
+    }
   };
 
   return (
@@ -158,6 +174,7 @@ const OfficerManagement = () => {
               <input placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
               <input type="password" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
             </div>
+            {dialogError && <div className="error-state"><p>{dialogError}</p></div>}
             <div className="dialog-actions">
               <button onClick={() => setShowAddDialog(false)}>Cancel</button>
               <button className="btn-primary" onClick={handleCreateOfficer}>Create</button>

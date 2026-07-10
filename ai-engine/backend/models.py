@@ -165,6 +165,13 @@ class UserRegister(BaseModel):
     district: Optional[str] = None
     ward: Optional[str] = None
 
+class OfficerCreate(BaseModel):
+    full_name: str
+    email: str
+    password: str
+    district: Optional[str] = None
+    department: Optional[str] = None
+
 class UserLogin(BaseModel):
     email: str
     password: str

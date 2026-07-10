@@ -18,7 +18,7 @@ from models import (
     ClusterRequest, ClusterResponse, ClusterAssignment,
     PriorityRequest, PriorityResponse, PriorityFactor,
     IncidentResponse,
-    UserRegister, UserLogin, UserResponse,
+    UserRegister, UserLogin, UserResponse, OfficerCreate,
     PredictionSummaryResponse,
     KnowledgeSummaryResponse,
     DecisionSupportSummaryResponse,
@@ -521,23 +521,23 @@ async def get_officers(db_user: User = Depends(get_executive_user), db: Session 
     return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status} for o in officers]
 
 @admin_router.post("/officers")
-async def create_officer(user: dict, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+async def create_officer(body: OfficerCreate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Create a new officer."""
-    if db.query(User).filter(User.email == user["email"]).first():
+    if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
-    officer_id = f"TN-{user.get('district', 'UNK')}-{user.get('department', 'UNK')}-{str(len(db.query(User).filter(User.role == 'Officer').all()) + 1).zfill(3)}"
+    officer_id = f"TN-{body.district or 'UNK'}-{body.department or 'UNK'}-{str(len(db.query(User).filter(User.role == 'Officer').all()) + 1).zfill(3)}"
     new_officer = User(
         id=officer_id,
-        full_name=user["full_name"],
-        email=user["email"],
-        password_hash=hash_password(user["password"]),
-        district=user.get("district"),
+        full_name=body.full_name,
+        email=body.email,
+        password_hash=hash_password(body.password),
+        district=body.district,
         role="Officer",
         status="active"
     )
     db.add(new_officer)
     db.commit()
-    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_create", officer_id, "success", f"full_name={user.get('full_name')} email={user.get('email')} district={user.get('district')}")
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_create", officer_id, "success", f"full_name={body.full_name} email={body.email} district={body.district}")
     return {"message": "Officer created", "officer_id": officer_id}
 
 @admin_router.patch("/officers/{officer_id}/disable")

@@ -57,7 +57,7 @@ export interface ClassificationMetrics {
   categoryDistribution: { category: string; count: number; percentage: number; }[];
   confusionMatrix: number[][];
   categories: string[];
-  trendData: { month: string; accuracy: number; precision: number; recall: number; }[];
+  trendData: { month: string; complaints: number; incidents: number; }[];
   datasetSize: number;
   modelType: string;
 }

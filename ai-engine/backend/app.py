@@ -166,7 +166,8 @@ app = FastAPI(
 # Enable CORS - restrict to configured frontend origins
 ALLOWED_ORIGINS = os.environ.get("GIIPS_ALLOWED_ORIGINS", "")
 if not ALLOWED_ORIGINS:
-    raise RuntimeError("GIIPS_ALLOWED_ORIGINS environment variable is not set. Backend startup aborted.")
+    logging.warning("GIIPS_ALLOWED_ORIGINS not set — defaulting to https://giips.vercel.app. Set this env var in production.")
+    ALLOWED_ORIGINS = "https://giips.vercel.app"
 allowed_origins_list = [o.strip() for o in ALLOWED_ORIGINS.split(",") if o.strip()]
 app.add_middleware(
     CORSMiddleware,
