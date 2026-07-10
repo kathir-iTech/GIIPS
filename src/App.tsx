@@ -70,10 +70,10 @@ function AnimatedRoutes() {
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
         
-        <Route path="/login" element={<PageTransition><AuthRedirect><Login /></AuthRedirect></PageTransition>} />
-        <Route path="/register" element={<PageTransition><AuthRedirect><Register /></AuthRedirect></PageTransition>} />
-        <Route path="/citizen-services" element={<PageTransition><AuthRedirect><CitizenServices /></AuthRedirect></PageTransition>} />
-        <Route path="/government-portal" element={<PageTransition><AuthRedirect><GovernmentPortal /></AuthRedirect></PageTransition>} />
+        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
+        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
+        <Route path="/citizen-services" element={<PageTransition><CitizenServices /></PageTransition>} />
+        <Route path="/government-portal" element={<PageTransition><GovernmentPortal /></PageTransition>} />
         
         <Route path="/citizen" element={
           <PageTransition>

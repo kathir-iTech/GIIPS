@@ -29,7 +29,11 @@ interface RoleGuardProps {
 export const RoleGuard = ({ allowedRoles, children }: RoleGuardProps) => {
   const { user } = useAuth();
   
-  if (!user || !allowedRoles.includes(user.role)) {
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  if (!allowedRoles.includes(user.role)) {
     return <Navigate to="/unauthorized" replace />;
   }
 

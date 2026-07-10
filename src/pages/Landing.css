@@ -16,6 +16,10 @@
 .nav-link.btn-login:hover { background: rgba(59,130,246,0.25); }
 .nav-link.btn-signup { background: #3b82f6; color: white; }
 .nav-link.btn-signup:hover { background: #2563eb; }
+.nav-link.btn-dashboard { background: rgba(34,197,94,0.15); color: #4ade80; border: 1px solid rgba(34,197,94,0.25); }
+.nav-link.btn-dashboard:hover { background: rgba(34,197,94,0.25); }
+.nav-link.btn-logout { background: rgba(239,68,68,0.1); color: #f87171; border: none; cursor: pointer; font-family: inherit; font-size: 14px; font-weight: 500; padding: 8px 14px; border-radius: 8px; display: inline-flex; align-items: center; gap: 6px; transition: all 0.2s; }
+.nav-link.btn-logout:hover { background: rgba(239,68,68,0.2); }
 
 .hero-os { position: relative; z-index: 10; text-align: center; padding: 100px 20px 60px; }
 .badge { display: inline-block; padding: 6px 16px; background: rgba(59, 130, 246, 0.15); border: 1px solid rgba(59, 130, 246, 0.3); border-radius: 20px; font-size: 12px; color: #60a5fa; margin-bottom: 24px; letter-spacing: 0.5px; }

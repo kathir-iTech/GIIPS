@@ -1,8 +1,16 @@
 import { Link } from 'react-router-dom';
-import { User, ShieldAlert, Play, LogIn, UserPlus, Building2, GitBranch, BarChart3, MapPin, Cpu } from 'lucide-react';
+import { User, ShieldAlert, Play, LogIn, UserPlus, Building2, GitBranch, BarChart3, MapPin, Cpu, LogOut, LayoutDashboard } from 'lucide-react';
+import { useAuth } from '../context/AuthContext';
 import './Landing.css';
 
 const Landing = () => {
+  const { user, logout } = useAuth();
+
+  const dashboardPath = user?.role === 'Citizen' ? '/citizen'
+    : user?.role === 'Officer' ? '/officer'
+    : user?.role === 'Executive' ? '/executive'
+    : null;
+
   return (
     <div className="landing-os">
       <div className="ambient-blobs">
@@ -17,12 +25,25 @@ const Landing = () => {
           <Link to="/citizen-services" className="nav-link">Citizen Services</Link>
           <Link to="/government-portal" className="nav-link">Government Portal</Link>
           <Link to="/demo" className="nav-link">Demo</Link>
-          <Link to="/login" className="nav-link btn-login">
-            <LogIn size={16} /> Sign In
-          </Link>
-          <Link to="/register" className="nav-link btn-signup">
-            <UserPlus size={16} /> Sign Up
-          </Link>
+          {user ? (
+            <>
+              <Link to={dashboardPath!} className="nav-link btn-dashboard">
+                <LayoutDashboard size={16} /> Dashboard
+              </Link>
+              <button onClick={logout} className="nav-link btn-logout">
+                <LogOut size={16} /> Sign Out
+              </button>
+            </>
+          ) : (
+            <>
+              <Link to="/login" className="nav-link btn-login">
+                <LogIn size={16} /> Sign In
+              </Link>
+              <Link to="/register" className="nav-link btn-signup">
+                <UserPlus size={16} /> Sign Up
+              </Link>
+            </>
+          )}
         </div>
       </nav>
 
@@ -49,8 +70,14 @@ const Landing = () => {
           <h3>Citizen</h3>
           <p>Submit grievances, track AI-powered classifications, and monitor resolution progress in real time.</p>
           <div className="role-actions">
-            <Link to="/register" className="btn-role"><UserPlus size={16} /> Register</Link>
-            <Link to="/login" className="btn-role secondary"><LogIn size={16} /> Login</Link>
+            {user?.role === 'Citizen' ? (
+              <Link to="/citizen" className="btn-role"><LayoutDashboard size={16} /> My Dashboard</Link>
+            ) : (
+              <>
+                <Link to="/register" className="btn-role"><UserPlus size={16} /> Register</Link>
+                <Link to="/login" className="btn-role secondary"><LogIn size={16} /> Login</Link>
+              </>
+            )}
           </div>
         </div>
         <div className="role-card glass-card">
@@ -58,7 +85,11 @@ const Landing = () => {
           <h3>Officer</h3>
           <p>View prioritized incidents, investigate AI-clustered complaints, and manage resolution workflows.</p>
           <div className="role-actions">
-            <Link to="/login" className="btn-role"><LogIn size={16} /> Login</Link>
+            {user?.role === 'Officer' ? (
+              <Link to="/officer" className="btn-role"><LayoutDashboard size={16} /> My Dashboard</Link>
+            ) : (
+              <Link to="/login" className="btn-role"><LogIn size={16} /> Login</Link>
+            )}
           </div>
         </div>
         <div className="role-card glass-card">
@@ -66,7 +97,11 @@ const Landing = () => {
           <h3>Executive</h3>
           <p>District-level command center with AI-driven insights, department analytics, and governance copilot.</p>
           <div className="role-actions">
-            <Link to="/login" className="btn-role"><LogIn size={16} /> Login</Link>
+            {user?.role === 'Executive' ? (
+              <Link to="/executive" className="btn-role"><LayoutDashboard size={16} /> My Dashboard</Link>
+            ) : (
+              <Link to="/login" className="btn-role"><LogIn size={16} /> Login</Link>
+            )}
           </div>
         </div>
       </section>
