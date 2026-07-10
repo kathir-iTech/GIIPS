@@ -13,6 +13,37 @@ import {
 } from 'lucide-react';
 import './SpatialIntelligence.css';
 
+const mapWardToDistrict = (ward: string): string => {
+  if (!ward) return 'Unknown';
+  const numMatch = ward.match(/\d+/);
+  if (numMatch) {
+    const num = parseInt(numMatch[0], 10);
+    const districtMap: Record<number, string> = {
+      1: 'Chennai', 2: 'Kanchipuram', 3: 'Vellore', 4: 'Vellore',
+      5: 'Tiruvannamalai', 6: 'Villupuram', 7: 'Cuddalore', 8: 'Cuddalore',
+      9: 'Krishnagiri', 10: 'Dharmapuri', 11: 'Salem', 12: 'Namakkal',
+      13: 'Erode', 14: 'Tiruppur', 15: 'Coimbatore', 16: 'Perambalur',
+      17: 'Ariyalur', 18: 'Karur', 19: 'Tiruchirappalli', 20: 'Thanjavur',
+      21: 'Mayiladuthurai', 22: 'Thiruvarur', 23: 'Nagapattinam',
+      24: 'Pudukkottai', 25: 'Dindigul', 26: 'Madurai', 27: 'Theni',
+      28: 'Sivaganga', 29: 'Virudhunagar', 30: 'Thoothukudi',
+      31: 'Tirunelveli', 32: 'Kanyakumari'
+    };
+    return districtMap[num] || 'Other';
+  }
+  return ward;
+};
+
+const getPriorityColor = (priority: string): string => {
+  switch (priority?.toLowerCase()) {
+    case 'critical': return '#ef4444';
+    case 'high': return '#f97316';
+    case 'medium': return '#eab308';
+    case 'low': return '#22c55e';
+    default: return '#64748b';
+  }
+};
+
 const SpatialIntelligence = () => {
   const [heatmap, setHeatmap] = useState<any[]>([]);
   const [hotspots, setHotspots] = useState<any[]>([]);
@@ -205,27 +236,6 @@ const SpatialIntelligence = () => {
     setSelectedIncident(incident);
   }, []);
 
-  const mapWardToDistrict = (ward: string): string => {
-    if (!ward) return 'Unknown';
-    const numMatch = ward.match(/\d+/);
-    if (numMatch) {
-      const num = parseInt(numMatch[0], 10);
-      const districtMap: Record<number, string> = {
-        1: 'Chennai', 2: 'Kanchipuram', 3: 'Vellore', 4: 'Vellore',
-        5: 'Tiruvannamalai', 6: 'Villupuram', 7: 'Cuddalore', 8: 'Cuddalore',
-        9: 'Krishnagiri', 10: 'Dharmapuri', 11: 'Salem', 12: 'Namakkal',
-        13: 'Erode', 14: 'Tiruppur', 15: 'Coimbatore', 16: 'Perambalur',
-        17: 'Ariyalur', 18: 'Karur', 19: 'Tiruchirappalli', 20: 'Thanjavur',
-        21: 'Mayiladuthurai', 22: 'Thiruvarur', 23: 'Nagapattinam',
-        24: 'Pudukkottai', 25: 'Dindigul', 26: 'Madurai', 27: 'Theni',
-        28: 'Sivaganga', 29: 'Virudhunagar', 30: 'Thoothukudi',
-        31: 'Tirunelveli', 32: 'Kanyakumari'
-      };
-      return districtMap[num] || 'Other';
-    }
-    return ward;
-  };
-
   const getDistrictColor = useCallback((districtName: string): string => {
     const data = districtData[districtName];
     if (!data) return 'transparent';
@@ -236,16 +246,6 @@ const SpatialIntelligence = () => {
     if (count <= 30) return '#f97316';
     return '#ef4444';
   }, [districtData]);
-
-  const getPriorityColor = (priority: string): string => {
-    switch (priority?.toLowerCase()) {
-      case 'critical': return '#ef4444';
-      case 'high': return '#f97316';
-      case 'medium': return '#eab308';
-      case 'low': return '#22c55e';
-      default: return '#64748b';
-    }
-  };
 
   const generateAIRecommendation = useCallback((district: string): string => {
     const data = districtData[district];
