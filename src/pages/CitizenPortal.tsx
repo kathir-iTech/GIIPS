@@ -269,7 +269,7 @@ const CitizenPortal = () => {
 
         <div className="wizard-controls">
           <button disabled={step === 1} onClick={() => setStep(s => s - 1)}><ChevronLeft /> Back</button>
-          <button disabled={step >= steps.length - 1} onClick={() => setStep(s => s + 1)}>Next <ChevronRight /></button>
+          <button disabled={step >= steps.length} onClick={() => setStep(s => s + 1)}>Next <ChevronRight /></button>
         </div>
       </div>
     </div>
