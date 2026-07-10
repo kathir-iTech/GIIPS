@@ -537,7 +537,7 @@ const SpatialIntelligence = () => {
         <div className="command-map">
           <MapContainer
             key={mapKey}
-            center={[10.5, 78.5] as any}
+            center={[10.9, 78.6] as any}
             zoom={7}
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
@@ -618,9 +618,9 @@ const SpatialIntelligence = () => {
             )}
 
             {layers.incidents && hotspots.map((hotspot: any, idx: number) => {
-              const lat = hotspot.lat || hotspot.latitude || hotspot.y;
-              const lng = hotspot.lng || hotspot.longitude || hotspot.x;
-              if (!lat || !lng) return null;
+              const lat = hotspot.lat ?? hotspot.latitude ?? hotspot.y;
+              const lng = hotspot.lng ?? hotspot.longitude ?? hotspot.x;
+              if (lat == null || lng == null) return null;
               return (
                 <CircleMarker
                   key={`hotspot-${idx}`}
@@ -673,7 +673,7 @@ const SpatialIntelligence = () => {
           </MapContainer>
 
           <div className="map-overlay-info">
-            <span className="map-source">Base: CARTO Dark Matter</span>
+            <span className="map-source">OpenStreetMap (dark filter)</span>
             {error && <span className="map-warning"><AlertTriangle size={12} /> Partial data</span>}
             {tileError && <span className="map-warning"><AlertTriangle size={12} /> Tile load error</span>}
           </div>

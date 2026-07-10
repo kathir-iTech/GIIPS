@@ -76,7 +76,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setToken(response.access_token);
       let userData: User = {
         user_id: response.user_id || email,
-        full_name: email.split('@')[0],
+        full_name: response.full_name || email.split('@')[0],
         email,
         role: response.role
       };
@@ -84,6 +84,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       localStorage.setItem('giips_token', response.access_token);
       localStorage.setItem('giips_user', JSON.stringify(userData));
       setTimeout(() => navigateBasedOnRole(response.role), 0);
+    } catch (err: any) {
+      throw new Error(err.message || 'Login failed');
     } finally {
       setIsLoading(false);
     }
@@ -94,6 +96,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       await api.register(data);
       navigate('/login');
+    } catch (err: any) {
+      throw new Error(err.message || 'Registration failed');
     } finally {
       setIsLoading(false);
     }

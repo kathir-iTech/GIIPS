@@ -20,12 +20,11 @@ const IncidentFeed = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
-    api.getIncidents(sortField)
-      .then((data: any) => {
-        setAllIncidents(data || []);
-      })
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+    let cancelled = false;
+    api.getIncidents(sortField).then((data: any) => {
+      if (!cancelled) setAllIncidents(data || []);
+    });
+    return () => { cancelled = true; };
   }, []);
 
   const categories = useMemo(() => {

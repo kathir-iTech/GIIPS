@@ -36,7 +36,7 @@ const Analysis = () => {
           </div>
           <div className="dataset-info">
             <span className="dataset-label">Dataset Size</span>
-            <span className="dataset-value">{metrics.datasetSize.toLocaleString()} complaints</span>
+            <span className="dataset-value">{(metrics.datasetSize ?? 0).toLocaleString()} complaints</span>
           </div>
         </section>
 
@@ -160,26 +160,6 @@ const Analysis = () => {
             )}
           </div>
 
-          <div className="chart-card">
-            <div className="chart-header"><h3>Similarity Threshold Analysis</h3><span className="chart-subtitle">Illustrative example — live data pending backend integration</span></div>
-              <div className="threshold-chart">
-                {[
-                  { threshold: 0.70, clusters: 18, duplicates: 12, quality: 68 },
-                  { threshold: 0.75, clusters: 16, duplicates: 14, quality: 78 },
-                  { threshold: 0.80, clusters: 15, duplicates: 15, quality: 88 },
-                  { threshold: 0.85, clusters: 15, duplicates: 15, quality: 92 },
-                  { threshold: 0.90, clusters: 15, duplicates: 15, quality: 94 }
-                ].map(t => (
-                  <div key={t.threshold} className={`threshold-row ${t.threshold === 0.80 ? 'active' : ''}`}>
-                    <span className="threshold-value">{(t.threshold * 100).toFixed(0)}%</span>
-                    <div className="threshold-bars">
-                      <div className="bar-group"><div className="bar clusters" style={{ width: `${t.clusters * 4}px` }}></div><span>{t.clusters}</span></div>
-                      <div className="bar-group"><div className="bar quality" style={{ width: `${t.quality}px` }}></div><span>{t.quality}%</span></div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-          </div>
         </section>
       </div>
     </div>

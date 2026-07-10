@@ -18,7 +18,7 @@ from models import (
     ClusterRequest, ClusterResponse, ClusterAssignment,
     PriorityRequest, PriorityResponse, PriorityFactor,
     IncidentResponse,
-    UserRegister, UserLogin, UserResponse, OfficerCreate,
+    UserRegister, UserLogin, UserResponse, OfficerCreate, ProfileUpdate,
     PredictionSummaryResponse,
     KnowledgeSummaryResponse,
     DecisionSupportSummaryResponse,
@@ -499,11 +499,31 @@ async def login(user: UserLogin, db: Session = Depends(get_db)):
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": db_user.email, "role": db_user.role})
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "login", "auth", "success")
-    return {"access_token": token, "token_type": "bearer", "role": db_user.role}
+    return {
+        "access_token": token,
+        "token_type": "bearer",
+        "role": db_user.role,
+        "user_id": db_user.id,
+        "full_name": db_user.full_name
+    }
 
 @auth_router.get("/me", response_model=UserResponse)
 async def get_me(db_user: User = Depends(get_current_user)):
     """Get current user profile from token."""
+    return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
+
+@auth_router.put("/profile", response_model=UserResponse)
+async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update current user profile."""
+    from auth_service import hash_password
+    if data.full_name is not None: db_user.full_name = data.full_name
+    if data.email is not None: db_user.email = data.email
+    if data.phone is not None: db_user.phone = data.phone
+    if data.district is not None: db_user.district = data.district
+    if data.ward is not None: db_user.ward = data.ward
+    if data.password: db_user.password_hash = hash_password(data.password)
+    db.commit()
+    db.refresh(db_user)
     return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])

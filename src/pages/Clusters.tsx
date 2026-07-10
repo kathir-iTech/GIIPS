@@ -144,6 +144,7 @@ const Clusters = () => {
   const [currentPage, setCurrentPage] = useState(1);
 
   useEffect(() => {
+    let cancelled = false;
     const fetchPageData = async () => {
       try {
         setLoading(true);
@@ -156,18 +157,20 @@ const Clusters = () => {
           api.getDecisionSupportSummary().catch(() => null),
         ]);
 
+        if (cancelled) return;
         if (incs.status === 'fulfilled') setIncidents(incs.value);
         if (rules.status === 'fulfilled') setPriorityRules(rules.value);
         if (preds.status === 'fulfilled') setPredictions(preds.value);
         if (know.status === 'fulfilled') setKnowledge(know.value);
         if (dec.status === 'fulfilled') setDecisionSupport(dec.value);
       } catch (err) {
-        setError(err instanceof Error ? err.message : 'Failed to load data');
+        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load data');
       } finally {
-        setLoading(false);
+        if (!cancelled) setLoading(false);
       }
     };
     fetchPageData();
+    return () => { cancelled = true; };
   }, []);
 
   const fetchIncidentDetail = useCallback(async (incident: Incident) => {

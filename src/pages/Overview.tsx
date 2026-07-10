@@ -35,20 +35,7 @@ const Overview = () => {
       .catch(err => {
         if (!cancelled) {
           console.error('Failed to fetch dashboard data:', err);
-          setError('Using offline mode — Data unavailable.');
-          setData({
-            totalComplaints: 0,
-            uniqueIncidents: 0,
-            workloadReduction: 0,
-            criticalIncidents: 0,
-            highPriorityIncidents: 0,
-            mediumPriorityIncidents: 0,
-            lowPriorityIncidents: 0,
-            trendData: [],
-            categoryBreakdown: [],
-            wardBreakdown: [],
-            recentIncidents: []
-          });
+          setError(err.message || 'Failed to load dashboard data');
         }
       })
       .finally(() => {

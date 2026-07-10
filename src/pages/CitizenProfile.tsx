@@ -37,14 +37,13 @@ const CitizenProfile = () => {
     setSaving(true);
     setMessage(null);
     try {
-      // Backend user update endpoint should be implemented separately.
-      // For now, we update local state and localStorage.
-      localStorage.setItem('giips_user', JSON.stringify({ ...profile, ...form }));
-      setProfile({ ...profile, ...form });
+      const updated = await api.updateProfile(form, token!);
+      localStorage.setItem('giips_user', JSON.stringify(updated));
+      setProfile(updated);
       setMessage('Profile updated successfully.');
       setEditing(false);
-    } catch {
-      setMessage('Failed to update profile.');
+    } catch (err: any) {
+      setMessage(err.message || 'Failed to update profile.');
     } finally {
       setSaving(false);
     }

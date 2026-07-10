@@ -223,6 +223,22 @@ export const api = {
     return response.json();
   },
 
+  updateProfile: async (data: any, token: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/profile`, {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      const error = await safeJson(response);
+      throw new Error(error.detail || 'Failed to update profile');
+    }
+    return response.json();
+  },
+
   getMyComplaints: async (token: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/complaints/my`, {
       headers: {

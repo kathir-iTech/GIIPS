@@ -24,13 +24,23 @@ const MyComplaints = () => {
   const [statusFilter, setStatusFilter] = useState<string>('all');
 
   useEffect(() => {
+    let cancelled = false;
     if (!token) return;
     setLoading(true);
     setError(null);
     api.getMyComplaints(token)
-      .then(res => setComplaints(Array.isArray(res.complaints) ? res.complaints : []))
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+      .then(res => {
+        if (cancelled) return;
+        setComplaints(Array.isArray(res.complaints) ? res.complaints : []);
+      })
+      .catch(err => {
+        if (cancelled) return;
+        setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [token]);
 
   const filtered = complaints.filter(c => {

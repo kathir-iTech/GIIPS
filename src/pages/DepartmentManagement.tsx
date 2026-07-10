@@ -83,15 +83,15 @@ const DepartmentManagement = () => {
                   <span className="label">Officers</span>
                 </div>
                 <div className="stat">
-                  <span className="value">{dept.avg_resolution_time.toFixed(1)}d</span>
+                  <span className="value">{(dept.avg_resolution_time ?? 0).toFixed(1)}d</span>
                   <span className="label">Avg Resolution</span>
                 </div>
                 <div className="stat">
-                  <span className="value">{(dept.completion_percentage * 100).toFixed(0)}%</span>
+                  <span className="value">{((dept.completion_percentage ?? 0) * 100).toFixed(0)}%</span>
                   <span className="label">Completion</span>
                 </div>
                 <div className={`workload ${getWorkloadColor(dept.workload_indicator)}`}>
-                  Workload: {(dept.workload_indicator * 100).toFixed(0)}%
+                  Workload: {((dept.workload_indicator ?? 0) * 100).toFixed(0)}%
                 </div>
               </div>
             </div>

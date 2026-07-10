@@ -23,13 +23,21 @@ const ComplaintDetail = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     if (!id || !token) return;
     setLoading(true);
     setError(null);
     api.getComplaintDetail(id, token)
-      .then(setData)
-      .catch(err => setError(err.message))
-      .finally(() => setLoading(false));
+      .then(data => {
+        if (!cancelled) setData(data);
+      })
+      .catch(err => {
+        if (!cancelled) setError(err.message);
+      })
+      .finally(() => {
+        if (!cancelled) setLoading(false);
+      });
+    return () => { cancelled = true; };
   }, [id, token]);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading complaint details...</span></div>;
@@ -45,17 +53,14 @@ const ComplaintDetail = () => {
     { label: 'Current Status', date: null, icon: Clock, color: '#eab308', detail: incidentStatus.replace('-', ' ').toUpperCase() },
   ];
 
-  if (data.incident?.priority_history && data.incident.priority_history.length > 0) {
-    data.incident.priority_history.forEach((ph, idx) => {
-      timeline.splice(-1, 0, {
-        label: `Priority Updated`,
-        date: ph.changed_at,
-        icon: AlertTriangle,
-        color: '#ea580c',
-        detail: `${ph.old_score} → ${ph.new_score} (${ph.reason})`
-      });
-    });
-  }
+  const priorityEntries = data.incident?.priority_history?.map((h: any) => ({
+    label: 'Priority Updated',
+    date: h.changed_at,
+    icon: AlertTriangle,
+    color: '#ea580c',
+    detail: `${h.old_score ?? 'N/A'} → ${h.new_score ?? 'N/A'}: ${h.reason || 'Score adjusted'}`
+  })) || [];
+  const fullTimeline = [...timeline, ...priorityEntries];
 
   return (
     <div className="complaint-detail-page">
@@ -119,7 +124,7 @@ const ComplaintDetail = () => {
           <div className="side-card glass-card">
             <h3>Complaint Timeline</h3>
             <div className="timeline">
-              {timeline.map((item, idx) => (
+              {fullTimeline.map((item, idx) => (
                 <div key={idx} className="timeline-item">
                   <div className="timeline-icon" style={{ background: item.color }}><item.icon size={16} /></div>
                   <div className="timeline-content">
