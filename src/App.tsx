@@ -24,7 +24,7 @@ import OfficerManagement from './pages/OfficerManagement';
 import DepartmentManagement from './pages/DepartmentManagement';
 import SystemHealth from './pages/SystemHealth';
 import AuditLogs from './pages/AuditLogs';
-import Demo from './pages/Demo';
+
 import { ProtectedRoute, RoleGuard } from './components/ProtectedRoute';
 import './App.css';
 
@@ -34,7 +34,7 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
-const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/demo'];
+const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal'];
 
 function AppLayout() {
   const { user } = useAuth();
@@ -154,11 +154,6 @@ function AnimatedRoutes() {
           </PageTransition>
         } />
 
-        <Route path="/demo" element={
-          <PageTransition>
-            <Demo />
-          </PageTransition>
-        } />
         
         <Route path="/admin" element={<Navigate to="/admin/officers" replace />} />
         <Route path="/admin/officers" element={
