@@ -100,26 +100,12 @@ async def lifespan(app: FastAPI):
 
     # Initialize database and create tables automatically on startup.
     # This runs once per worker and is the single source of truth for
-    # schema creation, demo-user seeding, and migration/backfill.
+    # schema creation and migration/backfill.
     try:
-        from database import Base, engine, seed_demo_users, seed_synthetic_data
+        from database import Base, engine
         logger.info("[STARTUP] Initializing database and auto-creating tables...")
         Base.metadata.create_all(bind=engine)
         logger.info("[STARTUP] Database tables created/verified successfully")
-
-        # Seed demo users idempotently
-        try:
-            seed_demo_users()
-            logger.info("[STARTUP] Demo users ensured")
-        except Exception as exc:
-            logger.warning("[STARTUP] Demo users seeding skipped: %s", exc)
-
-        # Seed synthetic data idempotently
-        try:
-            seed_synthetic_data()
-            logger.info("[STARTUP] Synthetic data seeding completed")
-        except Exception as exc:
-            logger.warning("[STARTUP] Synthetic data seeding skipped: %s", exc)
 
         # Backfill any complaints missing user_id
         try:
