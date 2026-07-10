@@ -149,9 +149,9 @@ export const api = {
       precision: precision / 100,
       recall: recall / 100,
       f1Score,
-      datasetSize: metrics.dataset_size ?? 1000,
-      modelType: metrics.model_type || 'Fine-tuned BERT with Custom Classification Head',
-      categories: metrics.categories || ['Road Infrastructure', 'Water Supply', 'Waste Management', 'Sanitation', 'Street Lighting', 'Public Works'],
+      datasetSize: metrics.dataset_size ?? 0,
+      modelType: metrics.model_type || '',
+      categories: metrics.categories || [],
       categoryDistribution: Array.isArray(metrics.category_distribution) ? metrics.category_distribution : [],
       confusionMatrix: Array.isArray(metrics.confusion_matrix) ? metrics.confusion_matrix : [],
       trendData: (trend.labels || []).map((label: string, i: number) => ({

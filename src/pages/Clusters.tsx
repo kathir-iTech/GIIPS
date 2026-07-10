@@ -117,8 +117,8 @@ const PriorityBadge: React.FC<{ priority: string }> = ({ priority }) => {
   );
 };
 
-const INITIAL_SUMMARY = 'Investigate incident based on linked complaints and AI analysis.';
-const DEFAULT_RECOMMENDATION = 'Issue requires immediate attention and resource deployment.';
+const INITIAL_SUMMARY = '';
+const DEFAULT_RECOMMENDATION = '';
 
 const Clusters = () => {
   const [incidents, setIncidents] = useState<Incident[]>([]);
@@ -283,7 +283,7 @@ const Clusters = () => {
 
   const rootCause = detail?.root_cause
     || selectedComplaints[0]?.text
-    || 'Review linked complaints for root cause analysis.';
+    || '';
 
   const escalationRisk = detail?.escalation_risk
     ?? detail?.escalationProbability

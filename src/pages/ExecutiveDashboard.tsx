@@ -24,19 +24,8 @@ const EXEC_DEPT_COLORS: Record<string, string> = {
   'Public Health': '#06b6d4',
 };
 
-const SPARKLINE_POINTS = [12, 18, 15, 22, 19, 25, 30, 28, 35, 32, 38, 45];
-
 const generateSparkline = (color: string): string => {
-  const width = 80;
-  const height = 30;
-  const max = Math.max(...SPARKLINE_POINTS);
-  const min = Math.min(...SPARKLINE_POINTS);
-  const points = SPARKLINE_POINTS.map((val, i) => {
-    const x = (i / (SPARKLINE_POINTS.length - 1)) * width;
-    const y = height - ((val - min) / (max - min || 1)) * height;
-    return `${x},${y}`;
-  });
-  return `M${points.join(' L')}`;
+  return ''; // real data from API will render sparkline when available
 };
 
 const SkeletonCard: React.FC = () => (
@@ -149,10 +138,9 @@ const ExecutiveDashboard = () => {
     fetchAll();
   }, [token]);
 
-  // Copilot greeting
+  // Copilot initialization
   useEffect(() => {
     const timer = setTimeout(() => {
-      setCopilotMessages([{ role: 'assistant', content: 'Good day, District Collector. I am your AI Executive Assistant. How may I support your decisions today?' }]);
       setCopilotInitialLoading(false);
     }, 1200);
     return () => clearTimeout(timer);
@@ -225,7 +213,7 @@ const ExecutiveDashboard = () => {
   const recommendations = decisionSupport?.recommendations || decisionSupport?.actions || [];
   const districtsAtRisk = wardHealth?.filter((w: any) => (w.healthScore || 100) < 60) || [];
 
-  const copilotSuggestions = ['Which district needs immediate intervention?', 'Recommend resource allocation', 'Which department is overloaded?', 'Explain current road situation'];
+  const copilotSuggestions: string[] = [];
 
   return (
     <div className="exec-dashboard">
@@ -267,7 +255,7 @@ const ExecutiveDashboard = () => {
             <div className="kpi-icon-wrapper stress"><ThermometerSun size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Depts Under Stress</span>
-              <span className="kpi-value">{(deptWorkload || []).filter((d: any) => (d.stressLevel || d.efficiency || 100) < 60).length || 2}</span>
+              <span className="kpi-value">{(deptWorkload || []).filter((d: any) => (d.stressLevel || d.efficiency || 100) < 60).length}</span>
               <TrendIndicator value={8} />
             </div>
             <Sparkline color="#ef4444" trend="up" />
@@ -322,10 +310,11 @@ const ExecutiveDashboard = () => {
               <div className="confidence-bar"><div className="confidence-fill" style={{ width: `${(decisionSupport?.confidence ?? predictions?.confidence ?? 88)}%` }} /></div>
             </div>
           </div>
-          <p className="brief-text">
-            {(decisionSupport?.executiveSummary || decisionSupport?.summary || knowledge?.summary || predictions?.summary ||
-              'Road complaints increased significantly in Coimbatore during the past week. Prediction confidence is 93%. Immediate deployment of two additional maintenance teams is recommended. High drainage risk is detected for the next seven days.')}
-          </p>
+          {(decisionSupport?.executiveSummary || decisionSupport?.summary || knowledge?.summary || predictions?.summary) ? (
+            <p className="brief-text">{decisionSupport?.executiveSummary || decisionSupport?.summary || knowledge?.summary || predictions?.summary}</p>
+          ) : (
+            <div className="empty-chart"><Brain size={32} /><p>Waiting for data. The AI engines will generate an executive summary once incidents are processed.</p></div>
+          )}
           <div className="brief-footer">
             <span className="brief-time">Generated {new Date().toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>
             <div className="brief-engines">
@@ -426,15 +415,7 @@ const ExecutiveDashboard = () => {
       {/* 5. Department Performance */}
       <SectionCard title="Department Performance" subtitle="Operational efficiency across units" icon={<BarChart3 size={18} />}>
         <div className="dept-grid">
-          {(deptWorkload && deptWorkload.length > 0 ? deptWorkload : [
-            { department: 'Roads', efficiency: 72, activeIncidents: 12, criticalPercent: 15, avgResolution: 3.2, workload: 78 },
-            { department: 'Water Supply', efficiency: 85, activeIncidents: 8, criticalPercent: 8, avgResolution: 2.1, workload: 55 },
-            { department: 'Drainage', efficiency: 58, activeIncidents: 18, criticalPercent: 28, avgResolution: 4.5, workload: 85 },
-            { department: 'Electricity', efficiency: 90, activeIncidents: 5, criticalPercent: 4, avgResolution: 1.8, workload: 40 },
-            { department: 'Streetlights', efficiency: 77, activeIncidents: 9, criticalPercent: 11, avgResolution: 2.8, workload: 62 },
-            { department: 'Garbage', efficiency: 65, activeIncidents: 14, criticalPercent: 20, avgResolution: 3.5, workload: 72 },
-            { department: 'Public Health', efficiency: 82, activeIncidents: 7, criticalPercent: 9, avgResolution: 2.4, workload: 50 },
-          ]).map((dept: any, idx: number) => {
+          {(deptWorkload && deptWorkload.length > 0 ? deptWorkload : []).map((dept: any, idx: number) => {
             const name = dept.department || dept.name || '';
             const efficiency = dept.efficiency ?? dept.score ?? 70;
             const deptIcon = name.toLowerCase().includes('road') ? Road : name.toLowerCase().includes('water') ? Droplets : name.toLowerCase().includes('drainage') ? Droplets : name.toLowerCase().includes('electricity') ? Zap : name.toLowerCase().includes('streetlight') ? Lightbulb : name.toLowerCase().includes('garbage') ? Trash2 : name.toLowerCase().includes('health') ? Heart : Wrench;
@@ -471,21 +452,20 @@ const ExecutiveDashboard = () => {
                   <div className="dept-stat"><span className="dept-stat-label">Critical %</span><span className="dept-stat-value bad">{dept.criticalPercent ?? dept.critical ?? 0}%</span></div>
                   <div className="dept-stat"><span className="dept-stat-label">Avg Resolution</span><span className="dept-stat-value">{(dept.avgResolution ?? 2.5).toFixed(1)}d</span></div>
                 </div>
-                <p className="dept-recommendation">{dept.recommendation || 'Continue current resource allocation with scheduled maintenance.'}</p>
+                {dept.recommendation && <p className="dept-recommendation">{dept.recommendation}</p>}
               </div>
             );
           })}
+          {(!deptWorkload || deptWorkload.length === 0) && (
+            <div className="empty-chart"><BarChart3 size={32} /><p>No department performance data available. Data will appear once incidents are processed.</p></div>
+          )}
         </div>
       </SectionCard>
 
       {/* 6. Emerging Risks */}
       <SectionCard title="Emerging Risks" subtitle="AI-detected future hotspots" icon={<Flame size={18} />}>
         <div className="risks-grid">
-          {((predictions?.risks || predictions?.emergingRisks || [
-            { category: 'Drainage', reason: 'Monsoon forecast + aging infrastructure', confidence: 92, suggestion: 'Pre-position 3 drainage teams in Ward 4 & 7', affected: '12,000 citizens' },
-            { category: 'Roads', reason: 'Pothole complaints trending up 34% week-over-week', confidence: 88, suggestion: 'Schedule proactive pothole patching for Ward 10, 12', affected: '8,500 citizens' },
-            { category: 'Electricity', reason: 'Transformer overheating reports increasing', confidence: 79, suggestion: 'Coordinate with TANGEDCO for inspection of Ward 3 substation', affected: '5,200 citizens' },
-          ]) || []).map((risk: any, idx: number) => (
+          {((predictions?.risks || predictions?.emergingRisks || []) || []).map((risk: any, idx: number) => (
             <div key={idx} className={`risk-card risk-${(risk.severity || risk.priority || 'medium').toLowerCase()}`}>
               <div className="risk-header">
                 <h4>{risk.category || risk.title || 'Infrastructure Risk'}</h4>
@@ -498,6 +478,9 @@ const ExecutiveDashboard = () => {
               </div>
             </div>
           ))}
+          {(!predictions?.risks?.length && !predictions?.emergingRisks?.length) && (
+            <div className="empty-chart"><Flame size={32} /><p>No emerging risks detected. AI will monitor incident trends and alert you to potential hotspots.</p></div>
+          )}
         </div>
       </SectionCard>
 
@@ -582,11 +565,7 @@ const ExecutiveDashboard = () => {
       {/* 9. Resource Allocation */}
       <SectionCard title="Resource Allocation" subtitle="Optimized deployment strategy" icon={<Users size={18} />}>
         <div className="resource-grid">
-          {(decisionSupport?.resourceAllocation || decisionSupport?.resources || [
-            { department: 'Roads', current: 8, recommended: 10, improvement: 32, costReduction: 18, gain: '+320 faster resolutions' },
-            { department: 'Drainage', current: 5, recommended: 8, improvement: 45, costReduction: 24, gain: '+180 faster resolutions' },
-            { department: 'Water Supply', current: 6, recommended: 7, improvement: 18, costReduction: 10, gain: '+95 faster resolutions' },
-          ]).map((res: any, idx: number) => (
+          {(decisionSupport?.resourceAllocation || decisionSupport?.resources || []).map((res: any, idx: number) => (
             <div key={idx} className="resource-card">
               <div className="resource-header">
                 <h4>{res.department || res.name || 'General'}</h4>
@@ -609,6 +588,9 @@ const ExecutiveDashboard = () => {
               </div>
             </div>
           ))}
+          {(!decisionSupport?.resourceAllocation?.length && !decisionSupport?.resources?.length) && (
+            <div className="empty-chart"><Users size={32} /><p>No resource allocation recommendations yet. AI will generate deployment strategies when sufficient data is available.</p></div>
+          )}
         </div>
       </SectionCard>
 
