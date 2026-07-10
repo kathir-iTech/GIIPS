@@ -1,7 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
-import L from 'leaflet';
 import { api } from '../services/api';
 import { tamilNaduDistricts, districtCentroids } from '../data/tamil-nadu-districts';
 import {
@@ -45,30 +44,10 @@ const getPriorityColor = (priority: string): string => {
   }
 };
 
-const TN_BOUNDS: L.LatLngBoundsExpression = [
+const TN_BOUNDS: [[number, number], [number, number]] = [
   [6.5, 76.0],
   [13.5, 80.5],
 ];
-
-const MapBounds = () => {
-  const map = useMap();
-  useEffect(() => {
-    map.setMaxBounds(TN_BOUNDS);
-    map.setMinZoom(7);
-    map.setMaxZoom(12);
-  }, [map]);
-  return null;
-};
-
-const TileErrorListener = ({ onError }: { onError: () => void }) => {
-  const map = useMap();
-  useEffect(() => {
-    const handler = () => onError();
-    map.on('tileerror', handler);
-    return () => { map.off('tileerror', handler); };
-  }, [map, onError]);
-  return null;
-};
 
 const SpatialIntelligence = () => {
   const [heatmap, setHeatmap] = useState<any[]>([]);
@@ -83,7 +62,7 @@ const SpatialIntelligence = () => {
   const [selectedDistrict, setSelectedDistrict] = useState<string | null>(null);
   const [hoveredDistrict, setHoveredDistrict] = useState<string | null>(null);
   const [mapKey, setMapKey] = useState(0);
-  const [tileError, setTileError] = useState(false);
+
 
   const [timelineDays, setTimelineDays] = useState<number>(7);
   const [layers, setLayers] = useState({
@@ -537,20 +516,19 @@ const SpatialIntelligence = () => {
         <div className="command-map">
           <MapContainer
             key={mapKey}
-            center={[10.9, 78.6] as any}
+            center={[10.9, 78.6]}
             zoom={7}
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
             attributionControl={false}
             maxBounds={TN_BOUNDS}
-            maxBoundsViscosity={1.0}
+            minZoom={7}
+            maxZoom={12}
           >
-            <MapBounds />
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxZoom={19}
             />
-            <TileErrorListener onError={() => setTileError(true)} />
 
             {layers.complaints && (
               <GeoJSON
@@ -675,7 +653,6 @@ const SpatialIntelligence = () => {
           <div className="map-overlay-info">
             <span className="map-source">OpenStreetMap (dark filter)</span>
             {error && <span className="map-warning"><AlertTriangle size={12} /> Partial data</span>}
-            {tileError && <span className="map-warning"><AlertTriangle size={12} /> Tile load error</span>}
           </div>
         </div>
 
