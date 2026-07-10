@@ -1,6 +1,7 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap, useMapEvents } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
 import { api } from '../services/api';
 import { tamilNaduDistricts, districtCentroids } from '../data/tamil-nadu-districts';
 import {
@@ -42,6 +43,21 @@ const getPriorityColor = (priority: string): string => {
     case 'low': return '#22c55e';
     default: return '#64748b';
   }
+};
+
+const TN_BOUNDS: L.LatLngBoundsExpression = [
+  [6.5, 76.0],
+  [13.5, 80.5],
+];
+
+const MapBounds = () => {
+  const map = useMap();
+  useEffect(() => {
+    map.setMaxBounds(TN_BOUNDS);
+    map.setMinZoom(7);
+    map.setMaxZoom(12);
+  }, [map]);
+  return null;
 };
 
 const TileErrorListener = ({ onError }: { onError: () => void }) => {
@@ -526,9 +542,12 @@ const SpatialIntelligence = () => {
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
             attributionControl={false}
+            maxBounds={TN_BOUNDS}
+            maxBoundsViscosity={1.0}
           >
+            <MapBounds />
             <TileLayer
-              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png"
+              url="https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}.png"
               maxZoom={19}
             />
             <TileErrorListener onError={() => setTileError(true)} />
