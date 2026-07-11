@@ -11,7 +11,9 @@ export default defineConfig({
     plugins: [react()],
     resolve: {
         alias: {
-            '@': '/src'
+            '@': '/src',
+            'framer-motion': '/node_modules/framer-motion/dist/cjs/index.js',
+            'react-plotly.js': '/node_modules/react-plotly.js/dist/index.cjs'
         }
     }
 });

@@ -1,4 +1,5 @@
 import type React from 'react';
+import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
 import {
   LayoutDashboard,
@@ -17,6 +18,8 @@ import {
   Settings,
   Users,
   Database,
+  Menu,
+  X,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -54,6 +57,7 @@ const CITIZEN_NAV = [
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems =
     user?.role === 'Executive'
@@ -65,51 +69,57 @@ const Sidebar: React.FC = () => {
           : [];
 
   return (
-    <aside className="sidebar">
-      <div className="sidebar-header">
-        <div className="logo">
-          <div className="logo-icon">
-            <svg viewBox="0 0 40 40" fill="none">
-              <rect width="40" height="40" rx="8" fill="#1e293b" />
-              <path d="M20 8L32 16V32H8V16L20 8Z" stroke="white" strokeWidth="2" />
-              <circle cx="20" cy="22" r="4" fill="white" />
-            </svg>
-          </div>
-          <div className="logo-text">
-            <span className="logo-title">GIIPS</span>
-            <span className="logo-subtitle">Governance Intelligence</span>
+    <>
+      <button className="hamburger-btn" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+        {mobileOpen ? <X size={24} /> : <Menu size={24} />}
+      </button>
+      <div className={`sidebar-overlay ${mobileOpen ? 'open' : ''}`} onClick={() => setMobileOpen(false)} />
+      <aside className={`sidebar ${mobileOpen ? 'mobile-open' : ''}`}>
+        <div className="sidebar-header">
+          <div className="logo">
+            <div className="logo-icon">
+              <svg viewBox="0 0 40 40" fill="none">
+                <rect width="40" height="40" rx="8" fill="#1e293b" />
+                <path d="M20 8L32 16V32H8V16L20 8Z" stroke="white" strokeWidth="2" />
+                <circle cx="20" cy="22" r="4" fill="white" />
+              </svg>
+            </div>
+            <div className="logo-text">
+              <span className="logo-title">GIIPS</span>
+              <span className="logo-subtitle">Governance Intelligence</span>
+            </div>
           </div>
         </div>
-      </div>
-      <nav className="sidebar-nav">
-        {navItems.map(({ path, label, icon: Icon }) => {
-          if (path === '/admin-divider') {
-            return <div key={path} className="nav-divider">{label}</div>;
-          }
-          return (
-            <NavLink key={path} to={path} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`}>
-              <Icon size={20} /> <span>{label}</span>
-            </NavLink>
-          );
-        })}
-      </nav>
-      {user ? (
-        <button onClick={logout} className="nav-item logout-btn">
-          <LogOut size={20} /> <span>Logout ({user.role})</span>
-        </button>
-      ) : (
-        <NavLink to="/login" className="nav-item">
-          <LogIn size={20} /> <span>Login</span>
-        </NavLink>
-      )}
-      <div className="sidebar-footer">
-        <div className="version-badge"><span>Platform v2.1</span></div>
-        <div className="footer-text">
-          <p>Municipal Corporation</p>
-          <p>Decision Support System</p>
+        <nav className="sidebar-nav">
+          {navItems.map(({ path, label, icon: Icon }) => {
+            if (path === '/admin-divider') {
+              return <div key={path} className="nav-divider">{label}</div>;
+            }
+            return (
+              <NavLink key={path} to={path} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
+                <Icon size={20} /> <span>{label}</span>
+              </NavLink>
+            );
+          })}
+        </nav>
+        {user ? (
+          <button onClick={() => { logout(); setMobileOpen(false); }} className="nav-item logout-btn">
+            <LogOut size={20} /> <span>Logout ({user.role})</span>
+          </button>
+        ) : (
+          <NavLink to="/login" className="nav-item" onClick={() => setMobileOpen(false)}>
+            <LogIn size={20} /> <span>Login</span>
+          </NavLink>
+        )}
+        <div className="sidebar-footer">
+          <div className="version-badge"><span>Platform v2.1</span></div>
+          <div className="footer-text">
+            <p>Municipal Corporation</p>
+            <p>Decision Support System</p>
+          </div>
         </div>
-      </div>
-    </aside>
+      </aside>
+    </>
   );
 };
 

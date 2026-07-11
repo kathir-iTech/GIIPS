@@ -55,3 +55,23 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 ::-webkit-scrollbar { width: 8px; height: 8px; }
 ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
 ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+
+.table-responsive-wrapper {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 -4px;
+  padding: 0 4px;
+}
+.table-responsive-wrapper table { min-width: 640px; }
+
+.grid-2-responsive { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; }
+.grid-3-responsive { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+.grid-4-responsive { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+
+@media (max-width: 1024px) {
+  .grid-4-responsive { grid-template-columns: repeat(2, 1fr); }
+  .grid-3-responsive { grid-template-columns: repeat(2, 1fr); }
+}
+@media (max-width: 640px) {
+  .grid-2-responsive, .grid-3-responsive, .grid-4-responsive { grid-template-columns: 1fr; }
+}

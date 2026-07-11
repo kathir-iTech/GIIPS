@@ -95,7 +95,8 @@
 .table-container {
   background: rgba(30, 41, 59, 0.6);
   border-radius: 12px;
-  overflow: hidden;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
 }
 
 .admin-table {
@@ -372,4 +373,18 @@
 
 .retry-btn:hover {
   background: #2563eb;
+}
+
+@media (max-width: 768px) {
+  .admin-page { padding: 1rem; }
+  .admin-controls { flex-direction: column; }
+  .search-box { min-width: 100%; }
+  .filters select { width: 100%; }
+  .stats-cards { grid-template-columns: repeat(2, 1fr); }
+  .form-grid { grid-template-columns: 1fr; }
+  .dialog { min-width: unset; width: calc(100vw - 32px); padding: 1.5rem; }
+  .dept-stats { grid-template-columns: 1fr; }
+}
+@media (max-width: 480px) {
+  .stats-cards { grid-template-columns: 1fr; }
 }

@@ -1,14 +1,15 @@
 import type React from 'react';
 import { motion } from 'framer-motion';
-import { LucideIcon } from 'lucide-react';
 import './KPICard.css';
+
+type IconComponent = React.ComponentType<{ size?: number; className?: string }>;
 
 interface KPICardProps { 
   title: string; 
   value: string | number; 
   subtitle?: string; 
   variant?: 'default' | 'critical' | 'success';
-  icon?: LucideIcon;
+  icon?: IconComponent;
 }
 
 const KPICard: React.FC<KPICardProps> = ({ title, value, subtitle, variant = 'default', icon: Icon }) => (
