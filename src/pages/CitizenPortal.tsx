@@ -84,9 +84,12 @@ const CitizenPortal = () => {
             const status = await api.getComplaintStatus(response.complaintId, token!);
             if (status.status === 'completed') {
               stopPolling();
+              setProcessingStatus(null);
+              setLoading(false);
               setResult(status.result || { complaintId: response.complaintId });
             } else if (status.status === 'failed') {
               stopPolling();
+              setProcessingStatus(null);
               setSubmitError(status.detail || 'Processing failed');
               setLoading(false);
             } else {
