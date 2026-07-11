@@ -396,6 +396,7 @@ class Complaint(Base):
     incident_id = Column(String, ForeignKey("incidents.id"), nullable=True)
     user_id = Column(String, nullable=True, index=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+    address = Column(String, nullable=True)
     latitude = Column(Float, nullable=True)
     longitude = Column(Float, nullable=True)
     

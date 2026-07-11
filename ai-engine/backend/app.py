@@ -23,6 +23,7 @@ import numpy as np
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel, Field
+from sqlalchemy import text
 
 # Configure logging
 logging.basicConfig(
@@ -106,6 +107,15 @@ async def lifespan(app: FastAPI):
         logger.info("[STARTUP] Initializing database and auto-creating tables...")
         Base.metadata.create_all(bind=engine)
         logger.info("[STARTUP] Database tables created/verified successfully")
+
+        # Migration: add address column to complaints table if missing
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE complaints ADD COLUMN address VARCHAR"))
+                conn.commit()
+            logger.info("[MIGRATION] Added address column to complaints table")
+        except Exception:
+            logger.info("[MIGRATION] address column already exists, skipping")
 
         # Seed default executive account
         try:
