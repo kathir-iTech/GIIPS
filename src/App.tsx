@@ -4,7 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import { ProtectedRoute, RoleGuard } from './components/ProtectedRoute';
+import { RoleGuard } from './components/ProtectedRoute';
 import './App.css';
 
 const Analysis = lazy(() => import('./pages/Analysis'));
