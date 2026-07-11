@@ -480,11 +480,26 @@ async def get_incidents(db: Session = Depends(get_db)):
 @incident_router.get("/{incident_id}")
 async def get_incident(incident_id: str, db: Session = Depends(get_db)):
     """Get incident by ID."""
-    service = DashboardService()
-    incident = service.get_incident_by_id(db, incident_id)
-    if not incident:
+    inc = db.query(Incident).options(joinedload(Incident.complaints), joinedload(Incident.priority_history)).filter(Incident.id == incident_id).first()
+    if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
-    return incident
+    return {
+        "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
+        "department": get_department(inc.category),
+        "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
+        "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
+        "recommended_action": inc.recommended_action, "days_open": inc.days_open,
+        "created_at": inc.created_at.isoformat() if inc.created_at else None,
+        "complaints": [{
+            "id": c.id, "complaint_number": c.id,
+            "date_received": c.created_at.isoformat() if c.created_at else None,
+            "text": c.title, "similarity_score": c.similarity_score or 0.85
+        } for c in inc.complaints] if inc.complaints else [],
+        "priority_history": [{
+            "id": ph.id, "old_score": ph.old_score, "new_score": ph.new_score,
+            "reason": ph.reason, "changed_at": ph.changed_at.isoformat() if ph.changed_at else None
+        } for ph in inc.priority_history] if inc.priority_history else [],
+    }
 
 # === Incident Intelligence Routes ===
 # ... (existing intelligence_router)
