@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Mail, Lock, User, AlertCircle } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, AlertCircle, ArrowLeft } from 'lucide-react';
 import './Auth.css';
 
 const Register = () => {
@@ -20,6 +20,10 @@ const Register = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
+    if (formData.email.endsWith('@gov.in')) {
+      setError('Government accounts cannot be created here. Contact your Executive to create your account.');
+      return;
+    }
     try {
       await register(formData);
       navigate('/login');
@@ -30,11 +34,16 @@ const Register = () => {
 
   return (
     <div className="auth-page">
+      <div className="auth-bg">
+        <div className="auth-orbe orbe-a"></div>
+        <div className="auth-orbe orbe-b"></div>
+      </div>
       <div className="auth-card glass-card">
+        <button className="auth-back" onClick={() => navigate('/')}><ArrowLeft size={16} /> Back</button>
         <div className="auth-header">
           <UserPlus size={32} className="auth-icon" />
           <h2>Create Account</h2>
-          <p>Register for GIIPS Governance Intelligence Platform</p>
+          <p>Register for GIIPS citizen services</p>
         </div>
 
         <form onSubmit={handleSubmit} className="auth-form">
@@ -47,7 +56,7 @@ const Register = () => {
               <input
                 id="full_name"
                 type="text"
-                placeholder="John Doe"
+                placeholder="Your full name"
                 value={formData.full_name}
                 onChange={e => setFormData({ ...formData, full_name: e.target.value })}
                 required
@@ -63,7 +72,7 @@ const Register = () => {
               <input
                 id="email"
                 type="email"
-                placeholder="you@giips.gov.in"
+                placeholder="your@email.com"
                 value={formData.email}
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -79,7 +88,7 @@ const Register = () => {
               <input
                 id="password"
                 type="password"
-                placeholder="Password"
+                placeholder="Create a password"
                 value={formData.password}
                 onChange={e => setFormData({ ...formData, password: e.target.value })}
                 required
@@ -95,7 +104,6 @@ const Register = () => {
 
         <div className="auth-footer">
           <p>Already have an account? <Link to="/login">Sign in</Link></p>
-          <p><Link to="/citizen-services">Back to Citizen Services</Link></p>
         </div>
       </div>
     </div>

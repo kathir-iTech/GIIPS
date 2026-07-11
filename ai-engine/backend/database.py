@@ -473,6 +473,29 @@ def seed_demo_users():
     db.commit()
     db.close()
 
+def seed_default_executive():
+    from auth_service import hash_password
+    db = SessionLocal()
+    try:
+        user = db.query(User).filter(User.email == "collector@gov.in").first()
+        if not user:
+            new_user = User(
+                id=str(uuid.uuid4()),
+                full_name="District Collector",
+                email="collector@gov.in",
+                password_hash=hash_password("1234567"),
+                role="Executive"
+            )
+            db.add(new_user)
+            db.commit()
+            print("[SEED] Default executive account created: collector@gov.in / 1234567")
+        else:
+            user.password_hash = hash_password("1234567")
+            db.commit()
+            print("[SEED] Default executive account verified: collector@gov.in")
+    finally:
+        db.close()
+
 # Dependency for database session
 def get_db():
     db = SessionLocal()

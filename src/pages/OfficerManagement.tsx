@@ -72,6 +72,10 @@ const OfficerManagement = () => {
 
   const handleCreateOfficer = async () => {
     if (!token) return;
+    if (!formData.email.endsWith('@gov.in')) {
+      setDialogError('Government accounts must use @gov.in email domain');
+      return;
+    }
     try {
       setDialogError(null);
       await api.post('/admin/officers', formData, token);

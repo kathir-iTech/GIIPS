@@ -478,12 +478,12 @@ auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @auth_router.post("/register")
 async def register(user: UserRegister, db: Session = Depends(get_db)):
-    """Register a new user. First user gets Executive role; subsequent ones get Citizen."""
+    """Register a new citizen account. Government accounts must be created by Executive through Officer Management."""
+    if user.email.endswith("@gov.in"):
+        raise HTTPException(status_code=400, detail="Government accounts must be created by an Executive. Use @gov.in emails are not allowed for public registration.")
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_pw = hash_password(user.password)
-    existing_count = db.query(User).count()
-    is_first_user = existing_count == 0
     new_user = User(
         id=str(uuid.uuid4()),
         full_name=user.full_name,
@@ -492,7 +492,7 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
         phone=user.phone,
         district=user.district,
         ward=user.ward,
-        role="Executive" if is_first_user else "Citizen"
+        role="Citizen"
     )
     db.add(new_user)
     db.commit()
@@ -550,7 +550,9 @@ async def get_officers(db_user: User = Depends(get_executive_user), db: Session 
 
 @admin_router.post("/officers")
 async def create_officer(body: OfficerCreate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
-    """Create a new officer."""
+    """Create a new officer. Only @gov.in emails allowed."""
+    if not body.email.endswith("@gov.in"):
+        raise HTTPException(status_code=400, detail="Government accounts must use @gov.in email domain")
     if db.query(User).filter(User.email == body.email).first():
         raise HTTPException(status_code=400, detail="Email already exists")
     officer_id = f"TN-{body.district or 'UNK'}-{body.department or 'UNK'}-{str(len(db.query(User).filter(User.role == 'Officer').all()) + 1).zfill(3)}"

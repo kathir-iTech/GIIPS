@@ -107,6 +107,13 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("[STARTUP] Database tables created/verified successfully")
 
+        # Seed default executive account
+        try:
+            from database import seed_default_executive
+            seed_default_executive()
+        except Exception as exc:
+            logger.warning("[STARTUP] Default executive seeding skipped: %s", exc)
+
         # Backfill any complaints missing user_id
         try:
             from database import backfill_complaint_user_ids

@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
-import { LogIn, Mail, Lock, AlertCircle } from 'lucide-react';
+import { LogIn, Mail, Lock, AlertCircle, ArrowLeft } from 'lucide-react';
 import './Auth.css';
 
 const Login = () => {
@@ -22,11 +22,16 @@ const Login = () => {
 
   return (
     <div className="auth-page">
+      <div className="auth-bg">
+        <div className="auth-orbe orbe-a"></div>
+        <div className="auth-orbe orbe-b"></div>
+      </div>
       <div className="auth-card glass-card">
+        <button className="auth-back" onClick={() => navigate('/')}><ArrowLeft size={16} /> Back</button>
         <div className="auth-header">
           <LogIn size={32} className="auth-icon" />
-          <h2>Welcome Back</h2>
-          <p>Sign in to access your governance dashboard</p>
+          <h2>Sign In</h2>
+          <p>Access your governance dashboard</p>
         </div>
         
         <form onSubmit={handleSubmit} className="auth-form">
@@ -39,7 +44,7 @@ const Login = () => {
               <input
                 id="email"
                 type="email"
-                placeholder="you@giips.gov.in"
+                placeholder="your@email.com"
                 value={formData.email}
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -71,7 +76,6 @@ const Login = () => {
 
         <div className="auth-footer">
           <p>Don't have an account? <Link to="/register">Create one</Link></p>
-          <p><Link to="/citizen-services">Back to Citizen Services</Link></p>
         </div>
       </div>
     </div>
