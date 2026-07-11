@@ -1,5 +1,9 @@
 """
-Arq job queue helpers: Redis pool init, enqueue complaint job, query status.
+Redis pool helpers and complaint status query (shared by routes.py and pipeline.py).
+The enqueue_complaint_job() function here is used for the arq worker model — currently
+deprecated in favour of pipeline.py's inline asyncio.create_task() approach.
+
+init_redis_pool / close_redis_pool / get_pool / get_complaint_status are still actively used.
 """
 
 import os
@@ -41,6 +45,11 @@ async def close_redis_pool():
             pass
         _pool = None
         logger.info("[JOB_QUEUE] Redis pool closed")
+
+
+def get_pool() -> Optional[ArqRedis]:
+    """Expose the global Redis pool for use by other modules (rate limiter, etc.)."""
+    return _pool
 
 
 async def enqueue_complaint_job(complaint_id: str, user_id: Optional[str] = None) -> bool:

@@ -131,6 +131,7 @@ const IncidentFeed = () => {
                 <th onClick={() => handleSort('category')} className={sortField === 'category' ? 'active' : ''}>
                   Category {sortField === 'category' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
+                <th>Department</th>
                 <th onClick={() => handleSort('cluster_size')} className={sortField === 'cluster_size' ? 'active' : ''}>
                   Cluster {sortField === 'cluster_size' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
@@ -149,8 +150,8 @@ const IncidentFeed = () => {
             </thead>
             <tbody>
               {pagedIncidents.length === 0 ? (
-                <tr className="empty-row">
-                  <td colSpan={9}>
+                  <tr className="empty-row">
+                    <td colSpan={10}>
                     <div className="empty-state">
                       <AlertCircle size={32} />
                       <p>No incidents match your current filters.</p>
@@ -163,6 +164,7 @@ const IncidentFeed = () => {
                     <td className="expand-cell">{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
                     <td className="incident-id">{incident.incident_number}</td>
                     <td><span className="category-badge">{incident.category}</span></td>
+                    <td className="dept-cell">{incident.department || incident.category}</td>
                     <td className="cluster-size"><span className="cluster-badge">{incident.cluster_size}</span></td>
                     <td className="ward-cell">{incident.ward?.replace('Ward ', 'W').split(' - ')[0]}</td>
                     <td className="days-cell">{incident.days_open}d</td>
@@ -174,7 +176,7 @@ const IncidentFeed = () => {
               )}
               {expandedId && pagedIncidents.map(incident => expandedId === incident.id && (
                 <tr key={`expanded-${incident.id}`} className="expanded-row">
-                  <td colSpan={9}>
+                  <td colSpan={10}>
                     <div className="expanded-content">
                       <div className="expanded-left">
                         <div className="detail-block">

@@ -5,7 +5,7 @@ API route definitions for GIIPS backend.
 import uuid
 import time
 import logging
-from fastapi import APIRouter, HTTPException, Depends, Query, Header, UploadFile, File
+from fastapi import APIRouter, HTTPException, Depends, Query, Header, UploadFile, File, Request
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, extract
 from typing import List, Dict, Any, Optional
@@ -26,13 +26,15 @@ from models import (
     CopilotChatResponse
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
-from job_queue import enqueue_complaint_job, get_complaint_status
+from job_queue import get_complaint_status
+from rate_limiter import check_auth_rate_limit
+from department_map import get_department
+from pipeline import process_complaint_pipeline
 from services import (
     ClassificationService,
     ClusteringService,
     PriorityService,
     DashboardService,
-    ComplaintService,
     DecisionService,
     SpatialService
 )
@@ -129,7 +131,8 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 
 @complaint_router.post("", status_code=202, response_model=SubmissionAcceptedResponse)
 async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Submit a new citizen complaint. Enqueues ML pipeline for async processing."""
+    """Submit a new citizen complaint. Runs ML pipeline inline via asyncio.create_task
+    (no separate worker process needed — keeps Render free tier viable)."""
     complaint_id = str(uuid.uuid4())
     complaint = Complaint(
         id=complaint_id,
@@ -146,7 +149,8 @@ async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get
     db.add(complaint)
     db.commit()
 
-    enqueued = await enqueue_complaint_job(complaint_id, db_user.id)
+    import asyncio
+    asyncio.create_task(process_complaint_pipeline(complaint_id, db_user.id))
 
     _write_audit_log(
         db,
@@ -155,8 +159,8 @@ async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get
         db_user.role,
         "complaint_create",
         complaint_id,
-        "accepted" if enqueued else "accepted_no_worker",
-        f"async=true enqueued={enqueued}",
+        "accepted",
+        "inline_pipeline",
     )
     return SubmissionAcceptedResponse(
         complaintId=complaint_id,
@@ -170,7 +174,7 @@ async def get_complaint_processing_status(complaint_id: str, _: User = Depends(g
     """Get async ML processing status for a complaint."""
     status_data = await get_complaint_status(complaint_id)
     if status_data is None:
-        return ComplaintProcessingStatus(status="pending", detail="Job not yet picked up by worker")
+        return ComplaintProcessingStatus(status="pending", detail="Pipeline not yet started")
     return ComplaintProcessingStatus(**status_data)
 
 
@@ -275,6 +279,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
         "ward": complaint.ward,
         "image_path": complaint.image_path,
         "predicted_category": complaint.predicted_category,
+        "department": get_department(complaint.predicted_category),
         "confidence": complaint.confidence,
         "priority": complaint.priority,
         "similarity_score": complaint.similarity_score,
@@ -458,6 +463,7 @@ async def get_incidents(db: Session = Depends(get_db)):
     for inc in incidents:
         inc_dict = {
             "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
+            "department": get_department(inc.category),
             "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
             "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
             "recommended_action": inc.recommended_action, "days_open": inc.days_open,
@@ -500,7 +506,7 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @auth_router.post("/register")
-async def register(user: UserRegister, db: Session = Depends(get_db)):
+async def register(user: UserRegister, request: Request, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):
     """Register a new citizen account. Government accounts must be created by Executive through Officer Management."""
     if user.email.endswith("@gov.in"):
         raise HTTPException(status_code=400, detail="Government accounts must be created by an Executive. Use @gov.in emails are not allowed for public registration.")
@@ -522,7 +528,7 @@ async def register(user: UserRegister, db: Session = Depends(get_db)):
     return {"message": "User registered successfully", "user_id": new_user.id, "role": new_user.role}
 
 @auth_router.post("/login")
-async def login(user: UserLogin, db: Session = Depends(get_db)):
+async def login(user: UserLogin, request: Request, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):
     """Authenticate user and return JWT token."""
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):

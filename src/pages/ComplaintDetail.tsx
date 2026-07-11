@@ -4,7 +4,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2 } from 'lucide-react';
 import './ComplaintDetail.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -89,6 +89,7 @@ const ComplaintDetail = () => {
               <div className="meta-item"><Tag size={16} /> <span>{data.ward || 'N/A'}</span></div>
               <div className="meta-item"><Calendar size={16} /> <span>{data.date_received ? new Date(data.date_received).toLocaleString('en-IN') : 'N/A'}</span></div>
               <div className="meta-item"><AlertTriangle size={16} /> <span>{data.predicted_category || 'Uncategorized'}</span></div>
+              {data.department && <div className="meta-item"><Building2 size={16} /> <span>{data.department}</span></div>}
             </div>
 
             <div className="ai-section">
@@ -113,7 +114,7 @@ const ComplaintDetail = () => {
                 <div className="incident-card">
                   <div className="incident-row"><span>Incident ID:</span><strong>{data.incident.incident_number}</strong></div>
                   <div className="incident-row"><span>Category:</span><strong>{data.incident.category}</strong></div>
-                  <div className="incident-row"><span>Department:</span><strong>{data.incident.category || 'N/A'}</strong></div>
+                  <div className="incident-row"><span>Department:</span><strong>{data.department || data.incident.category || 'N/A'}</strong></div>
                   <div className="incident-row"><span>Status:</span><strong>{data.incident.status?.replace('-', ' ')}</strong></div>
                   <div className="incident-row"><span>Priority:</span><strong>{data.incident.priority_label}</strong></div>
                   <div className="incident-row"><span>Similar complaints grouped:</span><strong>{data.incident.cluster_size}</strong></div>

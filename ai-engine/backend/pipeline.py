@@ -1,41 +1,31 @@
 """
-[DEPRECATED] Arq worker for background ML inference (classify, dup-detect, priority).
-Runs as:  arq ai_engine.backend.worker.WorkerSettings
+Inline ML pipeline for complaint processing.
+Runs as an asyncio.create_task inside the same uvicorn process,
+avoiding the need for a separate arq worker service on Render's free tier.
 
-Replaced by pipeline.py — an inline asyncio.create_task() approach that runs
-the ML pipeline inside the same uvicorn process. This avoids the need for a
-separate paid Render Worker service ($7/month minimum).
+Provides Redis-backed status updates so GET /complaints/{id}/status
+continues to work exactly as before.
 
-Kept in the codebase for reference. To re-enable the separate worker model:
-1. Remove the asyncio.create_task() call in routes.py POST /complaints
-2. Restore the enqueue_complaint_job() call
-3. Deploy a separate Render Worker service with:
-   Command: arq ai_engine.backend.worker.WorkerSettings
+See worker.py for the original arq-based implementation (kept for reference
+if a future scale-up needs a dedicated worker process).
 """
 
-import os
-import sys
 import json
-import uuid
 import logging
-from pathlib import Path
+import uuid
 from datetime import datetime, timedelta
-from typing import Dict, Any, Optional
+from typing import Optional
 
-logger = logging.getLogger("arq.worker")
-
-sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
-sys.path.insert(0, str(Path(__file__).resolve().parent))
-
-os.environ.setdefault("GIIPS_JWT_SECRET", "arq-worker-secret")
-os.environ.setdefault("GIIPS_ALLOWED_ORIGINS", "*")
-
-from services import ClassificationService, DuplicateDetector, PriorityService as PriorityScorer
-from database import SessionLocal, Complaint, Incident, PriorityHistory
-from models import ClassifyRequest, PriorityRequest
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
+from database import SessionLocal, Complaint, Incident, PriorityHistory
+from job_queue import get_pool
+from models import ClassifyRequest, PriorityRequest
+from services import ClassificationService, DuplicateDetector, PriorityService as PriorityScorer
+from department_map import get_department
+
+logger = logging.getLogger(__name__)
 
 JOB_TTL = 3600  # 1 hour expiry for status keys
 
@@ -50,18 +40,34 @@ def _format_existing(c):
     }
 
 
-async def process_complaint(ctx: Dict, complaint_id: str, user_id: Optional[str]) -> Dict[str, Any]:
-    redis = ctx.get("redis")
-    job_key = f"complaint:status:{complaint_id}"
+async def _set_status(complaint_id: str, status: str, detail: str = "", result: dict = None):
+    """Write status to Redis with TTL. Used by both the route and the inline pipeline."""
+    pool = get_pool()
+    if pool is None:
+        logger.warning("Redis pool not available — skipping status update for %s", complaint_id)
+        return
+    key = f"complaint:status:{complaint_id}"
+    payload = {"status": status, "detail": detail, "updated_at": datetime.utcnow().isoformat()}
+    if result:
+        payload["result"] = result
+    try:
+        await pool.set(key, json.dumps(payload))
+        await pool.expire(key, JOB_TTL)
+    except Exception as e:
+        logger.warning("Failed to update Redis status for %s: %s", complaint_id, e)
 
-    await _set_status(redis, job_key, "processing", detail="Starting ML pipeline")
+
+async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] = None):
+    """Full ML pipeline: classify → duplicate detection → incident create/merge → priority scoring.
+    Designed to run as asyncio.create_task() inside the same process as uvicorn."""
+    await _set_status(complaint_id, "processing", detail="Starting ML pipeline")
 
     db: Session = SessionLocal()
     try:
         complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
         if not complaint:
-            await _set_status(redis, job_key, "failed", detail="Complaint not found")
-            return {"error": "not_found"}
+            await _set_status(complaint_id, "failed", detail="Complaint not found")
+            return
 
         data = {
             "title": complaint.title,
@@ -72,11 +78,12 @@ async def process_complaint(ctx: Dict, complaint_id: str, user_id: Optional[str]
             "lon": getattr(complaint, "longitude", 0) or 0,
         }
 
-        await _set_status(redis, job_key, "processing", detail="Classifying complaint")
+        await _set_status(complaint_id, "processing", detail="Classifying complaint")
         classifier = ClassificationService()
         classify_res = await classifier.classify(ClassifyRequest(text=data["title"], detail=data["description"]))
         category = classify_res.predicted_category
         confidence = classify_res.confidence
+        department = get_department(category)
 
         incident_id = None
         dup_conf = 0.0
@@ -111,7 +118,7 @@ async def process_complaint(ctx: Dict, complaint_id: str, user_id: Optional[str]
             except Exception as exc:
                 logger.warning("Duplicate detection failed: %s", exc)
 
-        await _set_status(redis, job_key, "processing", detail="Updating incident")
+        await _set_status(complaint_id, "processing", detail="Updating incident")
 
         incident = None
         if is_duplicate and incident_id:
@@ -155,7 +162,7 @@ async def process_complaint(ctx: Dict, complaint_id: str, user_id: Optional[str]
                     incident_id=incident.id,
                     old_score=incident.priority_score,
                     new_score=priority_res.priority_score,
-                    reason="Automatic update in worker",
+                    reason="Automatic update in pipeline",
                 )
             )
         incident.priority_score = priority_res.priority_score
@@ -182,32 +189,12 @@ async def process_complaint(ctx: Dict, complaint_id: str, user_id: Optional[str]
             "message": "Complaint processed successfully.",
         }
 
-        await _set_status(redis, job_key, "completed", detail="ML pipeline finished", result=result)
-        logger.info("Processed complaint %s -> incident %s", complaint.id, incident.id)
-        return result
+        await _set_status(complaint_id, "completed", detail="ML pipeline finished", result=result)
+        logger.info("Processed complaint %s -> incident %s (department: %s)", complaint.id, incident.id, department)
 
     except Exception as exc:
         logger.exception("ML pipeline failed for complaint %s", complaint_id)
-        await _set_status(redis, job_key, "failed", detail=str(exc))
-        return {"error": str(exc)}
+        await _set_status(complaint_id, "failed", detail=str(exc))
 
     finally:
         db.close()
-
-
-async def _set_status(redis, key: str, status: str, detail: str = "", result: dict = None):
-    payload = {"status": status, "detail": detail, "updated_at": datetime.utcnow().isoformat()}
-    if result:
-        payload["result"] = result
-    try:
-        await redis.set(key, json.dumps(payload))
-        await redis.expire(key, JOB_TTL)
-    except Exception:
-        pass
-
-
-class WorkerSettings:
-    functions = [process_complaint]
-    poll_delay = 0.5
-    max_jobs = 10
-    burst = False

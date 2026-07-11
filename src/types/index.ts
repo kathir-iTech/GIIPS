@@ -28,6 +28,7 @@ export interface Incident {
   id: string;
   incident_number: string;
   category: string;
+  department?: string | null;
   cluster_size: number;
   ward: string;
   days_open: number;
@@ -86,6 +87,7 @@ export interface CitizenComplaint {
   location: string;
   ward: string;
   predicted_category: string;
+  department?: string | null;
   confidence: number;
   priority: string;
   similarity_score: number | null;
