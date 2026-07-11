@@ -18,7 +18,7 @@
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^6.0.3",
     "csstype": "^3.2.3",
-    "framer-motion": "^12.42.0",
+    "framer-motion": "^12.42.2",
     "leaflet": "^1.9.4",
     "lucide-react": "^1.21.0",
     "react": "^19.2.7",
