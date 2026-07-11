@@ -297,27 +297,21 @@ const ExecutiveDashboard = () => {
             <div className="kpi-info">
               <span className="kpi-label">Districts At Risk</span>
               <span className="kpi-value">{districtsAtRisk.length}</span>
-              <TrendIndicator value={0} />
             </div>
-            <Sparkline color="#f59e0b" trend="flat" />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper stress"><ThermometerSun size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Depts Under Stress</span>
               <span className="kpi-value">{(deptWorkload || []).filter((d: any) => (d.stressLevel || d.efficiency || 100) < 60).length}</span>
-              <TrendIndicator value={0} />
             </div>
-            <Sparkline color="#ef4444" trend="flat" />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper escalation"><Flame size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Predicted Escalations</span>
               <span className="kpi-value">{predictions?.predictedEscalations ?? predictions?.escalations ?? 7}</span>
-              <TrendIndicator value={0} />
             </div>
-            <Sparkline color="#f97316" trend="flat" />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper resolution"><Clock size={18} /></div>
