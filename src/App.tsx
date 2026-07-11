@@ -1,32 +1,45 @@
+import { Suspense, lazy } from 'react';
 import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import { ErrorBoundary } from './components/ErrorBoundary';
-import Analysis from './pages/Analysis';
-import CitizenPortal from './pages/CitizenPortal';
-import Clusters from './pages/Clusters';
-import ExecutiveDashboard from './pages/ExecutiveDashboard';
-import IncidentFeed from './pages/IncidentFeed';
-import Landing from './pages/Landing';
-import Methodology from './pages/Methodology';
-import Overview from './pages/Overview';
-import SpatialIntelligence from './pages/SpatialIntelligence';
-import Login from './pages/Login';
-import Register from './pages/Register';
-import Unauthorized from './pages/Unauthorized';
-import MyComplaints from './pages/MyComplaints';
-import ComplaintDetail from './pages/ComplaintDetail';
-import CitizenProfile from './pages/CitizenProfile';
-import CitizenServices from './pages/CitizenServices';
-import GovernmentPortal from './pages/GovernmentPortal';
-import OfficerManagement from './pages/OfficerManagement';
-import DepartmentManagement from './pages/DepartmentManagement';
-import SystemHealth from './pages/SystemHealth';
-import AuditLogs from './pages/AuditLogs';
-
 import { ProtectedRoute, RoleGuard } from './components/ProtectedRoute';
 import './App.css';
+
+const Analysis = lazy(() => import('./pages/Analysis'));
+const CitizenPortal = lazy(() => import('./pages/CitizenPortal'));
+const Clusters = lazy(() => import('./pages/Clusters'));
+const ExecutiveDashboard = lazy(() => import('./pages/ExecutiveDashboard'));
+const IncidentFeed = lazy(() => import('./pages/IncidentFeed'));
+const Landing = lazy(() => import('./pages/Landing'));
+const Methodology = lazy(() => import('./pages/Methodology'));
+const Overview = lazy(() => import('./pages/Overview'));
+const SpatialIntelligence = lazy(() => import('./pages/SpatialIntelligence'));
+const Login = lazy(() => import('./pages/Login'));
+const Register = lazy(() => import('./pages/Register'));
+const Unauthorized = lazy(() => import('./pages/Unauthorized'));
+const MyComplaints = lazy(() => import('./pages/MyComplaints'));
+const ComplaintDetail = lazy(() => import('./pages/ComplaintDetail'));
+const CitizenProfile = lazy(() => import('./pages/CitizenProfile'));
+const CitizenServices = lazy(() => import('./pages/CitizenServices'));
+const GovernmentPortal = lazy(() => import('./pages/GovernmentPortal'));
+const OfficerManagement = lazy(() => import('./pages/OfficerManagement'));
+const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
+const SystemHealth = lazy(() => import('./pages/SystemHealth'));
+const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+
+function LoadingScreen() {
+  return (
+    <div style={{
+      display: 'flex', alignItems: 'center', justifyContent: 'center',
+      minHeight: '100vh', background: '#0a0e1a', color: '#94a3b8',
+      fontFamily: 'inherit', fontSize: '14px'
+    }}>
+      <span>Loading...</span>
+    </div>
+  );
+}
 
 const PageTransition = ({ children }: { children: React.ReactNode }) => (
   <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
@@ -46,7 +59,9 @@ function AppLayout() {
       {showSidebar && <Sidebar />}
       <main className="main-content">
         <ErrorBoundary>
-          <AnimatedRoutes />
+          <Suspense fallback={<LoadingScreen />}>
+            <AnimatedRoutes />
+          </Suspense>
         </ErrorBoundary>
       </main>
     </div>

@@ -8,13 +8,12 @@ if (!env.VITE_API_BASE_URL) {
     throw new Error("VITE_API_BASE_URL is required but not set. Define it in your .env file.");
 }
 
-// CJS fallbacks for packages with corrupted ESM builds on this machine
+// CJS fallback – react-plotly.js ESM dist/import path doesn't resolve
 function cjsResolve(name) {
     try { return require.resolve(name); }
     catch { return null; }
 }
 
-const fmEntry = cjsResolve('framer-motion');
 const rpEntry = cjsResolve('react-plotly.js');
 
 export default defineConfig({
@@ -22,7 +21,6 @@ export default defineConfig({
     resolve: {
         alias: {
             '@': '/src',
-            ...(fmEntry ? { 'framer-motion': fmEntry } : {}),
             ...(rpEntry ? { 'react-plotly.js': rpEntry } : {})
         }
     }
