@@ -19,10 +19,30 @@ _pool: Optional[ArqRedis] = None
 
 
 def _redis_settings():
+    redis_url = os.environ.get("REDIS_URL")
+    if redis_url:
+        from urllib.parse import urlparse
+        parsed = urlparse(redis_url)
+        host = parsed.hostname or "127.0.0.1"
+        port = parsed.port or 6379
+        db = 0
+        if parsed.path and parsed.path.strip("/"):
+            try:
+                db = int(parsed.path.strip("/"))
+            except ValueError:
+                db = 0
+        password = parsed.password or os.environ.get("REDIS_PASSWORD")
+        ssl = parsed.scheme in ("rediss",)
+        return RedisSettings(
+            host=host, port=port, database=db,
+            password=password, ssl=ssl,
+        )
     host = os.environ.get("REDIS_HOST", "127.0.0.1")
     port = int(os.environ.get("REDIS_PORT", "6379"))
     db = int(os.environ.get("REDIS_DB", "0"))
-    return RedisSettings(host=host, port=port, database=db)
+    password = os.environ.get("REDIS_PASSWORD")
+    ssl = os.environ.get("REDIS_TLS", "").lower() in ("1", "true", "yes")
+    return RedisSettings(host=host, port=port, database=db, password=password, ssl=ssl)
 
 
 async def init_redis_pool():
