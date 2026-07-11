@@ -48,8 +48,8 @@ const ComplaintDetail = () => {
 
   const timeline = [
     { label: 'Submitted', date: data.date_received, icon: CheckCircle, color: '#3b82f6' },
-    { label: 'AI Classified', date: data.date_received, icon: ThumbsUp, color: '#8b5cf6', detail: `${data.predicted_category} (${Math.round((data.confidence || 0) * 100)}% confidence)` },
-    { label: 'Duplicate Check', date: data.date_received, icon: data.incident ? LinkIcon : XCircle, color: data.incident ? '#16a34a' : '#64748b', detail: data.incident ? `Merged into ${data.incident.incident_number}` : 'No duplicates found' },
+    { label: 'Categorized', date: data.date_received, icon: ThumbsUp, color: '#8b5cf6', detail: `${data.predicted_category} — ${data.confidence != null ? (data.confidence >= 0.8 ? 'High' : data.confidence >= 0.5 ? 'Medium' : 'Low') : ''} confidence` },
+    { label: 'Similarity Check', date: data.date_received, icon: data.incident ? LinkIcon : XCircle, color: data.incident ? '#16a34a' : '#64748b', detail: data.incident ? 'Grouped with similar complaints' : 'No similar complaints found' },
     { label: 'Current Status', date: null, icon: Clock, color: '#eab308', detail: incidentStatus.replace('-', ' ').toUpperCase() },
   ];
 
@@ -58,9 +58,17 @@ const ComplaintDetail = () => {
     date: h.changed_at,
     icon: AlertTriangle,
     color: '#ea580c',
-    detail: `${h.old_score ?? 'N/A'} → ${h.new_score ?? 'N/A'}: ${h.reason || 'Score adjusted'}`
+    detail: `${h.reason || 'Priority adjusted'}`
   })) || [];
   const fullTimeline = [...timeline, ...priorityEntries];
+
+  const friendlyMergeReason = (reason: string): string => {
+    if (!reason) return '';
+    if (reason.includes('Automated merge') || reason.includes('merged')) {
+      return 'Your complaint was grouped with one or more similar reports to help prioritize a faster response.';
+    }
+    return 'A new case was opened for your complaint.';
+  };
 
   return (
     <div className="complaint-detail-page">
@@ -84,25 +92,19 @@ const ComplaintDetail = () => {
             </div>
 
             <div className="ai-section">
-              <h3><ThumbsUp size={18} /> AI Classification</h3>
+              <h3><ThumbsUp size={18} /> Category & Priority</h3>
               <div className="ai-metrics">
                 <div className="ai-metric">
-                  <span className="label">Confidence</span>
+                  <span className="label">Match confidence</span>
                   <div className="metric-bar"><div className="metric-fill" style={{ width: `${Math.round((data.confidence || 0) * 100)}%` }}></div></div>
-                  <span className="value">{Math.round((data.confidence || 0) * 100)}%</span>
+                  <span className="value">{data.confidence != null ? (data.confidence >= 0.8 ? 'High' : data.confidence >= 0.5 ? 'Medium' : 'Low') : 'N/A'}</span>
                 </div>
                 <div className="ai-metric">
-                  <span className="label">Duplicate</span>
+                  <span className="label">Merged with similar complaints</span>
                   <span className={`value ${data.incident ? 'duplicate-yes' : 'duplicate-no'}`}>{data.incident ? 'Yes' : 'No'}</span>
                 </div>
-                {data.similarity_score != null && (
-                  <div className="ai-metric">
-                    <span className="label">Similarity</span>
-                    <span className="value">{(data.similarity_score * 100).toFixed(0)}%</span>
-                  </div>
-                )}
               </div>
-              {data.merge_reason && <p className="merge-reason">{data.merge_reason}</p>}
+              {data.merge_reason && <p className="merge-reason">{friendlyMergeReason(data.merge_reason)}</p>}
             </div>
 
             {data.incident && (
@@ -114,7 +116,7 @@ const ComplaintDetail = () => {
                   <div className="incident-row"><span>Department:</span><strong>{data.incident.category || 'N/A'}</strong></div>
                   <div className="incident-row"><span>Status:</span><strong>{data.incident.status?.replace('-', ' ')}</strong></div>
                   <div className="incident-row"><span>Priority:</span><strong>{data.incident.priority_label}</strong></div>
-                  <div className="incident-row"><span>Cluster Size:</span><strong>{data.incident.cluster_size}</strong></div>
+                  <div className="incident-row"><span>Similar complaints grouped:</span><strong>{data.incident.cluster_size}</strong></div>
                   {data.incident.recommended_action && <div className="incident-row"><span>Action:</span><span>{data.incident.recommended_action}</span></div>}
                 </div>
               </div>

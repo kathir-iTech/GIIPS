@@ -109,14 +109,14 @@ const CitizenPortal = () => {
 
   const isProcessing = processingStatus && ['submitting', 'pending', 'processing'].includes(processingStatus);
 
-  const steps = ['Details', 'Complaint', 'Location', 'Review', 'AI Preview', 'Success'];
+  const steps = ['Details', 'Complaint', 'Location', 'Photo', 'Review', 'Submit'];
 
   if (result && !isProcessing) return (
     <div className="portal-container success">
       <div className="glass-card success-card">
         <CheckCircle size={64} className="success-icon" />
         <h2>Submission Received</h2>
-        <p>Your complaint has been processed by the AI pipeline.</p>
+        <p>Your complaint has been received and is being reviewed.</p>
         <div className="summary-card">
           <p><strong>Complaint ID:</strong> {result.complaintId}</p>
           {result.priority && <p><strong>Priority:</strong> {result.priority}</p>}
@@ -136,10 +136,10 @@ const CitizenPortal = () => {
       <div className="glass-card success-card">
         <Clock size={64} className="processing-icon" />
         <h2>Processing Your Complaint</h2>
-        <p>Our AI pipeline is analyzing your submission...</p>
+        <p>Processing your submission...</p>
         <div className="processing-status">
           <Loader2 className="spinner" size={32} />
-          <p className="status-text">{processingStatus === 'submitting' ? 'Submitting...' : processingStatus === 'pending' ? 'Waiting in queue...' : 'Running ML analysis...'}</p>
+          <p className="status-text">{processingStatus === 'submitting' ? 'Submitting...' : processingStatus === 'pending' ? 'Waiting in queue...' : 'Analyzing your complaint...'}</p>
           {photoUploadStatus === 'uploading' && <p className="status-text">Uploading photo...</p>}
           {photoUploadStatus === 'done' && <p className="status-text photo-done">Photo uploaded</p>}
         </div>
@@ -221,7 +221,7 @@ const CitizenPortal = () => {
               {formData.latitude !== 0 && (
                 <small style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <MapPin size={12} />
-                  Coords: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                  Location pinned on map
                 </small>
               )}
             </div>
@@ -268,7 +268,7 @@ const CitizenPortal = () => {
                 </div>
                 {formData.latitude !== 0 && (
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <strong>Coordinates:</strong> {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                    <strong>Location pinned on map:</strong> Yes
                   </div>
                 )}
               </div>
@@ -277,8 +277,8 @@ const CitizenPortal = () => {
           {step === 6 && (
             <div className="form-step ai-step">
               <Sparkles className="ai-icon" />
-              <h3>AI Preview</h3>
-              <p>Analyzing priority and department...</p>
+              <h3>Confirm & Submit</h3>
+              <p>You're about to submit your complaint. Click confirm to send it for review.</p>
               {submitError && (
                 <div className="error-banner">
                   <AlertCircle size={16} />

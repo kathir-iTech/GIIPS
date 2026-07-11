@@ -852,6 +852,37 @@
   border-radius: 4px;
 }
 
+.timeline-item.overridden .tl-content {
+  opacity: 0.45;
+  border-color: rgba(239,68,68,0.2);
+}
+
+.tl-override-label {
+  display: block;
+  margin-top: 4px;
+  font-size: 11px;
+  color: #ef4444;
+  font-weight: 600;
+}
+
+.override-btn {
+  margin-top: 6px;
+  padding: 3px 10px;
+  font-size: 11px;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 6px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.override-btn:hover {
+  background: rgba(239,68,68,0.15);
+}
+
 /* Right Panel */
 .status-display {
   display: flex;
@@ -989,6 +1020,39 @@
   font-weight: 700;
   color: #2563eb;
   font-size: 11px;
+}
+
+.lc-row.overridden {
+  opacity: 0.4;
+}
+
+.override-btn-small {
+  padding: 2px 7px;
+  font-size: 10px;
+  font-weight: 600;
+  color: #ef4444;
+  background: rgba(239,68,68,0.08);
+  border: 1px solid rgba(239,68,68,0.2);
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+  white-space: nowrap;
+}
+
+.override-btn-small:hover {
+  background: rgba(239,68,68,0.15);
+}
+
+.override-summary-badge {
+  margin-top: 12px;
+  padding: 6px 10px;
+  font-size: 11px;
+  color: #f87171;
+  background: rgba(239,68,68,0.06);
+  border: 1px solid rgba(239,68,68,0.15);
+  border-radius: 6px;
+  text-align: center;
 }
 
 /* Dept Alloc */

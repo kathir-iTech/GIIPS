@@ -134,6 +134,16 @@ const Clusters = () => {
   const [intelLoading, setIntelLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
+  const [overriddenIds, setOverriddenIds] = useState<Set<string>>(new Set());
+
+  const toggleOverride = (complaintId: string) => {
+    setOverriddenIds(prev => {
+      const next = new Set(prev);
+      if (next.has(complaintId)) next.delete(complaintId);
+      else next.add(complaintId);
+      return next;
+    });
+  };
 
   const [search, setSearch] = useState('');
   const [filterPriority, setFilterPriority] = useState<PriorityLevel | 'all'>('all');
@@ -600,7 +610,7 @@ const Clusters = () => {
                         {[...selectedComplaints]
                           .sort((a, b) => new Date(a.date_received).getTime() - new Date(b.date_received).getTime())
                           .map((c, i) => (
-                            <div key={c.id} className="timeline-item">
+                            <div key={c.id} className={`timeline-item${overriddenIds.has(c.id) ? ' overridden' : ''}`}>
                               <div className="tl-marker">
                                 <span className="tl-dot" />
                                 <span className="tl-line" />
@@ -613,6 +623,10 @@ const Clusters = () => {
                                 </div>
                                 <p className="tl-text">{c.text}</p>
                                 {c.merge_reason && <span className="tl-merge-reason">{c.merge_reason}</span>}
+                                {overriddenIds.has(c.id) && <span className="tl-override-label">Manually excluded as not a duplicate</span>}
+                                <button className="override-btn" onClick={() => toggleOverride(c.id)}>
+                                  {overriddenIds.has(c.id) ? 'Undo' : 'Mark as not a duplicate'}
+                                </button>
                               </div>
                             </div>
                           ))}
@@ -676,12 +690,12 @@ const Clusters = () => {
                   <SectionCard title="Cluster Overview" icon={<GitBranch size={18} />}>
                     <div className="cluster-overview-grid">
                       <div className="co-item">
-                        <span className="co-value">{selectedClusterSize}</span>
-                        <span className="co-label">Duplicate Count</span>
+                        <span className="co-value">{selectedClusterSize - overriddenIds.size}</span>
+                        <span className="co-label">Active Duplicates</span>
                       </div>
                       <div className="co-item">
                         <span className="co-value">{selectedComplaints.length}</span>
-                        <span className="co-label">Linked Complaints</span>
+                        <span className="co-label">Total Linked</span>
                       </div>
                       <div className="co-item">
                         <span className="co-value">{avgSimilarity > 0 ? `${Math.round(avgSimilarity * 100)}%` : '—'}</span>
@@ -694,14 +708,22 @@ const Clusters = () => {
                         </div>
                       )}
                     </div>
+                    {overriddenIds.size > 0 && (
+                      <div className="override-summary-badge">
+                        {overriddenIds.size} complaint{overriddenIds.size > 1 ? 's' : ''} manually excluded from duplicate set
+                      </div>
+                    )}
                     {selectedComplaints.length > 0 && (
                       <div className="linked-complaints">
                         <h5>Recent Complaints</h5>
                         {selectedComplaints.slice(0, 5).map(c => (
-                          <div key={c.id} className="lc-row">
+                          <div key={c.id} className={`lc-row${overriddenIds.has(c.id) ? ' overridden' : ''}`}>
                             <span className="lc-num">{c.complaint_number}</span>
                             <span className="lc-text">{c.text?.substring(0, 60)}{c.text?.length > 60 ? '…' : ''}</span>
                             <span className="lc-sim">{Math.round((c.similarity_score || 0) * 100)}%</span>
+                            <button className="override-btn-small" onClick={() => toggleOverride(c.id)} title={overriddenIds.has(c.id) ? 'Undo override' : 'Flag as not a duplicate'}>
+                              {overriddenIds.has(c.id) ? 'Undo' : 'Not dup'}
+                            </button>
                           </div>
                         ))}
                       </div>

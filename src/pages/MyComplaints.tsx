@@ -110,13 +110,13 @@ const MyComplaints = () => {
                   <div className="card-footer">
                     <div className="confidence-bar">
                       <div className="confidence-fill" style={{ width: `${Math.round((c.confidence || 0) * 100)}%` }}></div>
-                      <span>AI Confidence: {Math.round((c.confidence || 0) * 100)}%</span>
+                      <span>Match confidence: {c.confidence != null ? (c.confidence >= 0.8 ? 'High' : c.confidence >= 0.5 ? 'Medium' : 'Low') : 'N/A'}</span>
                     </div>
                     <div className="duplicate-info">
                       {c.incident ? (
-                        <span className="linked-incident">Linked: {c.incident.incident_number || 'Unknown'}</span>
+                        <span className="linked-incident">Grouped with similar complaints</span>
                       ) : (
-                        <span className="no-incident">No linked incident</span>
+                        <span className="no-incident">Standalone complaint</span>
                       )}
                     </div>
                   </div>
