@@ -25,25 +25,30 @@ const Overview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchDashboard = async (showLoader = false) => {
-    if (showLoader) setLoading(true);
-    try {
-      const res = await api.getDashboardData();
-      setData(res as BackendDashboardData);
-    } catch (err: any) {
-      if (showLoader) {
-        console.error('Failed to fetch dashboard data:', err);
-        setError(err.message || 'Failed to load dashboard data');
-      }
-    } finally {
-      if (showLoader) setLoading(false);
-    }
-  };
-
   useEffect(() => {
+    let mounted = true;
+
+    const fetchDashboard = async (showLoader = false) => {
+      if (!mounted) return;
+      if (showLoader) setLoading(true);
+      try {
+        const res = await api.getDashboardData();
+        if (!mounted) return;
+        setData(res as BackendDashboardData);
+      } catch (err: any) {
+        if (!mounted) return;
+        if (showLoader) {
+          console.error('Failed to fetch dashboard data:', err);
+          setError(err.message || 'Failed to load dashboard data');
+        }
+      } finally {
+        if (showLoader && mounted) setLoading(false);
+      }
+    };
+
     fetchDashboard(true);
     const interval = setInterval(() => fetchDashboard(false), 30000);
-    return () => clearInterval(interval);
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading dashboard...</span></div>;

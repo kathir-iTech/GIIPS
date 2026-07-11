@@ -21,16 +21,26 @@ const IncidentFeed = () => {
 
   useEffect(() => {
     let cancelled = false;
-    const fetchIncidents = async () => {
+
+    const fetchIncidents = async (showLoader = false) => {
+      if (cancelled) return;
       try {
         const data = await api.getIncidents(sortField);
         if (!cancelled) setAllIncidents(data || []);
       } catch (e) {
-        if (!cancelled) console.error('Failed to fetch incidents:', e);
+        if (!cancelled) {
+          if (showLoader) {
+            setError('Failed to load incidents. Please try again.');
+          }
+          console.error('Failed to fetch incidents:', e);
+        }
+      } finally {
+        if (showLoader && !cancelled) setLoading(false);
       }
     };
-    fetchIncidents();
-    const interval = setInterval(fetchIncidents, 30000);
+
+    fetchIncidents(true);
+    const interval = setInterval(() => fetchIncidents(false), 30000);
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
