@@ -13,7 +13,12 @@ const Analysis = () => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    api.getClassificationMetrics().then(setMetrics).catch(err => setError(err.message)).finally(() => setLoading(false));
+    let cancelled = false;
+    api.getClassificationMetrics()
+      .then(data => { if (!cancelled) setMetrics(data); })
+      .catch(err => { if (!cancelled) setError(err.message); })
+      .finally(() => { if (!cancelled) setLoading(false); });
+    return () => { cancelled = true; };
   }, []);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading analysis...</span></div>;

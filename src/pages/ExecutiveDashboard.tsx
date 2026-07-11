@@ -8,7 +8,7 @@ import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
   Minus, ChevronRight, Wrench, Droplets, Lightbulb, Trash2, Heart,
-  Road, Send, X, Loader2, Brain, Target, Compass, AlertTriangle, CheckCircle2,
+  Road, Send, Loader2, Brain, Target, Compass, AlertTriangle, CheckCircle2,
   DollarSign, Calendar, Gauge, Sparkles, Bot, MessageSquare, Flame, ThermometerSun,
   Users2, ArrowRight
 } from 'lucide-react';
@@ -24,10 +24,6 @@ const EXEC_DEPT_COLORS: Record<string, string> = {
   'Public Health': '#06b6d4',
 };
 
-const generateSparkline = (color: string): string => {
-  return ''; // real data from API will render sparkline when available
-};
-
 const SkeletonCard: React.FC = () => (
   <div className="skeleton-card">
     <div className="skeleton-header" />
@@ -36,9 +32,21 @@ const SkeletonCard: React.FC = () => (
   </div>
 );
 
-const Sparkline: React.FC<{ color?: string; trend?: 'up' | 'down' | 'flat' }> = ({ color = '#3b82f6', trend = 'up' }) => (
+const buildSparklinePath = (data: number[], width: number, height: number): string => {
+  if (!data || data.length < 2) return '';
+  const max = Math.max(...data, 1);
+  const pad = 2;
+  const h = height - pad * 2;
+  return data.map((v, i) => {
+    const x = (i / (data.length - 1)) * (width - pad * 2) + pad;
+    const y = h - ((v / max) * h) + pad;
+    return `${i === 0 ? 'M' : 'L'}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(' ');
+};
+
+const Sparkline: React.FC<{ data?: number[]; color?: string; trend?: 'up' | 'down' | 'flat' }> = ({ data = [], color = '#3b82f6', trend = 'up' }) => (
   <svg width="80" height="30" viewBox="0 0 80 30" className="kpi-sparkline">
-    <path d={generateSparkline(color)} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+    <path d={buildSparklinePath(data, 80, 30)} fill="none" stroke={color} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
     {trend === 'up' && <ArrowUpRight size={12} className="spark-trend spark-up" />}
     {trend === 'down' && <ArrowDownRight size={12} className="spark-trend spark-down" />}
     {trend === 'flat' && <Minus size={12} className="spark-trend spark-flat" />}
@@ -100,11 +108,12 @@ const ExecutiveDashboard = () => {
   const [systemHealth, setSystemHealth] = useState<any>(null);
   const [timelineDays, setTimelineDays] = useState<number>(30);
 
+  const [trendLabels, setTrendLabels] = useState<string[]>([]);
+  const [trendComplaints, setTrendComplaints] = useState<number[]>([]);
+
   const [copilotMessages, setCopilotMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [copilotInput, setCopilotInput] = useState('');
   const [copilotLoading, setCopilotLoading] = useState(false);
-  const [copilotInitialLoading, setCopilotInitialLoading] = useState(true);
-
   useEffect(() => {
     let mounted = true;
 
@@ -121,6 +130,7 @@ const ExecutiveDashboard = () => {
           api.getKnowledgeSummary(),
           api.getDecisionSupportSummary(),
           token ? api.getSystemHealth(token) : Promise.resolve({}),
+          fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/trend`).then(r => r.json()).catch(() => ({ labels: [], complaints: [], incidents: [] })),
         ]);
         if (!mounted) return;
         const feedErrors: string[] = [];
@@ -139,6 +149,11 @@ const ExecutiveDashboard = () => {
         setKnowledge(checkFeed(results[5], 'knowledge'));
         setDecisionSupport(checkFeed(results[6], 'decisionSupport'));
         setSystemHealth(checkFeed(results[7], 'systemHealth'));
+        const trendRaw = checkFeed(results[8], 'trend');
+        if (trendRaw && trendRaw.labels) {
+          setTrendLabels(trendRaw.labels || []);
+          setTrendComplaints(trendRaw.complaints || []);
+        }
         if (feedErrors.length > 0) {
           const msg = 'Some intelligence feeds are offline: ' + feedErrors.join('; ');
           console.error(msg);
@@ -159,14 +174,6 @@ const ExecutiveDashboard = () => {
     const interval = setInterval(() => fetchAll(false), 30000);
     return () => { mounted = false; clearInterval(interval); };
   }, [token]);
-
-  // Copilot initialization
-  useEffect(() => {
-    const timer = setTimeout(() => {
-      setCopilotInitialLoading(false);
-    }, 1200);
-    return () => clearTimeout(timer);
-  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -198,6 +205,27 @@ const ExecutiveDashboard = () => {
   const totalComplaints = execSummary?.totalComplaints ?? execSummary?.todayComplaints ?? 0;
   const criticalCount = execSummary?.criticalIncidentCount ?? execSummary?.criticalIncidents ?? 0;
   const resolutionTime = execSummary?.avgResolutionTime ?? execSummary?.avg_days_open ?? 2.4;
+
+  const complaintTrend = useMemo(() => {
+    if (trendComplaints.length < 2) return 0;
+    const first = trendComplaints[0];
+    const last = trendComplaints[trendComplaints.length - 1];
+    if (first === 0) return 0;
+    return Math.round(((last - first) / first) * 100);
+  }, [trendComplaints]);
+
+  const criticalTrend = useMemo(() => {
+    const prior = execSummary?.priorCriticalIncidents;
+    const curr = criticalCount;
+    if (prior == null || prior === 0) return 0;
+    return Math.round(((curr - prior) / prior) * 100);
+  }, [execSummary, criticalCount]);
+
+  const resolutionTrend = useMemo(() => {
+    const prior = execSummary?.priorAvgResolutionTime;
+    if (prior == null || prior === 0) return 0;
+    return Math.round(((resolutionTime - prior) / prior) * 100);
+  }, [execSummary, resolutionTime]);
 
   if (loading) {
     return (
@@ -251,63 +279,63 @@ const ExecutiveDashboard = () => {
             <div className="kpi-info">
               <span className="kpi-label">Today's Complaints</span>
               <span className="kpi-value">{totalComplaints}</span>
-              <TrendIndicator value={5} />
+              <TrendIndicator value={complaintTrend} />
             </div>
-            <Sparkline color="#3b82f6" trend="up" />
+            <Sparkline data={trendComplaints} color="#3b82f6" trend={complaintTrend > 0 ? 'up' : complaintTrend < 0 ? 'down' : 'flat'} />
           </div>
           <div className="kpi-item critical">
             <div className="kpi-icon-wrapper critical"><AlertOctagon size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Critical Incidents</span>
               <span className="kpi-value">{criticalCount}</span>
-              <TrendIndicator value={12} />
+              <TrendIndicator value={criticalTrend} />
             </div>
-            <Sparkline color="#dc2626" trend="up" />
+            <Sparkline color="#dc2626" trend={criticalTrend > 0 ? 'up' : criticalTrend < 0 ? 'down' : 'flat'} />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper districts"><MapPin size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Districts At Risk</span>
               <span className="kpi-value">{districtsAtRisk.length}</span>
-              <TrendIndicator value={-3} />
+              <TrendIndicator value={0} />
             </div>
-            <Sparkline color="#f59e0b" trend="down" />
+            <Sparkline color="#f59e0b" trend="flat" />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper stress"><ThermometerSun size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Depts Under Stress</span>
               <span className="kpi-value">{(deptWorkload || []).filter((d: any) => (d.stressLevel || d.efficiency || 100) < 60).length}</span>
-              <TrendIndicator value={8} />
+              <TrendIndicator value={0} />
             </div>
-            <Sparkline color="#ef4444" trend="up" />
+            <Sparkline color="#ef4444" trend="flat" />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper escalation"><Flame size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Predicted Escalations</span>
               <span className="kpi-value">{predictions?.predictedEscalations ?? predictions?.escalations ?? 7}</span>
-              <TrendIndicator value={4} />
+              <TrendIndicator value={0} />
             </div>
-            <Sparkline color="#f97316" trend="up" />
+            <Sparkline color="#f97316" trend="flat" />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper resolution"><Clock size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Avg Resolution Time</span>
               <span className="kpi-value">{resolutionTime?.toFixed?.(1) ?? resolutionTime}d</span>
-              <TrendIndicator value={-10} />
+              <TrendIndicator value={resolutionTrend} />
             </div>
-            <Sparkline color="#22c55e" trend="down" />
+            <Sparkline color="#22c55e" trend={resolutionTrend < 0 ? 'down' : resolutionTrend > 0 ? 'up' : 'flat'} />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper weekly"><Activity size={18} /></div>
             <div className="kpi-info">
               <span className="kpi-label">Weekly Trend</span>
               <span className="kpi-value">Stable</span>
-              <TrendIndicator value={-6} />
+              <TrendIndicator value={complaintTrend} />
             </div>
-            <Sparkline color="#10b981" trend="down" />
+            <Sparkline data={trendComplaints} color="#10b981" trend={complaintTrend > 0 ? 'up' : complaintTrend < 0 ? 'down' : 'flat'} />
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper system"><ServerIcon size={18} /></div>

@@ -50,6 +50,7 @@ const CitizenPortal = () => {
   }, [stopPolling]);
 
   const handleSubmit = async () => {
+    if (!token) { setSubmitError('Authentication required'); setLoading(false); return; }
     setLoading(true);
     setSubmitError(null);
     setProcessingStatus('submitting');
