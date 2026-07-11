@@ -170,10 +170,27 @@ async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get
 
 
 @complaint_router.get("/{complaint_id}/status", response_model=ComplaintProcessingStatus)
-async def get_complaint_processing_status(complaint_id: str, _: User = Depends(get_current_user)):
-    """Get async ML processing status for a complaint."""
+async def get_complaint_processing_status(complaint_id: str, _: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get async ML processing status for a complaint. Falls back to DB if Redis is unavailable."""
     status_data = await get_complaint_status(complaint_id)
     if status_data is None:
+        complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+        if not complaint:
+            return ComplaintProcessingStatus(status="failed", detail="Complaint not found")
+        if complaint.predicted_category is not None:
+            return ComplaintProcessingStatus(
+                status="completed",
+                detail="ML pipeline finished",
+                result={
+                    "complaintId": complaint.id,
+                    "incidentId": complaint.incident_id,
+                    "predictedCategory": complaint.predicted_category,
+                    "priority": complaint.priority,
+                    "confidence": complaint.confidence,
+                    "duplicate": complaint.merge_reason is not None,
+                    "message": "Complaint processed successfully.",
+                }
+            )
         return ComplaintProcessingStatus(status="pending", detail="Pipeline not yet started")
     return ComplaintProcessingStatus(**status_data)
 

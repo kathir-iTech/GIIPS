@@ -73,7 +73,7 @@ const CitizenPortal = () => {
 
         pollTimeoutRef.current = setTimeout(() => {
           stopPolling();
-          setSubmitError('Processing timed out. Your complaint has been saved and will be processed shortly.');
+          setSubmitError('Status tracking timed out. Your complaint was submitted successfully — check My Complaints for the result.');
           setLoading(false);
         }, 120000);
         pollingRef.current = setInterval(async () => {
@@ -140,7 +140,7 @@ const CitizenPortal = () => {
         <p>Processing your submission...</p>
         <div className="processing-status">
           <Loader2 className="spinner" size={32} />
-          <p className="status-text">{processingStatus === 'submitting' ? 'Submitting...' : processingStatus === 'pending' ? 'Waiting in queue...' : 'Analyzing your complaint...'}</p>
+          <p className="status-text">{processingStatus === 'submitting' ? 'Submitting...' : processingStatus === 'pending' ? 'Starting analysis...' : 'Processing your complaint...'}</p>
           {photoUploadStatus === 'uploading' && <p className="status-text">Uploading photo...</p>}
           {photoUploadStatus === 'done' && <p className="status-text photo-done">Photo uploaded</p>}
         </div>
