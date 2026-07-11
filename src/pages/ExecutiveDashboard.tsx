@@ -117,20 +117,33 @@ const ExecutiveDashboard = () => {
           api.getWardHealth(),
           api.getDeptWorkload(),
           api.getIncidents(),
-          api.getPredictionsSummary().catch((e) => { console.warn('Predictions feed offline:', e); return {}; }),
-          api.getKnowledgeSummary().catch((e) => { console.warn('Knowledge feed offline:', e); return {}; }),
-          api.getDecisionSupportSummary().catch((e) => { console.warn('Decision support offline:', e); return {}; }),
-          token ? api.getSystemHealth(token).catch((e) => { console.warn('System health offline:', e); return {}; }) : Promise.resolve({}),
+          api.getPredictionsSummary(),
+          api.getKnowledgeSummary(),
+          api.getDecisionSupportSummary(),
+          token ? api.getSystemHealth(token) : Promise.resolve({}),
         ]);
         if (!mounted) return;
-        setExecSummary(results[0].status === 'fulfilled' ? results[0].value : null);
-        setWardHealth(results[1].status === 'fulfilled' ? results[1].value : []);
-        setDeptWorkload(results[2].status === 'fulfilled' ? results[2].value : []);
-        setIncidents(results[3].status === 'fulfilled' ? results[3].value : []);
-        setPredictions(results[4].status === 'fulfilled' ? results[4].value : null);
-        setKnowledge(results[5].status === 'fulfilled' ? results[5].value : null);
-        setDecisionSupport(results[6].status === 'fulfilled' ? results[6].value : null);
-        setSystemHealth(results[7].status === 'fulfilled' ? results[7].value : null);
+        const feedErrors: string[] = [];
+        const checkFeed = (r: any, name: string) => {
+          if (r.status === 'rejected') {
+            feedErrors.push(`${name} (${r.reason?.message || 'unknown error'})`);
+            return null;
+          }
+          return r.value;
+        };
+        setExecSummary(checkFeed(results[0], 'execSummary'));
+        setWardHealth(checkFeed(results[1], 'wardHealth') || []);
+        setDeptWorkload(checkFeed(results[2], 'deptWorkload') || []);
+        setIncidents(checkFeed(results[3], 'incidents') || []);
+        setPredictions(checkFeed(results[4], 'predictions'));
+        setKnowledge(checkFeed(results[5], 'knowledge'));
+        setDecisionSupport(checkFeed(results[6], 'decisionSupport'));
+        setSystemHealth(checkFeed(results[7], 'systemHealth'));
+        if (feedErrors.length > 0) {
+          const msg = 'Some intelligence feeds are offline: ' + feedErrors.join('; ');
+          console.error(msg);
+          if (showLoader) setError(msg);
+        }
       } catch (err) {
         if (!mounted) return;
         if (showLoader) {
