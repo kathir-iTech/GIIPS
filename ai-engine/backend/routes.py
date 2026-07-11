@@ -640,45 +640,60 @@ prediction_router = APIRouter(prefix="/predictions", tags=["Predictions"])
 @prediction_router.get("/summary", response_model=PredictionSummaryResponse)
 async def get_predictions_summary(db: Session = Depends(get_db)):
     """Get AI predictions summary using live complaint and incident data."""
-    engine = PredictiveEngine()
-    history_counts = []
-    for i in range(5):
-        cutoff = datetime.utcnow() - timedelta(days=5 - i)
-        next_cutoff = datetime.utcnow() - timedelta(days=4 - i)
-        count = db.query(Complaint).filter(Complaint.created_at >= cutoff, Complaint.created_at < next_cutoff).count()
-        history_counts.append(count)
-    forecast = engine.forecast_complaints('week', history=history_counts)
+    try:
+        engine = PredictiveEngine()
+        history_counts = []
+        for i in range(5):
+            cutoff = datetime.utcnow() - timedelta(days=5 - i)
+            next_cutoff = datetime.utcnow() - timedelta(days=4 - i)
+            count = db.query(Complaint).filter(Complaint.created_at >= cutoff, Complaint.created_at < next_cutoff).count()
+            history_counts.append(count)
+        forecast = engine.forecast_complaints('week', history=history_counts)
 
-    total_incidents = db.query(Incident).count()
-    critical_count = db.query(Incident).filter(Incident.priority_label == 'Critical').count()
-    high_count = db.query(Incident).filter(Incident.priority_label == 'High').count()
-    avg_days_open = db.query(func.avg(Incident.days_open)).scalar() or 0.0
+        total_incidents = db.query(Incident).count()
+        critical_count = db.query(Incident).filter(Incident.priority_label == 'Critical').count()
+        high_count = db.query(Incident).filter(Incident.priority_label == 'High').count()
+        avg_days_open = db.query(func.avg(Incident.days_open)).scalar() or 0.0
 
-    recent_incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(5).all()
-    escalation_risks = []
-    for inc in recent_incidents:
-        esc = engine.predict_escalation(inc.id)
-        escalation_risks.append({
-            "incident_id": inc.id,
-            "priority_label": inc.priority_label,
-            "escalation_probability": esc.get("probability", 0.0),
-            "risk_level": esc.get("risk_level", "LOW")
-        })
+        recent_incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(5).all()
+        escalation_risks = []
+        for inc in recent_incidents:
+            esc = engine.predict_escalation(inc.id)
+            escalation_risks.append({
+                "incident_id": inc.id,
+                "priority_label": inc.priority_label,
+                "escalation_probability": esc.get("probability", 0.0),
+                "risk_level": esc.get("risk_level", "LOW")
+            })
 
-    active_alerts = engine.generate_alerts()
+        active_alerts = engine.generate_alerts()
 
-    return PredictionSummaryResponse(
-        timeframe=forecast.get("timeframe", "week"),
-        predicted_volume=forecast.get("predicted_volume", 0.0),
-        confidence=forecast.get("confidence", 0.0),
-        model=forecast.get("model", "unknown"),
-        total_incidents=total_incidents,
-        critical_count=critical_count,
-        high_priority_count=high_count,
-        avg_days_open=round(float(avg_days_open), 1),
-        recent_escalation_risks=escalation_risks,
-        active_alerts=active_alerts
-    )
+        return PredictionSummaryResponse(
+            timeframe=forecast.get("timeframe", "week"),
+            predicted_volume=forecast.get("predicted_volume", 0.0),
+            confidence=forecast.get("confidence", 0.0),
+            model=forecast.get("model", "unknown"),
+            total_incidents=total_incidents,
+            critical_count=critical_count,
+            high_priority_count=high_count,
+            avg_days_open=round(float(avg_days_open), 1),
+            recent_escalation_risks=escalation_risks,
+            active_alerts=active_alerts
+        )
+    except Exception:
+        logger.exception("/predictions/summary failed")
+        return PredictionSummaryResponse(
+            timeframe="week",
+            predicted_volume=0.0,
+            confidence=0.0,
+            model="error",
+            total_incidents=0,
+            critical_count=0,
+            high_priority_count=0,
+            avg_days_open=0.0,
+            recent_escalation_risks=[],
+            active_alerts=[]
+        )
 
 
 knowledge_router = APIRouter(prefix="/knowledge", tags=["Knowledge"])
@@ -686,66 +701,86 @@ knowledge_router = APIRouter(prefix="/knowledge", tags=["Knowledge"])
 @knowledge_router.get("/summary", response_model=KnowledgeSummaryResponse)
 async def get_knowledge_summary(db: Session = Depends(get_db)):
     """Get AI knowledge summary using live ward and incident data."""
-    engine = GovernanceKnowledgeEngine()
-    risk_index = engine.get_risk_index()
-    policy_recs = engine.get_policy_recommendations()
+    try:
+        engine = GovernanceKnowledgeEngine()
+        risk_index = engine.get_risk_index()
+        policy_recs = engine.get_policy_recommendations()
 
-    worst_ward = db.query(Incident.ward, func.count(Incident.id)).group_by(Incident.ward).order_by(func.count(Incident.id).desc()).first()
-    worst_ward_name = worst_ward[0] if worst_ward else None
+        worst_ward = db.query(Incident.ward, func.count(Incident.id)).group_by(Incident.ward).order_by(func.count(Incident.id).desc()).first()
+        worst_ward_name = worst_ward[0] if worst_ward else None
 
-    root_causes = []
-    cascade_chains = []
-    if worst_ward_name:
-        worst_inc = db.query(Incident).filter(Incident.ward == worst_ward_name).order_by(Incident.created_at.desc()).first()
-        if worst_inc:
-            root_cause_result = engine.get_root_cause(worst_inc.id)
-            root_causes = root_cause_result.get("top_root_causes", [])
-            cascade_chains = engine.analyze_cascade_impact(worst_inc.id)
+        root_causes = []
+        cascade_chains = []
+        if worst_ward_name:
+            worst_inc = db.query(Incident).filter(Incident.ward == worst_ward_name).order_by(Incident.created_at.desc()).first()
+            if worst_inc:
+                root_cause_result = engine.get_root_cause(worst_inc.id)
+                root_causes = root_cause_result.get("top_root_causes", [])
+                cascade_chains = engine.analyze_cascade_impact(worst_inc.id)
 
-    return KnowledgeSummaryResponse(
-        district_risk_index=risk_index.get("district_risk_index"),
-        infrastructure_risk_index=risk_index.get("infrastructure_risk_index"),
-        policy_recommendations=policy_recs,
-        worst_performing_ward=worst_ward_name,
-        root_causes=root_causes,
-        cascade_chains=cascade_chains
-    )
+        return KnowledgeSummaryResponse(
+            district_risk_index=risk_index.get("district_risk_index"),
+            infrastructure_risk_index=risk_index.get("infrastructure_risk_index"),
+            policy_recommendations=policy_recs,
+            worst_performing_ward=worst_ward_name,
+            root_causes=root_causes,
+            cascade_chains=cascade_chains
+        )
+    except Exception:
+        logger.exception("/knowledge/summary failed")
+        return KnowledgeSummaryResponse(
+            district_risk_index=None,
+            infrastructure_risk_index=None,
+            policy_recommendations=[],
+            worst_performing_ward=None,
+            root_causes=[],
+            cascade_chains=[]
+        )
 
 
 decision_router = APIRouter(prefix="/decision-support", tags=["Decision Support"])
-
 @decision_router.get("/summary", response_model=DecisionSupportSummaryResponse)
 async def get_decision_support_summary(db: Session = Depends(get_db)):
     """Get decision support summary using live district rankings and critical incident data."""
-    engine = DecisionSupportEngine()
-    districts = engine.rank_districts()
-    wards = engine.rank_wards()
+    try:
+        engine = DecisionSupportEngine()
 
-    top_critical = db.query(Incident).filter(Incident.priority_label == 'Critical').order_by(Incident.created_at.desc()).first()
-    recommendation = None
-    if top_critical:
-        rec = engine.get_recommendations({
-            "id": top_critical.id,
-            "category": top_critical.category,
-            "ward": top_critical.ward
-        })
-        recommendation = {
-            "incident_id": top_critical.id,
-            "incident_number": top_critical.incident_number,
-            "recommended_actions": rec.get("recommended_actions", []),
-            "resource_plan": rec.get("resource_plan", {}),
-            "estimated_cost": rec.get("estimated_cost"),
-            "completion_hours": rec.get("completion_hours"),
-            "confidence": rec.get("confidence", 0.0),
-            "reason": rec.get("reason", "")
-        }
+        districts = engine.rank_districts()
+        wards = engine.rank_wards()
 
-    return DecisionSupportSummaryResponse(
-        district_rankings=districts,
-        ward_rankings=wards,
-        top_critical_recommendation=recommendation,
-        executive_report=engine.generate_report()
-    )
+        top_critical = db.query(Incident).filter(Incident.priority_label == 'Critical').order_by(Incident.created_at.desc()).first()
+        recommendation = None
+        if top_critical:
+            rec = engine.get_recommendations({
+                "id": top_critical.id,
+                "category": top_critical.category,
+                "ward": top_critical.ward
+            })
+            recommendation = {
+                "incident_id": top_critical.id,
+                "incident_number": top_critical.incident_number,
+                "recommended_actions": rec.get("recommended_actions", []),
+                "resource_plan": rec.get("resource_plan", {}),
+                "estimated_cost": rec.get("estimated_cost"),
+                "completion_hours": rec.get("completion_hours"),
+                "confidence": rec.get("confidence", 0.0),
+                "reason": rec.get("reason", "")
+            }
+
+        return DecisionSupportSummaryResponse(
+            district_rankings=districts,
+            ward_rankings=wards,
+            top_critical_recommendation=recommendation,
+            executive_report=engine.generate_report()
+        )
+    except Exception:
+        logger.exception("/decision-support/summary failed")
+        return DecisionSupportSummaryResponse(
+            district_rankings=[],
+            ward_rankings={},
+            top_critical_recommendation=None,
+            executive_report=""
+        )
 
 
 copilot_router = APIRouter(prefix="/copilot", tags=["Copilot"])
