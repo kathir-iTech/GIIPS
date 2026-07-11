@@ -16,7 +16,10 @@ class ComplaintCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Short title of the complaint")
     description: str = Field(..., min_length=1, max_length=5000, description="Detailed description of the issue")
     location: str = Field(..., min_length=1, max_length=500, description="Specific physical location or address")
-    ward: str = Field(..., min_length=1, max_length=100, description="Municipal ward identifier")
+    ward: str = Field(default="", max_length=100, description="Municipal ward identifier (optional, auto-derived from geocoding)")
+    address: Optional[str] = Field(None, max_length=1000, description="Full address string from Nominatim geocoding")
+    latitude: Optional[float] = Field(None, ge=-90, le=90, description="Latitude from geocoded address")
+    longitude: Optional[float] = Field(None, ge=-180, le=180, description="Longitude from geocoded address")
     image_path: Optional[str] = Field(None, description="Optional file path to uploaded image")
 
 class ComplaintSubmissionResponse(BaseModel):
@@ -46,7 +49,10 @@ class ComplaintBase(BaseModel):
     title: str = Field(..., description="Short title of the complaint", min_length=1)
     description: str = Field(..., description="Detailed description of the issue", min_length=1)
     location: str = Field(..., description="Specific physical location or address", min_length=1)
-    ward: str = Field(..., description="Municipal ward identifier", min_length=1)
+    ward: str = Field("", description="Municipal ward identifier")
+    address: Optional[str] = Field(None, description="Full address from Nominatim geocoding")
+    latitude: Optional[float] = Field(None, description="Geocoded latitude", ge=-90, le=90)
+    longitude: Optional[float] = Field(None, description="Geocoded longitude", ge=-180, le=180)
     image_path: Optional[str] = Field(None, description="Optional file path to uploaded image")
     predicted_category: Optional[str] = Field(None, description="AI-predicted category")
     confidence: Optional[float] = Field(None, description="AI classification confidence score", ge=0.0, le=1.0)

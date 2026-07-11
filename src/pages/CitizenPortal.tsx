@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
+import AddressSearch from '../components/AddressSearch';
 import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
 import './CitizenPortal.css';
 
@@ -17,6 +18,9 @@ const CitizenPortal = () => {
     description: '',
     location: '',
     ward: '',
+    address: '',
+    latitude: 0,
+    longitude: 0,
   });
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
@@ -196,26 +200,30 @@ const CitizenPortal = () => {
             <div className="form-step">
               <input
                 type="text"
-                placeholder="Location / Area"
+                placeholder="Location / Area (e.g. near market, opposite school)"
                 value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
               />
-              <input
-                type="number"
-                placeholder="Ward Number (1–200)"
-                min={1}
-                max={200}
-                value={formData.ward}
-                onChange={e => {
-                  const val = e.target.value;
-                  if (val === '' || (Number(val) >= 1 && Number(val) <= 200)) {
-                    setFormData({ ...formData, ward: val });
-                  }
-                }}
+              <label style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: -8 }}>
+                Search your exact address on the map:
+              </label>
+              <AddressSearch
+                value={formData.address}
+                onChange={(data) => setFormData(prev => ({
+                  ...prev,
+                  address: data.address,
+                  latitude: data.lat,
+                  longitude: data.lon,
+                  ward: prev.ward || '',
+                }))}
+                placeholder="Type your street, area, or landmark..."
               />
-              <small style={{ color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
-                Enter the ward number where this complaint is located (e.g. 12, 45, 103)
-              </small>
+              {formData.latitude !== 0 && (
+                <small style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: 4 }}>
+                  <MapPin size={12} />
+                  Coords: {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                </small>
+              )}
             </div>
           )}
           {step === 4 && (
@@ -255,7 +263,14 @@ const CitizenPortal = () => {
                 <div><strong>Email:</strong> {formData.email || '—'}</div>
                 <div><strong>Title:</strong> {formData.title || '—'}</div>
                 <div><strong>Location:</strong> {formData.location || '—'}</div>
-                <div><strong>Ward:</strong> {formData.ward || '—'}</div>
+                <div style={{ gridColumn: '1 / -1' }}>
+                  <strong>Address:</strong> {formData.address || formData.location || '—'}
+                </div>
+                {formData.latitude !== 0 && (
+                  <div style={{ gridColumn: '1 / -1' }}>
+                    <strong>Coordinates:</strong> {formData.latitude.toFixed(4)}, {formData.longitude.toFixed(4)}
+                  </div>
+                )}
               </div>
             </div>
           )}

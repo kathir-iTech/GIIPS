@@ -136,7 +136,10 @@ async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get
         title=request.title,
         description=request.description,
         location=request.location,
-        ward=request.ward,
+        ward=request.ward or "",
+        address=request.address,
+        latitude=request.latitude,
+        longitude=request.longitude,
         image_path=request.image_path,
         user_id=db_user.id,
     )
@@ -235,6 +238,26 @@ async def get_my_complaints(db_user: User = Depends(get_current_user), db: Sessi
             } if incident else None
         })
     return {"complaints": result}
+
+
+@complaint_router.get("/coordinates")
+async def get_complaint_coordinates(db: Session = Depends(get_db)):
+    """Get all complaint coordinates for spatial map pin layer. No auth required for map rendering."""
+    complaints = db.query(Complaint).filter(Complaint.latitude.isnot(None), Complaint.longitude.isnot(None)).order_by(Complaint.created_at.desc()).limit(500).all()
+    return [
+        {
+            "id": c.id,
+            "title": c.title,
+            "latitude": c.latitude,
+            "longitude": c.longitude,
+            "address": c.address or c.location,
+            "category": c.predicted_category,
+            "priority": c.priority,
+            "status": c.incident.status if c.incident else "pending",
+            "created_at": c.created_at.isoformat() if c.created_at else None,
+        }
+        for c in complaints
+    ]
 
 
 @complaint_router.get("/{complaint_id}")

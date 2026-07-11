@@ -239,6 +239,12 @@ export const api = {
     return response.json();
   },
 
+  getComplaintCoordinates: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/complaints/coordinates`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   getMyComplaints: async (token: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/complaints/my`, {
       headers: {

@@ -55,6 +55,7 @@ const SpatialIntelligence = () => {
   const [riskData, setRiskData] = useState<any[]>([]);
   const [forecast, setForecast] = useState<any>(null);
   const [incidents, setIncidents] = useState<any[]>([]);
+  const [complaintPins, setComplaintPins] = useState<any[]>([]);
   const [deptWorkload, setDeptWorkload] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -68,6 +69,7 @@ const SpatialIntelligence = () => {
   const [layers, setLayers] = useState({
     complaints: true,
     incidents: true,
+    complaintPins: true,
     risk: true,
     prediction: true,
     deptWorkload: true,
@@ -174,6 +176,7 @@ const SpatialIntelligence = () => {
       api.getRiskAnalysis(),
       api.getForecast(timelineDays),
       api.getIncidents(),
+      api.getComplaintCoordinates(),
     ]).then((results: any) => {
       if (cancelled) return;
       const errors: string[] = [];
@@ -187,6 +190,7 @@ const SpatialIntelligence = () => {
       else errors.push('forecast');
       if (results[4].status === 'fulfilled') setIncidents(Array.isArray(results[4].value) ? results[4].value : []);
       else errors.push('incidents');
+      if (results[5].status === 'fulfilled') setComplaintPins(Array.isArray(results[5].value) ? results[5].value : []);
       if (errors.length > 0) setError(`Some feeds offline: ${errors.join(', ')}. Showing best available data.`);
     }).finally(() => {
       if (!cancelled) setLoading(false);
@@ -229,12 +233,14 @@ const SpatialIntelligence = () => {
       api.getRiskAnalysis(),
       api.getForecast(timelineDays),
       api.getIncidents(),
+      api.getComplaintCoordinates(),
     ]).then((results: any) => {
       if (results[0].status === 'fulfilled') setHeatmap(Array.isArray(results[0].value) ? results[0].value : []);
       if (results[1].status === 'fulfilled') setHotspots(Array.isArray(results[1].value) ? results[1].value : []);
       if (results[2].status === 'fulfilled') setRiskData(Array.isArray(results[2].value) ? results[2].value : []);
       if (results[3].status === 'fulfilled') setForecast(results[3].value || null);
       if (results[4].status === 'fulfilled') setIncidents(Array.isArray(results[4].value) ? results[4].value : []);
+      if (results[5].status === 'fulfilled') setComplaintPins(Array.isArray(results[5].value) ? results[5].value : []);
     }).finally(() => setLoading(false));
   }, [timelineDays]);
 
@@ -405,6 +411,7 @@ const SpatialIntelligence = () => {
               {[
                 { key: 'complaints', label: 'Complaints', icon: AlertTriangle },
                 { key: 'incidents', label: 'Incidents', icon: AlertOctagon },
+                { key: 'complaintPins', label: 'Citizen Pins', icon: MapPin },
                 { key: 'risk', label: 'Risk Analysis', icon: ThermometerSun },
                 { key: 'prediction', label: 'AI Prediction', icon: Brain },
                 { key: 'deptWorkload', label: 'Dept Workload', icon: Users },
@@ -644,6 +651,31 @@ const SpatialIntelligence = () => {
                 >
                   <Tooltip direction="top" offset={[0, -8]} className="incident-tooltip">
                     <strong>{inc.incident_number}</strong> — {inc.priority_label}
+                  </Tooltip>
+                </CircleMarker>
+              );
+            })}
+
+            {layers.complaintPins && complaintPins.map((pin: any) => {
+              if (pin.latitude == null || pin.longitude == null) return null;
+              return (
+                <CircleMarker
+                  key={`pin-${pin.id}`}
+                  center={[pin.latitude, pin.longitude] as any}
+                  radius={5}
+                  pathOptions={{
+                    fillColor: getPriorityColor(pin.priority),
+                    fillOpacity: 0.6,
+                    color: '#fff',
+                    weight: 2,
+                  }}
+                >
+                  <Tooltip direction="top" offset={[0, -8]} className="complaint-pin-tooltip">
+                    <div style={{ maxWidth: 220, fontSize: 12, lineHeight: 1.4 }}>
+                      <strong>{pin.title || 'Complaint'}</strong><br />
+                      <span style={{ color: '#94a3b8' }}>{pin.address || ''}</span>
+                      {pin.priority && <><br /><span style={{ color: getPriorityColor(pin.priority) }}>{pin.priority}</span></>}
+                    </div>
                   </Tooltip>
                 </CircleMarker>
               );
