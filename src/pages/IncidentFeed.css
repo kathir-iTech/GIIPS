@@ -2,7 +2,8 @@
 .page-content { padding: 24px; display: flex; flex-direction: column; gap: 24px; }
 .feed-toolbar { background: var(--bg-card); backdrop-filter: blur(12px); padding: 16px; border-radius: var(--radius-md); border: 1px solid var(--border-subtle); display: flex; gap: 16px; align-items: center; box-shadow: var(--shadow-sm); }
 .search-box { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px; background: rgba(255,255,255,0.03); }
-.search-box input { border: none; flex: 1; outline: none; font-size: 14px; background: transparent; font-family: inherit; }
+.search-box input { border: none; flex: 1; outline: none; font-size: 14px; background: transparent; font-family: inherit; color: var(--text-primary); }
+.search-box input::placeholder { color: var(--text-muted); }
 .incidents-table-container { background: var(--bg-card); backdrop-filter: blur(12px); border-radius: var(--radius-md); border: 1px solid var(--border-subtle); overflow-x: auto; -webkit-overflow-scrolling: touch; box-shadow: var(--shadow-md); }
 .incidents-table th { background: rgba(255,255,255,0.02); padding: 16px; font-size: 11px; font-weight: 700; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; border-bottom: 1px solid var(--border-subtle); }
 .incident-row:hover { background: rgba(255,255,255,0.02); }

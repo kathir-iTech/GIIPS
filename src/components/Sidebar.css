@@ -22,7 +22,7 @@
   align-items: center; 
   gap: 14px; 
   padding: 14px 16px; 
-  color: #94a3b8; 
+  color: #cbd5e1; 
   text-decoration: none; 
   border-radius: 10px; 
   font-size: 14px; 
@@ -34,7 +34,8 @@
   width: 100%;
   text-align: left;
 }
-.nav-item:hover { background: rgba(255,255,255,0.05); color: white; transform: translateX(4px); }
+.nav-item:hover { background: rgba(255,255,255,0.08); color: white; transform: translateX(4px); }
+.nav-item svg { flex-shrink: 0; }
 .nav-item.active { 
   background: linear-gradient(90deg, #0284c7 0%, #0369a1 100%); 
   color: white; 

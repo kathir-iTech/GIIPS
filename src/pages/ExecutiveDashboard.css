@@ -42,8 +42,8 @@
   width: 36px;
   height: 36px;
   border-radius: var(--radius-sm);
-  background: rgba(59, 130, 246, 0.1);
-  color: #3b82f6;
+  background: rgba(59, 130, 246, 0.15);
+  color: #60a5fa;
 }
 
 .exec-dashboard .card-title-group h3 {
@@ -281,14 +281,14 @@
   flex-shrink: 0;
 }
 
-.kpi-icon-wrapper.complaints { background: rgba(59, 130, 246, 0.12); color: #3b82f6; }
-.kpi-icon-wrapper.critical { background: rgba(239, 68, 68, 0.12); color: #dc2626; }
-.kpi-icon-wrapper.districts { background: rgba(245, 158, 11, 0.12); color: #f59e0b; }
-.kpi-icon-wrapper.stress { background: rgba(239, 68, 68, 0.12); color: #ef4444; }
-.kpi-icon-wrapper.escalation { background: rgba(249, 115, 22, 0.12); color: #f97316; }
-.kpi-icon-wrapper.resolution { background: rgba(34, 197, 94, 0.12); color: #22c55e; }
-.kpi-icon-wrapper.weekly { background: rgba(16, 185, 129, 0.12); color: #10b981; }
-.kpi-icon-wrapper.system { background: rgba(6, 182, 212, 0.12); color: #06b6d4; }
+.kpi-icon-wrapper.complaints { background: rgba(59, 130, 246, 0.15); color: #60a5fa; }
+.kpi-icon-wrapper.critical { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.kpi-icon-wrapper.districts { background: rgba(245, 158, 11, 0.15); color: #fbbf24; }
+.kpi-icon-wrapper.stress { background: rgba(239, 68, 68, 0.15); color: #f87171; }
+.kpi-icon-wrapper.escalation { background: rgba(249, 115, 22, 0.15); color: #fb923c; }
+.kpi-icon-wrapper.resolution { background: rgba(34, 197, 94, 0.15); color: #4ade80; }
+.kpi-icon-wrapper.weekly { background: rgba(16, 185, 129, 0.15); color: #34d399; }
+.kpi-icon-wrapper.system { background: rgba(6, 182, 212, 0.15); color: #22d3ee; }
 
 .kpi-info {
   display: flex;
