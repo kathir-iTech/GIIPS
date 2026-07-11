@@ -21,10 +21,17 @@ const IncidentFeed = () => {
 
   useEffect(() => {
     let cancelled = false;
-    api.getIncidents(sortField).then((data: any) => {
-      if (!cancelled) setAllIncidents(data || []);
-    });
-    return () => { cancelled = true; };
+    const fetchIncidents = async () => {
+      try {
+        const data = await api.getIncidents(sortField);
+        if (!cancelled) setAllIncidents(data || []);
+      } catch (e) {
+        if (!cancelled) console.error('Failed to fetch incidents:', e);
+      }
+    };
+    fetchIncidents();
+    const interval = setInterval(fetchIncidents, 30000);
+    return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
   const categories = useMemo(() => {

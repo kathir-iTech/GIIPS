@@ -201,11 +201,21 @@ const CitizenPortal = () => {
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
               />
               <input
-                type="text"
-                placeholder="Ward Number"
+                type="number"
+                placeholder="Ward Number (1–200)"
+                min={1}
+                max={200}
                 value={formData.ward}
-                onChange={e => setFormData({ ...formData, ward: e.target.value })}
+                onChange={e => {
+                  const val = e.target.value;
+                  if (val === '' || (Number(val) >= 1 && Number(val) <= 200)) {
+                    setFormData({ ...formData, ward: val });
+                  }
+                }}
               />
+              <small style={{ color: 'var(--text-muted)', marginTop: 4, display: 'block' }}>
+                Enter the ward number where this complaint is located (e.g. 12, 45, 103)
+              </small>
             </div>
           )}
           {step === 4 && (

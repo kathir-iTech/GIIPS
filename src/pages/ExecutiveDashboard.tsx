@@ -105,37 +105,39 @@ const ExecutiveDashboard = () => {
   const [copilotLoading, setCopilotLoading] = useState(false);
   const [copilotInitialLoading, setCopilotInitialLoading] = useState(true);
 
+  const fetchAll = async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const results = await Promise.allSettled([
+        api.getExecutiveSummary(),
+        api.getWardHealth(),
+        api.getDeptWorkload(),
+        api.getIncidents(),
+        api.getPredictionsSummary().catch((e) => { console.warn('Predictions feed offline:', e); return {}; }),
+        api.getKnowledgeSummary().catch((e) => { console.warn('Knowledge feed offline:', e); return {}; }),
+        api.getDecisionSupportSummary().catch((e) => { console.warn('Decision support offline:', e); return {}; }),
+        token ? api.getSystemHealth(token).catch((e) => { console.warn('System health offline:', e); return {}; }) : Promise.resolve({}),
+      ]);
+      setExecSummary(results[0].status === 'fulfilled' ? results[0].value : null);
+      setWardHealth(results[1].status === 'fulfilled' ? results[1].value : []);
+      setDeptWorkload(results[2].status === 'fulfilled' ? results[2].value : []);
+      setIncidents(results[3].status === 'fulfilled' ? results[3].value : []);
+      setPredictions(results[4].status === 'fulfilled' ? results[4].value : null);
+      setKnowledge(results[5].status === 'fulfilled' ? results[5].value : null);
+      setDecisionSupport(results[6].status === 'fulfilled' ? results[6].value : null);
+      setSystemHealth(results[7].status === 'fulfilled' ? results[7].value : null);
+    } catch (err) {
+      console.error('Failed to fetch executive dashboard data:', err);
+      setError('Some intelligence feeds are offline. Showing best available data.');
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    const fetchAll = async () => {
-      setLoading(true);
-      setError(null);
-      try {
-        const results = await Promise.allSettled([
-          api.getExecutiveSummary(),
-          api.getWardHealth(),
-          api.getDeptWorkload(),
-          api.getIncidents(),
-          api.getPredictionsSummary().catch((e) => { console.warn('Predictions feed offline:', e); return {}; }),
-          api.getKnowledgeSummary().catch((e) => { console.warn('Knowledge feed offline:', e); return {}; }),
-          api.getDecisionSupportSummary().catch((e) => { console.warn('Decision support offline:', e); return {}; }),
-          token ? api.getSystemHealth(token).catch((e) => { console.warn('System health offline:', e); return {}; }) : Promise.resolve({}),
-        ]);
-        setExecSummary(results[0].status === 'fulfilled' ? results[0].value : null);
-        setWardHealth(results[1].status === 'fulfilled' ? results[1].value : []);
-        setDeptWorkload(results[2].status === 'fulfilled' ? results[2].value : []);
-        setIncidents(results[3].status === 'fulfilled' ? results[3].value : []);
-        setPredictions(results[4].status === 'fulfilled' ? results[4].value : null);
-        setKnowledge(results[5].status === 'fulfilled' ? results[5].value : null);
-        setDecisionSupport(results[6].status === 'fulfilled' ? results[6].value : null);
-        setSystemHealth(results[7].status === 'fulfilled' ? results[7].value : null);
-      } catch (err) {
-        console.error('Failed to fetch executive dashboard data:', err);
-        setError('Some intelligence feeds are offline. Showing best available data.');
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchAll();
+    fetchAll(true);
+    const interval = setInterval(() => fetchAll(false), 30000);
+    return () => clearInterval(interval);
   }, [token]);
 
   // Copilot initialization
