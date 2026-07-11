@@ -51,6 +51,9 @@ const CitizenPortal = () => {
 
   const handleSubmit = async () => {
     if (!token) { setSubmitError('Authentication required'); setLoading(false); return; }
+    if (!formData.title.trim()) { setSubmitError('Title is required'); setLoading(false); return; }
+    if (!formData.description.trim()) { setSubmitError('Description is required'); setLoading(false); return; }
+    if (!formData.location.trim()) { setSubmitError('Location is required'); setLoading(false); return; }
     setLoading(true);
     setSubmitError(null);
     setProcessingStatus('submitting');

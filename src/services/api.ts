@@ -13,10 +13,17 @@ const safeJson = async (response: Response) => {
   }
 };
 
+const detailToMessage = (detail: unknown): string => {
+  if (typeof detail === 'string') return detail;
+  if (Array.isArray(detail)) return detail.map((e: any) => e.msg || JSON.stringify(e)).join('; ');
+  if (typeof detail === 'object' && detail !== null) return JSON.stringify(detail);
+  return '';
+};
+
 const getErrorMessage = async (response: Response): Promise<string> => {
   try {
     const body = await response.json();
-    return body.detail || body.message || body.error || `HTTP ${response.status}`;
+    return detailToMessage(body.detail) || body.message || body.error || `HTTP ${response.status}`;
   } catch {
     return `HTTP ${response.status}`;
   }
@@ -42,7 +49,7 @@ export const api = {
     });
     const data = await safeJson(response);
     if (!response.ok) {
-      throw new Error(data.detail || `HTTP ${response.status}` || 'Submission failed');
+      throw new Error(detailToMessage(data.detail) || `HTTP ${response.status}` || 'Submission failed');
     }
     return data;
   },
@@ -71,7 +78,7 @@ export const api = {
     });
     const data = await safeJson(response);
     if (!response.ok) {
-      throw new Error(data.detail || `HTTP ${response.status}` || 'Upload failed');
+      throw new Error(detailToMessage(data.detail) || `HTTP ${response.status}` || 'Upload failed');
     }
     return data;
   },
@@ -186,7 +193,7 @@ export const api = {
     });
     if (!response.ok) {
       const error = await safeJson(response);
-      throw new Error(error.detail || 'Login failed');
+      throw new Error(detailToMessage(error.detail) || 'Login failed');
     }
     return response.json();
   },
@@ -206,7 +213,7 @@ export const api = {
     });
     if (!response.ok) {
       const error = await safeJson(response);
-      throw new Error(error.detail || 'Registration failed');
+      throw new Error(detailToMessage(error.detail) || 'Registration failed');
     }
     return response.json();
   },
@@ -234,7 +241,7 @@ export const api = {
     });
     if (!response.ok) {
       const error = await safeJson(response);
-      throw new Error(error.detail || 'Failed to update profile');
+      throw new Error(detailToMessage(error.detail) || 'Failed to update profile');
     }
     return response.json();
   },
