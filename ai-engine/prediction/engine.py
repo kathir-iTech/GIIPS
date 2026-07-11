@@ -33,7 +33,7 @@ class PredictiveEngine:
         
         return {
             'timeframe': timeframe,
-            'predicted_volume': float(forecast[-1]),
+            'predicted_volume': max(0, float(forecast[-1])),
             'confidence': 0.85,
             'model': 'linear_trend'
         }
