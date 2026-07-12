@@ -30,7 +30,7 @@ from models import (
 from priority.priority import PriorityEngine
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
 from job_queue import get_complaint_status
-from rate_limiter import check_auth_rate_limit
+from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit
 from department_map import get_department
 from pipeline import process_complaint_pipeline
 from services import (
@@ -137,7 +137,7 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 # === Complaint Submission Routes ===
 
 @complaint_router.post("", status_code=202, response_model=SubmissionAcceptedResponse)
-async def submit_complaint(request: ComplaintCreate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Submit a new citizen complaint. Runs ML pipeline inline via asyncio.create_task
     (no separate worker process needed — keeps Render free tier viable)."""
     complaint_id = str(uuid.uuid4())
@@ -562,7 +562,7 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
 
 
 @incident_router.post("/merge")
-async def merge_incidents(body: MergeIncidentsRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Merge multiple incidents into one. Moves all complaints to the target and recalculates priority."""
     if db_user.role not in ("Officer", "Executive"):
         raise HTTPException(status_code=403, detail="Only officers and executives can merge incidents")
@@ -635,7 +635,7 @@ async def merge_incidents(body: MergeIncidentsRequest, db_user: User = Depends(g
 
 
 @incident_router.post("/{incident_id}/split/{complaint_id}")
-async def split_complaint(incident_id: str, complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Remove a complaint from an incident and create a new standalone incident for it."""
     if db_user.role not in ("Officer", "Executive"):
         raise HTTPException(status_code=403, detail="Only officers and executives can split complaints")

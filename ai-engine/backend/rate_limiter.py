@@ -1,11 +1,9 @@
 """
-Redis-backed rate limiter for auth endpoints.
-Key pattern: rate_limit:auth:{ip}:{endpoint}
-TTL: 60 seconds, max 5 attempts per window.
+Redis-backed rate limiter for GIIPS endpoints.
+Key pattern: rate_limit:{prefix}:{ip}:{endpoint}
+TTL: configurable per caller, falls open if Redis is down.
 """
 
-import os
-import json
 import logging
 from typing import Optional
 
@@ -15,31 +13,31 @@ from job_queue import get_pool
 logger = logging.getLogger(__name__)
 
 RATE_LIMIT_WINDOW = 60
-RATE_LIMIT_MAX = 5
+AUTH_RATE_LIMIT_MAX = 5
+COMPLAINT_RATE_LIMIT_MAX = 10
 
 
-async def check_auth_rate_limit(request: Request) -> None:
-    """FastAPI dependency: raises 429 if client exceeds rate limit on auth endpoints."""
+async def _check_rate_limit(request: Request, prefix: str, max_requests: int, window: int = RATE_LIMIT_WINDOW) -> None:
+    """Core rate limiter. Falls open (allows request) if Redis is unavailable."""
     pool = get_pool()
     if pool is None:
         return
 
     ip = request.client.host if request.client else "unknown"
-    endpoint = request.url.path
-    key = f"rate_limit:auth:{ip}:{endpoint}"
+    key = f"rate_limit:{prefix}:{ip}:{request.url.path}"
 
     try:
         current = await pool.get(key)
         if current is None:
-            await pool.set(key, "1", ex=RATE_LIMIT_WINDOW)
+            await pool.set(key, "1", ex=window)
             return
 
         count = int(current)
-        if count >= RATE_LIMIT_MAX:
-            logger.warning("Rate limit exceeded for %s on %s", ip, endpoint)
+        if count >= max_requests:
+            logger.warning("Rate limit exceeded for %s on %s", ip, request.url.path)
             raise HTTPException(
                 status_code=429,
-                detail="Too many attempts. Please try again later."
+                detail=f"Too many requests. Please try again later."
             )
 
         await pool.incr(key)
@@ -47,3 +45,13 @@ async def check_auth_rate_limit(request: Request) -> None:
         raise
     except Exception as e:
         logger.warning("Rate limiter error (falling open): %s", e)
+
+
+async def check_auth_rate_limit(request: Request) -> None:
+    """5 req/min per IP on auth endpoints (login, register)."""
+    await _check_rate_limit(request, "auth", AUTH_RATE_LIMIT_MAX)
+
+
+async def check_complaint_rate_limit(request: Request) -> None:
+    """10 req/min per IP on complaint submission."""
+    await _check_rate_limit(request, "complaint", COMPLAINT_RATE_LIMIT_MAX)

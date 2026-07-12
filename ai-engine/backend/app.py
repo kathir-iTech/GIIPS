@@ -20,8 +20,9 @@ from contextlib import asynccontextmanager
 from collections import defaultdict
 
 import numpy as np
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.responses import JSONResponse
 from pydantic import BaseModel, Field
 from sqlalchemy import text
 
@@ -189,6 +190,56 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# === CSRF Protection: Origin/Referer header check ===
+# With SameSite=None, the auth cookie is sent on all cross-origin POSTs.
+# The Origin header is set by the browser and cannot be spoofed from JS,
+# making this a simple and effective CSRF defense. No frontend changes needed.
+# Also allows same-origin requests (e.g. Swagger UI at the backend's own URL).
+
+@app.middleware("http")
+async def csrf_origin_check(request: Request, call_next):
+    if request.method in ("POST", "PUT", "PATCH", "DELETE"):
+        path = request.url.path
+        exempt_prefixes = ("/docs", "/redoc", "/openapi.json", "/health", "/")
+        if path.startswith(exempt_prefixes):
+            return await call_next(request)
+
+        origin = request.headers.get("origin")
+        referer = request.headers.get("referer")
+
+        # Same-origin check — allow requests from the backend itself (Swagger UI, etc.)
+        host = request.headers.get("host", "")
+        protocol = request.url.scheme
+        backend_origin = f"{protocol}://{host}"
+
+        origin_valid = False
+        if origin:
+            origin_stripped = origin.rstrip("/")
+            if origin_stripped == backend_origin.rstrip("/"):
+                origin_valid = True
+            else:
+                for ao in allowed_origins_list:
+                    if origin_stripped == ao.rstrip("/"):
+                        origin_valid = True
+                        break
+        elif referer:
+            for ao in allowed_origins_list:
+                if referer.startswith(ao.rstrip("/")):
+                    origin_valid = True
+                    break
+
+        if not origin_valid:
+            logger.warning("CSRF origin check failed: method=%s path=%s origin=%s referer=%s",
+                           request.method, path, origin, referer)
+            return JSONResponse(
+                status_code=403,
+                content={"detail": "CSRF check failed: request must include a valid Origin or Referer header"}
+            )
+
+    return await call_next(request)
+
 
 from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router
 
