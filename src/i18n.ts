@@ -14,6 +14,8 @@ i18n
       ta: { translation: taTranslation },
     },
     fallbackLng: 'en',
+    supportedLngs: ['en', 'ta'],
+    nonExplicitSupportedLngs: true,
     detection: {
       order: ['localStorage', 'navigator'],
       lookupLocalStorage: 'giips_lang',
