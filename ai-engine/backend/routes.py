@@ -672,33 +672,6 @@ async def get_audit_logs(db_user: User = Depends(get_executive_user), db: Sessio
     logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
     return [{"id": l.id, "timestamp": l.timestamp.isoformat() if l.timestamp else None, "user": l.user_email, "role": l.role, "action": l.action, "target": l.target, "status": l.status} for l in logs]
 
-
-@admin_router.delete("/complaints/{complaint_id}")
-async def admin_delete_complaint(complaint_id: str, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
-    """[ADMIN] Delete a complaint and its linked incident. For data cleanup only."""
-    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
-    if not complaint:
-        raise HTTPException(status_code=404, detail="Complaint not found")
-    incident_id = complaint.incident_id
-    deleted = {"complaint_id": complaint_id, "incident_id": incident_id}
-    db.delete(complaint)
-    db.flush()
-    if incident_id:
-        try:
-            db.query(PriorityHistory).filter(PriorityHistory.incident_id == incident_id).delete()
-            remaining = db.query(Complaint).filter(Complaint.incident_id == incident_id).count()
-        except Exception:
-            remaining = 1
-        if remaining == 0:
-            incident = db.query(Incident).filter(Incident.id == incident_id).first()
-            if incident:
-                db.delete(incident)
-                deleted["incident_deleted"] = True
-    db.commit()
-    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "admin_delete_complaint", complaint_id, "success")
-    return {"deleted": deleted, "message": "Complaint and linked incident removed."}
-
-
 prediction_router = APIRouter(prefix="/predictions", tags=["Predictions"])
 
 @prediction_router.get("/summary", response_model=PredictionSummaryResponse)
