@@ -682,9 +682,13 @@ async def admin_delete_complaint(complaint_id: str, db_user: User = Depends(get_
     incident_id = complaint.incident_id
     deleted = {"complaint_id": complaint_id, "incident_id": incident_id}
     db.delete(complaint)
+    db.flush()
     if incident_id:
-        db.query(PriorityHistory).filter(PriorityHistory.incident_id == incident_id).delete()
-        remaining = db.query(Complaint).filter(Complaint.incident_id == incident_id).count()
+        try:
+            db.query(PriorityHistory).filter(PriorityHistory.incident_id == incident_id).delete()
+            remaining = db.query(Complaint).filter(Complaint.incident_id == incident_id).count()
+        except Exception:
+            remaining = 1
         if remaining == 0:
             incident = db.query(Incident).filter(Incident.id == incident_id).first()
             if incident:
