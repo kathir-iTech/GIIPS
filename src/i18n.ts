@@ -13,11 +13,12 @@ i18n
       en: { translation: enTranslation },
       ta: { translation: taTranslation },
     },
+    lng: 'en',
     fallbackLng: 'en',
     supportedLngs: ['en', 'ta'],
     nonExplicitSupportedLngs: true,
     detection: {
-      order: ['localStorage', 'navigator'],
+      order: ['localStorage'],
       lookupLocalStorage: 'giips_lang',
       caches: ['localStorage'],
     },
