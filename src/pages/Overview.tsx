@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
 import { AlertTriangle, Clock, Activity, Target } from 'lucide-react';
+import { AgingBadge } from '../components/AgingBadge';
 import './Overview.css';
 
 interface BackendDashboardData {
@@ -134,6 +135,7 @@ const Overview = () => {
                     <th>Incident ID</th>
                     <th>Category</th>
                     <th>Ward</th>
+                    <th>Days</th>
                     <th>Priority</th>
                     <th>Status</th>
                   </tr>
@@ -144,6 +146,7 @@ const Overview = () => {
                       <td>{inc.incident_number}</td>
                       <td>{inc.category}</td>
                       <td>{inc.ward}</td>
+                      <td><AgingBadge daysOpen={inc.days_open ?? 0} /></td>
                       <td><span className={`badge ${inc.priority_label?.toLowerCase() ?? 'low'}`}>{inc.priority_label ?? 'N/A'}</span></td>
                       <td>{inc.status}</td>
                     </tr>

@@ -1270,6 +1270,7 @@
   color: var(--text-muted);
 }
 
+.exec-dashboard .aging-badge { font-size: 11px; padding: 2px 8px; }
 @media (max-width: 640px) {
   .exec-dashboard { padding: 16px; }
   .recommendations-grid { grid-template-columns: 1fr; }

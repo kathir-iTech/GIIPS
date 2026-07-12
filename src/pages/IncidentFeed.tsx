@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight } from 'lucide-react';
+import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
+import { AgingBadge } from '../components/AgingBadge';
 import './IncidentFeed.css';
 
 const PAGE_SIZE = 10;
@@ -118,6 +119,13 @@ const IncidentFeed = () => {
             </select>
           </div>
           <div className="results-count">{filteredAndSorted.length} incidents</div>
+          <button
+            className={`sort-age-btn ${sortField === 'days_open' ? 'active' : ''}`}
+            onClick={() => handleSort('days_open')}
+            title="Sort by days open"
+          >
+            <ArrowUpDown size={14} /> Oldest
+          </button>
         </div>
 
         <div className="incidents-table-container">
@@ -167,7 +175,7 @@ const IncidentFeed = () => {
                     <td className="dept-cell">{incident.department || incident.category}</td>
                     <td className="cluster-size"><span className="cluster-badge">{incident.cluster_size}</span></td>
                     <td className="ward-cell">{incident.ward?.replace('Ward ', 'W').split(' - ')[0]}</td>
-                    <td className="days-cell">{incident.days_open}d</td>
+                    <td className="days-cell"><AgingBadge daysOpen={incident.days_open} /></td>
                     <td className="score-cell"><span className="score-badge">{incident.priority_score}</span></td>
                     <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || 'Low'}</span></td>
                     <td className="action-cell" title={incident.recommended_action}>{incident.recommended_action}</td>

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { api } from '../services/api';
 import type { Incident, Complaint, PriorityHistory } from '../types';
 import Header from '../components/Header';
+import { AgingBadge } from '../components/AgingBadge';
 import {
   Brain, ShieldAlert, MapPin, Clock, GitBranch, Lightbulb, Users, Wrench,
   ChevronRight, ChevronLeft, Search, Filter, SortAsc, ArrowUpRight, AlertTriangle,
@@ -342,7 +343,7 @@ const Clusters = () => {
           <h4 className="inc-card-title">{inc.category}</h4>
           <div className="inc-card-meta">
             <span><MapPin size={12} />{inc.ward}</span>
-            <span><Clock size={12} />{inc.days_open}d open</span>
+            <span><Clock size={12} /><AgingBadge daysOpen={inc.days_open} /></span>
             <span><GitBranch size={12} />{inc.cluster_size} reports</span>
           </div>
           <p className="inc-card-summary">{inc.summary?.substring(0, 160)}{inc.summary?.length > 160 ? '…' : ''}</p>

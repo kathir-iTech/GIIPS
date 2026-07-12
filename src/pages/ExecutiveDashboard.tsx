@@ -3,6 +3,7 @@ import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
+import { AgingBadge } from '../components/AgingBadge';
 import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
@@ -540,7 +541,7 @@ const ExecutiveDashboard = () => {
               <div className="inc-command-bottom">
                 <div className="inc-meta">
                   <span className="inc-cluster"><Users size={12} /> {inc.cluster_size || 1} reports</span>
-                  <span className="inc-days"><Clock size={12} /> {inc.days_open || 0}d open</span>
+                  <span className="inc-days"><Clock size={12} /> <AgingBadge daysOpen={inc.days_open || 0} /></span>
                 </div>
                 <div className="inc-action">
                   <span className="inc-recommendation">{inc.recommended_action}</span>
