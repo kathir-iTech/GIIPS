@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route, useLocation, Navigate } from 'react-route
 import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
+import LanguageSwitcher from './components/LanguageSwitcher';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RoleGuard } from './components/ProtectedRoute';
 import './App.css';
@@ -56,6 +57,7 @@ function AppLayout() {
 
   return (
     <div className={showSidebar ? 'app-layout' : 'full-content'}>
+      <LanguageSwitcher />
       {showSidebar && <Sidebar />}
       <main className="main-content">
         <ErrorBoundary>

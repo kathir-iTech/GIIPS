@@ -1,6 +1,7 @@
 import type React from 'react';
 import { useState } from 'react';
 import { NavLink } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
   LayoutDashboard,
   FileText,
@@ -57,6 +58,7 @@ const CITIZEN_NAV = [
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
+  const { t } = useTranslation();
   const [mobileOpen, setMobileOpen] = useState(false);
 
   const navItems =
@@ -85,8 +87,8 @@ const Sidebar: React.FC = () => {
               </svg>
             </div>
             <div className="logo-text">
-              <span className="logo-title">GIIPS</span>
-              <span className="logo-subtitle">Governance Intelligence</span>
+              <span className="logo-title">{t('app.title')}</span>
+              <span className="logo-subtitle">{t('app.subtitle')}</span>
             </div>
           </div>
         </div>
@@ -112,11 +114,7 @@ const Sidebar: React.FC = () => {
           </NavLink>
         )}
         <div className="sidebar-footer">
-          <div className="version-badge"><span>Platform v2.1</span></div>
-          <div className="footer-text">
-            <p>Municipal Corporation</p>
-            <p>Decision Support System</p>
-          </div>
+          <div className="version-badge"><span>{t('app.version')}</span></div>
         </div>
       </aside>
     </>

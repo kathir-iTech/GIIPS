@@ -1,0 +1,62 @@
+{
+  "app.title": "GIIPS",
+  "app.subtitle": "Governance Intelligence",
+  "app.version": "Platform v2.1",
+
+  "landing": {
+    "brand": "GIIPS OS",
+    "navDashboard": "Dashboard",
+    "navSignOut": "Sign Out",
+    "onboardingBanner": "GIIPS is an AI-assisted triage layer designed to work alongside official Tamil Nadu grievance systems — it is a hackathon prototype demonstrating automated complaint clustering and prioritization, not a replacement for government portals.",
+    "dismissTitle": "Dismiss",
+    "problemBadge": "The Problem",
+    "problemTitle": "Municipal staff are overwhelmed by complaint volume",
+    "problemBody": "Citizens report the same issues repeatedly. Officers manually read and triage each one, with no way to automatically detect duplicates or prioritize urgent cases. Critical problems get buried, and response times suffer.",
+    "solutionBadge": "The Solution",
+    "solutionTitle": "An AI triage layer for existing grievance workflows",
+    "solutionBody": "GIIPS automatically classifies incoming complaints, merges duplicates into a single incident, and assigns a priority score — so officers review fewer, more actionable items. It is designed as a supplemental triage layer, not a replacement for official government portals.",
+    "impactBadge": "Measured Impact",
+    "impactTitle": "Reducing incidents to review by 98%",
+    "impactBody": "In a benchmark against 10,000 synthetic complaints, GIIPS collapsed them into 160 actionable incident clusters — reducing officer triage volume by 98.4%. Estimated time saved: <0>~1,666 officer-hours</0>.",
+    "impactCaveat": "These figures are based on synthetic complaint data (not live grievance records) using an SBERT-based clustering model. Real-world free-text data with greater linguistic variety would likely yield a lower reduction rate, bounded below by an alternative TF-IDF estimate of ~50%. The metric is a validated upper bound, not a production guarantee.",
+    "citizenCardTitle": "Citizen Portal",
+    "citizenCardBody": "Submit and track complaints. See how your issue is categorized and prioritized.",
+    "citizenCardCta": "Enter Portal",
+    "govCardTitle": "Government Login",
+    "govCardBody": "Review incidents, monitor department performance, and access AI-assisted insights.",
+    "govCardCta": "Secure Access",
+    "footerBrand": "GIIPS — AI triage layer prototype",
+    "footerCopy": "Not affiliated with or endorsed by any government entity."
+  },
+
+  "login": {
+    "backButton": "Back",
+    "title": "Sign In",
+    "subtitle": "Access your governance dashboard",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Password",
+    "submitButton": "Sign In",
+    "submittingButton": "Signing In...",
+    "footerText": "Don't have an account?",
+    "footerLink": "Create one"
+  },
+
+  "register": {
+    "backButton": "Back",
+    "title": "Create Account",
+    "subtitle": "Register for GIIPS citizen services",
+    "fullNameLabel": "Full Name",
+    "fullNamePlaceholder": "Your full name",
+    "emailLabel": "Email",
+    "emailPlaceholder": "your@email.com",
+    "passwordLabel": "Password",
+    "passwordPlaceholder": "Create a password",
+    "submitButton": "Create Account",
+    "submittingButton": "Creating Account...",
+    "footerText": "Already have an account?",
+    "footerLink": "Sign in",
+    "govAccountError": "Government accounts cannot be created here. Contact your Executive to create your account."
+  }
+}
