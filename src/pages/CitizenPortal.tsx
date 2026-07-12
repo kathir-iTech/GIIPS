@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
@@ -10,6 +11,7 @@ import './CitizenPortal.css';
 const CitizenPortal = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
+  const { t } = useTranslation();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -50,10 +52,10 @@ const CitizenPortal = () => {
   }, [stopPolling]);
 
   const handleSubmit = async () => {
-    if (!user) { setSubmitError('Authentication required'); setLoading(false); return; }
-    if (!formData.title.trim()) { setSubmitError('Title is required'); setLoading(false); return; }
-    if (!formData.description.trim()) { setSubmitError('Description is required'); setLoading(false); return; }
-    if (!formData.location.trim()) { setSubmitError('Location is required'); setLoading(false); return; }
+    if (!user) { setSubmitError(t('citizenPortal.authRequired')); setLoading(false); return; }
+    if (!formData.title.trim()) { setSubmitError(t('citizenPortal.titleRequired')); setLoading(false); return; }
+    if (!formData.description.trim()) { setSubmitError(t('citizenPortal.descRequired')); setLoading(false); return; }
+    if (!formData.location.trim()) { setSubmitError(t('citizenPortal.locationRequired')); setLoading(false); return; }
     setLoading(true);
     setSubmitError(null);
     setProcessingStatus('submitting');
@@ -76,7 +78,7 @@ const CitizenPortal = () => {
 
         pollTimeoutRef.current = setTimeout(() => {
           stopPolling();
-          setSubmitError('Status tracking timed out. Your complaint was submitted successfully — check My Complaints for the result.');
+          setSubmitError(t('citizenPortal.statusTimedOut'));
           setLoading(false);
         }, 120000);
         pollingRef.current = setInterval(async () => {
@@ -90,14 +92,14 @@ const CitizenPortal = () => {
             } else if (status.status === 'failed') {
               stopPolling();
               setProcessingStatus(null);
-              setSubmitError(status.detail || 'Processing failed');
+              setSubmitError(status.detail || t('citizenPortal.processingFailed'));
               setLoading(false);
             } else {
               setProcessingStatus(status.status);
             }
           } catch {
             stopPolling();
-            setSubmitError('Failed to check processing status');
+            setSubmitError(t('citizenPortal.statusCheckError'));
             setLoading(false);
           }
         }, 1500);
@@ -116,23 +118,23 @@ const CitizenPortal = () => {
 
   const isProcessing = processingStatus && ['submitting', 'pending', 'processing'].includes(processingStatus);
 
-  const steps = ['Details', 'Complaint', 'Location', 'Photo', 'Review', 'Submit'];
+  const steps = [t('citizenPortal.stepDetails'), t('citizenPortal.stepComplaint'), t('citizenPortal.stepLocation'), t('citizenPortal.stepPhoto'), t('citizenPortal.stepReview'), t('citizenPortal.stepSubmit')];
 
   if (result && !isProcessing) return (
     <div className="portal-container success">
       <div className="glass-card success-card">
         <CheckCircle size={64} className="success-icon" />
-        <h2>Submission Received</h2>
-        <p>Your complaint has been received and is being reviewed.</p>
+        <h2>{t('citizenPortal.successTitle')}</h2>
+        <p>{t('citizenPortal.successBody')}</p>
         <div className="summary-card">
-          <p><strong>Complaint ID:</strong> {result.complaintId}</p>
-          {result.priority && <p><strong>Priority:</strong> {result.priority}</p>}
-          {result.predictedCategory && <p><strong>Category:</strong> {result.predictedCategory}</p>}
-          {result.incidentId && <p><strong>Incident ID:</strong> {result.incidentId}</p>}
+          <p><strong>{t('citizenPortal.summaryComplaintId')}</strong> {result.complaintId}</p>
+          {result.priority && <p><strong>{t('citizenPortal.summaryPriority')}</strong> {result.priority}</p>}
+          {result.predictedCategory && <p><strong>{t('citizenPortal.summaryCategory')}</strong> {result.predictedCategory}</p>}
+          {result.incidentId && <p><strong>{t('citizenPortal.summaryIncidentId')}</strong> {result.incidentId}</p>}
         </div>
         <div className="success-actions">
-          <button onClick={() => navigate('/my-complaints')}>View My Complaints</button>
-          <button className="secondary" onClick={() => navigate('/citizen')}>Submit Another</button>
+          <button onClick={() => navigate('/my-complaints')}>{t('citizenPortal.viewComplaintsButton')}</button>
+          <button className="secondary" onClick={() => navigate('/citizen')}>{t('citizenPortal.submitAnotherButton')}</button>
         </div>
       </div>
     </div>
@@ -142,13 +144,13 @@ const CitizenPortal = () => {
     <div className="portal-container success">
       <div className="glass-card success-card">
         <Clock size={64} className="processing-icon" />
-        <h2>Processing Your Complaint</h2>
-        <p>Processing your submission...</p>
+        <h2>{t('citizenPortal.processingTitle')}</h2>
+        <p>{t('citizenPortal.processingSubtitle')}</p>
         <div className="processing-status">
           <Loader2 className="spinner" size={32} />
-          <p className="status-text">{processingStatus === 'submitting' ? 'Submitting...' : processingStatus === 'pending' ? 'Starting analysis...' : 'Processing your complaint...'}</p>
-          {photoUploadStatus === 'uploading' && <p className="status-text">Uploading photo...</p>}
-          {photoUploadStatus === 'done' && <p className="status-text photo-done">Photo uploaded</p>}
+          <p className="status-text">{processingStatus === 'submitting' ? t('citizenPortal.statusSubmitting') : processingStatus === 'pending' ? t('citizenPortal.statusStarting') : t('citizenPortal.statusProcessing')}</p>
+          {photoUploadStatus === 'uploading' && <p className="status-text">{t('citizenPortal.statusUploading')}</p>}
+          {photoUploadStatus === 'done' && <p className="status-text photo-done">{t('citizenPortal.statusPhotoDone')}</p>}
         </div>
         {submitError && (
           <div className="error-banner">
@@ -162,7 +164,7 @@ const CitizenPortal = () => {
 
   return (
     <div className="portal-container">
-      <Header title="Citizen Portal" subtitle="Submit grievance securely" />
+      <Header title={t('citizenPortal.headerTitle')} subtitle={t('citizenPortal.headerSubtitle')} />
       <div className="wizard glass-card">
         <div className="progress-bar-container">
           <div className="progress-fill" style={{ width: `${(step / steps.length) * 100}%` }}></div>
@@ -174,14 +176,14 @@ const CitizenPortal = () => {
             <div className="form-step">
               <input
                 type="text"
-                placeholder="Full Name"
+                placeholder={t('citizenPortal.fullNamePlaceholder')}
                 value={formData.full_name}
                 onChange={e => setFormData({ ...formData, full_name: e.target.value })}
                 required
               />
               <input
                 type="email"
-                placeholder="Email Address"
+                placeholder={t('citizenPortal.emailPlaceholder')}
                 value={formData.email}
                 onChange={e => setFormData({ ...formData, email: e.target.value })}
                 required
@@ -192,12 +194,12 @@ const CitizenPortal = () => {
             <div className="form-step">
               <input
                 type="text"
-                placeholder="Complaint Title"
+                placeholder={t('citizenPortal.complaintTitlePlaceholder')}
                 value={formData.title}
                 onChange={e => setFormData({ ...formData, title: e.target.value })}
               />
               <textarea
-                placeholder="Detailed Description"
+                placeholder={t('citizenPortal.descriptionPlaceholder')}
                 value={formData.description}
                 onChange={e => setFormData({ ...formData, description: e.target.value })}
               />
@@ -207,12 +209,12 @@ const CitizenPortal = () => {
             <div className="form-step">
               <input
                 type="text"
-                placeholder="Location / Area (e.g. near market, opposite school)"
+                placeholder={t('citizenPortal.locationPlaceholder')}
                 value={formData.location}
                 onChange={e => setFormData({ ...formData, location: e.target.value })}
               />
               <label style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: -8 }}>
-                Search your exact address on the map:
+                {t('citizenPortal.searchMapLabel')}
               </label>
               <AddressSearch
                 value={formData.address}
@@ -223,12 +225,12 @@ const CitizenPortal = () => {
                   longitude: data.lon,
                   ward: prev.ward || '',
                 }))}
-                placeholder="Type your street, area, or landmark..."
+                placeholder={t('citizenPortal.addressSearchPlaceholder')}
               />
               {formData.latitude !== 0 && (
                 <small style={{ color: '#60a5fa', display: 'flex', alignItems: 'center', gap: 4 }}>
                   <MapPin size={12} />
-                  Location pinned on map
+                  {t('citizenPortal.locationPinned')}
                 </small>
               )}
             </div>
@@ -237,7 +239,7 @@ const CitizenPortal = () => {
             <div className="form-step">
               <label className="upload-box">
                 <Upload size={18} />
-                <span>{selectedFile ? selectedFile.name : 'Select Image (optional)'}</span>
+                <span>{selectedFile ? selectedFile.name : t('citizenPortal.photoUploadLabel')}</span>
                 <input
                   type="file"
                   accept=".jpg,.jpeg,.png"
@@ -246,11 +248,11 @@ const CitizenPortal = () => {
                     const file = e.target.files?.[0];
                     if (!file) { setSelectedFile(null); setImagePreview(null); return; }
                     if (!['image/jpeg', 'image/png'].includes(file.type)) {
-                      setPhotoError('Only JPG and PNG files are allowed.');
+                      setPhotoError(t('citizenPortal.photoErrorFormat'));
                       return;
                     }
                     if (file.size > 5 * 1024 * 1024) {
-                      setPhotoError('File too large. Maximum size is 5 MB.');
+                      setPhotoError(t('citizenPortal.photoErrorSize'));
                       return;
                     }
                     setSelectedFile(file);
@@ -259,23 +261,23 @@ const CitizenPortal = () => {
                 />
               </label>
               {photoError && <p className="field-error">{photoError}</p>}
-              {imagePreview && <img src={imagePreview} className="preview" alt="Preview" />}
+              {imagePreview && <img src={imagePreview} className="preview" alt={t('complaintDetail.imageAlt')} />}
             </div>
           )}
           {step === 5 && (
             <div className="form-step review-step">
-              <h3>Review Details</h3>
+              <h3>{t('citizenPortal.reviewTitle')}</h3>
               <div className="review-grid">
-                <div><strong>Name:</strong> {formData.full_name || '—'}</div>
-                <div><strong>Email:</strong> {formData.email || '—'}</div>
-                <div><strong>Title:</strong> {formData.title || '—'}</div>
-                <div><strong>Location:</strong> {formData.location || '—'}</div>
+                <div><strong>{t('citizenPortal.reviewName')}</strong> {formData.full_name || '—'}</div>
+                <div><strong>{t('citizenPortal.reviewEmail')}</strong> {formData.email || '—'}</div>
+                <div><strong>{t('citizenPortal.reviewTitleLabel')}</strong> {formData.title || '—'}</div>
+                <div><strong>{t('citizenPortal.reviewLocation')}</strong> {formData.location || '—'}</div>
                 <div style={{ gridColumn: '1 / -1' }}>
-                  <strong>Address:</strong> {formData.address || formData.location || '—'}
+                  <strong>{t('citizenPortal.reviewAddress')}</strong> {formData.address || formData.location || '—'}
                 </div>
                 {formData.latitude !== 0 && (
                   <div style={{ gridColumn: '1 / -1' }}>
-                    <strong>Location pinned on map:</strong> Yes
+                    <strong>{t('citizenPortal.reviewLocationPinned')}</strong> {t('common.yes')}
                   </div>
                 )}
               </div>
@@ -284,8 +286,8 @@ const CitizenPortal = () => {
           {step === 6 && (
             <div className="form-step ai-step">
               <Sparkles className="ai-icon" />
-              <h3>Confirm & Submit</h3>
-              <p>You're about to submit your complaint. Click confirm to send it for review.</p>
+              <h3>{t('citizenPortal.confirmTitle')}</h3>
+              <p>{t('citizenPortal.confirmBody')}</p>
               {submitError && (
                 <div className="error-banner">
                   <AlertCircle size={16} />
@@ -293,15 +295,15 @@ const CitizenPortal = () => {
                 </div>
               )}
               <button className="auth-button" onClick={handleSubmit} disabled={loading}>
-                {loading ? 'Processing...' : 'Confirm Submission'}
+                {loading ? t('citizenPortal.processingButton') : t('citizenPortal.confirmButton')}
               </button>
             </div>
           )}
         </div>
 
         <div className="wizard-controls">
-          <button disabled={step === 1} onClick={() => setStep(s => s - 1)}><ChevronLeft /> Back</button>
-          <button disabled={step >= steps.length} onClick={() => setStep(s => s + 1)}>Next <ChevronRight /></button>
+          <button disabled={step === 1} onClick={() => setStep(s => s - 1)}><ChevronLeft /> {t('citizenPortal.backButton')}</button>
+          <button disabled={step >= steps.length} onClick={() => setStep(s => s + 1)}>{t('citizenPortal.nextButton')} <ChevronRight /></button>
         </div>
       </div>
     </div>

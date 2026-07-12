@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import type { CitizenComplaint } from '../types';
@@ -13,8 +14,23 @@ const STATUS_STYLES: Record<string, string> = {
   closed: 'status-closed',
 };
 
+const STATUS_KEY: Record<string, string> = {
+  open: 'common.status.open',
+  'in-progress': 'common.status.inProgress',
+  resolved: 'common.status.resolved',
+  closed: 'common.status.closed',
+};
+
+const getConfidenceLabel = (confidence: number | null | undefined, t: (key: string) => string): string => {
+  if (confidence == null) return t('common.na');
+  if (confidence >= 0.8) return t('common.confidence.high');
+  if (confidence >= 0.5) return t('common.confidence.medium');
+  return t('common.confidence.low');
+};
+
 const MyComplaints = () => {
   const navigate = useNavigate();
+  const { t } = useTranslation();
   const [complaints, setComplaints] = useState<CitizenComplaint[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -51,37 +67,37 @@ const MyComplaints = () => {
     return matchesSearch && matchesStatus;
   });
 
-  if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading your complaints...</span></div>;
-  if (error) return <div className="page-error">Error: {error}</div>;
+  if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('myComplaints.loading')}</span></div>;
+  if (error) return <div className="page-error">{t('common.error')}: {error}</div>;
 
   return (
     <div className="my-complaints-page">
-      <Header title="My Complaints" subtitle="Track your submitted grievances" />
+      <Header title={t('myComplaints.headerTitle')} subtitle={t('myComplaints.headerSubtitle')} />
       <div className="page-content">
         <div className="toolbar">
           <div className="search-box">
             <Search size={18} className="search-icon" />
             <input
               type="text"
-              placeholder="Search by ID, title, ward..."
+              placeholder={t('myComplaints.searchPlaceholder')}
               value={searchQuery}
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
           <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="status-select">
-            <option value="all">All Status</option>
-            <option value="open">Open</option>
-            <option value="in-progress">In Progress</option>
-            <option value="resolved">Resolved</option>
-            <option value="closed">Closed</option>
+            <option value="all">{t('common.status.all')}</option>
+            <option value="open">{t('common.status.open')}</option>
+            <option value="in-progress">{t('common.status.inProgress')}</option>
+            <option value="resolved">{t('common.status.resolved')}</option>
+            <option value="closed">{t('common.status.closed')}</option>
           </select>
         </div>
 
         {filtered.length === 0 ? (
           <div className="empty-state">
             <FileText size={48} />
-            <h3>No complaints found</h3>
-            <p>You have not submitted any complaints yet, or none match your filters.</p>
+            <h3>{t('myComplaints.emptyTitle')}</h3>
+            <p>{t('myComplaints.emptyBody')}</p>
           </div>
         ) : (
           <div className="complaints-list">
@@ -92,28 +108,28 @@ const MyComplaints = () => {
                   <div className="card-header">
                     <div className="card-title">
                       <Tag size={16} />
-                      <span>{c.title || 'Untitled Complaint'}</span>
+                      <span>{c.title || t('common.untitled')}</span>
                     </div>
                     <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>
-                      {incidentStatus.replace('-', ' ')}
+                      {t(STATUS_KEY[incidentStatus] || 'common.status.open')}
                     </span>
                   </div>
                   <p className="card-desc">{c.description}</p>
                   <div className="card-meta">
-                    <span className="meta-item"><MapPin size={14} /> {c.ward || 'N/A'}</span>
-                    <span className="meta-item"><Calendar size={14} /> {c.date_received ? new Date(c.date_received).toLocaleDateString('en-IN') : 'N/A'}</span>
-                    <span className="meta-item"><AlertCircle size={14} /> {c.predicted_category || 'Uncategorized'}</span>
+                    <span className="meta-item"><MapPin size={14} /> {c.ward || t('common.na')}</span>
+                    <span className="meta-item"><Calendar size={14} /> {c.date_received ? new Date(c.date_received).toLocaleDateString('en-IN') : t('common.na')}</span>
+                    <span className="meta-item"><AlertCircle size={14} /> {c.predicted_category || t('common.uncategorized')}</span>
                   </div>
                   <div className="card-footer">
                     <div className="confidence-bar">
                       <div className="confidence-fill" style={{ width: `${Math.round((c.confidence || 0) * 100)}%` }}></div>
-                      <span>Match confidence: {c.confidence != null ? (c.confidence >= 0.8 ? 'High' : c.confidence >= 0.5 ? 'Medium' : 'Low') : 'N/A'}</span>
+                      <span>{t('myComplaints.confidenceLabel')} {getConfidenceLabel(c.confidence, t)}</span>
                     </div>
                     <div className="duplicate-info">
                       {c.incident ? (
-                        <span className="linked-incident">Grouped with similar complaints</span>
+                        <span className="linked-incident">{t('common.groupedWithSimilar')}</span>
                       ) : (
-                        <span className="no-incident">Standalone complaint</span>
+                        <span className="no-incident">{t('myComplaints.standalone')}</span>
                       )}
                     </div>
                   </div>
