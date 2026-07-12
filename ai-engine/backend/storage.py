@@ -1,5 +1,6 @@
 """
-S3-compatible storage for complaint photo evidence (MinIO / AWS S3).
+S3-compatible storage for complaint photo evidence (Backblaze B2 / MinIO / AWS S3).
+Uses a private bucket with presigned URLs — no public bucket or credit card needed.
 """
 
 import os
@@ -13,6 +14,7 @@ logger = logging.getLogger(__name__)
 ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
+PRESIGNED_URL_EXPIRY = 3600  # 1 hour
 
 
 def _config(key: str, default: str) -> str:
@@ -26,7 +28,6 @@ class S3Storage:
         self.secret_key = _config("S3_SECRET_ACCESS_KEY", "minioadmin")
         self.bucket = _config("S3_BUCKET_NAME", "giips-complaints")
         self.region = _config("S3_REGION", "us-east-1")
-        self.public_url = _config("S3_PUBLIC_URL", self.endpoint_url)
         self._client = None
 
     @property
@@ -59,6 +60,7 @@ class S3Storage:
                 logger.warning("Could not create bucket %s: %s", self.bucket, e)
 
     def upload(self, data: bytes, filename: str, content_type: str) -> str:
+        """Upload a file and return the object key. Use get_presigned_url() to retrieve."""
         ext = Path(filename).suffix.lower()
         key = f"complaints/{uuid.uuid4().hex}{ext}"
         self.client.put_object(
@@ -67,9 +69,21 @@ class S3Storage:
             Body=data,
             ContentType=content_type,
         )
-        url = f"{self.public_url.rstrip('/')}/{self.bucket}/{key}"
-        logger.info("Uploaded %s (%d bytes) -> %s", key, len(data), url)
-        return url
+        logger.info("Uploaded %s (%d bytes)", key, len(data))
+        return key
+
+    def get_presigned_url(self, object_key: str, expiry: int = PRESIGNED_URL_EXPIRY) -> Optional[str]:
+        """Generate a presigned GET URL for a private object."""
+        try:
+            url = self.client.generate_presigned_url(
+                "get_object",
+                Params={"Bucket": self.bucket, "Key": object_key},
+                ExpiresIn=expiry,
+            )
+            return url
+        except Exception as e:
+            logger.warning("Failed to generate presigned URL for %s: %s", object_key, e)
+            return None
 
 
 def validate_file(filename: str, content_type: str, size: int) -> Optional[str]:

@@ -93,6 +93,8 @@ export interface CitizenComplaint {
   similarity_score: number | null;
   merge_reason: string | null;
   date_received: string;
+  image_path?: string | null;
+  image_url?: string | null;
   incident?: {
     id: string | null;
     incident_number: string | null;

@@ -276,6 +276,18 @@ export const api = {
     return response.json();
   },
 
+  getComplaintPhoto: async (complaintId: string, token: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/photo`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+    if (!response.ok) {
+      throw new Error(await getErrorMessage(response));
+    }
+    return response.json();
+  },
+
   get: async (endpoint: string, token: string): Promise<Response> => {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
       headers: {

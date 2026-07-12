@@ -218,15 +218,34 @@ async def upload_complaint_photo(
         return {"imageUrl": "", "complaintId": complaint_id, "message": "Photo storage not configured. Complaint submitted without image."}
 
     try:
-        url = storage.upload(data, file.filename, file.content_type)
+        object_key = storage.upload(data, file.filename, file.content_type)
     except Exception as e:
         logger.error("S3 upload failed for complaint %s: %s", complaint_id, e)
         raise HTTPException(status_code=502, detail=f"Storage upload failed: {e}")
 
-    complaint.image_path = url
+    complaint.image_path = object_key
     db.commit()
 
-    return {"imageUrl": url, "complaintId": complaint_id, "message": "Photo uploaded successfully."}
+    return {"imageKey": object_key, "complaintId": complaint_id, "message": "Photo uploaded successfully."}
+
+
+@complaint_router.get("/{complaint_id}/photo")
+async def get_complaint_photo(complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get a presigned photo URL for a complaint's uploaded image (private bucket)."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    if not complaint.image_path:
+        return {"imageUrl": None, "complaintId": complaint_id}
+
+    storage = S3Storage()
+    if not storage.available:
+        return {"imageUrl": None, "complaintId": complaint_id, "message": "Storage not configured"}
+
+    url = storage.get_presigned_url(complaint.image_path)
+    if not url:
+        raise HTTPException(status_code=502, detail="Failed to generate photo URL")
+    return {"imageUrl": url, "complaintId": complaint_id}
 
 
 @complaint_router.get("/my")

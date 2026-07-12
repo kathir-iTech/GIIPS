@@ -21,6 +21,7 @@ const ComplaintDetail = () => {
   const [data, setData] = useState<ComplaintDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -29,7 +30,18 @@ const ComplaintDetail = () => {
     setError(null);
     api.getComplaintDetail(id, token)
       .then(data => {
-        if (!cancelled) setData(data);
+        if (!cancelled) {
+          setData(data);
+          if (data.image_path) {
+            if (data.image_path.startsWith('http')) {
+              setPhotoUrl(data.image_path);
+            } else {
+              api.getComplaintPhoto(id, token).then(photoRes => {
+                if (!cancelled && photoRes.imageUrl) setPhotoUrl(photoRes.imageUrl);
+              }).catch(() => {});
+            }
+          }
+        }
       })
       .catch(err => {
         if (!cancelled) setError(err.message);
@@ -83,6 +95,12 @@ const ComplaintDetail = () => {
               <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>{incidentStatus.replace('-', ' ')}</span>
             </div>
             <p className="detail-description">{data.description}</p>
+
+            {photoUrl && (
+              <div className="detail-photo">
+                <img src={photoUrl} alt="Complaint evidence" className="photo-img" />
+              </div>
+            )}
 
             <div className="detail-meta-grid">
               <div className="meta-item"><MapPin size={16} /> <span>{data.location || 'N/A'}</span></div>
