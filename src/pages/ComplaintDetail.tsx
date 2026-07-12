@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import type { ComplaintDetail } from '../types';
 import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2 } from 'lucide-react';
@@ -16,7 +15,6 @@ const STATUS_STYLES: Record<string, string> = {
 
 const ComplaintDetail = () => {
   const { id } = useParams<{ id: string }>();
-  const { token } = useAuth();
   const navigate = useNavigate();
   const [data, setData] = useState<ComplaintDetail | null>(null);
   const [loading, setLoading] = useState(true);
@@ -25,10 +23,10 @@ const ComplaintDetail = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!id || !token) { setLoading(false); return; }
+    if (!id) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-    api.getComplaintDetail(id, token)
+    api.getComplaintDetail(id)
       .then(data => {
         if (!cancelled) {
           setData(data);
@@ -36,7 +34,7 @@ const ComplaintDetail = () => {
             if (data.image_path.startsWith('http')) {
               setPhotoUrl(data.image_path);
             } else {
-              api.getComplaintPhoto(id, token).then(photoRes => {
+              api.getComplaintPhoto(id).then(photoRes => {
                 if (!cancelled && photoRes.imageUrl) setPhotoUrl(photoRes.imageUrl);
               }).catch(() => {});
             }
@@ -50,7 +48,7 @@ const ComplaintDetail = () => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [id, token]);
+  }, [id]);
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading complaint details...</span></div>;
   if (error) return <div className="page-error">Error: {error}</div>;

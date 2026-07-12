@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { UserPlus, Search, Lock, Unlock } from 'lucide-react';
 import './Admin.css';
 
@@ -14,7 +13,6 @@ interface Officer {
 }
 
 const OfficerManagement = () => {
-  const { token } = useAuth();
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +26,10 @@ const OfficerManagement = () => {
   }, []);
 
   const fetchOfficers = async () => {
-    if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/officers', token);
+      const response = await api.get('/admin/officers');
       const data = await response.json();
       setOfficers(data);
     } catch (err) {
@@ -49,10 +46,9 @@ const OfficerManagement = () => {
   );
 
   const handleDisable = async (id: string) => {
-    if (!token) return;
     try {
       setError(null);
-      await api.patch(`/admin/officers/${id}/disable`, {}, token);
+      await api.patch(`/admin/officers/${id}/disable`, {});
       fetchOfficers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to disable officer');
@@ -60,10 +56,9 @@ const OfficerManagement = () => {
   };
 
   const handleEnable = async (id: string) => {
-    if (!token) return;
     try {
       setError(null);
-      await api.patch(`/admin/officers/${id}/enable`, {}, token);
+      await api.patch(`/admin/officers/${id}/enable`, {});
       fetchOfficers();
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to enable officer');
@@ -71,14 +66,13 @@ const OfficerManagement = () => {
   };
 
   const handleCreateOfficer = async () => {
-    if (!token) return;
     if (!formData.email.endsWith('@gov.in')) {
       setDialogError('Government accounts must use @gov.in email domain');
       return;
     }
     try {
       setDialogError(null);
-      await api.post('/admin/officers', formData, token);
+      await api.post('/admin/officers', formData);
       setShowAddDialog(false);
       fetchOfficers();
     } catch (err) {

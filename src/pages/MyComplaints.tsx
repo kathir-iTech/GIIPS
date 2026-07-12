@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import type { CitizenComplaint } from '../types';
 import { FileText, MapPin, Calendar, Tag, AlertCircle, CheckCircle, Clock, Search, ChevronRight } from 'lucide-react';
@@ -15,7 +14,6 @@ const STATUS_STYLES: Record<string, string> = {
 };
 
 const MyComplaints = () => {
-  const { token } = useAuth();
   const navigate = useNavigate();
   const [complaints, setComplaints] = useState<CitizenComplaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -25,10 +23,9 @@ const MyComplaints = () => {
 
   useEffect(() => {
     let cancelled = false;
-    if (!token) { setLoading(false); return; }
     setLoading(true);
     setError(null);
-    api.getMyComplaints(token)
+    api.getMyComplaints()
       .then(res => {
         if (cancelled) return;
         setComplaints(Array.isArray(res.complaints) ? res.complaints : []);
@@ -41,7 +38,7 @@ const MyComplaints = () => {
         if (!cancelled) setLoading(false);
       });
     return () => { cancelled = true; };
-  }, [token]);
+  }, []);
 
   const filtered = complaints.filter(c => {
     const matchesSearch = !searchQuery.trim() ||

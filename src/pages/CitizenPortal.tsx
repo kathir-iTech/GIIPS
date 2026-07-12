@@ -9,7 +9,7 @@ import './CitizenPortal.css';
 
 const CitizenPortal = () => {
   const navigate = useNavigate();
-  const { token } = useAuth();
+  const { user } = useAuth();
   const [step, setStep] = useState(1);
   const [formData, setFormData] = useState({
     full_name: '',
@@ -50,7 +50,7 @@ const CitizenPortal = () => {
   }, [stopPolling]);
 
   const handleSubmit = async () => {
-    if (!token) { setSubmitError('Authentication required'); setLoading(false); return; }
+    if (!user) { setSubmitError('Authentication required'); setLoading(false); return; }
     if (!formData.title.trim()) { setSubmitError('Title is required'); setLoading(false); return; }
     if (!formData.description.trim()) { setSubmitError('Description is required'); setLoading(false); return; }
     if (!formData.location.trim()) { setSubmitError('Location is required'); setLoading(false); return; }
@@ -58,7 +58,7 @@ const CitizenPortal = () => {
     setSubmitError(null);
     setProcessingStatus('submitting');
     try {
-      const response = await api.submitComplaint(formData, token!);
+      const response = await api.submitComplaint(formData);
       if (response.statusUrl) {
         complaintIdRef.current = response.complaintId;
         setProcessingStatus('pending');
@@ -66,7 +66,7 @@ const CitizenPortal = () => {
         if (selectedFile) {
           setPhotoUploadStatus('uploading');
           try {
-            await api.uploadComplaintPhoto(response.complaintId, selectedFile, token!);
+            await api.uploadComplaintPhoto(response.complaintId, selectedFile);
             setPhotoUploadStatus('done');
           } catch (uploadErr: any) {
             setPhotoUploadStatus('failed');
@@ -81,7 +81,7 @@ const CitizenPortal = () => {
         }, 120000);
         pollingRef.current = setInterval(async () => {
           try {
-            const status = await api.getComplaintStatus(response.complaintId, token!);
+            const status = await api.getComplaintStatus(response.complaintId);
             if (status.status === 'completed') {
               stopPolling();
               setProcessingStatus(null);

@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp } from 'lucide-react';
 import './Admin.css';
 
@@ -15,7 +14,6 @@ interface DepartmentData {
 }
 
 const DepartmentManagement = () => {
-  const { token } = useAuth();
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -25,11 +23,10 @@ const DepartmentManagement = () => {
   }, []);
 
   const fetchDepartments = async () => {
-    if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/departments', token);
+      const response = await api.get('/admin/departments');
       const data = await response.json();
       setDepartments(data);
     } catch (err) {

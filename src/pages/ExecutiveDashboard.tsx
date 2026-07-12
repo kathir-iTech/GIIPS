@@ -3,7 +3,6 @@ import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
-import { useAuth } from '../context/AuthContext';
 import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
@@ -92,7 +91,6 @@ const TrendIndicator: React.FC<{ value: number }> = ({ value }) => {
 };
 
 const ExecutiveDashboard = () => {
-  const { token } = useAuth();
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(true);
@@ -129,7 +127,7 @@ const ExecutiveDashboard = () => {
           api.getPredictionsSummary(),
           api.getKnowledgeSummary(),
           api.getDecisionSupportSummary(),
-          token ? api.getSystemHealth(token) : Promise.resolve({}),
+          api.getSystemHealth().catch(() => ({})),
           fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/trend`).then(r => r.json()).catch(() => ({ labels: [], complaints: [], incidents: [] })),
         ]);
         if (!mounted) return;
@@ -173,7 +171,7 @@ const ExecutiveDashboard = () => {
     fetchAll(true);
     const interval = setInterval(() => fetchAll(false), 30000);
     return () => { mounted = false; clearInterval(interval); };
-  }, [token]);
+  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });

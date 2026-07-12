@@ -6,7 +6,7 @@ import os
 import uuid
 import time
 import logging
-from fastapi import APIRouter, HTTPException, Depends, Query, Header, UploadFile, File, Request
+from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, extract
 from typing import List, Dict, Any, Optional
@@ -39,7 +39,7 @@ from services import (
     DecisionService,
     SpatialService
 )
-from auth_service import hash_password, verify_password, create_access_token, verify_token
+from auth_service import hash_password, verify_password, create_access_token, verify_token, set_auth_cookie, clear_auth_cookie
 from prediction.engine import PredictiveEngine
 from knowledge.engine import GovernanceKnowledgeEngine
 from decision.support import DecisionSupportEngine
@@ -48,10 +48,14 @@ from storage import S3Storage, validate_file
 
 logger = logging.getLogger(__name__)
 
-def get_current_user(authorization: Optional[str] = Header(None, alias="Authorization"), db: Session = Depends(get_db)) -> User:
-    if not authorization or not authorization.startswith("Bearer "):
-        raise HTTPException(status_code=401, detail="Missing or invalid authorization header")
-    token = authorization.split(" ")[1]
+def get_current_user(request: Request, db: Session = Depends(get_db)) -> User:
+    """Extract JWT from httpOnly cookie first, fall back to Authorization header."""
+    token = request.cookies.get("access_token")
+    if not token:
+        authorization = request.headers.get("Authorization")
+        if not authorization or not authorization.startswith("Bearer "):
+            raise HTTPException(status_code=401, detail="Missing or invalid authorization")
+        token = authorization.split(" ")[1]
     payload = verify_token(token)
     if not payload:
         raise HTTPException(status_code=401, detail="Invalid or expired token")
@@ -596,21 +600,26 @@ async def register(user: UserRegister, request: Request, _: None = Depends(check
     return {"message": "User registered successfully", "user_id": new_user.id, "role": new_user.role}
 
 @auth_router.post("/login")
-async def login(user: UserLogin, request: Request, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):
-    """Authenticate user and return JWT token."""
+async def login(user: UserLogin, request: Request, response: Response, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):
+    """Authenticate user and return JWT token as httpOnly cookie."""
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
         _write_audit_log(db, None, user.email, None, "login", "auth", "failure", "Invalid credentials")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     token = create_access_token({"sub": db_user.email, "role": db_user.role})
+    set_auth_cookie(response, token)
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "login", "auth", "success")
     return {
-        "access_token": token,
-        "token_type": "bearer",
         "role": db_user.role,
         "user_id": db_user.id,
         "full_name": db_user.full_name
     }
+
+@auth_router.post("/logout")
+async def logout(response: Response):
+    """Logout: clear the httpOnly auth cookie."""
+    clear_auth_cookie(response)
+    return {"message": "Logged out successfully"}
 
 @auth_router.get("/me", response_model=UserResponse)
 async def get_me(db_user: User = Depends(get_current_user)):

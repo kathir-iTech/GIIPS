@@ -1,6 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { Search, Filter, Clock, User, Shield, FileText } from 'lucide-react';
 import './Admin.css';
 
@@ -15,7 +14,6 @@ interface AuditLog {
 }
 
 const AuditLogs = () => {
-  const { token } = useAuth();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -28,11 +26,10 @@ const AuditLogs = () => {
   }, []);
 
   const fetchLogs = async () => {
-    if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/audit-logs', token);
+      const response = await api.get('/admin/audit-logs');
       const data = await response.json();
       setLogs(data);
     } catch (err) {

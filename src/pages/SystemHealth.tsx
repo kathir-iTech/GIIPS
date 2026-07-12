@@ -1,11 +1,9 @@
 import React, { useState, useEffect } from 'react';
 import { api } from '../services/api';
-import { useAuth } from '../context/AuthContext';
 import { Server, Database, Brain, Shield, Clock, Users, MessageSquare, Activity } from 'lucide-react';
 import './Admin.css';
 
 const SystemHealth = () => {
-  const { token } = useAuth();
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -15,11 +13,10 @@ const SystemHealth = () => {
   }, []);
 
   const fetchHealth = async () => {
-    if (!token) return;
     setLoading(true);
     setError(null);
     try {
-      const response = await api.get('/admin/system-health', token);
+      const response = await api.get('/admin/system-health');
       const data = await response.json();
       setHealth(data);
     } catch (err) {

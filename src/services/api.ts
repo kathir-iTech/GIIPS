@@ -5,6 +5,10 @@ if (!BASE_URL) {
     throw new Error("VITE_API_BASE_URL is required but not set. Define it in your .env file.");
 }
 
+const FETCH_DEFAULTS: RequestInit = {
+  credentials: 'include',
+};
+
 const safeJson = async (response: Response) => {
   try {
     return await response.json();
@@ -31,20 +35,18 @@ const getErrorMessage = async (response: Response): Promise<string> => {
 
 export const api = {
   getDashboardData: async (): Promise<DashboardData> => {
-    const response = await fetch(`${BASE_URL}/dashboard`);
+    const response = await fetch(`${BASE_URL}/dashboard`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
 
-  submitComplaint: async (payload: any, token: string): Promise<any> => {
+  submitComplaint: async (payload: any): Promise<any> => {
     const response = await fetch(`${BASE_URL}/complaints`, {
+      ...FETCH_DEFAULTS,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload),
     });
     const data = await safeJson(response);
@@ -54,26 +56,20 @@ export const api = {
     return data;
   },
 
-  getComplaintStatus: async (complaintId: string, token: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/status`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  getComplaintStatus: async (complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/status`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
 
-  uploadComplaintPhoto: async (complaintId: string, file: File, token: string): Promise<any> => {
+  uploadComplaintPhoto: async (complaintId: string, file: File): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
     const response = await fetch(`${BASE_URL}/complaints/${complaintId}/upload`, {
+      ...FETCH_DEFAULTS,
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${token}`
-      },
       body: formData,
     });
     const data = await safeJson(response);
@@ -84,27 +80,27 @@ export const api = {
   },
 
   getHeatmap: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/spatial/heatmap`);
+    const response = await fetch(`${BASE_URL}/spatial/heatmap`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getHotspots: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/spatial/hotspots`);
+    const response = await fetch(`${BASE_URL}/spatial/hotspots`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getForecast: async (days: number): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/spatial/forecast?days=${days}`);
+    const response = await fetch(`${BASE_URL}/spatial/forecast?days=${days}`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getRiskAnalysis: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/spatial/risk`);
+    const response = await fetch(`${BASE_URL}/spatial/risk`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   simulateResources: async (additional_teams: number): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/spatial/simulate?additional_teams=${additional_teams}`, { method: 'POST' });
+    const response = await fetch(`${BASE_URL}/spatial/simulate?additional_teams=${additional_teams}`, { ...FETCH_DEFAULTS, method: 'POST' });
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
@@ -113,7 +109,7 @@ export const api = {
     const url = sortField
       ? `${BASE_URL}/incidents?sort=${encodeURIComponent(sortField)}`
       : `${BASE_URL}/incidents`;
-    const response = await fetch(url);
+    const response = await fetch(url, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
@@ -122,7 +118,7 @@ export const api = {
   },
 
   getClusterDetail: async (incidentId: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/incidents/${incidentId}`);
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
@@ -131,8 +127,8 @@ export const api = {
 
   getClassificationMetrics: async (): Promise<any> => {
     const [metricsRes, trendRes] = await Promise.all([
-      fetch(`${BASE_URL}/dashboard/metrics`),
-      fetch(`${BASE_URL}/dashboard/trend`)
+      fetch(`${BASE_URL}/dashboard/metrics`, FETCH_DEFAULTS),
+      fetch(`${BASE_URL}/dashboard/trend`, FETCH_DEFAULTS)
     ]);
 
     if (!metricsRes.ok || !trendRes.ok) {
@@ -170,23 +166,24 @@ export const api = {
   },
   
   getExecutiveSummary: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/executive/summary`);
+    const response = await fetch(`${BASE_URL}/executive/summary`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getWardHealth: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/executive/ward-health`);
+    const response = await fetch(`${BASE_URL}/executive/ward-health`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
   getDeptWorkload: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/executive/department-workload`);
+    const response = await fetch(`${BASE_URL}/executive/department-workload`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   login: async (email: string, password: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/auth/login`, {
+      ...FETCH_DEFAULTS,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ email, password })
@@ -207,6 +204,7 @@ export const api = {
     ward?: string;
   }): Promise<any> => {
     const response = await fetch(`${BASE_URL}/auth/register`, {
+      ...FETCH_DEFAULTS,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
@@ -218,25 +216,27 @@ export const api = {
     return response.json();
   },
 
-  getMe: async (token: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/auth/me`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
+  logout: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/logout`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
     });
+    return response.json();
+  },
+
+  getMe: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/me`, FETCH_DEFAULTS);
     if (!response.ok) {
-      throw new Error('Failed to fetch user profile');
+      throw new Error('Not authenticated');
     }
     return response.json();
   },
 
-  updateProfile: async (data: any, token: string): Promise<any> => {
+  updateProfile: async (data: any): Promise<any> => {
     const response = await fetch(`${BASE_URL}/auth/profile`, {
+      ...FETCH_DEFAULTS,
       method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     if (!response.ok) {
@@ -247,66 +247,48 @@ export const api = {
   },
 
   getComplaintCoordinates: async (): Promise<any[]> => {
-    const response = await fetch(`${BASE_URL}/complaints/coordinates`);
+    const response = await fetch(`${BASE_URL}/complaints/coordinates`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
-  getMyComplaints: async (token: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/complaints/my`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  getMyComplaints: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/my`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
 
-  getComplaintDetail: async (complaintId: string, token: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/complaints/${complaintId}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  getComplaintDetail: async (complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
 
-  getComplaintPhoto: async (complaintId: string, token: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/photo`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  getComplaintPhoto: async (complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/photo`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
     return response.json();
   },
 
-  get: async (endpoint: string, token: string): Promise<Response> => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      headers: {
-        'Authorization': `Bearer ${token}`
-      }
-    });
+  get: async (endpoint: string): Promise<Response> => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));
     }
     return response;
   },
 
-  post: async (endpoint: string, data: any, token: string): Promise<Response> => {
+  post: async (endpoint: string, data: any): Promise<Response> => {
     const response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...FETCH_DEFAULTS,
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data)
     });
     if (!response.ok) {
@@ -315,57 +297,56 @@ export const api = {
     return response;
   },
 
-  getSystemHealth: async (token: string): Promise<any> => {
-    const response = await api.get('/admin/system-health', token);
+  patch: async (endpoint: string, data: any): Promise<Response> => {
+    const response = await fetch(`${BASE_URL}${endpoint}`, {
+      ...FETCH_DEFAULTS,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    });
+    if (!response.ok) {
+      throw new Error(await getErrorMessage(response));
+    }
+    return response;
+  },
+
+  getSystemHealth: async (): Promise<any> => {
+    const response = await api.get('/admin/system-health');
     return response.json();
   },
 
   getPredictionsSummary: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/predictions/summary`);
+    const response = await fetch(`${BASE_URL}/predictions/summary`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   getPriorityRules: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/priority/rules`);
+    const response = await fetch(`${BASE_URL}/priority/rules`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   getKnowledgeSummary: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/knowledge/summary`);
+    const response = await fetch(`${BASE_URL}/knowledge/summary`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   getDecisionSupportSummary: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/decision-support/summary`);
+    const response = await fetch(`${BASE_URL}/decision-support/summary`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
 
   copilotChat: async (message: string, history: any[] = []): Promise<any> => {
     const response = await fetch(`${BASE_URL}/copilot/chat`, {
+      ...FETCH_DEFAULTS,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, history })
     });
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
-  },
-
-  patch: async (endpoint: string, data: any, token: string): Promise<Response> => {
-    const response = await fetch(`${BASE_URL}${endpoint}`, {
-      method: 'PATCH',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify(data)
-    });
-    if (!response.ok) {
-      throw new Error(await getErrorMessage(response));
-    }
-    return response;
   },
 };

@@ -11,10 +11,9 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
-  logout: () => void;
+  logout: () => Promise<void>;
   isLoading: boolean;
   navigateBasedOnRole: (role: string) => void;
 }
@@ -38,35 +37,26 @@ export const useAuth = () => {
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const navigate = useNavigate();
 
   useEffect(() => {
-    try {
-      const savedToken = localStorage.getItem('giips_token');
-      const savedUser = localStorage.getItem('giips_user');
-      if (savedToken && savedUser) {
-        setToken(savedToken);
-        setUser(JSON.parse(savedUser));
-        api.getMe(savedToken).catch(() => {
-          localStorage.removeItem('giips_token');
-          localStorage.removeItem('giips_user');
-          setToken(null);
-          setUser(null);
+    api.getMe()
+      .then(data => {
+        setUser({
+          user_id: data.user_id,
+          full_name: data.full_name,
+          email: data.email,
+          role: data.role,
         });
-      }
-    } catch {
-      localStorage.removeItem('giips_token');
-      localStorage.removeItem('giips_user');
-    }
+      })
+      .catch(() => {
+        setUser(null);
+      })
+      .finally(() => {
+        setIsLoading(false);
+      });
   }, []);
-
-  useEffect(() => {
-    if (user) {
-      localStorage.setItem('giips_user', JSON.stringify(user));
-    }
-  }, [user]);
 
   const navigateBasedOnRole = (role: string) => {
     if (role === 'Citizen') navigate('/citizen');
@@ -79,7 +69,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsLoading(true);
     try {
       const response = await api.login(email, password);
-      setToken(response.access_token);
       let userData: User = {
         user_id: response.user_id || email,
         full_name: response.full_name || email.split('@')[0],
@@ -87,8 +76,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: response.role
       };
       setUser(userData);
-      localStorage.setItem('giips_token', response.access_token);
-      localStorage.setItem('giips_user', JSON.stringify(userData));
       setTimeout(() => navigateBasedOnRole(response.role), 0);
     } catch (err: any) {
       throw new Error(err.message || 'Login failed');
@@ -100,12 +87,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const register = async (data: RegisterData) => {
     setIsLoading(true);
     try {
-      const res = await api.register(data);
-      if (res.role === 'Executive') {
-        navigate('/executive');
-      } else {
-        navigate('/login');
-      }
+      await api.register(data);
     } catch (err: any) {
       throw new Error(err.message || 'Registration failed');
     } finally {
@@ -113,16 +95,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
-  const logout = () => {
+  const logout = async () => {
+    try {
+      await api.logout();
+    } catch {
+      // clear client state regardless
+    }
     setUser(null);
-    setToken(null);
-    localStorage.removeItem('giips_token');
-    localStorage.removeItem('giips_user');
     navigate('/');
   };
 
   return (
-    <AuthContext.Provider value={{ user, token, login, register, logout, isLoading, navigateBasedOnRole }}>
+    <AuthContext.Provider value={{ user, login, register, logout, isLoading, navigateBasedOnRole }}>
       {children}
     </AuthContext.Provider>
   );

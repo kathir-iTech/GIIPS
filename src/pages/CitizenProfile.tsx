@@ -6,7 +6,7 @@ import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X } from 'lucide-react'
 import './CitizenProfile.css';
 
 const CitizenProfile = () => {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [profile, setProfile] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -16,9 +16,8 @@ const CitizenProfile = () => {
   const [message, setMessage] = useState<string | null>(null);
 
   useEffect(() => {
-    if (!token) { setLoading(false); return; }
     setLoading(true);
-    api.getMe(token)
+    api.getMe()
       .then(res => {
         setProfile(res);
         setForm({
@@ -31,14 +30,13 @@ const CitizenProfile = () => {
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
-  }, [token]);
+  }, []);
 
   const handleSave = async () => {
     setSaving(true);
     setMessage(null);
     try {
-      const updated = await api.updateProfile(form, token!);
-      localStorage.setItem('giips_user', JSON.stringify(updated));
+      const updated = await api.updateProfile(form);
       setProfile(updated);
       setMessage('Profile updated successfully.');
       setEditing(false);
