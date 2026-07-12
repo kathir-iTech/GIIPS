@@ -3,6 +3,50 @@
   "app.subtitle": "Governance Intelligence",
   "app.version": "Platform v2.1",
 
+  "nav": {
+    "dashboard": "Dashboard",
+    "incidents": "Incidents",
+    "clusters": "Clusters",
+    "spatial": "Spatial Intelligence",
+    "analytics": "Analytics",
+    "methodology": "Methodology",
+    "executiveDashboard": "Executive Dashboard",
+    "submitComplaint": "Submit Complaint",
+    "myComplaints": "My Complaints",
+    "profile": "Profile",
+    "administration": "Administration",
+    "officerManagement": "Officer Management",
+    "departmentManagement": "Department Management",
+    "systemHealth": "System Health",
+    "auditLogs": "Audit Logs",
+    "logout": "Logout",
+    "login": "Login",
+    "toggleMenu": "Toggle menu",
+    "roleCitizen": "Citizen",
+    "roleOfficer": "Officer",
+    "roleExecutive": "Executive"
+  },
+
+  "profile": {
+    "headerTitle": "My Profile",
+    "headerSubtitle": "Manage your account details",
+    "loading": "Loading profile...",
+    "defaultName": "User",
+    "editButton": "Edit",
+    "saveChanges": "Save Changes",
+    "saving": "Saving...",
+    "cancel": "Cancel",
+    "updateSuccess": "Profile updated successfully.",
+    "updateFailed": "Failed to update profile.",
+    "fieldFullName": "Full Name",
+    "fieldEmail": "Email",
+    "fieldPhone": "Phone",
+    "fieldDistrict": "District",
+    "fieldWard": "Ward",
+    "aboutTitle": "About Your Account",
+    "aboutBody": "As a {{role}}, you can submit grievances, track their status, and view AI-powered classification and duplicate detection results."
+  },
+
   "common": {
     "status": {
       "all": "All Status",

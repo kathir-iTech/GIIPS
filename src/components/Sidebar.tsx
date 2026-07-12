@@ -26,35 +26,41 @@ import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
 
 const OFFICER_NAV = [
-  { path: '/officer', label: 'Dashboard', icon: LayoutDashboard },
-  { path: '/incident-feed', label: 'Incidents', icon: FileText },
-  { path: '/clusters', label: 'Clusters', icon: GitBranch },
-  { path: '/spatial', label: 'Spatial Intelligence', icon: Map },
-  { path: '/analysis', label: 'Analytics', icon: BarChart3 },
-  { path: '/methodology', label: 'Methodology', icon: BookOpen },
+  { path: '/officer', key: 'nav.dashboard', icon: LayoutDashboard },
+  { path: '/incident-feed', key: 'nav.incidents', icon: FileText },
+  { path: '/clusters', key: 'nav.clusters', icon: GitBranch },
+  { path: '/spatial', key: 'nav.spatial', icon: Map },
+  { path: '/analysis', key: 'nav.analytics', icon: BarChart3 },
+  { path: '/methodology', key: 'nav.methodology', icon: BookOpen },
 ];
 
 const EXECUTIVE_NAV = [
-  { path: '/executive', label: 'Executive Dashboard', icon: LayoutDashboard },
-  { path: '/incident-feed', label: 'Incidents', icon: FileText },
-  { path: '/clusters', label: 'Clusters', icon: GitBranch },
-  { path: '/spatial', label: 'Spatial Intelligence', icon: Map },
-  { path: '/analysis', label: 'Analytics', icon: BarChart3 },
-  { path: '/methodology', label: 'Methodology', icon: BookOpen },
+  { path: '/executive', key: 'nav.executiveDashboard', icon: LayoutDashboard },
+  { path: '/incident-feed', key: 'nav.incidents', icon: FileText },
+  { path: '/clusters', key: 'nav.clusters', icon: GitBranch },
+  { path: '/spatial', key: 'nav.spatial', icon: Map },
+  { path: '/analysis', key: 'nav.analytics', icon: BarChart3 },
+  { path: '/methodology', key: 'nav.methodology', icon: BookOpen },
 ];
 
 const EXECUTIVE_ADMIN = [
-  { path: '/admin/officers', label: 'Officer Management', icon: Users },
-  { path: '/admin/departments', label: 'Department Management', icon: Building2 },
-  { path: '/admin/system-health', label: 'System Health', icon: Database },
-  { path: '/admin/audit-logs', label: 'Audit Logs', icon: FileText },
+  { path: '/admin/officers', key: 'nav.officerManagement', icon: Users },
+  { path: '/admin/departments', key: 'nav.departmentManagement', icon: Building2 },
+  { path: '/admin/system-health', key: 'nav.systemHealth', icon: Database },
+  { path: '/admin/audit-logs', key: 'nav.auditLogs', icon: FileText },
 ];
 
 const CITIZEN_NAV = [
-  { path: '/citizen', label: 'Submit Complaint', icon: FileText },
-  { path: '/my-complaints', label: 'My Complaints', icon: UserIcon },
-  { path: '/profile', label: 'Profile', icon: User },
+  { path: '/citizen', key: 'nav.submitComplaint', icon: FileText },
+  { path: '/my-complaints', key: 'nav.myComplaints', icon: UserIcon },
+  { path: '/profile', key: 'nav.profile', icon: User },
 ];
+
+const ROLE_KEYS: Record<string, string> = {
+  Citizen: 'nav.roleCitizen',
+  Officer: 'nav.roleOfficer',
+  Executive: 'nav.roleExecutive',
+};
 
 const Sidebar: React.FC = () => {
   const { user, logout } = useAuth();
@@ -63,16 +69,18 @@ const Sidebar: React.FC = () => {
 
   const navItems =
     user?.role === 'Executive'
-      ? [...EXECUTIVE_NAV, { path: '/admin-divider', label: 'Administration', icon: Settings }, ...EXECUTIVE_ADMIN]
+      ? [...EXECUTIVE_NAV, { path: '/admin-divider' as const, key: 'nav.administration', icon: Settings }, ...EXECUTIVE_ADMIN]
       : user?.role === 'Officer'
         ? OFFICER_NAV
         : user?.role === 'Citizen'
           ? CITIZEN_NAV
           : [];
 
+  const roleLabel = (role?: string) => t(ROLE_KEYS[role || ''] || role || '');
+
   return (
     <>
-      <button className="hamburger-btn" onClick={() => setMobileOpen(!mobileOpen)} aria-label="Toggle menu">
+      <button className="hamburger-btn" onClick={() => setMobileOpen(!mobileOpen)} aria-label={t('nav.toggleMenu')}>
         {mobileOpen ? <X size={24} /> : <Menu size={24} />}
       </button>
       <div className={`sidebar-overlay ${mobileOpen ? 'open' : ''}`} onClick={() => setMobileOpen(false)} />
@@ -93,24 +101,24 @@ const Sidebar: React.FC = () => {
           </div>
         </div>
         <nav className="sidebar-nav">
-          {navItems.map(({ path, label, icon: Icon }) => {
+          {navItems.map(({ path, key, icon: Icon }) => {
             if (path === '/admin-divider') {
-              return <div key={path} className="nav-divider">{label}</div>;
+              return <div key={path} className="nav-divider">{t('nav.administration')}</div>;
             }
             return (
               <NavLink key={path} to={path} className={({ isActive }) => `nav-item ${isActive ? 'active' : ''}`} onClick={() => setMobileOpen(false)}>
-                <Icon size={20} /> <span>{label}</span>
+                <Icon size={20} /> <span>{t(key)}</span>
               </NavLink>
             );
           })}
         </nav>
         {user ? (
           <button onClick={() => { logout(); setMobileOpen(false); }} className="nav-item logout-btn">
-            <LogOut size={20} /> <span>Logout ({user.role})</span>
+            <LogOut size={20} /> <span>{t('nav.logout')} ({roleLabel(user.role)})</span>
           </button>
         ) : (
           <NavLink to="/login" className="nav-item" onClick={() => setMobileOpen(false)}>
-            <LogIn size={20} /> <span>Login</span>
+            <LogIn size={20} /> <span>{t('nav.login')}</span>
           </NavLink>
         )}
         <div className="sidebar-footer">

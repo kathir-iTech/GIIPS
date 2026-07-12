@@ -3,6 +3,50 @@
   "app.subtitle": "ஆளுகை நுண்ணறிவு",
   "app.version": "தளம் v2.1",
 
+  "nav": {
+    "dashboard": "டாஷ்போர்டு",
+    "incidents": "சம்பவங்கள்",
+    "clusters": "தொகுப்புகள்",
+    "spatial": "இடவியல் நுண்ணறிவு",
+    "analytics": "பகுப்பாய்வு",
+    "methodology": "முறையியல்",
+    "executiveDashboard": "நிர்வாக டாஷ்போர்டு",
+    "submitComplaint": "புகாரை சமர்ப்பிக்கவும்",
+    "myComplaints": "எனது புகார்கள்",
+    "profile": "சுயவிவரம்",
+    "administration": "நிர்வாகம்",
+    "officerManagement": "அலுவலர் மேலாண்மை",
+    "departmentManagement": "துறை மேலாண்மை",
+    "systemHealth": "அமைப்பு ஆரோக்கியம்",
+    "auditLogs": "தணிக்கை பதிவுகள்",
+    "logout": "வெளியேறு",
+    "login": "உள்நுழைக",
+    "toggleMenu": "மெனுவை மாற்றவும்",
+    "roleCitizen": "குடிமகன்",
+    "roleOfficer": "அலுவலர்",
+    "roleExecutive": "நிர்வாகி"
+  },
+
+  "profile": {
+    "headerTitle": "எனது சுயவிவரம்",
+    "headerSubtitle": "உங்கள் கணக்கு விவரங்களை நிர்வகிக்கவும்",
+    "loading": "சுயவிவரம் ஏற்றப்படுகிறது...",
+    "defaultName": "பயனர்",
+    "editButton": "திருத்தவும்",
+    "saveChanges": "மாற்றங்களை சேமிக்கவும்",
+    "saving": "சேமிக்கப்படுகிறது...",
+    "cancel": "ரத்து செய்யவும்",
+    "updateSuccess": "சுயவிவரம் வெற்றிகரமாக புதுப்பிக்கப்பட்டது.",
+    "updateFailed": "சுயவிவரத்தை புதுப்பிக்க முடியவில்லை.",
+    "fieldFullName": "முழு பெயர்",
+    "fieldEmail": "மின்னஞ்சல்",
+    "fieldPhone": "தொலைபேசி",
+    "fieldDistrict": "மாவட்டம்",
+    "fieldWard": "வார்டு",
+    "aboutTitle": "உங்கள் கணக்கு பற்றி",
+    "aboutBody": "{{role}} ஆக, நீங்கள் புகார்களை சமர்ப்பிக்கலாம், அவற்றின் நிலையை கண்காணிக்கலாம், மற்றும் AI-இயங்கும் வகைப்பாடு மற்றும் நகல் கண்டறிதல் முடிவுகளை பார்க்கலாம்."
+  },
+
   "common": {
     "status": {
       "all": "அனைத்து நிலைகள்",
