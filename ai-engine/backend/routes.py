@@ -27,7 +27,6 @@ from models import (
     CopilotChatResponse,
     MergeIncidentsRequest,
 )
-from priority.priority import PriorityEngine
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit
@@ -597,6 +596,7 @@ async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_c
 
     # Recalculate priority
     from priority.utils import calculate_days_open
+    from priority.priority import PriorityEngine
     dates = [c.created_at for c in target.complaints if c.created_at]
     first_date = min(dates).isoformat() if dates else datetime.utcnow().isoformat()
     last_date = max(dates).isoformat() if dates else datetime.utcnow().isoformat()
@@ -675,6 +675,7 @@ async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends
 
     # Recalculate priority for original incident
     from priority.utils import calculate_days_open
+    from priority.priority import PriorityEngine
     orig_dates = [c.created_at for c in incident.complaints if c.created_at and c.id != complaint_id]
     if orig_dates:
         first_date = min(orig_dates).isoformat()
