@@ -4,16 +4,23 @@ import './LanguageSwitcher.css';
 
 const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
-
-  const toggleLanguage = () => {
-    const next = i18n.language === 'ta' ? 'en' : 'ta';
-    i18n.changeLanguage(next);
-  };
+  const current = i18n.language?.startsWith('ta') ? 'ta' : 'en';
 
   return (
-    <button className="lang-switcher" onClick={toggleLanguage} title={i18n.language === 'ta' ? 'Switch to English' : 'தமிழுக்கு மாற்று'}>
-      {i18n.language === 'ta' ? 'English' : 'தமிழ்'}
-    </button>
+    <div className="lang-switcher">
+      <button
+        className={`lang-option ${current === 'en' ? 'active' : ''}`}
+        onClick={() => i18n.changeLanguage('en')}
+      >
+        English
+      </button>
+      <button
+        className={`lang-option ${current === 'ta' ? 'active' : ''}`}
+        onClick={() => i18n.changeLanguage('ta')}
+      >
+        தமிழ்
+      </button>
+    </div>
   );
 };
 
