@@ -137,6 +137,16 @@ async def lifespan(app: FastAPI):
     # Ensure outputs directory exists
     OUTPUTS_DIR.mkdir(parents=True, exist_ok=True)
 
+    # Log S3 storage availability
+    try:
+        from storage import S3Storage
+        s3 = S3Storage()
+        logger.info("[STARTUP] S3 storage available=%s (endpoint=%s, bucket=%s, key_id_set=%s)",
+                    s3.available, s3.endpoint_url, s3.bucket,
+                    bool(os.environ.get("S3_ACCESS_KEY_ID")))
+    except Exception as e:
+        logger.warning("[STARTUP] S3 storage check failed: %s", e)
+
     # Initialize Redis pool for arq job queue
     try:
         from job_queue import init_redis_pool, close_redis_pool

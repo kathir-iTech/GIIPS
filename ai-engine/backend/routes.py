@@ -2,6 +2,7 @@
 API route definitions for GIIPS backend.
 """
 
+import os
 import uuid
 import time
 import logging
@@ -215,7 +216,7 @@ async def upload_complaint_photo(
     storage = S3Storage()
     if not storage.available:
         logger.warning("S3 not configured — skipping photo upload for complaint %s", complaint_id)
-        return {"imageUrl": "", "complaintId": complaint_id, "message": "Photo storage not configured. Complaint submitted without image."}
+        raise HTTPException(status_code=502, detail="S3 storage is not configured. Set S3_ENDPOINT_URL and related env vars.")
 
     try:
         object_key = storage.upload(data, file.filename, file.content_type)
@@ -246,6 +247,22 @@ async def get_complaint_photo(complaint_id: str, db_user: User = Depends(get_cur
     if not url:
         raise HTTPException(status_code=502, detail="Failed to generate photo URL")
     return {"imageUrl": url, "complaintId": complaint_id}
+
+
+@complaint_router.get("/debug/env")
+async def debug_env():
+    """Check S3 environment variable status (no auth required, for debugging)."""
+    from storage import S3Storage
+    s3 = S3Storage()
+    return {
+        "S3_ENDPOINT_URL_set": bool(os.environ.get("S3_ENDPOINT_URL")),
+        "S3_ACCESS_KEY_ID_set": bool(os.environ.get("S3_ACCESS_KEY_ID")),
+        "S3_SECRET_ACCESS_KEY_set": bool(os.environ.get("S3_SECRET_ACCESS_KEY")),
+        "S3_BUCKET_NAME_set": bool(os.environ.get("S3_BUCKET_NAME")),
+        "S3Storage.available": s3.available,
+        "endpoint_url": s3.endpoint_url,
+        "bucket": s3.bucket,
+    }
 
 
 @complaint_router.get("/my")
