@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip } from 'react-leaflet';
 import 'leaflet/dist/leaflet.css';
 import { api } from '../services/api';
@@ -50,6 +51,8 @@ const TN_BOUNDS: [[number, number], [number, number]] = [
 ];
 
 const SpatialIntelligence = () => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'ta' ? 'ta-IN' : 'en-IN';
   const [heatmap, setHeatmap] = useState<any[]>([]);
   const [hotspots, setHotspots] = useState<any[]>([]);
   const [riskData, setRiskData] = useState<any[]>([]);
@@ -191,7 +194,7 @@ const SpatialIntelligence = () => {
       if (results[4].status === 'fulfilled') setIncidents(Array.isArray(results[4].value) ? results[4].value : []);
       else errors.push('incidents');
       if (results[5].status === 'fulfilled') setComplaintPins(Array.isArray(results[5].value) ? results[5].value : []);
-      if (errors.length > 0) setError(`Some feeds offline: ${errors.join(', ')}. Showing best available data.`);
+      if (errors.length > 0) setError(t('spatialIntelligence.feedsOffline', { feeds: errors.join(', ') }));
     }).finally(() => {
       if (!cancelled) setLoading(false);
     });
@@ -218,7 +221,7 @@ const SpatialIntelligence = () => {
       setSimResult(result);
     } catch (err) {
       console.error('Simulation failed:', err);
-      setSimResult({ error: 'Simulation failed. Please try again.' });
+      setSimResult({ error: t('spatialIntelligence.simulationFailed') });
     } finally {
       setSimulating(false);
     }
@@ -261,20 +264,20 @@ const SpatialIntelligence = () => {
 
   const generateAIRecommendation = useCallback((district: string): string => {
     const data = districtData[district];
-    if (!data) return 'No data available for this district.';
+    if (!data) return t('spatialIntelligence.noDistrictData');
     const recommendations: string[] = [];
-    if ((data.riskScore || 0) > 70) recommendations.push('Immediate intervention recommended due to high risk score.');
-    if (data.criticalCount > 3) recommendations.push(`Deploy ${Math.ceil(data.criticalCount / 2)} additional field teams for ${data.criticalCount} critical incidents.`);
-    if ((data.healthScore || 100) < 50) recommendations.push('Comprehensive infrastructure review needed — health score below threshold.');
-    if (recommendations.length === 0) recommendations.push('Monitor situation. Current indicators are within acceptable parameters.');
+    if ((data.riskScore || 0) > 70) recommendations.push(t('spatialIntelligence.aiRecHighRisk'));
+    if (data.criticalCount > 3) recommendations.push(t('spatialIntelligence.aiRecDeployTeams', { teams: Math.ceil(data.criticalCount / 2), count: data.criticalCount }));
+    if ((data.healthScore || 100) < 50) recommendations.push(t('spatialIntelligence.aiRecHealthReview'));
+    if (recommendations.length === 0) recommendations.push(t('spatialIntelligence.aiRecMonitor'));
     return recommendations.join(' ');
   }, [districtData]);
 
   const getTopCategory = useCallback((district: string): string => {
     const data = districtData[district];
-    if (!data || !data.categories) return 'N/A';
+    if (!data || !data.categories) return t('common.na');
     const entries = Object.entries(data.categories);
-    if (entries.length === 0) return 'N/A';
+    if (entries.length === 0) return t('common.na');
     entries.sort((a: any, b: any) => (b[1] as number) - (a[1] as number));
     return entries[0][0];
   }, [districtData]);
@@ -286,20 +289,20 @@ const SpatialIntelligence = () => {
           <div className="header-brand">
             <div className="header-logo"><ShieldAlert size={22} /></div>
             <div>
-              <h1>Spatial Intelligence Command Center</h1>
-              <p>AI-Powered Governance GIS — Tamil Nadu State Overview</p>
+              <h1>{t('spatialIntelligence.header.title')}</h1>
+              <p>{t('spatialIntelligence.header.subtitle')}</p>
             </div>
           </div>
           <div className="header-status">
             <span className="status-dot loading" />
-            <span>Loading intelligence feeds...</span>
+            <span>{t('spatialIntelligence.loading.feeds')}</span>
           </div>
         </header>
         <div className="loading-overlay">
           <div className="loading-spinner" />
-          <p>Initializing command center...</p>
+          <p>{t('spatialIntelligence.loading.initializing')}</p>
           <div className="loading-bars">
-            {['Fetching heatmap data', 'Loading hotspots', 'Syncing risk analysis', 'Loading forecast model', 'Retrieving incidents'].map((text, i) => (
+            {[t('spatialIntelligence.loading.heatmap'), t('spatialIntelligence.loading.hotspots'), t('spatialIntelligence.loading.riskAnalysis'), t('spatialIntelligence.loading.forecast'), t('spatialIntelligence.loading.incidents')].map((text, i) => (
               <div key={i} className="loading-bar-item">
                 <div className="loading-bar-track">
                   <div className="loading-bar-fill" style={{ animationDelay: `${i * 0.3}s` }} />
@@ -320,17 +323,17 @@ const SpatialIntelligence = () => {
           <div className="header-brand">
             <div className="header-logo"><ShieldAlert size={22} /></div>
             <div>
-              <h1>Spatial Intelligence Command Center</h1>
-              <p>AI-Powered Governance GIS — Tamil Nadu State Overview</p>
+              <h1>{t('spatialIntelligence.header.title')}</h1>
+              <p>{t('spatialIntelligence.header.subtitle')}</p>
             </div>
           </div>
         </header>
         <div className="error-overlay">
           <AlertTriangle size={48} />
-          <h2>Intelligence Feeds Unavailable</h2>
+          <h2>{t('spatialIntelligence.error.title')}</h2>
           <p>{error}</p>
           <button className="retry-btn" onClick={handleRetry}>
-            <RefreshCw size={16} /> Retry Connection
+            <RefreshCw size={16} /> {t('spatialIntelligence.error.retry')}
           </button>
         </div>
       </div>
@@ -344,17 +347,17 @@ const SpatialIntelligence = () => {
           <div className="header-brand">
             <div className="header-logo"><ShieldAlert size={22} /></div>
             <div>
-              <h1>Spatial Intelligence Command Center</h1>
-              <p>AI-Powered Governance GIS — Tamil Nadu State Overview</p>
+              <h1>{t('spatialIntelligence.header.title')}</h1>
+              <p>{t('spatialIntelligence.header.subtitle')}</p>
             </div>
           </div>
         </header>
         <div className="empty-overlay">
           <MapIcon size={48} />
-          <h2>No Intelligence Data Available</h2>
-          <p>There are currently no incidents or complaints to display on the map.</p>
+          <h2>{t('spatialIntelligence.empty.title')}</h2>
+          <p>{t('spatialIntelligence.empty.body')}</p>
           <button className="retry-btn" onClick={handleRetry}>
-            <RefreshCw size={16} /> Refresh
+            <RefreshCw size={16} /> {t('spatialIntelligence.empty.refresh')}
           </button>
         </div>
       </div>
@@ -374,31 +377,31 @@ const SpatialIntelligence = () => {
         <div className="header-kpis">
           <div className="kpi-mini">
             <span className="kpi-mini-value">{totalComplaints.toLocaleString()}</span>
-            <span className="kpi-mini-label">Complaints</span>
+            <span className="kpi-mini-label">{t('spatialIntelligence.kpi.complaints')}</span>
           </div>
           <div className="kpi-mini">
             <span className="kpi-mini-value">{totalIncidents}</span>
-            <span className="kpi-mini-label">Incidents</span>
+            <span className="kpi-mini-label">{t('spatialIntelligence.kpi.incidents')}</span>
           </div>
           <div className="kpi-mini critical">
             <span className="kpi-mini-value">{criticalCount}</span>
-            <span className="kpi-mini-label">Critical</span>
+            <span className="kpi-mini-label">{t('spatialIntelligence.kpi.critical')}</span>
           </div>
           <div className="kpi-mini">
             <span className="kpi-mini-value">{avgRisk}%</span>
-            <span className="kpi-mini-label">Avg Risk</span>
+            <span className="kpi-mini-label">{t('spatialIntelligence.kpi.avgRisk')}</span>
           </div>
         </div>
         <div className="header-actions">
           <button className="mobile-filter-toggle" onClick={() => setShowMobileFilters(!showMobileFilters)}>
             <Filter size={18} />
           </button>
-          <button className="refresh-btn" onClick={handleRetry} title="Refresh data">
+          <button className="refresh-btn" onClick={handleRetry} title={t('common.tooltip.refresh')}>
             <RefreshCw size={18} />
           </button>
           <div className="header-datetime">
             <Clock size={14} />
-            <span>{new Date().toLocaleString('en-IN', { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
+            <span>{new Date().toLocaleString(dateLocale, { day: '2-digit', month: 'short', hour: '2-digit', minute: '2-digit' })}</span>
           </div>
         </div>
       </header>
@@ -406,15 +409,15 @@ const SpatialIntelligence = () => {
       <div className="command-body">
         <aside className={`command-left-panel ${showMobileFilters ? 'open' : ''}`}>
           <div className="panel-section">
-            <h3><Layers size={14} /> Map Layers</h3>
+            <h3><Layers size={14} /> {t('spatialIntelligence.sidebar.mapLayers')}</h3>
             <div className="layer-toggles">
               {[
-                { key: 'complaints', label: 'Complaints', icon: AlertTriangle },
-                { key: 'incidents', label: 'Incidents', icon: AlertOctagon },
-                { key: 'complaintPins', label: 'Citizen Pins', icon: MapPin },
-                { key: 'risk', label: 'Risk Analysis', icon: ThermometerSun },
-                { key: 'prediction', label: 'AI Prediction', icon: Brain },
-                { key: 'deptWorkload', label: 'Dept Workload', icon: Users },
+                { key: 'complaints', label: t('spatialIntelligence.layer.complaints'), icon: AlertTriangle },
+                { key: 'incidents', label: t('spatialIntelligence.layer.incidents'), icon: AlertOctagon },
+                { key: 'complaintPins', label: t('spatialIntelligence.layer.citizenPins'), icon: MapPin },
+                { key: 'risk', label: t('spatialIntelligence.layer.risk'), icon: ThermometerSun },
+                { key: 'prediction', label: t('spatialIntelligence.layer.prediction'), icon: Brain },
+                { key: 'deptWorkload', label: t('spatialIntelligence.layer.deptWorkload'), icon: Users },
               ].map(({ key, label, icon: Icon }) => (
                 <label key={key} className={`layer-toggle ${layers[key as keyof typeof layers] ? 'active' : ''}`}>
                   <input
@@ -430,40 +433,40 @@ const SpatialIntelligence = () => {
           </div>
 
           <div className="panel-section">
-            <h3><Filter size={14} /> Smart Filters</h3>
+            <h3><Filter size={14} /> {t('spatialIntelligence.sidebar.smartFilters')}</h3>
             <div className="filter-grid">
               <div className="filter-field">
-                <label>District</label>
+                <label>{t('spatialIntelligence.filter.district')}</label>
                 <select value={filters.district} onChange={(e) => handleFilterChange('district', e.target.value)}>
-                  <option value="all">All Districts</option>
+                  <option value="all">{t('spatialIntelligence.filter.allDistricts')}</option>
                   {districts.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
                 </select>
               </div>
               <div className="filter-field">
-                <label>Category</label>
+                <label>{t('spatialIntelligence.filter.category')}</label>
                 <select value={filters.category} onChange={(e) => handleFilterChange('category', e.target.value)}>
-                  <option value="all">All Categories</option>
+                  <option value="all">{t('spatialIntelligence.filter.allCategories')}</option>
                   {categories.map((c) => (
                     <option key={c} value={c}>{c}</option>
                   ))}
                 </select>
               </div>
               <div className="filter-field">
-                <label>Priority</label>
+                <label>{t('spatialIntelligence.filter.priority')}</label>
                 <select value={filters.priority} onChange={(e) => handleFilterChange('priority', e.target.value)}>
-                  <option value="all">All Priorities</option>
-                  <option value="critical">Critical</option>
-                  <option value="high">High</option>
-                  <option value="medium">Medium</option>
-                  <option value="low">Low</option>
+                  <option value="all">{t('spatialIntelligence.filter.allPriorities')}</option>
+                  <option value="critical">{t('common.priority.critical')}</option>
+                  <option value="high">{t('common.priority.high')}</option>
+                  <option value="medium">{t('common.priority.medium')}</option>
+                  <option value="low">{t('common.priority.low')}</option>
                 </select>
               </div>
               <div className="filter-field">
-                <label>Department</label>
+                <label>{t('spatialIntelligence.filter.department')}</label>
                 <select value={filters.department} onChange={(e) => handleFilterChange('department', e.target.value)}>
-                  <option value="all">All Departments</option>
+                  <option value="all">{t('spatialIntelligence.filter.allDepartments')}</option>
                   {departments.map((d) => (
                     <option key={d} value={d}>{d}</option>
                   ))}
@@ -473,7 +476,7 @@ const SpatialIntelligence = () => {
           </div>
 
           <div className="panel-section">
-            <h3><Calendar size={14} /> Forecast Timeline</h3>
+            <h3><Calendar size={14} /> {t('spatialIntelligence.sidebar.forecastTimeline')}</h3>
             <div className="timeline-buttons">
               {[7, 15, 30].map((days) => (
                 <button
@@ -481,25 +484,25 @@ const SpatialIntelligence = () => {
                   className={`timeline-btn ${timelineDays === days ? 'active' : ''}`}
                   onClick={() => setTimelineDays(days)}
                 >
-                  {days} Days
+                  {days} {t('spatialIntelligence.days')}
                 </button>
               ))}
             </div>
             {forecast && (
               <div className="forecast-summary">
-                <p><Activity size={12} /> Forecast loaded for {timelineDays} days</p>
+                <p><Activity size={12} /> {t('spatialIntelligence.forecastLoaded', { days: timelineDays })}</p>
               </div>
             )}
           </div>
 
           <div className="panel-section">
-            <h3><MapPin size={14} /> Heatmap Legend</h3>
+            <h3><MapPin size={14} /> {t('spatialIntelligence.sidebar.heatmapLegend')}</h3>
             <div className="legend-items">
               {[
-                { color: '#22c55e', label: 'Low (0-5)' },
-                { color: '#eab308', label: 'Medium (6-15)' },
-                { color: '#f97316', label: 'High (16-30)' },
-                { color: '#ef4444', label: 'Critical (30+)' },
+                { color: '#22c55e', label: t('spatialIntelligence.legend.low') },
+                { color: '#eab308', label: t('spatialIntelligence.legend.medium') },
+                { color: '#f97316', label: t('spatialIntelligence.legend.high') },
+                { color: '#ef4444', label: t('spatialIntelligence.legend.critical') },
               ].map(({ color, label }) => (
                 <div key={label} className="legend-item">
                   <div className="legend-dot" style={{ background: color }} />
@@ -510,11 +513,11 @@ const SpatialIntelligence = () => {
           </div>
 
           <div className="panel-section">
-            <h3><Radio size={14} /> Hotspots</h3>
+            <h3><Radio size={14} /> {t('spatialIntelligence.sidebar.hotspots')}</h3>
             <div className="legend-items">
               <div className="legend-item">
                 <div className="legend-dot hotspot" />
-                <span>Active Hotspot</span>
+                <span>{t('spatialIntelligence.legend.activeHotspot')}</span>
               </div>
             </div>
           </div>
@@ -683,8 +686,8 @@ const SpatialIntelligence = () => {
           </MapContainer>
 
           <div className="map-overlay-info">
-            <span className="map-source">OpenStreetMap (dark filter)</span>
-            {error && <span className="map-warning"><AlertTriangle size={12} /> Partial data</span>}
+            <span className="map-source">{t('spatialIntelligence.mapSource')}</span>
+            {error && <span className="map-warning"><AlertTriangle size={12} /> {t('spatialIntelligence.partialData')}</span>}
           </div>
         </div>
 
@@ -699,57 +702,57 @@ const SpatialIntelligence = () => {
             <div className="panel-content">
               <div className="detail-grid">
                 <div className="detail-card">
-                  <span className="detail-label">Complaints</span>
+                  <span className="detail-label">{t('spatialIntelligence.detail.complaints')}</span>
                   <span className="detail-value">{selectedDistrictData.count || 0}</span>
                 </div>
                 <div className="detail-card">
-                  <span className="detail-label">Risk Score</span>
+                  <span className="detail-label">{t('spatialIntelligence.detail.riskScore')}</span>
                   <span className={`detail-value ${(selectedDistrictData.riskScore || 0) > 70 ? 'critical' : (selectedDistrictData.riskScore || 0) > 40 ? 'warning' : 'good'}`}>
                     {selectedDistrictData.riskScore || 0}%
                   </span>
                 </div>
                 <div className="detail-card">
-                  <span className="detail-label">Health Score</span>
+                  <span className="detail-label">{t('spatialIntelligence.detail.healthScore')}</span>
                   <span className={`detail-value ${(selectedDistrictData.healthScore || 100) < 50 ? 'critical' : (selectedDistrictData.healthScore || 100) < 70 ? 'warning' : 'good'}`}>
                     {selectedDistrictData.healthScore || 100}%
                   </span>
                 </div>
                 <div className="detail-card">
-                  <span className="detail-label">Critical Incidents</span>
+                  <span className="detail-label">{t('spatialIntelligence.detail.criticalIncidents')}</span>
                   <span className="detail-value critical">{selectedDistrictData.criticalCount || 0}</span>
                 </div>
               </div>
 
               <div className="detail-section">
-                <h4><Target size={14} /> Top Category</h4>
+                <h4><Target size={14} /> {t('spatialIntelligence.detail.topCategory')}</h4>
                 <p className="detail-text">{getTopCategory(selectedDistrict)}</p>
               </div>
 
               <div className="detail-section">
-                <h4><Brain size={14} /> AI Recommendation</h4>
+                <h4><Brain size={14} /> {t('spatialIntelligence.detail.aiRecommendation')}</h4>
                 <p className="detail-text recommendation">{generateAIRecommendation(selectedDistrict)}</p>
               </div>
 
               <div className="detail-section">
-                <h4><Zap size={14} /> Resource Simulation</h4>
+                <h4><Zap size={14} /> {t('spatialIntelligence.detail.resourceSimulation')}</h4>
                 <div className="sim-controls">
                   <button className="sim-btn" onClick={() => handleSimulate(2)} disabled={simulating}>
-                    {simulating ? <RefreshCw size={14} className="spin" /> : <Users size={14} />} +2 Teams
+                    {simulating ? <RefreshCw size={14} className="spin" /> : <Users size={14} />} {t('spatialIntelligence.simPlusTeams', { count: 2 })}
                   </button>
                   <button className="sim-btn" onClick={() => handleSimulate(5)} disabled={simulating}>
-                    {simulating ? <RefreshCw size={14} className="spin" /> : <Users size={14} />} +5 Teams
+                    {simulating ? <RefreshCw size={14} className="spin" /> : <Users size={14} />} {t('spatialIntelligence.simPlusTeams', { count: 5 })}
                   </button>
                 </div>
                 {simResult && (
                   <div className="sim-result">
-                    <p><strong>Simulation Result:</strong></p>
+                    <p><strong>{t('spatialIntelligence.simResult')}</strong></p>
                     <pre>{JSON.stringify(simResult, null, 2)}</pre>
                   </div>
                 )}
               </div>
 
               <div className="detail-section">
-                <h4><AlertOctagon size={14} /> Incidents in District</h4>
+                <h4><AlertOctagon size={14} /> {t('spatialIntelligence.detail.incidentsInDistrict')}</h4>
                 <div className="incident-list">
                   {(selectedDistrictData.incidents || []).slice(0, 5).map((inc: any) => (
                     <div key={inc.id} className="incident-item" onClick={() => handleIncidentClick(inc)}>
@@ -764,7 +767,7 @@ const SpatialIntelligence = () => {
                     </div>
                   ))}
                   {(selectedDistrictData.incidents || []).length === 0 && (
-                    <p className="no-data">No incidents in this district.</p>
+                    <p className="no-data">{t('spatialIntelligence.noIncidentsDistrict')}</p>
                   )}
                 </div>
               </div>
@@ -775,14 +778,14 @@ const SpatialIntelligence = () => {
 
       <footer className="command-footer">
         <div className="footer-left">
-          <span className="footer-brand">GIIPS Spatial Intelligence v2.1</span>
+          <span className="footer-brand">{t('spatialIntelligence.footer.brand')}</span>
           <span className="footer-status">
-            <span className="status-dot" /> System Operational
+            <span className="status-dot" /> {t('spatialIntelligence.footer.systemOperational')}
           </span>
         </div>
         <div className="footer-right">
-          <span>Data refreshed: {new Date().toLocaleString('en-IN')}</span>
-          <span className="footer-badge">Tamil Nadu State GIS</span>
+          <span>{t('spatialIntelligence.footer.dataRefreshed')}: {new Date().toLocaleString(dateLocale)}</span>
+          <span className="footer-badge">{t('spatialIntelligence.footer.stateBadge')}</span>
         </div>
       </footer>
 
@@ -796,31 +799,31 @@ const SpatialIntelligence = () => {
           </div>
           <div className="popup-body">
             <div className="popup-row">
-              <span className="popup-label">Category</span>
+              <span className="popup-label">{t('spatialIntelligence.popup.category')}</span>
               <span className="popup-value">{selectedIncident.category || 'N/A'}</span>
             </div>
             <div className="popup-row">
-              <span className="popup-label">Priority</span>
+              <span className="popup-label">{t('spatialIntelligence.popup.priority')}</span>
               <span className={`popup-value priority-${selectedIncident.priority_label?.toLowerCase() || 'medium'}`}>
-                {selectedIncident.priority_label || 'N/A'}
+                {selectedIncident.priority_label || t('common.na')}
               </span>
             </div>
             <div className="popup-row">
-              <span className="popup-label">Age</span>
-              <span className="popup-value">{selectedIncident.days_open || 0} days</span>
+              <span className="popup-label">{t('spatialIntelligence.popup.age')}</span>
+              <span className="popup-value">{selectedIncident.days_open || 0} {t('spatialIntelligence.days')}</span>
             </div>
             <div className="popup-row">
-              <span className="popup-label">Affected Population</span>
+              <span className="popup-label">{t('spatialIntelligence.popup.affectedPopulation')}</span>
               <span className="popup-value">{(selectedIncident.population || selectedIncident.cluster_size || 0).toLocaleString()}</span>
             </div>
             <div className="popup-row">
-              <span className="popup-label">Recommended Action</span>
-              <span className="popup-value">{selectedIncident.recommended_action || 'Pending review'}</span>
+              <span className="popup-label">{t('spatialIntelligence.popup.recommendedAction')}</span>
+              <span className="popup-value">{selectedIncident.recommended_action || t('spatialIntelligence.popup.pendingReview')}</span>
             </div>
           </div>
           <div className="popup-footer">
             <button className="open-details-btn" onClick={() => { window.location.href = '/incident-feed'; }}>
-              Open Details <ArrowUpRight size={14} />
+              {t('spatialIntelligence.popup.openDetails')} <ArrowUpRight size={14} />
             </button>
           </div>
         </div>

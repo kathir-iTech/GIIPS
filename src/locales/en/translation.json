@@ -69,7 +69,42 @@
     "matchConfidence": "Match confidence",
     "mergedWith": "Merged with similar complaints",
     "groupedWithSimilar": "Grouped with similar complaints",
-    "error": "Error"
+    "error": "Error",
+    "priority": {
+      "critical": "Critical",
+      "high": "High",
+      "medium": "Medium",
+      "low": "Low"
+    },
+    "deptStatus": {
+      "healthy": "Healthy",
+      "stressed": "Stressed",
+      "underStress": "Under Stress"
+    },
+    "tooltip": {
+      "refresh": "Refresh",
+      "download": "Download",
+      "share": "Share"
+    },
+    "engineTags": {
+      "prediction": "Prediction Engine",
+      "decision": "Decision Engine",
+      "knowledge": "Knowledge Engine"
+    },
+    "copilot": {
+      "placeholder": "Ask the AI Executive Assistant...",
+      "processing": "I am processing your request. Please try again.",
+      "error": "I encountered an issue connecting to the knowledge engine. Please retry shortly."
+    },
+    "time": {
+      "days": "d",
+      "reports": "reports",
+      "improvement": "improvement",
+      "confidence": "confidence",
+      "affected": "affected",
+      "costReduction": "cost reduction",
+      "faster": "faster"
+    }
   },
 
   "landing": {
@@ -230,5 +265,222 @@
     "emptyBody": "You have not submitted any complaints yet, or none match your filters.",
     "confidenceLabel": "Match confidence:",
     "standalone": "Standalone complaint"
+  },
+
+  "executive": {
+    "header": {
+      "title": "Executive Decision Intelligence",
+      "subtitle": "AI-Powered Command Center — Real-time Governance Intelligence",
+      "loadingSubtitle": "Initializing AI Command Center",
+      "errorSubtitle": "System Status"
+    },
+    "loading": {
+      "syncing": "Syncing intelligence feeds..."
+    },
+    "error": {
+      "title": "Intelligence feeds unavailable",
+      "body": "Unable to connect to one or more backend services. Please try again.",
+      "retry": "Retry Connection"
+    },
+    "global": {
+      "feedOffline": "Some intelligence feeds are offline. Showing best available data."
+    },
+    "feedErrors": {
+      "someOffline": "Some intelligence feeds are offline: "
+    },
+    "kpi": {
+      "todayComplaints": "Today's Complaints",
+      "criticalIncidents": "Critical Incidents",
+      "districtsAtRisk": "Districts At Risk",
+      "deptsUnderStress": "Depts Under Stress",
+      "predictedEscalations": "Predicted Escalations",
+      "avgResolutionTime": "Avg Resolution Time",
+      "weeklyTrend": "Weekly Trend",
+      "systemHealth": "System Health",
+      "stable": "Stable",
+      "optimal": "Optimal"
+    },
+    "situation": {
+      "title": "Government Situation Summary",
+      "subtitle": "Live operational pulse"
+    },
+    "brief": {
+      "title": "AI Executive Brief",
+      "subtitle": "Synthesized decision insights",
+      "aiGenerated": "AI Generated",
+      "confidence": "Confidence",
+      "empty": "Waiting for data. The AI engines will generate an executive summary once incidents are processed.",
+      "generated": "Generated"
+    },
+    "actions": {
+      "title": "AI Recommended Actions",
+      "subtitle": "Prioritized interventions",
+      "fallbackTitle": "Recommended Action",
+      "fallbackReason": "Based on recent trend analysis and prediction models.",
+      "expectedImpact": "Expected Impact",
+      "department": "Department",
+      "deploy": "Deploy",
+      "empty": "No urgent actions at this time. System monitoring is active."
+    },
+    "district": {
+      "title": "District Intelligence",
+      "subtitle": "Ward-level performance ranking",
+      "topPerforming": "Top Performing",
+      "mostCritical": "Most Critical",
+      "fastestImproving": "Fastest Improving",
+      "highestGrowth": "Highest Complaint Growth"
+    },
+    "dept": {
+      "title": "Department Performance",
+      "subtitle": "Operational efficiency across units",
+      "efficiency": "Efficiency",
+      "safety": "Safety",
+      "openIncidents": "Open Incidents",
+      "criticalPercent": "Critical %",
+      "avgResolution": "Avg Resolution",
+      "empty": "No department performance data available. Data will appear once incidents are processed."
+    },
+    "risks": {
+      "title": "Emerging Risks",
+      "subtitle": "AI-detected future hotspots",
+      "fallbackCategory": "Infrastructure Risk",
+      "fallbackReason": "No specific reason provided.",
+      "confidence": "confidence",
+      "empty": "No emerging risks detected. AI will monitor incident trends and alert you to potential hotspots."
+    },
+    "incidents": {
+      "title": "Incident Command Center",
+      "subtitle": "{{criticalCount}} critical incidents require action",
+      "reports": "reports",
+      "openDetail": "Open Detail",
+      "empty": "No critical incidents at this time."
+    },
+    "copilot": {
+      "title": "AI Executive Copilot",
+      "subtitle": "Conversational decision support"
+    },
+    "resources": {
+      "title": "Resource Allocation",
+      "subtitle": "Optimized deployment strategy",
+      "improvement": "improvement",
+      "current": "Current:",
+      "recommended": "Recommended:",
+      "costReduction": "cost reduction",
+      "empty": "No resource allocation recommendations yet. AI will generate deployment strategies when sufficient data is available."
+    },
+    "timeline": {
+      "title": "Predictive Timeline",
+      "subtitle": "AI-powered volume forecasting",
+      "days": "Days",
+      "predictedVolume": "Predicted Volume",
+      "day": "Day",
+      "empty": "Prediction data unavailable. The AI forecasting model will generate projections once sufficient incident data is collected."
+    },
+    "footer": {
+      "title": "GIIPS Executive Decision Intelligence v2.1",
+      "dataRefreshed": "Data refreshed"
+    }
+  },
+
+  "officerManagement": {
+    "loadError": "Failed to load officers",
+    "disableError": "Failed to disable officer",
+    "enableError": "Failed to enable officer",
+    "createError": "Failed to create officer",
+    "govEmailError": "Government accounts must use @gov.in email domain",
+    "header": {
+      "title": "Officer Management",
+      "subtitle": "Manage government officers and their assignments"
+    },
+    "searchPlaceholder": "Search officers...",
+    "addOfficer": "Add Officer",
+    "totalOfficers": "Total Officers",
+    "activeOfficers": "Active Officers",
+    "disabledOfficers": "Disabled Officers",
+    "colOfficerId": "Officer ID",
+    "colName": "Name",
+    "colEmail": "Email",
+    "colDistrict": "District",
+    "colStatus": "Status",
+    "colCreated": "Created",
+    "colActions": "Actions",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "empty": "No officers found",
+    "dialogTitle": "Add New Officer",
+    "fieldFullName": "Full Name",
+    "fieldEmail": "Email",
+    "fieldDistrict": "District",
+    "fieldDepartment": "Department",
+    "fieldPassword": "Password",
+    "cancel": "Cancel",
+    "create": "Create"
+  },
+
+  "departmentManagement": {
+    "loadError": "Failed to load departments",
+    "header": {
+      "title": "Department Management",
+      "subtitle": "Monitor department performance and incident resolution"
+    },
+    "loading": "Loading...",
+    "retry": "Retry",
+    "empty": "No department data available",
+    "openIncidents": "Open Incidents",
+    "critical": "Critical",
+    "officers": "Officers",
+    "avgResolution": "Avg Resolution",
+    "completion": "Completion",
+    "workload": "Workload"
+  },
+
+  "systemHealth": {
+    "loadError": "Failed to load system health",
+    "loading": "Loading system health...",
+    "errorPrefix": "Error: ",
+    "noData": "No system health data available.",
+    "header": {
+      "title": "System Health",
+      "subtitle": "Monitor backend services and system status"
+    },
+    "card": {
+      "backend": "Backend",
+      "database": "Database",
+      "aiEngine": "AI Engine",
+      "jwtAuth": "JWT Authentication",
+      "classification": "Classification Model",
+      "prediction": "Prediction Engine",
+      "duplicateDetection": "Duplicate Detection",
+      "knowledgeEngine": "Knowledge Engine",
+      "decisionEngine": "Decision Engine"
+    },
+    "metrics": {
+      "title": "System Metrics",
+      "totalUsers": "Total Users",
+      "totalComplaints": "Total Complaints",
+      "totalIncidents": "Total Incidents"
+    }
+  },
+
+  "auditLogs": {
+    "loadError": "Failed to load audit logs",
+    "header": {
+      "title": "Audit Logs",
+      "subtitle": "Track all system actions and changes"
+    },
+    "searchPlaceholder": "Search logs...",
+    "allRoles": "All Roles",
+    "allStatus": "All Status",
+    "success": "Success",
+    "failed": "Failed",
+    "colTimestamp": "Timestamp",
+    "colUser": "User",
+    "colRole": "Role",
+    "colAction": "Action",
+    "colTarget": "Target",
+    "colStatus": "Status",
+    "loading": "Loading...",
+    "retry": "Retry",
+    "empty": "No audit logs found"
   }
 }

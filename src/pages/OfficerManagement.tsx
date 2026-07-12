@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { UserPlus, Search, Lock, Unlock } from 'lucide-react';
 import './Admin.css';
@@ -13,6 +14,7 @@ interface Officer {
 }
 
 const OfficerManagement = () => {
+  const { t } = useTranslation();
   const [officers, setOfficers] = useState<Officer[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ const OfficerManagement = () => {
       const data = await response.json();
       setOfficers(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load officers');
+      setError(err instanceof Error ? err.message : t('officerManagement.loadError'));
     } finally {
       setLoading(false);
     }
@@ -51,7 +53,7 @@ const OfficerManagement = () => {
       await api.patch(`/admin/officers/${id}/disable`, {});
       fetchOfficers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to disable officer');
+      setError(err instanceof Error ? err.message : t('officerManagement.disableError'));
     }
   };
 
@@ -61,13 +63,13 @@ const OfficerManagement = () => {
       await api.patch(`/admin/officers/${id}/enable`, {});
       fetchOfficers();
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to enable officer');
+      setError(err instanceof Error ? err.message : t('officerManagement.enableError'));
     }
   };
 
   const handleCreateOfficer = async () => {
     if (!formData.email.endsWith('@gov.in')) {
-      setDialogError('Government accounts must use @gov.in email domain');
+      setDialogError(t('officerManagement.govEmailError'));
       return;
     }
     try {
@@ -76,15 +78,15 @@ const OfficerManagement = () => {
       setShowAddDialog(false);
       fetchOfficers();
     } catch (err) {
-      setDialogError(err instanceof Error ? err.message : 'Failed to create officer');
+      setDialogError(err instanceof Error ? err.message : t('officerManagement.createError'));
     }
   };
 
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>Officer Management</h1>
-        <p>Manage government officers and their assignments</p>
+<h1>{t('officerManagement.header.title')}</h1>
+<p>{t('officerManagement.header.subtitle')}</p>
       </div>
 
       <div className="admin-controls">
@@ -92,28 +94,28 @@ const OfficerManagement = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search officers..."
+            placeholder={t('officerManagement.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <button className="btn-primary" onClick={() => setShowAddDialog(true)}>
-          <UserPlus size={16} /> Add Officer
+          <UserPlus size={16} /> {t('officerManagement.addOfficer')}
         </button>
       </div>
 
       <div className="stats-cards">
         <div className="stat-card">
-          <h3>{officers.length}</h3>
-          <p>Total Officers</p>
+<h3>{officers.length}</h3>
+<p>{t('officerManagement.totalOfficers')}</p>
         </div>
         <div className="stat-card">
-          <h3>{officers.filter(o => o.status === 'active').length}</h3>
-          <p>Active Officers</p>
+<h3>{officers.filter(o => o.status === 'active').length}</h3>
+<p>{t('officerManagement.activeOfficers')}</p>
         </div>
         <div className="stat-card">
-          <h3>{officers.filter(o => o.status === 'disabled').length}</h3>
-          <p>Disabled Officers</p>
+<h3>{officers.filter(o => o.status === 'disabled').length}</h3>
+<p>{t('officerManagement.disabledOfficers')}</p>
         </div>
       </div>
 
@@ -121,22 +123,22 @@ const OfficerManagement = () => {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Officer ID</th>
-              <th>Name</th>
-              <th>Email</th>
-              <th>District</th>
-              <th>Status</th>
-              <th>Created</th>
-              <th>Actions</th>
+              <th>{t('officerManagement.colOfficerId')}</th>
+              <th>{t('officerManagement.colName')}</th>
+              <th>{t('officerManagement.colEmail')}</th>
+              <th>{t('officerManagement.colDistrict')}</th>
+              <th>{t('officerManagement.colStatus')}</th>
+              <th>{t('officerManagement.colCreated')}</th>
+              <th>{t('officerManagement.colActions')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="loading">Loading...</td></tr>
+              <tr><td colSpan={7} className="loading">{t('officerManagement.loading')}</td></tr>
             ) : error ? (
-              <tr><td colSpan={7} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchOfficers}>Retry</button></td></tr>
+              <tr><td colSpan={7} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchOfficers}>{t('officerManagement.retry')}</button></td></tr>
             ) : filteredOfficers.length === 0 ? (
-              <tr><td colSpan={7} className="empty">No officers found</td></tr>
+              <tr><td colSpan={7} className="empty">{t('officerManagement.empty')}</td></tr>
             ) : (
               filteredOfficers.map(officer => (
                 <tr key={officer.id}>
@@ -164,18 +166,18 @@ const OfficerManagement = () => {
       {showAddDialog && (
         <div className="dialog-overlay">
           <div className="dialog">
-            <h3>Add New Officer</h3>
+            <h3>{t('officerManagement.dialogTitle')}</h3>
             <div className="form-grid">
-              <input placeholder="Full Name" value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
-              <input placeholder="Email" value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
-              <input placeholder="District" value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} />
-              <input placeholder="Department" value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
-              <input type="password" placeholder="Password" value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
+              <input placeholder={t('officerManagement.fieldFullName')} value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
+              <input placeholder={t('officerManagement.fieldEmail')} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
+              <input placeholder={t('officerManagement.fieldDistrict')} value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} />
+              <input placeholder={t('officerManagement.fieldDepartment')} value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
+              <input type="password" placeholder={t('officerManagement.fieldPassword')} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
             </div>
             {dialogError && <div className="error-state"><p>{dialogError}</p></div>}
             <div className="dialog-actions">
-              <button onClick={() => setShowAddDialog(false)}>Cancel</button>
-              <button className="btn-primary" onClick={handleCreateOfficer}>Create</button>
+              <button onClick={() => setShowAddDialog(false)}>{t('officerManagement.cancel')}</button>
+              <button className="btn-primary" onClick={handleCreateOfficer}>{t('officerManagement.create')}</button>
             </div>
           </div>
         </div>

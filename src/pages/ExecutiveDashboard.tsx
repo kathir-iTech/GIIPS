@@ -1,4 +1,5 @@
 import React, { useEffect, useState, useRef, useMemo } from 'react';
+import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
@@ -55,34 +56,38 @@ const Sparkline: React.FC<{ data?: number[]; color?: string; trend?: 'up' | 'dow
 
 const SectionCard: React.FC<{ title: string; subtitle?: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }> = ({
   title, subtitle, icon, children, className = ''
-}) => (
-  <div className={`section-card glass-card ${className}`}>
-    <div className="card-header">
-      <div className="card-title-group">
-        {icon && <span className="card-icon">{icon}</span>}
-        <div>
-          <h3>{title}</h3>
-          {subtitle && <span className="card-subtitle">{subtitle}</span>}
+}) => {
+  const { t } = useTranslation();
+  return (
+    <div className={`section-card glass-card ${className}`}>
+      <div className="card-header">
+        <div className="card-title-group">
+          {icon && <span className="card-icon">{icon}</span>}
+          <div>
+            <h3>{title}</h3>
+            {subtitle && <span className="card-subtitle">{subtitle}</span>}
+          </div>
+        </div>
+        <div className="card-actions">
+          <button className="icon-btn" title={t('common.tooltip.refresh')}><RefreshCw size={14} /></button>
+          <button className="icon-btn" title={t('common.tooltip.download')}><Download size={14} /></button>
+          <button className="icon-btn" title={t('common.tooltip.share')}><Share2 size={14} /></button>
         </div>
       </div>
-      <div className="card-actions">
-        <button className="icon-btn" title="Refresh"><RefreshCw size={14} /></button>
-        <button className="icon-btn" title="Download"><Download size={14} /></button>
-        <button className="icon-btn" title="Share"><Share2 size={14} /></button>
+      <div className="card-body">
+        {children}
       </div>
     </div>
-    <div className="card-body">
-      {children}
-    </div>
-  </div>
-);
+  );
+};
 
 const PriorityBadge: React.FC<{ priority: string }> = ({ priority }) => {
+  const { t } = useTranslation();
   const color = priority?.toLowerCase() === 'critical' ? '#dc2626'
     : priority?.toLowerCase() === 'high' ? '#ea580c'
     : priority?.toLowerCase() === 'medium' ? '#ca8a04'
     : '#16a34a';
-  return <span className="priority-badge" style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}40` }}>{priority}</span>;
+  return <span className="priority-badge" style={{ backgroundColor: `${color}18`, color, border: `1px solid ${color}40` }}>{t(`common.priority.${priority?.toLowerCase()}`)}</span>;
 };
 
 const TrendIndicator: React.FC<{ value: number }> = ({ value }) => {
@@ -92,6 +97,8 @@ const TrendIndicator: React.FC<{ value: number }> = ({ value }) => {
 };
 
 const ExecutiveDashboard = () => {
+  const { t, i18n } = useTranslation();
+  const dateLocale = i18n.language === 'ta' ? 'ta-IN' : 'en-IN';
   const chatEndRef = useRef<HTMLDivElement>(null);
 
   const [loading, setLoading] = useState(true);
@@ -154,7 +161,7 @@ const ExecutiveDashboard = () => {
           setTrendComplaints(trendRaw.complaints || []);
         }
         if (feedErrors.length > 0) {
-          const msg = 'Some intelligence feeds are offline: ' + feedErrors.join('; ');
+          const msg = t('executive.feedErrors.someOffline') + feedErrors.join('; ');
           console.error(msg);
           if (showLoader) setError(msg);
         }
@@ -162,7 +169,7 @@ const ExecutiveDashboard = () => {
         if (!mounted) return;
         if (showLoader) {
           console.error('Failed to fetch executive dashboard data:', err);
-          setError('Some intelligence feeds are offline. Showing best available data.');
+          setError(t('executive.global.feedOffline'));
         }
       } finally {
         if (showLoader && mounted) setLoading(false);
@@ -187,10 +194,10 @@ const ExecutiveDashboard = () => {
     try {
       const history = copilotMessages.map(m => ({ role: m.role, content: m.content }));
       const res = await api.copilotChat(msg, history);
-      const reply = res.response || res.message || res.reply || 'I am processing your request. Please try again.';
+      const reply = res.response || res.message || res.reply || t('common.copilot.processing');
       setCopilotMessages(prev => [...prev, { role: 'assistant', content: reply }]);
     } catch {
-      setCopilotMessages(prev => [...prev, { role: 'assistant', content: 'I encountered an issue connecting to the knowledge engine. Please retry shortly.' }]);
+      setCopilotMessages(prev => [...prev, { role: 'assistant', content: t('common.copilot.error') }]);
     } finally {
       setCopilotLoading(false);
     }
@@ -229,7 +236,7 @@ const ExecutiveDashboard = () => {
   if (loading) {
     return (
       <div className="exec-dashboard">
-        <Header title="Executive Decision Intelligence" subtitle="Initializing AI Command Center" />
+        <Header title={t('executive.header.title')} subtitle={t('executive.header.loadingSubtitle')} />
         <section className="kpi-skeleton-grid">
           {Array.from({ length: 8 }).map((_, i) => <SkeletonCard key={i} />)}
         </section>
@@ -239,7 +246,7 @@ const ExecutiveDashboard = () => {
         </div>
         <div className="loading-state">
           <div className="spinner"></div>
-          <p>Syncing intelligence feeds...</p>
+          <p>{t('executive.loading.syncing')}</p>
         </div>
       </div>
     );
@@ -248,12 +255,12 @@ const ExecutiveDashboard = () => {
   if (!execSummary) {
     return (
       <div className="exec-dashboard">
-        <Header title="Executive Decision Intelligence" subtitle="System Status" />
+        <Header title={t('executive.header.title')} subtitle={t('executive.header.errorSubtitle')} />
         <div className="error-state">
           <AlertTriangle size={48} />
-          <h2>Intelligence feeds unavailable</h2>
-          <p>{error || 'Unable to connect to one or more backend services. Please try again.'}</p>
-          <button className="retry-btn" onClick={() => window.location.reload()}>Retry Connection</button>
+          <h2>{t('executive.error.title')}</h2>
+          <p>{error || t('executive.error.body')}</p>
+          <button className="retry-btn" onClick={() => window.location.reload()}>{t('executive.error.retry')}</button>
         </div>
       </div>
     );
@@ -266,17 +273,17 @@ const ExecutiveDashboard = () => {
 
   return (
     <div className="exec-dashboard">
-      <Header title="Executive Decision Intelligence" subtitle="AI-Powered Command Center — Real-time Governance Intelligence" />
+      <Header title={t('executive.header.title')} subtitle={t('executive.header.subtitle')} />
 
       {error && <div className="global-banner warning"><AlertTriangle size={16} />{error}</div>}
 
       {/* 1. Government Situation Summary */}
-      <SectionCard title="Government Situation Summary" subtitle="Live operational pulse" icon={<Gauge size={18} />}>
+      <SectionCard title={t('executive.situation.title')} subtitle={t('executive.situation.subtitle')} icon={<Gauge size={18} />}>
         <div className="kpi-scroll-grid">
           <div className="kpi-item">
             <div className="kpi-icon-wrapper complaints"><MessageSquare size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Today's Complaints</span>
+              <span className="kpi-label">{t('executive.kpi.todayComplaints')}</span>
               <span className="kpi-value">{totalComplaints}</span>
               <TrendIndicator value={complaintTrend} />
             </div>
@@ -285,7 +292,7 @@ const ExecutiveDashboard = () => {
           <div className="kpi-item critical">
             <div className="kpi-icon-wrapper critical"><AlertOctagon size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Critical Incidents</span>
+              <span className="kpi-label">{t('executive.kpi.criticalIncidents')}</span>
               <span className="kpi-value">{criticalCount}</span>
               <TrendIndicator value={criticalTrend} />
             </div>
@@ -294,29 +301,29 @@ const ExecutiveDashboard = () => {
           <div className="kpi-item">
             <div className="kpi-icon-wrapper districts"><MapPin size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Districts At Risk</span>
+              <span className="kpi-label">{t('executive.kpi.districtsAtRisk')}</span>
               <span className="kpi-value">{districtsAtRisk.length}</span>
             </div>
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper stress"><ThermometerSun size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Depts Under Stress</span>
+              <span className="kpi-label">{t('executive.kpi.deptsUnderStress')}</span>
               <span className="kpi-value">{(deptWorkload || []).filter((d: any) => (d.stressLevel || d.efficiency || 100) < 60).length}</span>
             </div>
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper escalation"><Flame size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Predicted Escalations</span>
+              <span className="kpi-label">{t('executive.kpi.predictedEscalations')}</span>
               <span className="kpi-value">{predictions?.predictedEscalations ?? predictions?.escalations ?? 7}</span>
             </div>
           </div>
           <div className="kpi-item">
             <div className="kpi-icon-wrapper resolution"><Clock size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Avg Resolution Time</span>
-              <span className="kpi-value">{resolutionTime?.toFixed?.(1) ?? resolutionTime}d</span>
+              <span className="kpi-label">{t('executive.kpi.avgResolutionTime')}</span>
+              <span className="kpi-value">{resolutionTime?.toFixed?.(1) ?? resolutionTime}{t('common.time.days')}</span>
               <TrendIndicator value={resolutionTrend} />
             </div>
             <Sparkline color="#22c55e" trend={resolutionTrend < 0 ? 'down' : resolutionTrend > 0 ? 'up' : 'flat'} />
@@ -324,8 +331,8 @@ const ExecutiveDashboard = () => {
           <div className="kpi-item">
             <div className="kpi-icon-wrapper weekly"><Activity size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Weekly Trend</span>
-              <span className="kpi-value">Stable</span>
+              <span className="kpi-label">{t('executive.kpi.weeklyTrend')}</span>
+              <span className="kpi-value">{t('executive.kpi.stable')}</span>
               <TrendIndicator value={complaintTrend} />
             </div>
             <Sparkline data={trendComplaints} color="#10b981" trend={complaintTrend > 0 ? 'up' : complaintTrend < 0 ? 'down' : 'flat'} />
@@ -333,8 +340,8 @@ const ExecutiveDashboard = () => {
           <div className="kpi-item">
             <div className="kpi-icon-wrapper system"><ServerIcon size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">System Health</span>
-              <span className="kpi-value">{systemHealth?.backend === 'healthy' ? 'Optimal' : 'Stable'}</span>
+              <span className="kpi-label">{t('executive.kpi.systemHealth')}</span>
+              <span className="kpi-value">{systemHealth?.backend === 'healthy' ? t('executive.kpi.optimal') : t('executive.kpi.stable')}</span>
               <TrendIndicator value={0} />
             </div>
             <Sparkline color="#06b6d4" trend="flat" />
@@ -343,12 +350,12 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 2. AI Executive Brief */}
-      <SectionCard title="AI Executive Brief" subtitle="Synthesized decision insights" icon={<Brain size={18} />}>
+      <SectionCard title={t('executive.brief.title')} subtitle={t('executive.brief.subtitle')} icon={<Brain size={18} />}>
         <div className="executive-brief">
           <div className="brief-header">
-            <div className="brief-badge ai"><Sparkles size={14} /> AI Generated</div>
+            <div className="brief-badge ai"><Sparkles size={14} /> {t('executive.brief.aiGenerated')}</div>
             <div className="brief-confidence">
-              <span className="confidence-label">Confidence</span>
+              <span className="confidence-label">{t('executive.brief.confidence')}</span>
               <span className="confidence-value">{(decisionSupport?.confidence ?? predictions?.confidence ?? 88).toFixed(0)}%</span>
               <div className="confidence-bar"><div className="confidence-fill" style={{ width: `${(decisionSupport?.confidence ?? predictions?.confidence ?? 88)}%` }} /></div>
             </div>
@@ -356,21 +363,27 @@ const ExecutiveDashboard = () => {
           {(decisionSupport?.executiveSummary || decisionSupport?.summary || knowledge?.summary || predictions?.summary) ? (
             <p className="brief-text">{decisionSupport?.executiveSummary || decisionSupport?.summary || knowledge?.summary || predictions?.summary}</p>
           ) : (
-            <div className="empty-chart"><Brain size={32} /><p>Waiting for data. The AI engines will generate an executive summary once incidents are processed.</p></div>
+            <div className="empty-chart"><Brain size={32} /><p>{t('executive.brief.empty')}</p></div>
           )}
           <div className="brief-footer">
-            <span className="brief-time">Generated {new Date().toLocaleString('en-IN', { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>
+            <span className="brief-time">{t('executive.brief.generated')} {new Date().toLocaleString(dateLocale, { hour: '2-digit', minute: '2-digit', day: 'numeric', month: 'short' })}</span>
             <div className="brief-engines">
-              {(predictions ? ['Prediction Engine'] : []).concat(decisionSupport ? ['Decision Engine'] : []).concat(knowledge ? ['Knowledge Engine'] : []).length > 0
-                ? (predictions ? ['Prediction Engine'] : []).concat(decisionSupport ? ['Decision Engine'] : []).concat(knowledge ? ['Knowledge Engine'] : []).map((eng: string) => <span key={eng} className="engine-tag">{eng}</span>)
-                : <span className="engine-tag">Prediction Engine</span>}
+              {(() => {
+                const engines: { key: string; label: string }[] = [];
+                if (predictions) engines.push({ key: 'prediction', label: t('common.engineTags.prediction') });
+                if (decisionSupport) engines.push({ key: 'decision', label: t('common.engineTags.decision') });
+                if (knowledge) engines.push({ key: 'knowledge', label: t('common.engineTags.knowledge') });
+                return engines.length > 0
+                  ? engines.map(eng => <span key={eng.key} className="engine-tag">{eng.label}</span>)
+                  : <span className="engine-tag">{t('common.engineTags.prediction')}</span>;
+              })()}
             </div>
           </div>
         </div>
       </SectionCard>
 
       {/* 3. AI Recommended Government Actions */}
-      <SectionCard title="AI Recommended Actions" subtitle="Prioritized interventions" icon={<Target size={18} />}>
+      <SectionCard title={t('executive.actions.title')} subtitle={t('executive.actions.subtitle')} icon={<Target size={18} />}>
         {recommendations.length > 0 ? (
           <div className="recommendations-grid">
             {recommendations.slice(0, 6).map((rec: any, idx: number) => (
@@ -379,24 +392,24 @@ const ExecutiveDashboard = () => {
                   <span className="rec-number">#{idx + 1}</span>
                   <PriorityBadge priority={rec.priority || rec.severity || 'Medium'} />
                 </div>
-                <h4>{rec.title || rec.action || rec.recommendation || 'Recommended Action'}</h4>
-                <p className="rec-reason">{rec.reason || 'Based on recent trend analysis and prediction models.'}</p>
+                <h4>{rec.title || rec.action || rec.recommendation || t('executive.actions.fallbackTitle')}</h4>
+                <p className="rec-reason">{rec.reason || t('executive.actions.fallbackReason')}</p>
                 <div className="rec-metrics">
                   <div className="rec-metric">
-                    <span className="rec-metric-label">Expected Impact</span>
-                    <span className="rec-metric-value positive">{rec.expectedImpact ?? rec.expected_improvement ?? rec.impact ?? '15%'} improvement</span>
+                    <span className="rec-metric-label">{t('executive.actions.expectedImpact')}</span>
+                    <span className="rec-metric-value positive">{rec.expectedImpact ?? rec.expected_improvement ?? rec.impact ?? '15%'} {t('common.time.improvement')}</span>
                   </div>
                   <div className="rec-metric">
-                    <span className="rec-metric-label">Department</span>
+                    <span className="rec-metric-label">{t('executive.actions.department')}</span>
                     <span className="rec-metric-value">{rec.department || rec.responsibleDept || 'Infrastructure'}</span>
                   </div>
                 </div>
                 <div className="rec-footer">
                   <div className="rec-chips">
-                    {rec.affectedPopulation && <span className="rec-chip"><Users2 size={12} /> {(rec.affectedPopulation || 0).toLocaleString()} affected</span>}
-                    {rec.confidence && <span className="rec-chip"><Activity size={12} /> {rec.confidence}% confidence</span>}
+                    {rec.affectedPopulation && <span className="rec-chip"><Users2 size={12} /> {(rec.affectedPopulation || 0).toLocaleString()} {t('common.time.affected')}</span>}
+                    {rec.confidence && <span className="rec-chip"><Activity size={12} /> {rec.confidence}% {t('common.time.confidence')}</span>}
                   </div>
-                  <button className="rec-action-btn">Deploy <ArrowRight size={14} /></button>
+                  <button className="rec-action-btn">{t('executive.actions.deploy')} <ArrowRight size={14} /></button>
                 </div>
               </div>
             ))}
@@ -404,16 +417,16 @@ const ExecutiveDashboard = () => {
         ) : (
           <div className="empty-state">
             <CheckCircle2 size={32} />
-            <p>No urgent actions at this time. System monitoring is active.</p>
+            <p>{t('executive.actions.empty')}</p>
           </div>
         )}
       </SectionCard>
 
       {/* 4. District Intelligence */}
-      <SectionCard title="District Intelligence" subtitle="Ward-level performance ranking" icon={<Compass size={18} />}>
+      <SectionCard title={t('executive.district.title')} subtitle={t('executive.district.subtitle')} icon={<Compass size={18} />}>
         <div className="district-grid">
           <div className="district-panel">
-            <h4><TrendingUp size={14} /> Top Performing</h4>
+            <h4><TrendingUp size={14} /> {t('executive.district.topPerforming')}</h4>
             {topDistricts.map((d: any, i: number) => (
               <div key={i} className="district-row top">
                 <span className="district-rank">#{i + 1}</span>
@@ -423,7 +436,7 @@ const ExecutiveDashboard = () => {
             ))}
           </div>
           <div className="district-panel critical-panel">
-            <h4><AlertTriangle size={14} /> Most Critical</h4>
+            <h4><AlertTriangle size={14} /> {t('executive.district.mostCritical')}</h4>
             {criticalDistricts.map((d: any, i: number) => (
               <div key={i} className="district-row critical">
                 <span className="district-rank">#{i + 1}</span>
@@ -433,7 +446,7 @@ const ExecutiveDashboard = () => {
             ))}
           </div>
           <div className="district-panel">
-            <h4><Zap size={14} /> Fastest Improving</h4>
+            <h4><Zap size={14} /> {t('executive.district.fastestImproving')}</h4>
             {topDistricts.slice().reverse().slice(0, 3).map((d: any, i: number) => (
               <div key={i} className="district-row improving">
                 <span className="district-rank">#{i + 1}</span>
@@ -443,7 +456,7 @@ const ExecutiveDashboard = () => {
             ))}
           </div>
           <div className="district-panel warning-panel">
-            <h4><Flame size={14} /> Highest Complaint Growth</h4>
+            <h4><Flame size={14} /> {t('executive.district.highestGrowth')}</h4>
             {criticalDistricts.slice(0, 3).map((d: any, i: number) => (
               <div key={i} className="district-row growth">
                 <span className="district-rank">#{i + 1}</span>
@@ -456,7 +469,7 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 5. Department Performance */}
-      <SectionCard title="Department Performance" subtitle="Operational efficiency across units" icon={<BarChart3 size={18} />}>
+      <SectionCard title={t('executive.dept.title')} subtitle={t('executive.dept.subtitle')} icon={<BarChart3 size={18} />}>
         <div className="dept-grid">
           {(deptWorkload && deptWorkload.length > 0 ? deptWorkload : []).map((dept: any, idx: number) => {
             const name = dept.department || dept.name || '';
@@ -469,7 +482,7 @@ const ExecutiveDashboard = () => {
                   <div className="dept-icon" style={{ color, background: `${color}18` }}>{React.createElement(deptIcon, { size: 18 })}</div>
                   <div>
                     <h4>{name}</h4>
-                    <span className="dept-status" style={{ color }}>{efficiency > 75 ? 'Healthy' : efficiency > 55 ? 'Stressed' : 'Under Stress'}</span>
+                    <span className="dept-status" style={{ color }}>{efficiency > 75 ? t('common.deptStatus.healthy') : efficiency > 55 ? t('common.deptStatus.stressed') : t('common.deptStatus.underStress')}</span>
                   </div>
                 </div>
                 <div className="dept-rings">
@@ -479,7 +492,7 @@ const ExecutiveDashboard = () => {
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={color} strokeWidth="3" strokeDasharray={`${efficiency}, 100`} strokeLinecap="round" />
                       <text x="18" y="20.35" textAnchor="middle" fontSize="8" fontWeight="700" fill={color}>{efficiency}%</text>
                     </svg>
-                    <span>Efficiency</span>
+                    <span>{t('executive.dept.efficiency')}</span>
                   </div>
                   <div className="dept-ring">
                     <svg viewBox="0 0 36 36">
@@ -487,48 +500,48 @@ const ExecutiveDashboard = () => {
                       <path d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" fill="none" stroke={color} strokeWidth="3" strokeDasharray={`${100 - (dept.criticalPercent ?? 20)}, 100`} strokeLinecap="round" />
                       <text x="18" y="20.35" textAnchor="middle" fontSize="8" fontWeight="700" fill={color}>{100 - (dept.criticalPercent ?? 20)}%</text>
                     </svg>
-                    <span>Safety</span>
+                    <span>{t('executive.dept.safety')}</span>
                   </div>
                 </div>
                 <div className="dept-stats">
-                  <div className="dept-stat"><span className="dept-stat-label">Open Incidents</span><span className="dept-stat-value">{dept.activeIncidents ?? dept.openIncidents ?? 0}</span></div>
-                  <div className="dept-stat"><span className="dept-stat-label">Critical %</span><span className="dept-stat-value bad">{dept.criticalPercent ?? dept.critical ?? 0}%</span></div>
-                  <div className="dept-stat"><span className="dept-stat-label">Avg Resolution</span><span className="dept-stat-value">{(dept.avgResolution ?? 2.5).toFixed(1)}d</span></div>
+                  <div className="dept-stat"><span className="dept-stat-label">{t('executive.dept.openIncidents')}</span><span className="dept-stat-value">{dept.activeIncidents ?? dept.openIncidents ?? 0}</span></div>
+                  <div className="dept-stat"><span className="dept-stat-label">{t('executive.dept.criticalPercent')}</span><span className="dept-stat-value bad">{dept.criticalPercent ?? dept.critical ?? 0}%</span></div>
+                  <div className="dept-stat"><span className="dept-stat-label">{t('executive.dept.avgResolution')}</span><span className="dept-stat-value">{(dept.avgResolution ?? 2.5).toFixed(1)}{t('common.time.days')}</span></div>
                 </div>
                 {dept.recommendation && <p className="dept-recommendation">{dept.recommendation}</p>}
               </div>
             );
           })}
           {(!deptWorkload || deptWorkload.length === 0) && (
-            <div className="empty-chart"><BarChart3 size={32} /><p>No department performance data available. Data will appear once incidents are processed.</p></div>
+            <div className="empty-chart"><BarChart3 size={32} /><p>{t('executive.dept.empty')}</p></div>
           )}
         </div>
       </SectionCard>
 
       {/* 6. Emerging Risks */}
-      <SectionCard title="Emerging Risks" subtitle="AI-detected future hotspots" icon={<Flame size={18} />}>
+      <SectionCard title={t('executive.risks.title')} subtitle={t('executive.risks.subtitle')} icon={<Flame size={18} />}>
         <div className="risks-grid">
           {((predictions?.risks || predictions?.emergingRisks || []) || []).map((risk: any, idx: number) => (
             <div key={idx} className={`risk-card risk-${(risk.severity || risk.priority || 'medium').toLowerCase()}`}>
               <div className="risk-header">
-                <h4>{risk.category || risk.title || 'Infrastructure Risk'}</h4>
+                <h4>{risk.category || risk.title || t('executive.risks.fallbackCategory')}</h4>
                 <PriorityBadge priority={risk.severity || risk.priority || 'Medium'} />
               </div>
-              <p className="risk-reason">{risk.reason || risk.description || 'No specific reason provided.'}</p>
+              <p className="risk-reason">{risk.reason || risk.description || t('executive.risks.fallbackReason')}</p>
               <div className="risk-meta">
-                <span className="risk-confidence"><Activity size={12} /> {risk.confidence ?? risk.confidence_score ?? 75}% confidence</span>
+                <span className="risk-confidence"><Activity size={12} /> {risk.confidence ?? risk.confidence_score ?? 75}% {t('executive.risks.confidence')}</span>
                 {risk.suggestion && <span className="risk-suggestion"><Target size={12} /> {risk.suggestion}</span>}
               </div>
             </div>
           ))}
           {(!predictions?.risks?.length && !predictions?.emergingRisks?.length) && (
-            <div className="empty-chart"><Flame size={32} /><p>No emerging risks detected. AI will monitor incident trends and alert you to potential hotspots.</p></div>
+            <div className="empty-chart"><Flame size={32} /><p>{t('executive.risks.empty')}</p></div>
           )}
         </div>
       </SectionCard>
 
       {/* 7. Incident Command Center */}
-      <SectionCard title="Incident Command Center" subtitle={`${criticalIncidents.length} critical incidents require action`} icon={<ShieldAlert size={18} />}>
+      <SectionCard title={t('executive.incidents.title')} subtitle={t('executive.incidents.subtitle', { criticalCount: criticalIncidents.length })} icon={<ShieldAlert size={18} />}>
         <div className="incidents-command">
           {criticalIncidents.length > 0 ? criticalIncidents.map((inc: any) => (
             <div key={inc.id} className="incident-command-card">
@@ -540,26 +553,26 @@ const ExecutiveDashboard = () => {
               <p className="inc-summary">{inc.summary}</p>
               <div className="inc-command-bottom">
                 <div className="inc-meta">
-                  <span className="inc-cluster"><Users size={12} /> {inc.cluster_size || 1} reports</span>
+                  <span className="inc-cluster"><Users size={12} /> {inc.cluster_size || 1} {t('executive.incidents.reports')}</span>
                   <span className="inc-days"><Clock size={12} /> <AgingBadge daysOpen={inc.days_open || 0} /></span>
                 </div>
                 <div className="inc-action">
                   <span className="inc-recommendation">{inc.recommended_action}</span>
-                  <button className="inc-detail-btn" onClick={() => window.location.href = `/incident-feed`}>Open Detail <ChevronRight size={14} /></button>
+                  <button className="inc-detail-btn" onClick={() => window.location.href = `/incident-feed`}>{t('executive.incidents.openDetail')} <ChevronRight size={14} /></button>
                 </div>
               </div>
             </div>
           )) : (
             <div className="empty-state">
               <CheckCircle2 size={32} />
-              <p>No critical incidents at this time.</p>
+              <p>{t('executive.incidents.empty')}</p>
             </div>
           )}
         </div>
       </SectionCard>
 
       {/* 8. AI Copilot */}
-      <SectionCard title="AI Executive Copilot" subtitle="Conversational decision support" icon={<Bot size={18} />}>
+      <SectionCard title={t('executive.copilot.title')} subtitle={t('executive.copilot.subtitle')} icon={<Bot size={18} />}>
         <div className="copilot-panel">
           <div className="copilot-messages">
             {copilotMessages.map((msg, idx) => (
@@ -595,7 +608,7 @@ const ExecutiveDashboard = () => {
               value={copilotInput}
               onChange={e => setCopilotInput(e.target.value)}
               onKeyDown={e => e.key === 'Enter' && handleCopilotSend()}
-              placeholder="Ask the AI Executive Assistant..."
+              placeholder={t('common.copilot.placeholder')}
               disabled={copilotLoading}
             />
             <button className="send-btn" onClick={() => handleCopilotSend()} disabled={copilotLoading || !copilotInput.trim()}>
@@ -606,42 +619,42 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 9. Resource Allocation */}
-      <SectionCard title="Resource Allocation" subtitle="Optimized deployment strategy" icon={<Users size={18} />}>
+      <SectionCard title={t('executive.resources.title')} subtitle={t('executive.resources.subtitle')} icon={<Users size={18} />}>
         <div className="resource-grid">
           {(decisionSupport?.resourceAllocation || decisionSupport?.resources || []).map((res: any, idx: number) => (
             <div key={idx} className="resource-card">
               <div className="resource-header">
                 <h4>{res.department || res.name || 'General'}</h4>
-                <span className="resource-improvement positive">+{res.improvement ?? res.improvement_percent ?? 20}% improvement</span>
+                <span className="resource-improvement positive">+{res.improvement ?? res.improvement_percent ?? 20}% {t('executive.resources.improvement')}</span>
               </div>
               <div className="resource-bars">
                 <div className="resource-bar-group">
-                  <div className="resource-bar-label"><Users size={12} /> Current: <strong>{res.current ?? res.current_teams ?? 5}</strong></div>
+                  <div className="resource-bar-label"><Users size={12} /> {t('executive.resources.current')} <strong>{res.current ?? res.current_teams ?? 5}</strong></div>
                   <div className="resource-bar-track"><div className="resource-bar-fill current" style={{ width: `${((res.current ?? res.current_teams ?? 5) / 15) * 100}%` }} /></div>
                 </div>
                 <ArrowRight size={16} className="resource-arrow" />
                 <div className="resource-bar-group">
-                  <div className="resource-bar-label"><Target size={12} /> Recommended: <strong>{res.recommended ?? res.recommended_teams ?? 8}</strong></div>
+                  <div className="resource-bar-label"><Target size={12} /> {t('executive.resources.recommended')} <strong>{res.recommended ?? res.recommended_teams ?? 8}</strong></div>
                   <div className="resource-bar-track"><div className="resource-bar-fill recommended" style={{ width: `${((res.recommended ?? res.recommended_teams ?? 8) / 15) * 100}%` }} /></div>
                 </div>
               </div>
               <div className="resource-stats">
-                <span className="resource-stat"><DollarSign size={12} /> {res.costReduction ?? res.cost_saving ?? 12}% cost reduction</span>
-                <span className="resource-stat"><Activity size={12} /> {res.gain ?? res.expectedResolutionGain ?? '+150 faster'}</span>
+                <span className="resource-stat"><DollarSign size={12} /> {res.costReduction ?? res.cost_saving ?? 12}% {t('executive.resources.costReduction')}</span>
+                <span className="resource-stat"><Activity size={12} /> {res.gain ?? res.expectedResolutionGain ?? `+150 ${t('common.time.faster')}`}</span>
               </div>
             </div>
           ))}
           {(!decisionSupport?.resourceAllocation?.length && !decisionSupport?.resources?.length) && (
-            <div className="empty-chart"><Users size={32} /><p>No resource allocation recommendations yet. AI will generate deployment strategies when sufficient data is available.</p></div>
+            <div className="empty-chart"><Users size={32} /><p>{t('executive.resources.empty')}</p></div>
           )}
         </div>
       </SectionCard>
 
       {/* 10. Predictive Timeline */}
-      <SectionCard title="Predictive Timeline" subtitle="AI-powered volume forecasting" icon={<Calendar size={18} />}>
+      <SectionCard title={t('executive.timeline.title')} subtitle={t('executive.timeline.subtitle')} icon={<Calendar size={18} />}>
         <div className="timeline-tabs">
           {[7, 15, 30].map(days => (
-            <button key={days} className={`timeline-tab ${timelineDays === days ? 'active' : ''}`} onClick={() => setTimelineDays(days)}>{days} Days</button>
+            <button key={days} className={`timeline-tab ${timelineDays === days ? 'active' : ''}`} onClick={() => setTimelineDays(days)}>{days} {t('executive.timeline.days')}</button>
           ))}
         </div>
         {predictions ? (
@@ -649,7 +662,7 @@ const ExecutiveDashboard = () => {
             <Plot
               data={[
                 {
-                  x: Array.from({ length: timelineDays }, (_, i) => `Day ${i + 1}`),
+                  x: Array.from({ length: timelineDays }, (_, i) => `${t('executive.timeline.day')} ${i + 1}`),
                   y: Array.from({ length: timelineDays }, (_, i) =>
                     predictions.predicted_volume
                       ? Math.round(predictions.predicted_volume * (0.8 + (i / timelineDays) * 0.4))
@@ -657,7 +670,7 @@ const ExecutiveDashboard = () => {
                   ),
                   type: 'scatter',
                   mode: 'lines+markers',
-                  name: 'Predicted Volume',
+                  name: t('executive.timeline.predictedVolume'),
                   line: { color: '#3b82f6', width: 3, shape: 'spline' },
                   marker: { size: 6, color: '#3b82f6' },
                   fill: 'tozeroy',
@@ -680,14 +693,14 @@ const ExecutiveDashboard = () => {
         ) : (
           <div className="empty-chart">
             <Calendar size={32} />
-            <p>Prediction data unavailable. The AI forecasting model will generate projections once sufficient incident data is collected.</p>
+            <p>{t('executive.timeline.empty')}</p>
           </div>
         )}
       </SectionCard>
 
       <footer className="exec-footer">
-        <span>GIIPS Executive Decision Intelligence v2.1</span>
-        <span>Data refreshed {new Date().toLocaleString('en-IN')}</span>
+        <span>{t('executive.footer.title')}</span>
+        <span>{t('executive.footer.dataRefreshed')} {new Date().toLocaleString(dateLocale)}</span>
       </footer>
     </div>
   );

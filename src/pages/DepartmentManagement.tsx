@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp } from 'lucide-react';
 import './Admin.css';
@@ -14,6 +15,7 @@ interface DepartmentData {
 }
 
 const DepartmentManagement = () => {
+  const { t } = useTranslation();
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -30,7 +32,7 @@ const DepartmentManagement = () => {
       const data = await response.json();
       setDepartments(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load departments');
+      setError(err instanceof Error ? err.message : t('departmentManagement.loadError'));
     } finally {
       setLoading(false);
     }
@@ -45,20 +47,20 @@ const DepartmentManagement = () => {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>Department Management</h1>
-        <p>Monitor department performance and incident resolution</p>
+<h1>{t('departmentManagement.header.title')}</h1>
+<p>{t('departmentManagement.header.subtitle')}</p>
       </div>
 
       <div className="dept-grid">
         {loading ? (
-          <div className="loading">Loading...</div>
+          <div className="loading">{t('departmentManagement.loading')}</div>
         ) : error ? (
           <div className="error-state">
             <p>{error}</p>
-            <button className="retry-btn" onClick={fetchDepartments}>Retry</button>
+            <button className="retry-btn" onClick={fetchDepartments}>{t('departmentManagement.retry')}</button>
           </div>
         ) : departments.length === 0 ? (
-          <div className="empty">No department data available</div>
+          <div className="empty">{t('departmentManagement.empty')}</div>
         ) : (
           departments.map(dept => (
             <div className="dept-card" key={dept.department}>
@@ -69,26 +71,26 @@ const DepartmentManagement = () => {
               <div className="dept-stats">
                 <div className="stat">
                   <span className="value">{dept.open_incidents}</span>
-                  <span className="label">Open Incidents</span>
+                  <span className="label">{t('departmentManagement.openIncidents')}</span>
                 </div>
                 <div className="stat">
                   <span className="value">{dept.critical_incidents}</span>
-                  <span className="label">Critical</span>
+                  <span className="label">{t('departmentManagement.critical')}</span>
                 </div>
                 <div className="stat">
                   <span className="value">{dept.assigned_officers}</span>
-                  <span className="label">Officers</span>
+                  <span className="label">{t('departmentManagement.officers')}</span>
                 </div>
                 <div className="stat">
                   <span className="value">{(dept.avg_resolution_time ?? 0).toFixed(1)}d</span>
-                  <span className="label">Avg Resolution</span>
+                  <span className="label">{t('departmentManagement.avgResolution')}</span>
                 </div>
                 <div className="stat">
                   <span className="value">{((dept.completion_percentage ?? 0) * 100).toFixed(0)}%</span>
-                  <span className="label">Completion</span>
+                  <span className="label">{t('departmentManagement.completion')}</span>
                 </div>
                 <div className={`workload ${getWorkloadColor(dept.workload_indicator)}`}>
-                  Workload: {((dept.workload_indicator ?? 0) * 100).toFixed(0)}%
+                  {t('departmentManagement.workload')}: {((dept.workload_indicator ?? 0) * 100).toFixed(0)}%
                 </div>
               </div>
             </div>

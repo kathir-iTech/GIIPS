@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import type { Incident, Complaint, PriorityHistory } from '../types';
 import Header from '../components/Header';
@@ -122,6 +123,7 @@ const INITIAL_SUMMARY = '';
 const DEFAULT_RECOMMENDATION = '';
 
 const Clusters = () => {
+  const { t } = useTranslation();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [detail, setDetail] = useState<any>(null);
@@ -175,7 +177,7 @@ const Clusters = () => {
         if (know.status === 'fulfilled') setKnowledge(know.value);
         if (dec.status === 'fulfilled') setDecisionSupport(dec.value);
       } catch (err) {
-        if (!cancelled) setError(err instanceof Error ? err.message : 'Failed to load data');
+        if (!cancelled) setError(err instanceof Error ? err.message : t('clusters.loadError'));
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -191,7 +193,7 @@ const Clusters = () => {
       const data = await api.getClusterDetail(incident.id).catch(() => null);
       setDetail(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load incident detail');
+      setError(err instanceof Error ? err.message : t('clusters.detailLoadError'));
       setDetail(null);
     } finally {
       setDetailLoading(false);
@@ -323,8 +325,8 @@ const Clusters = () => {
   const priorityExplanation = detail?.priority_explanation
     || detail?.priority_reasoning
     || (priorityRules && priorityRules.length > 0
-      ? `Priority calculated from ${priorityRules.length} active AI weighting rules. Score: ${selectedPriorityScore}.`
-      : `AI priority score of ${selectedPriorityScore} derived from cluster size (${selectedClusterSize}), days open (${selectedDaysOpen}d), complaint volume, and historical severity trends.`);
+      ? t('clusters.priorityFromRules', { count: priorityRules.length, score: selectedPriorityScore })
+      : t('clusters.priorityDerived', { score: selectedPriorityScore, clusterSize: selectedClusterSize, daysOpen: selectedDaysOpen }));
 
   const renderInvestigationCard = (inc: Incident) => {
     const color = getPriorityColor(inc.priority_label);
@@ -344,7 +346,7 @@ const Clusters = () => {
           <div className="inc-card-meta">
             <span><MapPin size={12} />{inc.ward}</span>
             <span><Clock size={12} /><AgingBadge daysOpen={inc.days_open} /></span>
-            <span><GitBranch size={12} />{inc.cluster_size} reports</span>
+            <span><GitBranch size={12} />{inc.cluster_size} {t('common.time.reports')}</span>
           </div>
           <p className="inc-card-summary">{inc.summary?.substring(0, 160)}{inc.summary?.length > 160 ? '…' : ''}</p>
           {inc.recommended_action && (
@@ -354,7 +356,7 @@ const Clusters = () => {
             <span className="inc-card-status" data-status={inc.status?.toLowerCase()}>
               <CheckCircle2 size={12} />{inc.status || 'Open'}
             </span>
-            <span className="inc-card-score">Score: {inc.priority_score}</span>
+            <span className="inc-card-score">{t('clusters.score')}: {inc.priority_score}</span>
           </div>
         </div>
       </div>
@@ -364,10 +366,10 @@ const Clusters = () => {
   if (loading) {
     return (
       <div className="ice-page">
-        <Header title="AI Cluster Intelligence Explorer" subtitle="Initializing investigation workspace" />
+        <Header title={t('clusters.header.title')} subtitle={t('clusters.header.loadingSubtitle')} />
         <div className="loading-state">
           <Loader2 size={48} className="spin" />
-          <p>Loading incident intelligence feeds...</p>
+          <p>{t('clusters.loading')}</p>
         </div>
       </div>
     );
@@ -375,7 +377,7 @@ const Clusters = () => {
 
   return (
     <div className="ice-page">
-      <Header title="AI Cluster Intelligence Explorer" subtitle="Incident Investigation Center — Real-time AI-Powered Analysis" />
+      <Header title={t('clusters.header.title')} subtitle={t('clusters.header.subtitle')} />
 
       {error && (
         <div className="global-banner warning">
@@ -390,7 +392,7 @@ const Clusters = () => {
             <Search size={16} />
             <input
               type="text"
-              placeholder="Search incidents, wards, categories..."
+              placeholder={t('clusters.searchPlaceholder')}
               value={search}
               onChange={e => setSearch(e.target.value)}
             />
@@ -398,41 +400,41 @@ const Clusters = () => {
           <div className="filter-wrap">
             <Filter size={14} />
             <select value={filterPriority} onChange={e => setFilterPriority(e.target.value as any)}>
-              <option value="all">All Priorities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="all">{t('clusters.allPriorities')}</option>
+              <option value="critical">{t('common.priority.critical')}</option>
+              <option value="high">{t('common.priority.high')}</option>
+              <option value="medium">{t('common.priority.medium')}</option>
+              <option value="low">{t('common.priority.low')}</option>
             </select>
           </div>
           <select value={filterStatus} onChange={e => setFilterStatus(e.target.value)}>
-            <option value="all">All Statuses</option>
+            <option value="all">{t('clusters.allStatuses')}</option>
             {statuses.map(s => <option key={s} value={s}>{s}</option>)}
           </select>
           <select value={filterWard} onChange={e => setFilterWard(e.target.value)}>
-            <option value="all">All Wards</option>
+            <option value="all">{t('clusters.allWards')}</option>
             {wards.map(w => <option key={w} value={w}>{w}</option>)}
           </select>
           <div className="sort-wrap">
             <SortAsc size={14} />
             <select value={sortField} onChange={e => setSortField(e.target.value as SortField)}>
-              <option value="priority_score">Priority</option>
-              <option value="cluster_size">Cluster Size</option>
-              <option value="days_open">Days Open</option>
-              <option value="incident_number">Number</option>
-              <option value="ward">Ward</option>
+              <option value="priority_score">{t('clusters.sortPriority')}</option>
+              <option value="cluster_size">{t('clusters.sortClusterSize')}</option>
+              <option value="days_open">{t('clusters.sortDaysOpen')}</option>
+              <option value="incident_number">{t('clusters.sortNumber')}</option>
+              <option value="ward">{t('clusters.sortWard')}</option>
             </select>
             <button
               className="sort-dir-btn"
               onClick={() => setSortDir(d => d === 'asc' ? 'desc' : 'asc')}
-              title={sortDir === 'asc' ? 'Ascending' : 'Descending'}
+              title={sortDir === 'asc' ? t('clusters.ascending') : t('clusters.descending')}
             >
               {sortDir === 'asc' ? '↑' : '↓'}
             </button>
           </div>
         </div>
         <div className="results-info">
-          <span>{filteredIncidents.length} incident{filteredIncidents.length !== 1 ? 's' : ''} found</span>
+          <span>{t('clusters.resultsFound', { count: filteredIncidents.length })}</span>
         </div>
       </div>
 
@@ -449,17 +451,17 @@ const Clusters = () => {
                 disabled={safePage <= 1}
                 onClick={() => setCurrentPage(p => p - 1)}
               >
-                <ChevronLeft size={16} /> Prev
+                <ChevronLeft size={16} /> {t('clusters.prev')}
               </button>
               <span className="page-indicator">
-                Page {safePage} of {totalPages}
+                {t('clusters.pageOf', { current: safePage, total: totalPages })}
               </span>
               <button
                 className="page-btn"
                 disabled={safePage >= totalPages}
                 onClick={() => setCurrentPage(p => p + 1)}
               >
-                Next <ChevronRight size={16} />
+                {t('clusters.next')} <ChevronRight size={16} />
               </button>
             </div>
           )}
@@ -467,8 +469,8 @@ const Clusters = () => {
       ) : (
         <div className="empty-state">
           <Search size={32} />
-          <p>No incidents match your search criteria.</p>
-          <button className="retry-btn" onClick={() => { setSearch(''); setFilterPriority('all'); setFilterStatus('all'); setFilterWard('all'); }}>Clear Filters</button>
+          <p>{t('clusters.emptyFiltered')}</p>
+          <button className="retry-btn" onClick={() => { setSearch(''); setFilterPriority('all'); setFilterStatus('all'); setFilterWard('all'); }}>{t('clusters.clearFilters')}</button>
         </div>
       )}
 
@@ -481,20 +483,20 @@ const Clusters = () => {
               <div className="workspace-title-group">
                 <button className="back-btn" onClick={closeWorkspace}><X size={18} /></button>
                 <div>
-                  <h2>{selectedIncident.incident_number} Investigation</h2>
+                  <h2>{t('clusters.investigation', { number: selectedIncident.incident_number })}</h2>
                   <span className="workspace-subtitle">{selectedCategory} · {selectedWard}</span>
                 </div>
               </div>
               <div className="workspace-header-right">
                 <PriorityBadge priority={selectedPriority} />
-                <span className="ws-days-open"><Clock size={14} />{selectedDaysOpen}d open</span>
+                <span className="ws-days-open"><Clock size={14} />{t('clusters.daysOpen', { days: selectedDaysOpen })}</span>
               </div>
             </div>
 
             {detailLoading && (
               <div className="loading-state inline">
                 <Loader2 size={24} className="spin" />
-                <p>Loading incident intelligence...</p>
+                <p>{t('clusters.detailLoading')}</p>
               </div>
             )}
 
@@ -503,26 +505,26 @@ const Clusters = () => {
                 <div className="workspace-left">
                   {/* Incident Summary */}
                   <SectionCard
-                    title="Incident Summary"
-                    subtitle="AI-generated overview"
+                    title={t('clusters.section.summary')}
+                    subtitle={t('clusters.section.summarySubtitle')}
                     icon={<Brain size={18} />}
                     accent={getPriorityColor(selectedPriority)}
                   >
                     <p className="summary-text">{selectedSummary}</p>
                     <div className="summary-meta-row">
                       <span className="meta-chip"><MapPin size={12} />{selectedWard}</span>
-                      <span className="meta-chip"><Users size={12} />{selectedClusterSize} linked reports</span>
-                      <span className="meta-chip"><Clock size={12} />{selectedDaysOpen} days open</span>
+                      <span className="meta-chip"><Users size={12} />{selectedClusterSize} {t('clusters.linkedReports')}</span>
+                      <span className="meta-chip"><Clock size={12} />{selectedDaysOpen} {t('clusters.daysOpenLabel')}</span>
                     </div>
                   </SectionCard>
 
                   {/* Root Cause Analysis */}
-                  <SectionCard title="Root Cause Analysis" icon={<Target size={18} />}>
+                  <SectionCard title={t('clusters.section.rootCause')} icon={<Target size={18} />}>
                     <div className="root-cause-content">
                       <p className="root-cause-text">{rootCause}</p>
                       {selectedComplaints.length > 0 && (
                         <div className="top-complaints">
-                          <h5>Top Contributing Complaints</h5>
+                          <h5>{t('clusters.topComplaints')}</h5>
                           {selectedComplaints.slice(0, 3).map((c, i) => (
                             <div key={c.id} className="top-complaint-row">
                               <span className="tc-rank">#{i + 1}</span>
@@ -536,7 +538,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* AI Priority Explanation */}
-                  <SectionCard title="AI Priority Explanation" subtitle="How priority was determined" icon={<Zap size={18} />}>
+                  <SectionCard title={t('clusters.section.priorityExplanation')} subtitle={t('clusters.section.priorityExplanationSubtitle')} icon={<Zap size={18} />}>
                     <div className="priority-explainer">
                       <div className="priority-score-display">
                         <div className="score-ring">
@@ -552,7 +554,7 @@ const Clusters = () => {
                               transform="rotate(-90 40 40)"
                             />
                             <text x="40" y="37" textAnchor="middle" fontSize="18" fontWeight="800" fill={getPriorityColor(selectedPriority)}>{selectedPriorityScore}</text>
-                            <text x="40" y="52" textAnchor="middle" fontSize="10" fontWeight="600" fill={getPriorityColor(selectedPriority)}>Score</text>
+                            <text x="40" y="52" textAnchor="middle" fontSize="10" fontWeight="600" fill={getPriorityColor(selectedPriority)}>{t('clusters.score')}</text>
                           </svg>
                         </div>
                         <PriorityBadge priority={selectedPriority} />
@@ -562,8 +564,8 @@ const Clusters = () => {
                         <div className="priority-rules-list">
                           {priorityRules.slice(0, 6).map((rule: PriorityRule) => (
                             <div key={rule.id} className="priority-rule-row">
-                              <span className="rule-name">{rule.name || rule.description || 'Rule'}</span>
-                              <span className="rule-weight">Weight: {rule.weight ?? '?'}%</span>
+                              <span className="rule-name">{rule.name || rule.description || t('clusters.rule')}</span>
+                              <span className="rule-weight">{t('clusters.weight')}: {rule.weight ?? '?'}%</span>
                             </div>
                           ))}
                         </div>
@@ -572,10 +574,10 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Prediction & Escalation Risk */}
-                  <SectionCard title="Predictions & Escalation Risk" subtitle="AI forward-looking analysis" icon={<Flame size={18} />}>
+                  <SectionCard title={t('clusters.section.predictions')} subtitle={t('clusters.section.predictionsSubtitle')} icon={<Flame size={18} />}>
                     <div className="escalation-content">
                       <div className="escalation-meter">
-                        <span className="escalation-label">Escalation Probability</span>
+                        <span className="escalation-label">{t('clusters.escalationProbability')}</span>
                         <div className="escalation-track">
                           <div
                             className="escalation-fill"
@@ -588,14 +590,14 @@ const Clusters = () => {
                       </div>
                       <p className="escalation-text">
                         {predictions?.summary ||
-                          `AI prediction indicates a ${Math.round(escalationRisk)}% chance of escalation within the next 7 days based on historical patterns.`}
+                          t('clusters.escalationPrediction', { risk: Math.round(escalationRisk) })}
                       </p>
                       {(predictions?.risks?.length ?? 0) > 0 && (
                         <div className="prediction-risks">
                           {(predictions!.risks ?? []).slice(0, 3).map((risk: any, i: number) => (
                             <div key={i} className="prediction-risk-row">
                               <AlertTriangle size={12} />
-                              <span>{risk.reason || risk.description || 'Risk detected'}</span>
+                              <span>{risk.reason || risk.description || t('clusters.riskDetected')}</span>
                               <span className="risk-conf">{risk.confidence ?? 75}%</span>
                             </div>
                           ))}
@@ -605,7 +607,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Timeline */}
-                  <SectionCard title="Complaint Relationship Timeline" subtitle={`${selectedComplaints.length} linked complaints`} icon={<Calendar size={18} />}>
+                  <SectionCard title={t('clusters.section.timeline')} subtitle={t('clusters.section.timelineSubtitle', { count: selectedComplaints.length })} icon={<Calendar size={18} />}>
                     {selectedComplaints.length > 0 ? (
                       <div className="complaint-timeline">
                         {[...selectedComplaints]
@@ -620,27 +622,27 @@ const Clusters = () => {
                                 <div className="tl-top">
                                   <span className="tl-comp">{c.complaint_number}</span>
                                   <span className="tl-date">{new Date(c.date_received).toLocaleDateString('en-IN')}</span>
-                                  <span className="tl-score">Similarity: {Math.round((c.similarity_score || 0) * 100)}%</span>
+                                  <span className="tl-score">{t('clusters.similarity')}: {Math.round((c.similarity_score || 0) * 100)}%</span>
                                 </div>
                                 <p className="tl-text">{c.text}</p>
                                 {c.merge_reason && <span className="tl-merge-reason">{c.merge_reason}</span>}
-                                {overriddenIds.has(c.id) && <span className="tl-override-label">Manually excluded as not a duplicate</span>}
+                                {overriddenIds.has(c.id) && <span className="tl-override-label">{t('clusters.manuallyExcluded')}</span>}
                                 <button className="override-btn" onClick={() => toggleOverride(c.id)}>
-                                  {overriddenIds.has(c.id) ? 'Undo' : 'Mark as not a duplicate'}
+                                  {overriddenIds.has(c.id) ? t('clusters.undo') : t('clusters.markNotDuplicate')}
                                 </button>
                               </div>
                             </div>
                           ))}
                       </div>
                     ) : (
-                      <div className="empty-inline">No complaints linked for timeline.</div>
+                      <div className="empty-inline">{t('clusters.noComplaintsTimeline')}</div>
                     )}
                   </SectionCard>
                 </div>
 
                 <div className="workspace-right">
                   {/* Status & Priority Timeline */}
-                  <SectionCard title="Incident Status" icon={<ShieldAlert size={18} />}>
+                  <SectionCard title={t('clusters.section.status')} icon={<ShieldAlert size={18} />}>
                     <div className={`status-display status-${(selectedStatus || 'open').toLowerCase()}`}>
                       <span className="status-dot" />
                       <span className="status-text">{selectedStatus || 'Open'}</span>
@@ -655,13 +657,13 @@ const Clusters = () => {
                           </div>
                         ))
                       ) : (
-                        <div className="empty-inline">No priority history recorded.</div>
+                        <div className="empty-inline">{t('clusters.noPriorityHistory')}</div>
                       )}
                     </div>
                   </SectionCard>
 
                   {/* Responsible Department & Resource Allocation */}
-                  <SectionCard title="Responsible Department" subtitle="AI-suggested allocation" icon={<Building2 size={18} />}>
+                  <SectionCard title={t('clusters.section.responsibleDept')} subtitle={t('clusters.section.responsibleDeptSubtitle')} icon={<Building2 size={18} />}>
                     <div className="dept-allocation">
                       <div className="dept-primary">
                         <span className="dept-icon-wrap"><Wrench size={18} /></span>
@@ -671,7 +673,7 @@ const Clusters = () => {
                         <div className="resource-recs">
                           {resources.slice(0, 4).map((res: any, i: number) => (
                             <div key={i} className="res-row">
-                              <span className="res-label">{res.department || res.name || 'Resource'}</span>
+                              <span className="res-label">{res.department || res.name || t('clusters.resource')}</span>
                               <div className="res-bars">
                                 <span className="res-val current">{res.current ?? res.current_teams ?? 5}</span>
                                 <ChevronRight size={10} />
@@ -682,48 +684,48 @@ const Clusters = () => {
                           ))}
                         </div>
                       ) : (
-                        <p className="empty-inline">AI recommends reviewing resource level based on cluster size and days open.</p>
+                        <p className="empty-inline">{t('clusters.resourceDefault')}</p>
                       )}
                     </div>
                   </SectionCard>
 
                   {/* Duplicate Count & Linked Complaints */}
-                  <SectionCard title="Cluster Overview" icon={<GitBranch size={18} />}>
+                  <SectionCard title={t('clusters.section.clusterOverview')} icon={<GitBranch size={18} />}>
                     <div className="cluster-overview-grid">
                       <div className="co-item">
                         <span className="co-value">{selectedClusterSize - overriddenIds.size}</span>
-                        <span className="co-label">Active Duplicates</span>
+                        <span className="co-label">{t('clusters.activeDuplicates')}</span>
                       </div>
                       <div className="co-item">
                         <span className="co-value">{selectedComplaints.length}</span>
-                        <span className="co-label">Total Linked</span>
+                        <span className="co-label">{t('clusters.totalLinked')}</span>
                       </div>
                       <div className="co-item">
                         <span className="co-value">{avgSimilarity > 0 ? `${Math.round(avgSimilarity * 100)}%` : '—'}</span>
-                        <span className="co-label">Avg Similarity</span>
+                        <span className="co-label">{t('clusters.avgSimilarity')}</span>
                       </div>
                       {selectedIncident?.days_open != null && (
                         <div className="co-item">
                           <span className="co-value">{selectedIncident.days_open}d</span>
-                          <span className="co-label">Days Open</span>
+                          <span className="co-label">{t('clusters.daysOpenLabel')}</span>
                         </div>
                       )}
                     </div>
                     {overriddenIds.size > 0 && (
                       <div className="override-summary-badge">
-                        {overriddenIds.size} complaint{overriddenIds.size > 1 ? 's' : ''} manually excluded from duplicate set
+                        {t('clusters.excludedCount', { count: overriddenIds.size })}
                       </div>
                     )}
                     {selectedComplaints.length > 0 && (
                       <div className="linked-complaints">
-                        <h5>Recent Complaints</h5>
+                        <h5>{t('clusters.recentComplaints')}</h5>
                         {selectedComplaints.slice(0, 5).map(c => (
                           <div key={c.id} className={`lc-row${overriddenIds.has(c.id) ? ' overridden' : ''}`}>
                             <span className="lc-num">{c.complaint_number}</span>
                             <span className="lc-text">{c.text?.substring(0, 60)}{c.text?.length > 60 ? '…' : ''}</span>
                             <span className="lc-sim">{Math.round((c.similarity_score || 0) * 100)}%</span>
-                            <button className="override-btn-small" onClick={() => toggleOverride(c.id)} title={overriddenIds.has(c.id) ? 'Undo override' : 'Flag as not a duplicate'}>
-                              {overriddenIds.has(c.id) ? 'Undo' : 'Not dup'}
+                            <button className="override-btn-small" onClick={() => toggleOverride(c.id)} title={overriddenIds.has(c.id) ? t('clusters.undoOverride') : t('clusters.flagNotDuplicate')}>
+                              {overriddenIds.has(c.id) ? t('clusters.undo') : t('clusters.notDup')}
                             </button>
                           </div>
                         ))}
@@ -732,28 +734,28 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Knowledge Insights */}
-                  <SectionCard title="Knowledge Insights" subtitle="Historical pattern intelligence" icon={<BookOpen size={18} />}>
+                  <SectionCard title={t('clusters.section.knowledge')} subtitle={t('clusters.section.knowledgeSubtitle')} icon={<BookOpen size={18} />}>
                     {relatedKnowledge.length > 0 ? (
                       <div className="knowledge-list">
                         {relatedKnowledge.slice(0, 6).map((ki: any, i: number) => (
                           <div key={i} className="knowledge-row">
-                            <span className="ki-category">{ki.category || ki.title || 'Insight'}</span>
-                            <p className="ki-statement">{ki.statement || ki.reason || ki.description || 'No additional insight available.'}</p>
+                            <span className="ki-category">{ki.category || ki.title || t('clusters.insight')}</span>
+                            <p className="ki-statement">{ki.statement || ki.reason || ki.description || t('clusters.noInsight')}</p>
                             {ki.related_incidents != null && (
-                              <span className="ki-related">{ki.related_incidents} related incidents</span>
+                              <span className="ki-related">{t('clusters.relatedIncidents', { count: ki.related_incidents })}</span>
                             )}
                           </div>
                         ))}
                       </div>
                     ) : (
                       <div className="empty-inline">
-                        <p>{knowledge?.summary || 'No knowledge insights available for this incident category.'}</p>
+                        <p>{knowledge?.summary || t('clusters.noKnowledge')}</p>
                       </div>
                     )}
                   </SectionCard>
 
                   {/* Decision Recommendations */}
-                  <SectionCard title="Decision Recommendations" subtitle="AI-suggested interventions" icon={<ArrowUpRight size={18} />}>
+                  <SectionCard title={t('clusters.section.decisions')} subtitle={t('clusters.section.decisionsSubtitle')} icon={<ArrowUpRight size={18} />}>
                     {recs.length > 0 ? (
                       <div className="recs-list">
                         {recs.slice(0, 6).map((rec: DecisionRecommendation, i: number) => (
@@ -773,7 +775,7 @@ const Clusters = () => {
                       </div>
                     ) : (
                       <div className="empty-inline">
-                        <p>{decisionSupport?.summary || 'No specific recommendations available at this time.'}</p>
+                        <p>{decisionSupport?.summary || t('clusters.noRecommendations')}</p>
                       </div>
                     )}
                   </SectionCard>

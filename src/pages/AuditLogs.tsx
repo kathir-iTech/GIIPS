@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { Search, Filter, Clock, User, Shield, FileText } from 'lucide-react';
 import './Admin.css';
@@ -14,6 +15,7 @@ interface AuditLog {
 }
 
 const AuditLogs = () => {
+  const { t } = useTranslation();
   const [logs, setLogs] = useState<AuditLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -33,7 +35,7 @@ const AuditLogs = () => {
       const data = await response.json();
       setLogs(data);
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load audit logs');
+      setError(err instanceof Error ? err.message : t('auditLogs.loadError'));
     } finally {
       setLoading(false);
     }
@@ -52,8 +54,8 @@ const AuditLogs = () => {
   return (
     <div className="admin-page">
       <div className="admin-header">
-        <h1>Audit Logs</h1>
-        <p>Track all system actions and changes</p>
+        <h1>{t('auditLogs.header.title')}</h1>
+        <p>{t('auditLogs.header.subtitle')}</p>
       </div>
 
       <div className="admin-controls">
@@ -61,22 +63,22 @@ const AuditLogs = () => {
           <Search size={18} />
           <input
             type="text"
-            placeholder="Search logs..."
+            placeholder={t('auditLogs.searchPlaceholder')}
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
         </div>
         <div className="filters">
           <select value={filterRole} onChange={(e) => setFilterRole(e.target.value)}>
-            <option value="all">All Roles</option>
-            <option value="Executive">Executive</option>
-            <option value="Officer">Officer</option>
-            <option value="Citizen">Citizen</option>
+            <option value="all">{t('auditLogs.allRoles')}</option>
+            <option value="Executive">{t('nav.roleExecutive')}</option>
+            <option value="Officer">{t('nav.roleOfficer')}</option>
+            <option value="Citizen">{t('nav.roleCitizen')}</option>
           </select>
           <select value={filterStatus} onChange={(e) => setFilterStatus(e.target.value)}>
-            <option value="all">All Status</option>
-            <option value="success">Success</option>
-            <option value="failed">Failed</option>
+            <option value="all">{t('auditLogs.allStatus')}</option>
+            <option value="success">{t('auditLogs.success')}</option>
+            <option value="failed">{t('auditLogs.failed')}</option>
           </select>
         </div>
       </div>
@@ -85,21 +87,21 @@ const AuditLogs = () => {
         <table className="admin-table">
           <thead>
             <tr>
-              <th>Timestamp</th>
-              <th>User</th>
-              <th>Role</th>
-              <th>Action</th>
-              <th>Target</th>
-              <th>Status</th>
+              <th>{t('auditLogs.colTimestamp')}</th>
+              <th>{t('auditLogs.colUser')}</th>
+              <th>{t('auditLogs.colRole')}</th>
+              <th>{t('auditLogs.colAction')}</th>
+              <th>{t('auditLogs.colTarget')}</th>
+              <th>{t('auditLogs.colStatus')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={6} className="loading">Loading...</td></tr>
+              <tr><td colSpan={6} className="loading">{t('auditLogs.loading')}</td></tr>
             ) : error ? (
-              <tr><td colSpan={6} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchLogs}>Retry</button></td></tr>
+              <tr><td colSpan={6} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchLogs}>{t('auditLogs.retry')}</button></td></tr>
             ) : filteredLogs.length === 0 ? (
-              <tr><td colSpan={6} className="empty">No audit logs found</td></tr>
+              <tr><td colSpan={6} className="empty">{t('auditLogs.empty')}</td></tr>
             ) : (
               filteredLogs.map(log => (
                 <tr key={log.id}>

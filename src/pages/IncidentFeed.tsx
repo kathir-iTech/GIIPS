@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
@@ -9,6 +10,7 @@ import './IncidentFeed.css';
 const PAGE_SIZE = 10;
 
 const IncidentFeed = () => {
+  const { t } = useTranslation();
   const [allIncidents, setAllIncidents] = useState<Incident[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -34,7 +36,7 @@ const IncidentFeed = () => {
       const data = await api.getIncidents(sortField);
       setAllIncidents(data || []);
     } catch (err: any) {
-      setMergeError(err.message || 'Merge failed');
+      setMergeError(err.message || t('incidents.catch.mergeFailed'));
     }
   }, [selectedIds, sortField]);
 
@@ -46,7 +48,7 @@ const IncidentFeed = () => {
       const data = await api.getIncidents(sortField);
       setAllIncidents(data || []);
     } catch (err: any) {
-      setSplitError(err.message || 'Split failed');
+      setSplitError(err.message || t('incidents.catch.splitFailed'));
     }
   }, [sortField]);
 
@@ -61,7 +63,7 @@ const IncidentFeed = () => {
       } catch (e) {
         if (!cancelled) {
           if (showLoader) {
-            setError('Failed to load incidents. Please try again.');
+            setError(t('incidents.loadError'));
           }
           console.error('Failed to fetch incidents:', e);
         }
@@ -122,43 +124,43 @@ const IncidentFeed = () => {
     }
   };
 
-  if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading incidents...</span></div>;
-  if (error) return <div className="page-error">Error: {error}</div>;
+  if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('incidents.loading')}</span></div>;
+  if (error) return <div className="page-error">{t('incidents.errorPrefix')}{error}</div>;
 
   return (
     <div className="incident-feed-page">
-      <Header title="Incident Feed" subtitle="Prioritized list of identified incidents" />
+      <Header title={t('incidents.header.title')} subtitle={t('incidents.header.subtitle')} />
       <div className="page-content">
         <div className="feed-toolbar">
           <div className="search-box">
             <Search size={18} className="search-icon" />
-            <input type="text" placeholder="Search by ID, ward, category..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
+            <input type="text" placeholder={t('incidents.searchPlaceholder')} value={searchQuery} onChange={e => setSearchQuery(e.target.value)} />
           </div>
           <div className="filter-group">
             <Filter size={16} />
             <select value={priorityFilter} onChange={e => setPriorityFilter(e.target.value as typeof priorityFilter)}>
-              <option value="all">All Priorities</option>
-              <option value="critical">Critical</option>
-              <option value="high">High</option>
-              <option value="medium">Medium</option>
-              <option value="low">Low</option>
+              <option value="all">{t('incidents.allPriorities')}</option>
+              <option value="critical">{t('common.priority.critical')}</option>
+              <option value="high">{t('common.priority.high')}</option>
+              <option value="medium">{t('common.priority.medium')}</option>
+              <option value="low">{t('common.priority.low')}</option>
             </select>
             <select value={categoryFilter} onChange={e => setCategoryFilter(e.target.value)}>
-              <option value="all">All Categories</option>
+              <option value="all">{t('incidents.allCategories')}</option>
               {categories.map(cat => <option key={cat} value={cat}>{cat}</option>)}
             </select>
           </div>
-          <div className="results-count">{filteredAndSorted.length} incidents</div>
+          <div className="results-count">{t('incidents.resultsCount', { count: filteredAndSorted.length })}</div>
           <button
             className={`sort-age-btn ${sortField === 'days_open' ? 'active' : ''}`}
             onClick={() => handleSort('days_open')}
-            title="Sort by days open"
+            title={t('incidents.sortByDays')}
           >
-            <ArrowUpDown size={14} /> Oldest
+            <ArrowUpDown size={14} /> {t('incidents.oldest')}
           </button>
           {selectedIds.size >= 2 && (
-            <button className="merge-btn" onClick={handleMerge} title="Merge selected incidents">
-              <GitMerge size={14} /> Merge {selectedIds.size}
+            <button className="merge-btn" onClick={handleMerge} title={t('incidents.mergeTitle')}>
+              <GitMerge size={14} /> {t('incidents.merge')} {selectedIds.size}
             </button>
           )}
         </div>
@@ -172,26 +174,26 @@ const IncidentFeed = () => {
                 <th className="select-col"><input type="checkbox" onChange={e => { if (e.target.checked) setSelectedIds(new Set(pagedIncidents.map(i => i.id))); else setSelectedIds(new Set()); }} checked={selectedIds.size === pagedIncidents.length && pagedIncidents.length > 0} /></th>
                 <th className="expand-col"></th>
                 <th onClick={() => handleSort('incident_number')} className={sortField === 'incident_number' ? 'active' : ''}>
-                  Incident ID {sortField === 'incident_number' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                  {t('incidents.colIncidentId')} {sortField === 'incident_number' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th onClick={() => handleSort('category')} className={sortField === 'category' ? 'active' : ''}>
-                  Category {sortField === 'category' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                  {t('incidents.colCategory')} {sortField === 'category' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
-                <th>Department</th>
+                <th>{t('incidents.colDepartment')}</th>
                 <th onClick={() => handleSort('cluster_size')} className={sortField === 'cluster_size' ? 'active' : ''}>
-                  Cluster {sortField === 'cluster_size' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                  {t('incidents.colCluster')} {sortField === 'cluster_size' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th onClick={() => handleSort('ward')} className={sortField === 'ward' ? 'active' : ''}>
-                  Ward {sortField === 'ward' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                  {t('incidents.colWard')} {sortField === 'ward' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th onClick={() => handleSort('days_open')} className={sortField === 'days_open' ? 'active' : ''} >
-                  Days {sortField === 'days_open' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                  {t('incidents.colDays')} {sortField === 'days_open' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th onClick={() => handleSort('priority_score')} className={sortField === 'priority_score' ? 'active' : ''}>
-                  Score {sortField === 'priority_score' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
+                  {t('incidents.colScore')} {sortField === 'priority_score' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
-                <th>Priority</th>
-                <th className="action-col">Recommended Action</th>
+                <th>{t('incidents.colPriority')}</th>
+                <th className="action-col">{t('incidents.colRecommendedAction')}</th>
               </tr>
             </thead>
             <tbody>
@@ -200,7 +202,7 @@ const IncidentFeed = () => {
                     <td colSpan={10}>
                     <div className="empty-state">
                       <AlertCircle size={32} />
-                      <p>No incidents match your current filters.</p>
+                      <p>{t('incidents.emptyFiltered')}</p>
                     </div>
                   </td>
                 </tr>
@@ -216,8 +218,8 @@ const IncidentFeed = () => {
                     <td className="ward-cell">{incident.ward?.replace('Ward ', 'W').split(' - ')[0]}</td>
                     <td className="days-cell"><AgingBadge daysOpen={incident.days_open} /></td>
                     <td className="score-cell"><span className="score-badge">{incident.priority_score}</span></td>
-                    <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || 'Low'}</span></td>
-                    <td className="action-cell" title={incident.recommended_action}>{incident.recommended_action}</td>
+                    <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || t('common.priority.low')}</span></td>
+                    <td className="action-cell" title={incident.recommended_action || ''}>{incident.recommended_action}</td>
                   </tr>
                 ))
               )}
@@ -227,20 +229,20 @@ const IncidentFeed = () => {
                     <div className="expanded-content">
                       <div className="expanded-left">
                         <div className="detail-block">
-                          <h4>Summary</h4>
+                          <h4>{t('incidents.summary')}</h4>
                           <p>{incident.summary}</p>
                         </div>
                         <div className="detail-block">
-                          <h4>Clustering Reasoning</h4>
+                          <h4>{t('incidents.clusteringReasoning')}</h4>
                           <p className="reasoning">
                             {incident.complaints && incident.complaints.length > 0 && incident.complaints[0]?.similarity_score
-                              ? `Complaints clustered with ${(incident.complaints[0].similarity_score * 100).toFixed(0)}% average similarity.`
-                              : 'Clustering based on semantic similarity of reported issues.'}
+                              ? t('incidents.clusteredWithSimilarity', { score: (incident.complaints[0].similarity_score * 100).toFixed(0) })
+                              : t('incidents.clusteringDefaultReason')}
                           </p>
                         </div>
                       </div>
                       <div className="expanded-right">
-                        <h4>Linked Complaints ({incident.complaints?.length || 0})</h4>
+                        <h4>{t('incidents.linkedComplaints', { count: incident.complaints?.length || 0 })}</h4>
                         <div className="complaints-list">
                           {(incident.complaints?.slice(0, 5) ?? []).map(c => (
                             <div key={c.id} className="complaint-item">
@@ -248,12 +250,12 @@ const IncidentFeed = () => {
                                 <span className="complaint-id">{c.complaint_number}</span>
                                 <span className="complaint-date">{c.date_received}</span>
                                 <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{((c.similarity_score || 0) * 100).toFixed(0)}%</span></div>
-                                <button className="split-btn" onClick={(e) => { e.stopPropagation(); handleSplit(incident.id, c.id); }} title="Split complaint into new incident">Split</button>
+                                <button className="split-btn" onClick={(e) => { e.stopPropagation(); handleSplit(incident.id, c.id); }} title={t('incidents.splitTitle')}>{t('incidents.split')}</button>
                               </div>
                               <p className="complaint-text">{c.text}</p>
                             </div>
                           ))}
-                          {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">+{incident.complaints.length - 5} more complaints</div>}
+                          {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">{t('incidents.moreComplaints', { count: incident.complaints.length - 5 })}</div>}
                         </div>
                       </div>
                     </div>
@@ -266,7 +268,7 @@ const IncidentFeed = () => {
 
         {totalPages > 1 && (
           <div className="pagination">
-            <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={16} /> Prev</button>
+            <button className="page-btn" disabled={currentPage === 1} onClick={() => setCurrentPage(p => p - 1)}><ChevronLeft size={16} /> {t('incidents.prev')}</button>
             <div className="page-numbers">
               {Array.from({ length: Math.min(5, totalPages) }, (_, i) => {
                 let pageNum: number;
@@ -277,7 +279,7 @@ const IncidentFeed = () => {
                 return <button key={i} className={`page-num ${currentPage === pageNum ? 'active' : ''}`} onClick={() => setCurrentPage(pageNum)}>{pageNum}</button>;
               })}
             </div>
-            <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>Next <ChevronRight size={16} /></button>
+            <button className="page-btn" disabled={currentPage === totalPages} onClick={() => setCurrentPage(p => p + 1)}>{t('incidents.next')} <ChevronRight size={16} /></button>
           </div>
         )}
       </div>
