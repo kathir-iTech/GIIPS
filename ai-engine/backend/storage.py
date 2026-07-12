@@ -23,7 +23,10 @@ def _config(key: str, default: str) -> str:
 
 class S3Storage:
     def __init__(self):
-        self.endpoint_url = _config("S3_ENDPOINT_URL", "http://localhost:9000")
+        raw = _config("S3_ENDPOINT_URL", "http://localhost:9000")
+        if raw and not raw.startswith("http://") and not raw.startswith("https://"):
+            raw = "https://" + raw
+        self.endpoint_url = raw
         self.access_key = _config("S3_ACCESS_KEY_ID", "minioadmin")
         self.secret_key = _config("S3_SECRET_ACCESS_KEY", "minioadmin")
         self.bucket = _config("S3_BUCKET_NAME", "giips-complaints")
