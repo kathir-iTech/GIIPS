@@ -1,5 +1,5 @@
-import { useState, useEffect, useMemo } from 'react';
-import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown } from 'lucide-react';
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
@@ -19,6 +19,36 @@ const IncidentFeed = () => {
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [searchQuery, setSearchQuery] = useState('');
   const [currentPage, setCurrentPage] = useState(1);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
+  const [mergeError, setMergeError] = useState<string | null>(null);
+  const [splitError, setSplitError] = useState<string | null>(null);
+
+  const handleMerge = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (ids.length < 2) return;
+    setMergeError(null);
+    try {
+      await api.mergeIncidents(ids);
+      setSelectedIds(new Set());
+      setExpandedId(null);
+      const data = await api.getIncidents(sortField);
+      setAllIncidents(data || []);
+    } catch (err: any) {
+      setMergeError(err.message || 'Merge failed');
+    }
+  }, [selectedIds, sortField]);
+
+  const handleSplit = useCallback(async (incidentId: string, complaintId: string) => {
+    setSplitError(null);
+    try {
+      await api.splitComplaint(incidentId, complaintId);
+      setExpandedId(null);
+      const data = await api.getIncidents(sortField);
+      setAllIncidents(data || []);
+    } catch (err: any) {
+      setSplitError(err.message || 'Split failed');
+    }
+  }, [sortField]);
 
   useEffect(() => {
     let cancelled = false;
@@ -126,12 +156,20 @@ const IncidentFeed = () => {
           >
             <ArrowUpDown size={14} /> Oldest
           </button>
+          {selectedIds.size >= 2 && (
+            <button className="merge-btn" onClick={handleMerge} title="Merge selected incidents">
+              <GitMerge size={14} /> Merge {selectedIds.size}
+            </button>
+          )}
         </div>
+        {mergeError && <div className="feed-error"><AlertCircle size={14} /> {mergeError} <button onClick={() => setMergeError(null)}>x</button></div>}
+        {splitError && <div className="feed-error"><AlertCircle size={14} /> {splitError} <button onClick={() => setSplitError(null)}>x</button></div>}
 
         <div className="incidents-table-container">
           <table className="incidents-table">
             <thead>
               <tr>
+                <th className="select-col"><input type="checkbox" onChange={e => { if (e.target.checked) setSelectedIds(new Set(pagedIncidents.map(i => i.id))); else setSelectedIds(new Set()); }} checked={selectedIds.size === pagedIncidents.length && pagedIncidents.length > 0} /></th>
                 <th className="expand-col"></th>
                 <th onClick={() => handleSort('incident_number')} className={sortField === 'incident_number' ? 'active' : ''}>
                   Incident ID {sortField === 'incident_number' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
@@ -168,8 +206,9 @@ const IncidentFeed = () => {
                 </tr>
               ) : (
                 pagedIncidents.map(incident => (
-                  <tr key={incident.id} className={`incident-row priority-${incident.priority_label?.toLowerCase()}`} onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>
-                    <td className="expand-cell">{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
+                  <tr key={incident.id} className={`incident-row priority-${incident.priority_label?.toLowerCase()} ${selectedIds.has(incident.id) ? 'selected' : ''}`}>
+                    <td className="select-cell" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(incident.id)} onChange={() => setSelectedIds(prev => { const next = new Set(prev); if (next.has(incident.id)) next.delete(incident.id); else next.add(incident.id); return next; })} /></td>
+                    <td className="expand-cell" onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
                     <td className="incident-id">{incident.incident_number}</td>
                     <td><span className="category-badge">{incident.category}</span></td>
                     <td className="dept-cell">{incident.department || incident.category}</td>
@@ -184,7 +223,7 @@ const IncidentFeed = () => {
               )}
               {expandedId && pagedIncidents.map(incident => expandedId === incident.id && (
                 <tr key={`expanded-${incident.id}`} className="expanded-row">
-                  <td colSpan={10}>
+                  <td colSpan={11}>
                     <div className="expanded-content">
                       <div className="expanded-left">
                         <div className="detail-block">
@@ -209,6 +248,7 @@ const IncidentFeed = () => {
                                 <span className="complaint-id">{c.complaint_number}</span>
                                 <span className="complaint-date">{c.date_received}</span>
                                 <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{((c.similarity_score || 0) * 100).toFixed(0)}%</span></div>
+                                <button className="split-btn" onClick={(e) => { e.stopPropagation(); handleSplit(incident.id, c.id); }} title="Split complaint into new incident">Split</button>
                               </div>
                               <p className="complaint-text">{c.text}</p>
                             </div>

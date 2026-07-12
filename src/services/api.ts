@@ -339,6 +339,26 @@ export const api = {
     return response.json();
   },
 
+  mergeIncidents: async (incidentIds: string[]): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/merge`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ incident_ids: incidentIds })
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  splitComplaint: async (incidentId: string, complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/split/${complaintId}`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   copilotChat: async (message: string, history: any[] = []): Promise<any> => {
     const response = await fetch(`${BASE_URL}/copilot/chat`, {
       ...FETCH_DEFAULTS,

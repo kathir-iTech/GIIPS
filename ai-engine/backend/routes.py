@@ -24,8 +24,10 @@ from models import (
     KnowledgeSummaryResponse,
     DecisionSupportSummaryResponse,
     CopilotChatRequest,
-    CopilotChatResponse
+    CopilotChatResponse,
+    MergeIncidentsRequest,
 )
+from priority.priority import PriorityEngine
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit
@@ -557,6 +559,185 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
             "reason": ph.reason, "changed_at": ph.changed_at.isoformat() if ph.changed_at else None
         } for ph in inc.priority_history] if inc.priority_history else [],
     }
+
+
+@incident_router.post("/merge")
+async def merge_incidents(body: MergeIncidentsRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Merge multiple incidents into one. Moves all complaints to the target and recalculates priority."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can merge incidents")
+    if len(body.incident_ids) < 2:
+        raise HTTPException(status_code=400, detail="At least two incident IDs are required")
+
+    incidents = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id.in_(body.incident_ids)).all()
+    if len(incidents) != len(body.incident_ids):
+        found = {i.id for i in incidents}
+        missing = set(body.incident_ids) - found
+        raise HTTPException(status_code=404, detail=f"Incidents not found: {', '.join(missing)}")
+
+    # Pick the largest incident as target (most complaints), fallback to first
+    target = max(incidents, key=lambda i: len(i.complaints) or 0)
+    sources = [i for i in incidents if i.id != target.id]
+
+    for src in sources:
+        for c in src.complaints:
+            c.incident_id = target.id
+            c.merge_reason = f"Merged from {src.incident_number} by officer action"
+        db.query(PriorityHistory).filter(PriorityHistory.incident_id == src.id).delete()
+        db.delete(src)
+
+    db.flush()
+
+    # Recalculate cluster size and summary
+    target.cluster_size = db.query(Complaint).filter(Complaint.incident_id == target.id).count()
+
+    # Build merged summary
+    all_titles = [c.title for c in target.complaints][:5]
+    target.summary = "; ".join(all_titles) if all_titles else target.summary
+
+    # Recalculate priority
+    from priority.utils import calculate_days_open
+    dates = [c.created_at for c in target.complaints if c.created_at]
+    first_date = min(dates).isoformat() if dates else datetime.utcnow().isoformat()
+    last_date = max(dates).isoformat() if dates else datetime.utcnow().isoformat()
+    location_hints = list({c.location for c in target.complaints if c.location})
+
+    try:
+        engine = PriorityEngine()
+        result = engine.compute(
+            incident_id=target.id,
+            cluster_size=target.cluster_size,
+            first_complaint_date=first_date,
+            last_complaint_date=last_date,
+            category=target.category,
+            location_hints=location_hints,
+        )
+        old_score = target.priority_score
+        if abs(target.priority_score - result.priority_score) > 0.01:
+            db.add(PriorityHistory(
+                id=str(uuid.uuid4()), incident_id=target.id,
+                old_score=old_score, new_score=result.priority_score,
+                reason=f"Merged {len(sources)} incident(s) into {target.incident_number}"
+            ))
+        target.priority_score = result.priority_score
+        target.priority_label = result.priority_label
+        target.days_open = calculate_days_open(first_date)
+    except Exception as e:
+        logger.warning("Priority recalculation failed after merge: %s", e)
+
+    db.commit()
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_merge",
+                     target.id, "success",
+                     f"Merged incidents {', '.join(src.incident_number for src in sources)} into {target.incident_number}")
+
+    return {"message": f"Incidents merged into {target.incident_number}", "incident_id": target.id}
+
+
+@incident_router.post("/{incident_id}/split/{complaint_id}")
+async def split_complaint(incident_id: str, complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Remove a complaint from an incident and create a new standalone incident for it."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can split complaints")
+
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.incident_id == incident_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found in this incident")
+
+    if incident.cluster_size <= 1:
+        raise HTTPException(status_code=400, detail="Cannot split the last complaint from an incident. Delete the incident instead.")
+
+    # Create new incident for the split complaint
+    new_incident = Incident(
+        id=str(uuid.uuid4()),
+        incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}",
+        category=complaint.predicted_category or incident.category,
+        ward=complaint.ward or incident.ward,
+        cluster_size=1,
+        priority_score=0.0,
+        priority_label="Low",
+        summary=complaint.title,
+    )
+    db.add(new_incident)
+    db.flush()
+
+    # Move the complaint
+    old_merge_reason = complaint.merge_reason
+    complaint.incident_id = new_incident.id
+    complaint.merge_reason = f"Split from {incident.incident_number} by officer action"
+
+    # Update original incident
+    incident.cluster_size = db.query(Complaint).filter(Complaint.incident_id == incident.id).count()
+
+    # Recalculate priority for original incident
+    from priority.utils import calculate_days_open
+    orig_dates = [c.created_at for c in incident.complaints if c.created_at and c.id != complaint_id]
+    if orig_dates:
+        first_date = min(orig_dates).isoformat()
+        last_date = max(orig_dates).isoformat()
+        orig_location_hints = list({c.location for c in incident.complaints if c.location and c.id != complaint_id})
+        try:
+            engine = PriorityEngine()
+            result = engine.compute(
+                incident_id=incident.id, cluster_size=incident.cluster_size,
+                first_complaint_date=first_date, last_complaint_date=last_date,
+                category=incident.category, location_hints=orig_location_hints,
+            )
+            old_score = incident.priority_score
+            if abs(incident.priority_score - result.priority_score) > 0.01:
+                db.add(PriorityHistory(
+                    id=str(uuid.uuid4()), incident_id=incident.id,
+                    old_score=old_score, new_score=result.priority_score,
+                    reason=f"Complaint {complaint_id[:8]} split out to {new_incident.incident_number}"
+                ))
+            incident.priority_score = result.priority_score
+            incident.priority_label = result.priority_label
+            incident.days_open = calculate_days_open(first_date)
+        except Exception as e:
+            logger.warning("Priority recalculation failed after split (original): %s", e)
+
+    # Recalculate priority for new incident
+    new_dates = [complaint.created_at] if complaint.created_at else []
+    if new_dates:
+        try:
+            engine = PriorityEngine()
+            result = engine.compute(
+                incident_id=new_incident.id, cluster_size=1,
+                first_complaint_date=new_dates[0].isoformat(),
+                last_complaint_date=new_dates[0].isoformat(),
+                category=new_incident.category,
+                location_hints=[complaint.location] if complaint.location else [],
+            )
+            new_incident.priority_score = result.priority_score
+            new_incident.priority_label = result.priority_label
+            new_incident.days_open = calculate_days_open(new_dates[0].isoformat())
+        except Exception as e:
+            logger.warning("Priority recalculation failed after split (new): %s", e)
+
+    # Record priority history for the change
+    db.add(PriorityHistory(
+        id=str(uuid.uuid4()), incident_id=incident.id,
+        old_score=incident.priority_score, new_score=incident.priority_score,
+        reason=f"Cluster size changed after split: {incident.cluster_size + 1} -> {incident.cluster_size}"
+    ))
+
+    db.commit()
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_split",
+                     incident.id, "success",
+                     f"Complaint {complaint_id[:8]} split from {incident.incident_number} to new {new_incident.incident_number}")
+
+    return {
+        "message": f"Complaint split to new incident {new_incident.incident_number}",
+        "original_incident_id": incident.id,
+        "new_incident_id": new_incident.id,
+        "new_incident_number": new_incident.incident_number,
+    }
+
 
 # === Incident Intelligence Routes ===
 # ... (existing intelligence_router)

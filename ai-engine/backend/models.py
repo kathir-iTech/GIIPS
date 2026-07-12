@@ -230,3 +230,7 @@ class CopilotChatResponse(BaseModel):
     confidence: float = Field(..., ge=0.0, le=1.0)
     data_sources: List[str]
     reasoning: str
+
+
+class MergeIncidentsRequest(BaseModel):
+    incident_ids: List[str] = Field(..., min_length=2)
