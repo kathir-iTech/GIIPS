@@ -20,6 +20,7 @@ sys.path.insert(0, str(Path(__file__).parent.parent))
 
 from database import SessionLocal, Complaint, Incident, PriorityHistory
 from classification.train import ComplaintClassifier
+from classification.tamil_fallback import is_tamil_text, tamil_keyword_classify
 from clustering.cluster import ComplaintClusterer
 from priority.priority import PriorityEngine
 from duplicate_detection.engine import DuplicateDetector
@@ -52,6 +53,21 @@ class ClassificationService:
         classifier = self.get_classifier()
         if classifier is None: return await self._fallback_classify(request)
         combined_text = request.text + (f" {request.detail}" if request.detail else "")
+
+        if is_tamil_text(combined_text):
+            category, keywords_matched, confidence = tamil_keyword_classify(combined_text)
+            if category:
+                # Phase 1.5 TEMPORARY: Tamil keyword fallback
+                reason = f"Classified as {category} via Tamil keyword match (terms: {', '.join(keywords_matched)})"
+                return ClassifyResponse(
+                    predicted_category=category,
+                    confidence=confidence,
+                    top_predictions=[{"category": category, "confidence": confidence}],
+                    reason=reason,
+                    supporting_factors=keywords_matched,
+                    method="tamil_keyword_fallback",
+                )
+
         try:
             prediction = classifier.predict([combined_text])[0]
             probabilities = classifier.predict_proba([combined_text])[0]
@@ -70,7 +86,7 @@ class ClassificationService:
                     supporting_factors = [w for w in words if w in text_lower]
                     break
                     
-            return ClassifyResponse(predicted_category=str(prediction), confidence=confidence, top_predictions=top_predictions, reason=reason, supporting_factors=supporting_factors)
+            return ClassifyResponse(predicted_category=str(prediction), confidence=confidence, top_predictions=top_predictions, reason=reason, supporting_factors=supporting_factors, method="ml_model")
         except Exception: return await self._fallback_classify(request)
 
     async def _fallback_classify(self, request: ClassifyRequest) -> ClassifyResponse:
@@ -90,7 +106,7 @@ class ClassificationService:
                 predicted, confidence, supporting_factors = cat, 0.75, matched
                 break
         reason = f"Classified as {predicted} using heuristic fallback based on detected keywords."
-        return ClassifyResponse(predicted_category=predicted, confidence=confidence, top_predictions=[{"category": predicted, "confidence": confidence}], reason=reason, supporting_factors=supporting_factors)
+        return ClassifyResponse(predicted_category=predicted, confidence=confidence, top_predictions=[{"category": predicted, "confidence": confidence}], reason=reason, supporting_factors=supporting_factors, method="heuristic_fallback")
 
 
 class ClusteringService:

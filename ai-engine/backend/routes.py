@@ -9,7 +9,7 @@ import time
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_, extract
+from sqlalchemy import func, and_, extract, text
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
@@ -90,7 +90,7 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
 
 
 def _create_notification(db: Session, user_id: str, notification_type: str, complaint_id: Optional[str] = None, data: Optional[dict] = None):
-    """Create an in-app notification for a citizen user."""
+    """Create an in-app notification for a user."""
     try:
         notif = Notification(
             id=str(uuid.uuid4()),
@@ -105,6 +105,66 @@ def _create_notification(db: Session, user_id: str, notification_type: str, comp
     except Exception:
         logger.error("Notification creation failed for user=%s type=%s", user_id, notification_type)
         db.rollback()
+
+
+def _get_department_officers(db: Session, department: str) -> list[User]:
+    """Return active officers assigned to a given department."""
+    return db.query(User).filter(
+        User.role == "Officer",
+        User.department == department,
+        User.status == "active"
+    ).all()
+
+
+def _notify_department_officers(db: Session, department: str, notification_type: str, data: Optional[dict] = None):
+    """Create a notification for every active officer in a department."""
+    for officer in _get_department_officers(db, department):
+        _create_notification(db, officer.id, notification_type, data=data)
+
+
+def _check_aging_notifications(db: Session, department: str):
+    """Create aging-warning / aging-critical notifications for officers in a department."""
+    from department_map import DEPARTMENT_MAP
+    dept_categories = [cat for cat, dept in DEPARTMENT_MAP.items() if dept == department]
+
+    if not dept_categories:
+        return
+
+    incidents = db.query(Incident).filter(
+        Incident.category.in_(dept_categories),
+        Incident.status == "open"
+    ).all()
+
+    officers = _get_department_officers(db, department)
+    if not officers or not incidents:
+        return
+
+    for incident in incidents:
+        days = incident.days_open or 0
+        if days < 4:
+            continue
+        aging_type = "aging_critical" if days >= 8 else "aging_warning"
+        officer_ids = {o.id for o in officers}
+
+        existing = db.query(Notification).filter(
+            Notification.user_id.in_(officer_ids),
+            Notification.type == aging_type,
+            Notification.data.like(f'%"incident_id": "{incident.id}"%'),
+        ).all()
+        already_notified = {n.user_id for n in existing}
+
+        for officer in officers:
+            if officer.id not in already_notified:
+                _create_notification(
+                    db, officer.id, aging_type,
+                    data={
+                        "incident_id": incident.id,
+                        "incident_number": incident.incident_number,
+                        "category": incident.category,
+                        "ward": incident.ward,
+                        "days_open": days,
+                    },
+                )
 
 # ... (router definitions)
 spatial_router = APIRouter(prefix="/spatial", tags=["Spatial"])
@@ -534,6 +594,107 @@ async def get_trend_data(db: Session = Depends(get_db)):
     }
 
 
+@dashboard_router.get("/analytics")
+async def get_analytics(db: Session = Depends(get_db)):
+    """Get comprehensive analytics data for the Analysis page."""
+    from department_map import get_department
+
+    six_months_ago = datetime.now() - timedelta(days=180)
+
+    # Overview
+    total_complaints = db.query(Complaint).count()
+    total_incidents = db.query(Incident).count()
+    open_incidents = db.query(Incident).filter(Incident.status == "open").count()
+
+    # Category breakdown (complaints by category)
+    cat_raw = db.query(
+        Complaint.predicted_category, func.count(Complaint.id)
+    ).filter(
+        Complaint.predicted_category.isnot(None),
+    ).group_by(Complaint.predicted_category).order_by(func.count(Complaint.id).desc()).all()
+
+    # Department workload (open incidents, mapped to departments)
+    dept_raw = db.query(
+        Incident.category, func.count(Incident.id)
+    ).filter(Incident.status == "open").group_by(Incident.category).all()
+    dept_merged: Dict[str, int] = {}
+    for cat, cnt in dept_raw:
+        dept = get_department(cat)
+        dept_merged[dept] = dept_merged.get(dept, 0) + cnt
+
+    # Volume trend (last 6 months)
+    months: list = []
+    for i in range(5, -1, -1):
+        d = datetime.now() - timedelta(days=30 * i)
+        months.append((d.year, d.month, d.strftime("%b")))
+
+    comp_by_month = {
+        (r[0], r[1]): r[2]
+        for r in db.query(
+            extract("year", Complaint.created_at),
+            extract("month", Complaint.created_at),
+            func.count(Complaint.id),
+        ).filter(Complaint.created_at >= six_months_ago)
+         .group_by(text("year"), text("month")).all()
+    }
+    inc_by_month = {
+        (r[0], r[1]): r[2]
+        for r in db.query(
+            extract("year", Incident.created_at),
+            extract("month", Incident.created_at),
+            func.count(Incident.id),
+        ).filter(Incident.created_at >= six_months_ago)
+         .group_by(text("year"), text("month")).all()
+    }
+
+    # Resolution time trend (avg days_open for closed/resolved incidents per month)
+    res_raw = db.query(
+        extract("year", Incident.created_at),
+        extract("month", Incident.created_at),
+        func.avg(Incident.days_open),
+    ).filter(
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.created_at >= six_months_ago,
+    ).group_by(text("year"), text("month")).all()
+    res_by_month = {(r[0], r[1]): round(float(r[2]), 1) for r in res_raw if r[2] is not None}
+
+    # Ward hotspots (top 10 by complaint count)
+    ward_raw = db.query(
+        Complaint.ward, func.count(Complaint.id)
+    ).filter(
+        Complaint.ward.isnot(None), Complaint.ward != "",
+    ).group_by(Complaint.ward).order_by(func.count(Complaint.id).desc()).limit(10).all()
+
+    return {
+        "overview": {
+            "totalComplaints": total_complaints,
+            "totalIncidents": total_incidents,
+            "openIncidents": open_incidents,
+        },
+        "categoryBreakdown": [
+            {"category": cat or "Uncategorized", "count": cnt}
+            for cat, cnt in cat_raw
+        ],
+        "departmentWorkload": [
+            {"department": dept, "activeIncidents": cnt}
+            for dept, cnt in sorted(dept_merged.items(), key=lambda x: -x[1])
+        ],
+        "volumeTrend": {
+            "labels": [m[2] for m in months],
+            "complaints": [comp_by_month.get((y, m), 0) for y, m, _ in months],
+            "incidents": [inc_by_month.get((y, m), 0) for y, m, _ in months],
+        },
+        "resolutionTrend": {
+            "labels": [m[2] for m in months],
+            "avgDays": [res_by_month.get((y, m)) for y, m, _ in months],
+        },
+        "wardHotspots": [
+            {"ward": w, "complaintCount": cnt}
+            for w, cnt in ward_raw
+        ],
+    }
+
+
 @incident_router.get("")
 async def get_incidents(db: Session = Depends(get_db)):
     """Get all incidents."""
@@ -658,6 +819,14 @@ async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_c
                      target.id, "success",
                      f"Merged incidents {', '.join(src.incident_number for src in sources)} into {target.incident_number}")
 
+    # Notify officers in the department
+    department = get_department(target.category)
+    _notify_department_officers(
+        db, department, "officer_merged",
+        data={"incident_number": target.incident_number, "incident_id": target.id, "category": target.category}
+    )
+    _check_aging_notifications(db, department)
+
     return {"message": f"Incidents merged into {target.incident_number}", "incident_id": target.id}
 
 
@@ -766,6 +935,20 @@ async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends
                      incident.id, "success",
                      f"Complaint {complaint_id[:8]} split from {incident.incident_number} to new {new_incident.incident_number}")
 
+    # Notify officers in both departments
+    dept_orig = get_department(incident.category)
+    dept_new = get_department(new_incident.category)
+    for dept in {dept_orig, dept_new}:
+        _notify_department_officers(
+            db, dept, "officer_split",
+            data={
+                "incident_number_orig": incident.incident_number,
+                "incident_number_new": new_incident.incident_number,
+                "complaint_id": complaint.id,
+            }
+        )
+        _check_aging_notifications(db, dept)
+
     return {
         "message": f"Complaint split to new incident {new_incident.incident_number}",
         "original_incident_id": incident.id,
@@ -805,6 +988,19 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
                      incident.id, "success",
                      f"Status changed from {old_status} to {body.status}")
+
+    # Notify officers in the department
+    department = get_department(incident.category)
+    _notify_department_officers(
+        db, department, "officer_status_change",
+        data={
+            "incident_number": incident.incident_number,
+            "incident_id": incident.id,
+            "old_status": old_status,
+            "new_status": body.status,
+        }
+    )
+    _check_aging_notifications(db, department)
 
     return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
 
@@ -959,6 +1155,7 @@ async def create_officer(body: OfficerCreate, db_user: User = Depends(get_execut
         email=body.email,
         password_hash=hash_password(body.password),
         district=body.district,
+        department=body.department,
         role="Officer",
         status="active"
     )

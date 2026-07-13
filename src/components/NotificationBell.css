@@ -130,3 +130,10 @@
   font-size: 11px;
   color: var(--text-secondary, #94a3b8);
 }
+
+@media (max-width: 480px) {
+  .notification-dropdown { width: 300px; right: -8px; }
+}
+@media (max-width: 375px) {
+  .notification-dropdown { width: 280px; right: -4px; }
+}

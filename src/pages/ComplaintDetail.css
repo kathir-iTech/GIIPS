@@ -42,3 +42,4 @@
 
 @media (max-width: 1024px) { .detail-grid { grid-template-columns: 1fr; } .side-card { position: static; } }
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .detail-meta-grid { grid-template-columns: 1fr; } .status-header { flex-direction: column; } }
+@media (max-width: 480px) { .page-content { padding: 12px; } .main-card { padding: 16px; } .side-card { padding: 16px; } .ai-metric { flex-wrap: wrap; } .ai-metric .label, .ai-metric .value { width: auto; } .status-header h2 { font-size: 18px; } .meta-item { font-size: 13px; padding: 10px; } .back-btn { width: 100%; justify-content: center; min-height: 44px; } }

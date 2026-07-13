@@ -1,171 +1,242 @@
 import { useState, useEffect } from 'react';
+import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
-import type { ClassificationMetrics } from '../types';
 import Header from '../components/Header';
+import { AlertCircle } from 'lucide-react';
 import './Analysis.css';
 
-const qualityClass = (value: number) => value >= 0.9 ? 'excellent' : value >= 0.8 ? 'good' : value >= 0.7 ? 'warning' : 'poor';
+interface CategoryItem {
+  category: string;
+  count: number;
+}
+
+interface DeptItem {
+  department: string;
+  activeIncidents: number;
+}
+
+interface WardItem {
+  ward: string;
+  complaintCount: number;
+}
+
+interface Overview {
+  totalComplaints: number;
+  totalIncidents: number;
+  openIncidents: number;
+}
+
+interface AnalyticsData {
+  overview: Overview;
+  categoryBreakdown: CategoryItem[];
+  departmentWorkload: DeptItem[];
+  volumeTrend: { labels: string[]; complaints: number[]; incidents: number[] };
+  resolutionTrend: { labels: string[]; avgDays: (number | null)[] };
+  wardHotspots: WardItem[];
+}
 
 const Analysis = () => {
-  const [metrics, setMetrics] = useState<ClassificationMetrics | null>(null);
+  const { t } = useTranslation();
+  const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api.getClassificationMetrics()
-      .then(data => { if (!cancelled) setMetrics(data); })
-      .catch(err => { if (!cancelled) setError(err.message); })
+    api.getAnalytics()
+      .then(d => { if (!cancelled) setData(d); })
+      .catch(e => { if (!cancelled) setError(e.message); })
       .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
-  if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading analysis...</span></div>;
-  if (error) return <div className="page-error">Error: {error}</div>;
-  if (!metrics) return null;
+  if (loading) return <div className="page-loading"><div className="spinner" /><span>{t('analysis.loading')}</span></div>;
+  if (error) return <div className="page-error"><AlertCircle size={20} /> {error}</div>;
+  if (!data) return null;
 
-  const categoryData = metrics.categoryDistribution;
-  const confusionData = metrics.confusionMatrix;
-  const hasConfusion = confusionData && confusionData.length > 0;
-  const hasCategories = metrics.categories && metrics.categories.length > 0;
+  const { overview, categoryBreakdown, departmentWorkload, volumeTrend, resolutionTrend, wardHotspots } = data;
+
+  const color = (i: number, base = 210) => `hsl(${base + i * 30}, 65%, 55%)`;
 
   return (
     <div className="analysis-page">
-      <Header title="Complaint Analysis" subtitle="Model performance and classification metrics" />
+      <Header title={t('analysis.pageTitle')} subtitle={t('analysis.pageSubtitle')} />
       <div className="page-content">
-        <section className="model-info">
-          <div className="model-badge">
-            <span className="model-icon">AI</span>
-            <span className="model-name">{metrics.modelType}</span>
-          </div>
-          <div className="dataset-info">
-            <span className="dataset-label">Dataset Size</span>
-            <span className="dataset-value">{(metrics.datasetSize ?? 0).toLocaleString()} complaints</span>
-          </div>
-        </section>
 
-        <section className="metrics-hero">
-          <div className="metric-card primary">
-            <div className="metric-header">
-              <span className="metric-title">Accuracy</span>
-              <div className={`metric-indicator ${qualityClass(metrics.accuracy)}`}></div>
-            </div>
-            <span className="metric-value">{(metrics.accuracy * 100).toFixed(1)}%</span>
-            <p className="metric-desc">Overall classification correctness across all categories</p>
+        <div className="kpi-hero">
+          <div className="kpi-card">
+            <span className="kpi-value">{overview.totalComplaints.toLocaleString()}</span>
+            <span className="kpi-label">{t('analysis.totalComplaints')}</span>
           </div>
-          <div className="metric-card primary">
-            <div className="metric-header">
-              <span className="metric-title">Precision</span>
-              <div className={`metric-indicator ${qualityClass(metrics.precision)}`}></div>
-            </div>
-            <span className="metric-value">{(metrics.precision * 100).toFixed(1)}%</span>
-            <p className="metric-desc">True positives among predicted cluster memberships</p>
+          <div className="kpi-card">
+            <span className="kpi-value">{overview.totalIncidents.toLocaleString()}</span>
+            <span className="kpi-label">{t('analysis.totalIncidents')}</span>
           </div>
-          <div className="metric-card primary">
-            <div className="metric-header">
-              <span className="metric-title">Recall</span>
-              <div className={`metric-indicator ${qualityClass(metrics.recall)}`}></div>
-            </div>
-            <span className="metric-value">{(metrics.recall * 100).toFixed(1)}%</span>
-            <p className="metric-desc">Actual duplicates correctly identified by model</p>
+          <div className="kpi-card">
+            <span className="kpi-value">{overview.openIncidents.toLocaleString()}</span>
+            <span className="kpi-label">{t('analysis.openIncidents')}</span>
           </div>
-          <div className="metric-card primary">
-            <div className="metric-header">
-              <span className="metric-title">F1 Score</span>
-              <div className={`metric-indicator ${qualityClass(metrics.f1Score)}`}></div>
-            </div>
-            <span className="metric-value">{(metrics.f1Score * 100).toFixed(1)}%</span>
-            <p className="metric-desc">Harmonic mean balancing precision and recall</p>
+          <div className="kpi-card">
+            <span className="kpi-value">{categoryBreakdown.length}</span>
+            <span className="kpi-label">{t('analysis.categoriesTracked')}</span>
           </div>
-        </section>
+        </div>
 
-        <section className="charts-section">
-          <div className="chart-card large">
-            <div className="chart-header">
-              <h3>Complaint & Incident Volume (6 Months)</h3>
-              <span className="chart-subtitle">Monthly totals from backend</span>
+        <div className="chart-grid">
+          <div className="chart-card chart-full">
+            <div className="chart-hdr">
+              <h3>{t('analysis.volumeTrendTitle')}</h3>
+              <span className="chart-desc">{t('analysis.volumeTrendSubtitle')}</span>
             </div>
-            {metrics.trendData.length > 0 ? (
+            <Plot
+              data={[
+                { x: volumeTrend.labels, y: volumeTrend.complaints, type: 'scatter', mode: 'lines+markers',
+                  name: t('analysis.complaints'), line: { color: '#3b82f6', width: 2 }, marker: { size: 5 } },
+                { x: volumeTrend.labels, y: volumeTrend.incidents, type: 'scatter', mode: 'lines+markers',
+                  name: t('analysis.incidents'), line: { color: '#8b5cf6', width: 2 }, marker: { size: 5 } },
+              ]}
+              layout={{
+                autosize: true, height: 280,
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#94a3b8', size: 11 },
+                margin: { t: 10, b: 40, l: 50, r: 10 },
+                legend: { orientation: 'h', y: 1.1, x: 0 },
+                xaxis: { gridcolor: 'rgba(255,255,255,0.05)' },
+                yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+              }}
+              config={{ displayModeBar: false, responsive: true }}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+
+        <div className="chart-grid chart-grid-2">
+          <div className="chart-card">
+            <div className="chart-hdr">
+              <h3>{t('analysis.categoryBreakdownTitle')}</h3>
+              <span className="chart-desc">{t('analysis.categoryBreakdownSubtitle')}</span>
+            </div>
+            {categoryBreakdown.length === 0 ? (
+              <p className="empty-chart">{t('analysis.noData')}</p>
+            ) : (
               <Plot
-                data={[
-                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.complaints), type: 'scatter', mode: 'lines+markers', name: 'Complaints', line: { color: '#1e293b', width: 3 }, marker: { size: 8 } },
-                  { x: metrics.trendData.map(d => d.month), y: metrics.trendData.map(d => d.incidents), type: 'scatter', mode: 'lines+markers', name: 'Incidents', line: { color: '#0369a1', width: 2, dash: 'dot' }, marker: { size: 6 } },
-                ]}
+                data={[{
+                  x: categoryBreakdown.map(c => c.count),
+                  y: categoryBreakdown.map(c => c.category),
+                  type: 'bar', orientation: 'h',
+                  marker: { color: categoryBreakdown.map((_, i) => color(i)) },
+                }]}
                 layout={{
-                  paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
-                  margin: { t: 10, r: 30, b: 50, l: 60 },
-                  xaxis: { showgrid: false, tickangle: -45 },
-                  yaxis: { showgrid: true, gridcolor: '#f1f5f9' },
-                  showlegend: true, legend: { orientation: 'h', y: 1.15 },
-                  hovermode: 'x unified', height: 300
+                  autosize: true, height: Math.max(180, categoryBreakdown.length * 38),
+                  paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                  font: { color: '#94a3b8', size: 11 },
+                  margin: { t: 10, b: 40, l: 130, r: 20 },
+                  xaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+                  yaxis: { automargin: true },
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: '100%' }}
               />
-            ) : (
-              <div className="empty-chart">No trend data available.</div>
             )}
           </div>
 
           <div className="chart-card">
-            <div className="chart-header"><h3>Category Distribution</h3><span className="chart-subtitle">Complaints by issue type</span></div>
-            {categoryData.length > 0 ? (
+            <div className="chart-hdr">
+              <h3>{t('analysis.resolutionTrendTitle')}</h3>
+              <span className="chart-desc">{t('analysis.resolutionTrendSubtitle')}</span>
+            </div>
+            <Plot
+              data={[{
+                x: resolutionTrend.labels,
+                y: resolutionTrend.avgDays.map(d => d ?? 0),
+                type: 'scatter', mode: 'lines+markers',
+                name: t('analysis.avgDays'),
+                line: { color: '#16a34a', width: 2 },
+                marker: { size: 5 },
+                connectgaps: false,
+              }]}
+              layout={{
+                autosize: true, height: 240,
+                paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                font: { color: '#94a3b8', size: 11 },
+                margin: { t: 10, b: 40, l: 50, r: 10 },
+                xaxis: { gridcolor: 'rgba(255,255,255,0.05)' },
+                yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false, ticksuffix: 'd' },
+              }}
+              config={{ displayModeBar: false, responsive: true }}
+              style={{ width: '100%' }}
+            />
+          </div>
+        </div>
+
+        <div className="chart-grid">
+          <div className="chart-card chart-full">
+            <div className="chart-hdr">
+              <h3>{t('analysis.deptWorkloadTitle')}</h3>
+              <span className="chart-desc">{t('analysis.deptWorkloadSubtitle')}</span>
+            </div>
+            {departmentWorkload.length === 0 ? (
+              <p className="empty-chart">{t('analysis.noData')}</p>
+            ) : (
               <Plot
                 data={[{
-                  values: categoryData.map(d => d.count),
-                  labels: categoryData.map(d => d.category),
-                  type: 'pie',
-                  hole: 0.45,
-                  marker: { colors: ['#1e293b', '#0369a1', '#7c3aed', '#b45309', '#059669', '#be123c'] },
-                  textinfo: 'value+percent',
-                  textposition: 'outside',
-                  textfont: { size: 11 }
+                  x: departmentWorkload.map(d => d.activeIncidents),
+                  y: departmentWorkload.map(d => d.department),
+                  type: 'bar', orientation: 'h',
+                  marker: { color: '#f59e0b' },
                 }]}
                 layout={{
-                  paper_bgcolor: 'transparent',
-                  margin: { t: 30, r: 30, b: 80, l: 30 },
-                  showlegend: true,
-                  legend: { orientation: 'h', y: -0.15 },
-                  annotations: [{ text: 'Total', showarrow: false, font: { size: 14, weight: 600 }, y: 0.55 }],
-                  height: 300
+                  autosize: true, height: Math.max(200, departmentWorkload.length * 45),
+                  paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                  font: { color: '#94a3b8', size: 11 },
+                  margin: { t: 10, b: 40, l: 200, r: 40 },
+                  xaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+                  yaxis: { automargin: true },
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: '100%' }}
               />
-            ) : (
-              <div className="empty-chart">No category distribution available.</div>
             )}
           </div>
+        </div>
 
-          <div className="chart-card">
-            <div className="chart-header"><h3>Confidence Matrix</h3><span className="chart-subtitle">Clustering accuracy heatmap</span></div>
-            {hasConfusion && hasCategories ? (
+        <div className="chart-grid">
+          <div className="chart-card chart-full">
+            <div className="chart-hdr">
+              <h3>{t('analysis.wardHotspotsTitle')}</h3>
+              <span className="chart-desc">{t('analysis.wardHotspotsSubtitle')}</span>
+            </div>
+            {wardHotspots.length === 0 ? (
+              <p className="empty-chart">{t('analysis.noData')}</p>
+            ) : (
               <Plot
                 data={[{
-                  z: confusionData.slice(0, 4).map(row => row.slice(0, 4)),
-                  x: metrics.categories.slice(0, 4).map(c => c.split(' ')[0]),
-                  y: metrics.categories.slice(0, 4).map(c => c.split(' ')[0]),
-                  type: 'heatmap',
-                  colorscale: [[0, '#f1f5f9'], [1, '#1e293b']],
-                  showscale: false
+                  x: wardHotspots.map(w => w.ward),
+                  y: wardHotspots.map(w => w.complaintCount),
+                  type: 'bar',
+                  marker: {
+                    color: wardHotspots.map(w =>
+                      w.complaintCount >= 5 ? '#dc2626' :
+                      w.complaintCount >= 3 ? '#f59e0b' : '#3b82f6'
+                    ),
+                  },
                 }]}
                 layout={{
-                  paper_bgcolor: 'transparent',
-                  margin: { t: 10, r: 30, b: 60, l: 80 },
-                  xaxis: { side: 'bottom' },
-                  yaxis: { autorange: 'reversed' },
-                  height: 280
+                  autosize: true, height: Math.max(220, wardHotspots.length * 32),
+                  paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                  font: { color: '#94a3b8', size: 11 },
+                  margin: { t: 10, b: 80, l: 100, r: 20 },
+                  xaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false, tickangle: -30 },
+                  yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: '100%' }}
               />
-            ) : (
-              <div className="empty-chart">Confusion matrix data not available.</div>
             )}
           </div>
+        </div>
 
-        </section>
       </div>
     </div>
   );

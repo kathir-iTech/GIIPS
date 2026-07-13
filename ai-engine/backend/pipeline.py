@@ -177,7 +177,7 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
 
         # Create notification for the citizen when complaint is processed
         if user_id:
-            from routes import _create_notification
+            from routes import _create_notification, _notify_department_officers, _check_aging_notifications
             notif_data = {"incident_number": incident.incident_number, "is_duplicate": is_duplicate}
             if is_duplicate:
                 notif_data["merge_reason"] = merge_reason
@@ -186,6 +186,20 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                 complaint_id=complaint.id,
                 data=notif_data,
             )
+
+            # Notify officers in the department about new complaint
+            _notify_department_officers(
+                db, department, "complaint_assigned",
+                data={
+                    "complaint_id": complaint.id,
+                    "incident_number": incident.incident_number,
+                    "incident_id": incident.id,
+                    "category": category,
+                    "ward": complaint.ward,
+                    "title": complaint.title,
+                }
+            )
+            _check_aging_notifications(db, department)
 
         db.commit()
         db.refresh(complaint)

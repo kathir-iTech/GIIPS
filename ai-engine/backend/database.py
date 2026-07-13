@@ -354,6 +354,7 @@ class User(Base):
     district = Column(String, nullable=True)
     ward = Column(String, nullable=True)
     role = Column(String, nullable=False) # 'Citizen', 'Officer', 'Executive'
+    department = Column(String, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     last_login = Column(DateTime, nullable=True)
     status = Column(String, default="active", nullable=False)

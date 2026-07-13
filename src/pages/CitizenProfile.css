@@ -28,3 +28,4 @@
 .info-card p { margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
 
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .profile-header { flex-wrap: wrap; } }
+@media (max-width: 480px) { .page-content { padding: 12px; } .profile-card { padding: 16px; } .edit-actions { flex-direction: column; } .edit-btn, .save-btn, .cancel-btn { width: 100%; justify-content: center; min-height: 44px; } }

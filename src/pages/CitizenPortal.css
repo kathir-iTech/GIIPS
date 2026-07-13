@@ -33,6 +33,12 @@
 .status-text { font-size: 14px; color: var(--text-secondary); }
 .photo-done { color: #16a34a; }
 .field-error { color: #dc2626; font-size: 0.8rem; margin-top: -8px; }
+.photo-retry-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
+.photo-retry-actions button { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; min-height: 44px; }
+.retry-btn { background: #3b82f6; color: white; border: none; }
+.retry-btn:hover { background: #2563eb; }
+.skip-btn { background: transparent; color: var(--text-secondary); border: 1px solid var(--border-subtle); }
+.skip-btn:hover { color: var(--text-primary); border-color: var(--text-muted); }
 @keyframes spin { 100% { transform: rotate(360deg); } }
 .address-search-wrapper { position: relative; width: 100%; }
 .address-search-input-group { display: flex; align-items: center; gap: 8px; position: relative; }
@@ -48,4 +54,22 @@
 .address-suggestion-text { overflow: hidden; text-overflow: ellipsis; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; }
 .address-no-results { position: absolute; top: 100%; left: 0; right: 0; z-index: 100; background: #1e293b; border: 1px solid rgba(255,255,255,0.1); border-radius: var(--radius-sm); margin-top: 4px; padding: 16px; text-align: center; color: var(--text-muted); font-size: 13px; }
 @keyframes spin { 100% { transform: rotate(360deg); } }
-@media (max-width: 640px) { .portal-container { padding: 20px; } .wizard { padding: 24px; } .review-grid { grid-template-columns: 1fr; } .success-actions { flex-direction: column; } }
+@media (max-width: 640px) {
+  .portal-container { padding: 20px; }
+  .wizard { padding: 24px; }
+  .review-grid { grid-template-columns: 1fr; }
+  .success-actions { flex-direction: column; }
+  .wizard-controls button { min-height: 44px; }
+}
+@media (max-width: 480px) {
+  .portal-container { padding: 12px; }
+  .wizard { padding: 16px; }
+  .steps-header { font-size: 16px; }
+  .form-step input, .form-step textarea { min-height: 44px; }
+  .upload-box { min-height: 44px; padding: 16px; }
+  .wizard-controls { flex-direction: column; gap: 8px; }
+  .wizard-controls button { justify-content: center; width: 100%; min-height: 44px; }
+  .auth-button { min-height: 48px; }
+  .success-actions button { width: 100%; min-height: 44px; }
+  .preview { max-height: 200px; }
+}

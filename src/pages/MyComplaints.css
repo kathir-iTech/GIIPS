@@ -1,11 +1,16 @@
 .my-complaints-page { min-height: 100vh; background: var(--bg-app); }
 .page-content { padding: 24px 32px; max-width: 1000px; margin: 0 auto; display: flex; flex-direction: column; gap: 24px; }
 
-.toolbar { display: flex; gap: 16px; align-items: center; }
-.search-box { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px; background: rgba(255,255,255,0.03); }
+.toolbar { display: flex; gap: 16px; align-items: center; flex-wrap: wrap; }
+.search-box { flex: 1; display: flex; align-items: center; gap: 8px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); padding: 8px 12px; background: rgba(255,255,255,0.03); min-width: 200px; }
 .search-box input { border: none; flex: 1; outline: none; font-size: 14px; background: transparent; font-family: inherit; color: var(--text-primary); }
 .search-icon { color: var(--text-muted); }
 .status-select { padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 14px; font-family: inherit; cursor: pointer; }
+.filter-group { display: flex; align-items: center; gap: 8px; color: var(--text-muted); }
+.date-input { padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); color: var(--text-primary); font-size: 14px; font-family: inherit; cursor: pointer; color-scheme: dark; }
+.date-separator { color: var(--text-muted); font-size: 14px; }
+.reset-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: transparent; color: var(--text-secondary); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; }
+.reset-btn:hover { border-color: #ef4444; color: #ef4444; }
 
 .complaints-list { display: flex; flex-direction: column; gap: 16px; }
 .complaint-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; position: relative; }
@@ -35,3 +40,4 @@
 .empty-state p { margin: 0; max-width: 400px; }
 
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .toolbar { flex-direction: column; } .card-meta { flex-direction: column; gap: 8px; } .card-footer { flex-direction: column; align-items: flex-start; } }
+@media (max-width: 480px) { .page-content { padding: 12px; } .complaint-card { padding: 16px; } .card-header { flex-wrap: wrap; } .card-title { font-size: 14px; } .search-box { min-height: 44px; } .status-select { min-height: 44px; } }

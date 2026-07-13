@@ -39,6 +39,18 @@ function getNotificationMessage(n: AppNotification, t: (key: string, opts?: any)
       return t('notification.split', { incidentNumber: n.data?.incident_number || '' });
     case 'created':
       return t('notification.created', { incidentNumber: n.data?.incident_number || '' });
+    case 'complaint_assigned':
+      return t('notification.complaintAssigned', { incidentNumber: n.data?.incident_number || '' });
+    case 'aging_warning':
+      return t('notification.agingWarning', { incidentNumber: n.data?.incident_number || '', days: n.data?.days_open || '' });
+    case 'aging_critical':
+      return t('notification.agingCritical', { incidentNumber: n.data?.incident_number || '', days: n.data?.days_open || '' });
+    case 'officer_merged':
+      return t('notification.officerMerged', { incidentNumber: n.data?.incident_number || '' });
+    case 'officer_split':
+      return t('notification.officerSplit', { incidentNumber: n.data?.incident_number_orig || '', incidentNumberNew: n.data?.incident_number_new || '' });
+    case 'officer_status_change':
+      return t('notification.officerStatusChange', { incidentNumber: n.data?.incident_number || '', newStatus: t(`common.status.${n.data?.new_status || 'open'}`) });
     default:
       return '';
   }
@@ -55,7 +67,7 @@ export default function NotificationBell() {
   const unreadCount = notifications.filter((n) => !n.is_read).length;
 
   const fetchNotifications = useCallback(async () => {
-    if (!user || user.role !== 'Citizen') return;
+    if (!user || !['Citizen', 'Officer', 'Executive'].includes(user.role)) return;
     try {
       const data = await api.getNotifications();
       setNotifications(data);
@@ -106,7 +118,7 @@ export default function NotificationBell() {
     setOpen(false);
   };
 
-  if (!user || user.role !== 'Citizen') return null;
+  if (!user || !['Citizen', 'Officer', 'Executive'].includes(user.role)) return null;
 
   return (
     <div className="notification-bell" ref={ref}>

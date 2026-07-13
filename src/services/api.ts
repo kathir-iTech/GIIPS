@@ -9,6 +9,34 @@ const FETCH_DEFAULTS: RequestInit = {
   credentials: 'include',
 };
 
+const TIMEOUT_MS = 30_000;
+
+class NetworkError extends Error {
+  constructor(message: string, public readonly isTimeout: boolean, public readonly original?: unknown) {
+    super(message);
+    this.name = 'NetworkError';
+  }
+}
+
+const fetchWithTimeout = async (url: string, options: RequestInit, timeoutMs: number = TIMEOUT_MS): Promise<Response> => {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, { ...options, signal: controller.signal });
+    return response;
+  } catch (err: any) {
+    if (err.name === 'AbortError') {
+      throw new NetworkError('Connection timed out. Please check your internet and try again.', true, err);
+    }
+    if (err instanceof TypeError && err.message === 'Failed to fetch') {
+      throw new NetworkError('Could not reach the server. Please check your internet connection and try again.', false, err);
+    }
+    throw new NetworkError(err.message || 'A network error occurred. Please try again.', false, err);
+  } finally {
+    clearTimeout(timer);
+  }
+};
+
 const safeJson = async (response: Response) => {
   try {
     return await response.json();
@@ -43,7 +71,7 @@ export const api = {
   },
 
   submitComplaint: async (payload: any): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/complaints`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/complaints`, {
       ...FETCH_DEFAULTS,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -51,7 +79,7 @@ export const api = {
     });
     const data = await safeJson(response);
     if (!response.ok) {
-      throw new Error(detailToMessage(data.detail) || `HTTP ${response.status}` || 'Submission failed');
+      throw new Error(detailToMessage(data.detail) || `Server error (${response.status}). Please try again.`);
     }
     return data;
   },
@@ -67,14 +95,14 @@ export const api = {
   uploadComplaintPhoto: async (complaintId: string, file: File): Promise<any> => {
     const formData = new FormData();
     formData.append('file', file);
-    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/upload`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/complaints/${complaintId}/upload`, {
       ...FETCH_DEFAULTS,
       method: 'POST',
       body: formData,
-    });
+    }, 30_000);
     const data = await safeJson(response);
     if (!response.ok) {
-      throw new Error(detailToMessage(data.detail) || `HTTP ${response.status}` || 'Upload failed');
+      throw new Error(detailToMessage(data.detail) || `Photo upload failed (server error ${response.status}).`);
     }
     return data;
   },
@@ -182,7 +210,7 @@ export const api = {
   },
 
   login: async (email: string, password: string): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/auth/login`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/auth/login`, {
       ...FETCH_DEFAULTS,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -190,7 +218,7 @@ export const api = {
     });
     if (!response.ok) {
       const error = await safeJson(response);
-      throw new Error(detailToMessage(error.detail) || 'Login failed');
+      throw new Error(detailToMessage(error.detail) || 'Login failed. Please check your credentials and try again.');
     }
     return response.json();
   },
@@ -203,7 +231,7 @@ export const api = {
     district?: string;
     ward?: string;
   }): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/auth/register`, {
+    const response = await fetchWithTimeout(`${BASE_URL}/auth/register`, {
       ...FETCH_DEFAULTS,
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -211,7 +239,7 @@ export const api = {
     });
     if (!response.ok) {
       const error = await safeJson(response);
-      throw new Error(detailToMessage(error.detail) || 'Registration failed');
+      throw new Error(detailToMessage(error.detail) || 'Registration failed. Please try again.');
     }
     return response.json();
   },
@@ -308,6 +336,12 @@ export const api = {
       throw new Error(await getErrorMessage(response));
     }
     return response;
+  },
+
+  getAnalytics: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/dashboard/analytics`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
   },
 
   getSystemHealth: async (): Promise<any> => {

@@ -225,7 +225,10 @@
     "viewComplaintsButton": "View My Complaints",
     "submitAnotherButton": "Submit Another",
     "processingTitle": "Processing Your Complaint",
-    "processingSubtitle": "Processing your submission..."
+    "processingSubtitle": "Processing your submission...",
+    "photoFailedStatus": "Photo upload failed",
+    "retryPhotoButton": "Retry Photo Upload",
+    "skipPhotoButton": "Skip Photo — Submit Without It"
   },
 
   "complaintDetail": {
@@ -261,6 +264,9 @@
     "headerSubtitle": "Track your submitted grievances",
     "loading": "Loading your complaints...",
     "searchPlaceholder": "Search by ID, title, ward...",
+    "dateFrom": "From date",
+    "dateTo": "To date",
+    "resetFilters": "Reset filters",
     "emptyTitle": "No complaints found",
     "emptyBody": "You have not submitted any complaints yet, or none match your filters.",
     "confidenceLabel": "Match confidence:",
@@ -515,7 +521,13 @@
     "justNow": "just now",
     "minutesAgo": "{{count}} min ago",
     "hoursAgo": "{{count}}h ago",
-    "daysAgo": "{{count}}d ago"
+    "daysAgo": "{{count}}d ago",
+    "complaintAssigned": "New complaint assigned to your department ({{incidentNumber}})",
+    "agingWarning": "{{incidentNumber}} has been open for {{days}} days — aging warning",
+    "agingCritical": "{{incidentNumber}} has been open for {{days}} days — CRITICAL aging",
+    "officerMerged": "Incident {{incidentNumber}} was merged in your department",
+    "officerSplit": "Complaint split from {{incidentNumber_orig}} into new incident {{incidentNumberNew}}",
+    "officerStatusChange": "{{incidentNumber}} status changed to {{newStatus}}"
   },
 
   "auditLogs": {
@@ -538,5 +550,30 @@
     "loading": "Loading...",
     "retry": "Retry",
     "empty": "No audit logs found"
+  },
+
+  "analysis": {
+    "pageTitle": "Analytics",
+    "pageSubtitle": "Complaint and incident analytics from live data",
+    "loading": "Loading analytics...",
+    "totalComplaints": "Total Complaints",
+    "totalIncidents": "Total Incidents",
+    "openIncidents": "Open Incidents",
+    "categoriesTracked": "Categories Tracked",
+    "volumeTrendTitle": "Complaint & Incident Volume",
+    "volumeTrendSubtitle": "Monthly trend over the last 6 months",
+    "complaints": "Complaints",
+    "incidents": "Incidents",
+    "categoryBreakdownTitle": "Category Breakdown",
+    "categoryBreakdownSubtitle": "Complaints by category",
+    "resolutionTrendTitle": "Avg. Resolution Time",
+    "resolutionTrendSubtitle": "Average days to close per month",
+    "avgDays": "Avg days",
+    "deptWorkloadTitle": "Department Workload",
+    "deptWorkloadSubtitle": "Open incidents by responsible department",
+    "activeIncidents": "Active Incidents",
+    "wardHotspotsTitle": "Ward Hotspots",
+    "wardHotspotsSubtitle": "Top 10 wards by complaint count",
+    "noData": "No data available yet"
   }
 }

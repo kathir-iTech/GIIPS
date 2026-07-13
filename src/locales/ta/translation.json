@@ -225,7 +225,10 @@
     "viewComplaintsButton": "எனது புகார்களைப் பார்க்கவும்",
     "submitAnotherButton": "மற்றொன்றை சமர்ப்பிக்கவும்",
     "processingTitle": "உங்கள் புகார் செயலாக்கப்படுகிறது",
-    "processingSubtitle": "உங்கள் சமர்ப்பிப்பு செயலாக்கப்படுகிறது..."
+    "processingSubtitle": "உங்கள் சமர்ப்பிப்பு செயலாக்கப்படுகிறது...",
+    "photoFailedStatus": "புகைப்பட பதிவேற்றம் தோல்வியடைந்தது",
+    "retryPhotoButton": "மீண்டும் முயற்சிக்கவும்",
+    "skipPhotoButton": "புகைப்படம் இல்லாமல் சமர்ப்பிக்கவும்"
   },
 
   "complaintDetail": {
@@ -261,6 +264,9 @@
     "headerSubtitle": "உங்கள் சமர்ப்பித்த புகார்களை கண்காணிக்கவும்",
     "loading": "உங்கள் புகார்கள் ஏற்றப்படுகின்றன...",
     "searchPlaceholder": "எண், தலைப்பு, வார்டு மூலம் தேடவும்...",
+    "dateFrom": "தேதியிலிருந்து",
+    "dateTo": "தேதி வரை",
+    "resetFilters": "வடிப்பான்களை மீட்டமை",
     "emptyTitle": "புகார்கள் எதுவும் கிடைக்கவில்லை",
     "emptyBody": "நீங்கள் இதுவரை எந்த புகாரையும் சமர்ப்பிக்கவில்லை, அல்லது உங்கள் வடிப்பான்களுடன் பொருந்தவில்லை.",
     "confidenceLabel": "பொருந்தும் நம்பிக்கை:",
@@ -515,7 +521,13 @@
     "justNow": "இப்போதுதான்",
     "minutesAgo": "{{count}} நிமிடம் முன்பு",
     "hoursAgo": "{{count}} மணி முன்பு",
-    "daysAgo": "{{count}} நாள் முன்பு"
+    "daysAgo": "{{count}} நாள் முன்பு",
+    "complaintAssigned": "உங்கள் துறைக்கு புதிய புகார் ஒதுக்கப்பட்டது ({{incidentNumber}})",
+    "agingWarning": "{{incidentNumber}} {{days}} நாட்களாக திறந்துள்ளது — கால எச்சரிக்கை",
+    "agingCritical": "{{incidentNumber}} {{days}} நாட்களாக திறந்துள்ளது — மிக முக்கியமான கால எச்சரிக்கை",
+    "officerMerged": "சம்பவம் {{incidentNumber}} உங்கள் துறையில் இணைக்கப்பட்டது",
+    "officerSplit": "புகார் {{incidentNumber_orig}} இலிருந்து பிரிக்கப்பட்டு புதிய சம்பவம் {{incidentNumberNew}} ஆக மாற்றப்பட்டது",
+    "officerStatusChange": "{{incidentNumber}} இன் நிலை {{newStatus}} ஆக மாற்றப்பட்டது"
   },
 
   "auditLogs": {
@@ -538,5 +550,30 @@
     "loading": "ஏற்றுகிறது...",
     "retry": "மீண்டும் முயற்சிக்கவும்",
     "empty": "தணிக்கை பதிவுகள் எதுவும் கிடைக்கவில்லை"
+  },
+
+  "analysis": {
+    "pageTitle": "பகுப்பாய்வு",
+    "pageSubtitle": "நேரடி தரவுகளிலிருந்து புகார்கள் மற்றும் சம்பவ பகுப்பாய்வு",
+    "loading": "பகுப்பாய்வு ஏற்றுகிறது...",
+    "totalComplaints": "மொத்த புகார்கள்",
+    "totalIncidents": "மொத்த சம்பவங்கள்",
+    "openIncidents": "திறந்த சம்பவங்கள்",
+    "categoriesTracked": "கண்காணிக்கப்பட்ட வகைகள்",
+    "volumeTrendTitle": "புகார் மற்றும் சம்பவ அளவு",
+    "volumeTrendSubtitle": "கடந்த 6 மாதங்களின் மாதாந்திர போக்கு",
+    "complaints": "புகார்கள்",
+    "incidents": "சம்பவங்கள்",
+    "categoryBreakdownTitle": "வகை பிரிப்பு",
+    "categoryBreakdownSubtitle": "வகை வாரியாக புகார்கள்",
+    "resolutionTrendTitle": "சராசரி தீர்வு நேரம்",
+    "resolutionTrendSubtitle": "மாதத்திற்கு சராசரி நாட்கள்",
+    "avgDays": "சராசரி நாட்கள்",
+    "deptWorkloadTitle": "துறை பணிச்சுமை",
+    "deptWorkloadSubtitle": "பொறுப்பான துறை வாரியாக திறந்த சம்பவங்கள்",
+    "activeIncidents": "செயலில் உள்ள சம்பவங்கள்",
+    "wardHotspotsTitle": "வார்டு ஹாட்ஸ்பாட்கள்",
+    "wardHotspotsSubtitle": "புகார்கள் எண்ணிக்கையில் முதல் 10 வார்டுகள்",
+    "noData": "இதுவரை தரவு எதுவும் இல்லை"
   }
 }

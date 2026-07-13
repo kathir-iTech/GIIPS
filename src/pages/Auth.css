@@ -153,3 +153,11 @@
 .auth-footer a:hover {
   text-decoration: underline;
 }
+
+@media (max-width: 480px) {
+  .auth-page { padding: 1rem; }
+  .auth-card { padding: 1.5rem; }
+  .auth-header h2 { font-size: 1.25rem; }
+  .auth-button { min-height: 48px; font-size: 0.95rem; }
+  .auth-form input { min-height: 48px; }
+}

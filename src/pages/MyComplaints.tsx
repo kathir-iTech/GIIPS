@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import type { CitizenComplaint } from '../types';
-import { FileText, MapPin, Calendar, Tag, AlertCircle, CheckCircle, Clock, Search, ChevronRight } from 'lucide-react';
+import { FileText, MapPin, Calendar, Tag, AlertCircle, CheckCircle, Clock, Search, ChevronRight, X, Filter } from 'lucide-react';
 import './MyComplaints.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -36,6 +36,17 @@ const MyComplaints = () => {
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string>('all');
+  const [dateFrom, setDateFrom] = useState('');
+  const [dateTo, setDateTo] = useState('');
+
+  const resetFilters = () => {
+    setSearchQuery('');
+    setStatusFilter('all');
+    setDateFrom('');
+    setDateTo('');
+  };
+
+  const hasActiveFilters = searchQuery.trim() || statusFilter !== 'all' || dateFrom || dateTo;
 
   useEffect(() => {
     let cancelled = false;
@@ -64,7 +75,10 @@ const MyComplaints = () => {
       (c.predicted_category || '').toLowerCase().includes(searchQuery.toLowerCase());
     const incidentStatus = c.incident?.status || 'open';
     const matchesStatus = statusFilter === 'all' || incidentStatus === statusFilter;
-    return matchesSearch && matchesStatus;
+    const complaintDate = c.date_received ? new Date(c.date_received) : null;
+    const matchesDateFrom = !dateFrom || (complaintDate && complaintDate >= new Date(dateFrom));
+    const matchesDateTo = !dateTo || (complaintDate && complaintDate <= new Date(dateTo + 'T23:59:59'));
+    return matchesSearch && matchesStatus && matchesDateFrom && matchesDateTo;
   });
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('myComplaints.loading')}</span></div>;
@@ -84,13 +98,36 @@ const MyComplaints = () => {
               onChange={e => setSearchQuery(e.target.value)}
             />
           </div>
-          <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="status-select">
-            <option value="all">{t('common.status.all')}</option>
-            <option value="open">{t('common.status.open')}</option>
-            <option value="in-progress">{t('common.status.inProgress')}</option>
-            <option value="resolved">{t('common.status.resolved')}</option>
-            <option value="closed">{t('common.status.closed')}</option>
-          </select>
+          <div className="filter-group">
+            <Filter size={16} />
+            <select value={statusFilter} onChange={e => setStatusFilter(e.target.value)} className="status-select">
+              <option value="all">{t('common.status.all')}</option>
+              <option value="open">{t('common.status.open')}</option>
+              <option value="in-progress">{t('common.status.inProgress')}</option>
+              <option value="resolved">{t('common.status.resolved')}</option>
+              <option value="closed">{t('common.status.closed')}</option>
+            </select>
+            <input
+              type="date"
+              value={dateFrom}
+              onChange={e => setDateFrom(e.target.value)}
+              className="date-input"
+              aria-label={t('myComplaints.dateFrom')}
+            />
+            <span className="date-separator">—</span>
+            <input
+              type="date"
+              value={dateTo}
+              onChange={e => setDateTo(e.target.value)}
+              className="date-input"
+              aria-label={t('myComplaints.dateTo')}
+            />
+          </div>
+          {hasActiveFilters && (
+            <button className="reset-btn" onClick={resetFilters} title={t('myComplaints.resetFilters')}>
+              <X size={16} /> {t('myComplaints.resetFilters')}
+            </button>
+          )}
         </div>
 
         {filtered.length === 0 ? (

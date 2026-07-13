@@ -35,6 +35,7 @@ const CitizenPortal = () => {
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const complaintIdRef = useRef<string | null>(null);
+  const isUploadingRef = useRef(false);
 
   const stopPolling = useCallback(() => {
     if (pollingRef.current) {
@@ -51,6 +52,34 @@ const CitizenPortal = () => {
     return () => stopPolling();
   }, [stopPolling]);
 
+  const uploadPhoto = async (complaintId: string) => {
+    if (!selectedFile || isUploadingRef.current) return;
+    isUploadingRef.current = true;
+    setPhotoUploadStatus('uploading');
+    setSubmitError(null);
+    try {
+      await api.uploadComplaintPhoto(complaintId, selectedFile);
+      setPhotoUploadStatus('done');
+    } catch (uploadErr: any) {
+      setPhotoUploadStatus('failed');
+      setSubmitError(uploadErr.message);
+    } finally {
+      isUploadingRef.current = false;
+    }
+  };
+
+  const skipPhoto = () => {
+    isUploadingRef.current = false;
+    setPhotoUploadStatus('done');
+    setSubmitError(null);
+  };
+
+  const retryPhotoUpload = async () => {
+    if (complaintIdRef.current) {
+      await uploadPhoto(complaintIdRef.current);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!user) { setSubmitError(t('citizenPortal.authRequired')); setLoading(false); return; }
     if (!formData.title.trim()) { setSubmitError(t('citizenPortal.titleRequired')); setLoading(false); return; }
@@ -59,6 +88,7 @@ const CitizenPortal = () => {
     setLoading(true);
     setSubmitError(null);
     setProcessingStatus('submitting');
+    setPhotoUploadStatus('idle');
     try {
       const response = await api.submitComplaint(formData);
       if (response.statusUrl) {
@@ -66,14 +96,9 @@ const CitizenPortal = () => {
         setProcessingStatus('pending');
 
         if (selectedFile) {
-          setPhotoUploadStatus('uploading');
-          try {
-            await api.uploadComplaintPhoto(response.complaintId, selectedFile);
-            setPhotoUploadStatus('done');
-          } catch (uploadErr: any) {
-            setPhotoUploadStatus('failed');
-            setSubmitError(uploadErr.message);
-          }
+          await uploadPhoto(response.complaintId);
+        } else {
+          setPhotoUploadStatus('done');
         }
 
         pollTimeoutRef.current = setTimeout(() => {
@@ -117,6 +142,7 @@ const CitizenPortal = () => {
   };
 
   const isProcessing = processingStatus && ['submitting', 'pending', 'processing'].includes(processingStatus);
+  const isPhotoRetryable = photoUploadStatus === 'failed' && complaintIdRef.current;
 
   const steps = [t('citizenPortal.stepDetails'), t('citizenPortal.stepComplaint'), t('citizenPortal.stepLocation'), t('citizenPortal.stepPhoto'), t('citizenPortal.stepReview'), t('citizenPortal.stepSubmit')];
 
@@ -147,15 +173,33 @@ const CitizenPortal = () => {
         <h2>{t('citizenPortal.processingTitle')}</h2>
         <p>{t('citizenPortal.processingSubtitle')}</p>
         <div className="processing-status">
-          <Loader2 className="spinner" size={32} />
-          <p className="status-text">{processingStatus === 'submitting' ? t('citizenPortal.statusSubmitting') : processingStatus === 'pending' ? t('citizenPortal.statusStarting') : t('citizenPortal.statusProcessing')}</p>
+          {photoUploadStatus !== 'failed' && <Loader2 className="spinner" size={32} />}
+          <p className="status-text">
+            {photoUploadStatus === 'failed'
+              ? t('citizenPortal.photoFailedStatus')
+              : processingStatus === 'submitting'
+                ? t('citizenPortal.statusSubmitting')
+                : processingStatus === 'pending'
+                  ? t('citizenPortal.statusStarting')
+                  : t('citizenPortal.statusProcessing')}
+          </p>
           {photoUploadStatus === 'uploading' && <p className="status-text">{t('citizenPortal.statusUploading')}</p>}
-          {photoUploadStatus === 'done' && <p className="status-text photo-done">{t('citizenPortal.statusPhotoDone')}</p>}
+          {photoUploadStatus === 'done' && selectedFile && <p className="status-text photo-done">{t('citizenPortal.statusPhotoDone')}</p>}
         </div>
         {submitError && (
           <div className="error-banner">
             <AlertCircle size={16} />
             <span>{submitError}</span>
+          </div>
+        )}
+        {isPhotoRetryable && (
+          <div className="photo-retry-actions">
+            <button className="retry-btn" onClick={retryPhotoUpload}>
+              <Upload size={16} /> {t('citizenPortal.retryPhotoButton')}
+            </button>
+            <button className="skip-btn" onClick={skipPhoto}>
+              {t('citizenPortal.skipPhotoButton')}
+            </button>
           </div>
         )}
       </div>
