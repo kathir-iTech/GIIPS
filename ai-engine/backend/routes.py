@@ -139,22 +139,35 @@ def _check_aging_notifications(db: Session, department: str):
     if not officers or not incidents:
         return
 
+    officer_ids = {o.id for o in officers}
+
+    # Fetch ALL existing aging-type notifications for these officers at once
+    # (avoids a slow per-incident LIKE query on JSON text)
+    all_existing = db.query(Notification).filter(
+        Notification.user_id.in_(officer_ids),
+        Notification.type.in_(["aging_warning", "aging_critical"]),
+    ).all()
+
+    # Build a set of (officer_id, incident_id) already notified
+    already_notified = set()
+    for n in all_existing:
+        if n.data:
+            try:
+                nd = json.loads(n.data)
+                iid = nd.get("incident_id")
+                if iid:
+                    already_notified.add((n.user_id, iid))
+            except (json.JSONDecodeError, TypeError):
+                continue
+
     for incident in incidents:
         days = incident.days_open or 0
         if days < 4:
             continue
         aging_type = "aging_critical" if days >= 8 else "aging_warning"
-        officer_ids = {o.id for o in officers}
-
-        existing = db.query(Notification).filter(
-            Notification.user_id.in_(officer_ids),
-            Notification.type == aging_type,
-            Notification.data.like(f'%"incident_id": "{incident.id}"%'),
-        ).all()
-        already_notified = {n.user_id for n in existing}
 
         for officer in officers:
-            if officer.id not in already_notified:
+            if (officer.id, incident.id) not in already_notified:
                 _create_notification(
                     db, officer.id, aging_type,
                     data={

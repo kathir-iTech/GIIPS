@@ -118,6 +118,15 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] address column already exists, skipping")
 
+        # Migration: add department column to users table if missing
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN department VARCHAR"))
+                conn.commit()
+            logger.info("[MIGRATION] Added department column to users table")
+        except Exception:
+            logger.info("[MIGRATION] department column already exists or not applicable, skipping")
+
         # Seed default executive account
         try:
             from database import seed_default_executive

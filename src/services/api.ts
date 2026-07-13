@@ -253,7 +253,10 @@ export const api = {
   },
 
   getMe: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/auth/me`, FETCH_DEFAULTS);
+    const response = await fetchWithTimeout(`${BASE_URL}/auth/me`, {
+      ...FETCH_DEFAULTS,
+      method: 'GET',
+    }, 30_000);
     if (!response.ok) {
       throw new Error('Not authenticated');
     }
