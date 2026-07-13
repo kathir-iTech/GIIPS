@@ -575,5 +575,107 @@
     "wardHotspotsTitle": "வார்டு ஹாட்ஸ்பாட்கள்",
     "wardHotspotsSubtitle": "புகார்கள் எண்ணிக்கையில் முதல் 10 வார்டுகள்",
     "noData": "இதுவரை தரவு எதுவும் இல்லை"
+  },
+
+  "spatialIntelligence": {
+    "header": {
+      "title": "இடஞ்சார் நுண்ணறிவு கட்டளை மையம்",
+      "subtitle": "AI-இயங்கு ஆளுகை GIS — தமிழ்நாடு மாநில கண்ணோட்டம்"
+    },
+    "loading": {
+      "feeds": "தரவு ஊட்டங்கள் ஏற்றுகிறது...",
+      "initializing": "இடஞ்சார் நுண்ணறிவு பொறியை துவக்குகிறது",
+      "heatmap": "வெப்ப வரைபடம்",
+      "hotspots": "ஹாட்ஸ்பாட்கள்",
+      "riskAnalysis": "இடர் பகுப்பாய்வு",
+      "forecast": "முன்கணிப்பு",
+      "incidents": "சம்பவங்கள்"
+    },
+    "error": {
+      "title": "இடஞ்சார் தரவை ஏற்ற முடியவில்லை",
+      "retry": "மீண்டும் முயற்சிக்கவும்"
+    },
+    "empty": {
+      "title": "இடஞ்சார் தரவு எதுவும் இல்லை",
+      "body": "உங்கள் வடிப்பான்களை சரிசெய்யவும் அல்லது தரவை புதுப்பிக்கவும்.",
+      "refresh": "தரவை புதுப்பிக்கவும்"
+    },
+    "kpi": {
+      "complaints": "புகார்கள்",
+      "incidents": "சம்பவங்கள்",
+      "critical": "முக்கியமான",
+      "avgRisk": "சராசரி இடர்"
+    },
+    "sidebar": {
+      "mapLayers": "வரைபட அடுக்குகள்",
+      "smartFilters": "ஸ்மார்ட் வடிப்பான்கள்",
+      "forecastTimeline": "முன்கணிப்பு காலவரிசை",
+      "heatmapLegend": "வெப்ப வரைபட குறியீடு",
+      "hotspots": "செயலில் உள்ள ஹாட்ஸ்பாட்கள்"
+    },
+    "layer": {
+      "complaints": "புகார்கள்",
+      "incidents": "சம்பவங்கள்",
+      "citizenPins": "குடிமக்கள் குறிகள்",
+      "risk": "இடர்",
+      "prediction": "முன்கணிப்பு",
+      "deptWorkload": "துறை பணிச்சுமை"
+    },
+    "filter": {
+      "district": "மாவட்டம்",
+      "allDistricts": "அனைத்து மாவட்டங்கள்",
+      "category": "வகை",
+      "allCategories": "அனைத்து வகைகள்",
+      "priority": "முன்னுரிமை",
+      "allPriorities": "அனைத்து முன்னுரிமைகள்",
+      "department": "துறை",
+      "allDepartments": "அனைத்து துறைகள்"
+    },
+    "days": "நாட்கள்",
+    "forecastLoaded": "{{days}} நாட்களுக்கான முன்கணிப்பு ஏற்றப்பட்டது",
+    "mapSource": "OpenStreetMap | GIIPS",
+    "partialData": "சில தரவு ஊட்டங்கள் ஆஃப்லைனில் உள்ளன",
+    "feedsOffline": "ஆஃப்லைன் ஊட்டங்கள்: {{feeds}}",
+    "simulationFailed": "உருவகப்படுத்துதல் தோல்வியடைந்தது. மீண்டும் முயற்சிக்கவும்.",
+    "noDistrictData": "இந்த மாவட்டத்திற்கு தரவு எதுவும் இல்லை",
+    "noIncidentsDistrict": "இந்த மாவட்டத்தில் சம்பவங்கள் எதுவும் இல்லை",
+    "simPlusTeams": "+{{count}} குழுக்கள்",
+    "simResult": "உருவகப்படுத்துதல் முடிவு",
+    "legend": {
+      "low": "குறைந்த",
+      "medium": "நடுத்தர",
+      "high": "அதிக",
+      "critical": "முக்கியமான",
+      "activeHotspot": "செயலில் உள்ள ஹாட்ஸ்பாட்"
+    },
+    "detail": {
+      "complaints": "புகார்கள்",
+      "riskScore": "இடர் மதிப்பெண்",
+      "healthScore": "ஆரோக்கிய மதிப்பெண்",
+      "criticalIncidents": "முக்கியமான சம்பவங்கள்",
+      "topCategory": "முதல் வகை",
+      "aiRecommendation": "AI பரிந்துரை",
+      "resourceSimulation": "வள உருவகப்படுத்துதல்",
+      "incidentsInDistrict": "மாவட்டத்தில் சம்பவங்கள்"
+    },
+    "footer": {
+      "brand": "GIIPS இடஞ்சார் நுண்ணறிவு",
+      "systemOperational": "அமைப்பு இயங்குகிறது",
+      "dataRefreshed": "தரவு புதுப்பிக்கப்பட்டது",
+      "stateBadge": "தமிழ்நாடு"
+    },
+    "popup": {
+      "category": "வகை",
+      "priority": "முன்னுரிமை",
+      "age": "வயது",
+      "affectedPopulation": "பாதிக்கப்பட்ட மக்கள் தொகை",
+      "recommendedAction": "பரிந்துரைக்கப்பட்ட நடவடிக்கை",
+      "pendingReview": "மதிப்பாய்வு நிலுவையில்",
+      "openDetails": "விவரங்களைத் திறக்க"
+    },
+    "aiRecHighRisk": "அதிக இடர் மதிப்பெண் கண்டறியப்பட்டது — உடனடி கவனம் தேவை.",
+    "aiRecDeployTeams": "{{count}} முக்கியமான சம்பவங்களை கையாள {{teams}} கூடுதல் குழுக்களை நியமிக்கவும்.",
+    "aiRecHealthReview": "குறைந்த ஆரோக்கிய மதிப்பெண் — வள ஒதுக்கீட்டை மதிப்பாய்வு செய்யவும்.",
+    "aiRecMonitor": "அனைத்து அளவீடுகளும் இயல்பு நிலையில் — தொடர்ந்து கண்காணிக்கவும்."
   }
 }

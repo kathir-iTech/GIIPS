@@ -641,34 +641,34 @@ async def get_analytics(db: Session = Depends(get_db)):
         d = datetime.now() - timedelta(days=30 * i)
         months.append((d.year, d.month, d.strftime("%b")))
 
+    yr = extract("year", Complaint.created_at)
+    mo = extract("month", Complaint.created_at)
     comp_by_month = {
         (r[0], r[1]): r[2]
         for r in db.query(
-            extract("year", Complaint.created_at),
-            extract("month", Complaint.created_at),
-            func.count(Complaint.id),
+            yr, mo, func.count(Complaint.id),
         ).filter(Complaint.created_at >= six_months_ago)
-         .group_by(text("year"), text("month")).all()
+         .group_by(yr, mo).all()
     }
     inc_by_month = {
         (r[0], r[1]): r[2]
         for r in db.query(
-            extract("year", Incident.created_at),
-            extract("month", Incident.created_at),
+            extract("year", Incident.created_at).label("y"),
+            extract("month", Incident.created_at).label("m"),
             func.count(Incident.id),
         ).filter(Incident.created_at >= six_months_ago)
-         .group_by(text("year"), text("month")).all()
+         .group_by("y", "m").all()
     }
 
     # Resolution time trend (avg days_open for closed/resolved incidents per month)
+    yr2 = extract("year", Incident.created_at)
+    mo2 = extract("month", Incident.created_at)
     res_raw = db.query(
-        extract("year", Incident.created_at),
-        extract("month", Incident.created_at),
-        func.avg(Incident.days_open),
+        yr2, mo2, func.avg(Incident.days_open),
     ).filter(
         Incident.status.in_(["resolved", "closed"]),
         Incident.created_at >= six_months_ago,
-    ).group_by(text("year"), text("month")).all()
+    ).group_by(yr2, mo2).all()
     res_by_month = {(r[0], r[1]): round(float(r[2]), 1) for r in res_raw if r[2] is not None}
 
     # Ward hotspots (top 10 by complaint count)

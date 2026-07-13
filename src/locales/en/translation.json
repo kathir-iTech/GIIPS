@@ -575,5 +575,107 @@
     "wardHotspotsTitle": "Ward Hotspots",
     "wardHotspotsSubtitle": "Top 10 wards by complaint count",
     "noData": "No data available yet"
+  },
+
+  "spatialIntelligence": {
+    "header": {
+      "title": "Spatial Intelligence Command Center",
+      "subtitle": "AI-Powered Governance GIS — Tamil Nadu State Overview"
+    },
+    "loading": {
+      "feeds": "Loading data feeds...",
+      "initializing": "Initializing spatial intelligence engine",
+      "heatmap": "Heatmap",
+      "hotspots": "Hotspots",
+      "riskAnalysis": "Risk analysis",
+      "forecast": "Forecast",
+      "incidents": "Incidents"
+    },
+    "error": {
+      "title": "Failed to load spatial data",
+      "retry": "Retry"
+    },
+    "empty": {
+      "title": "No spatial data available",
+      "body": "Try adjusting your filters or refreshing the data.",
+      "refresh": "Refresh data"
+    },
+    "kpi": {
+      "complaints": "Complaints",
+      "incidents": "Incidents",
+      "critical": "Critical",
+      "avgRisk": "Avg Risk"
+    },
+    "sidebar": {
+      "mapLayers": "Map Layers",
+      "smartFilters": "Smart Filters",
+      "forecastTimeline": "Forecast Timeline",
+      "heatmapLegend": "Heatmap Legend",
+      "hotspots": "Active Hotspots"
+    },
+    "layer": {
+      "complaints": "Complaints",
+      "incidents": "Incidents",
+      "citizenPins": "Citizen Pins",
+      "risk": "Risk",
+      "prediction": "Prediction",
+      "deptWorkload": "Dept. Workload"
+    },
+    "filter": {
+      "district": "District",
+      "allDistricts": "All Districts",
+      "category": "Category",
+      "allCategories": "All Categories",
+      "priority": "Priority",
+      "allPriorities": "All Priorities",
+      "department": "Department",
+      "allDepartments": "All Departments"
+    },
+    "days": "days",
+    "forecastLoaded": "Forecast loaded for {{days}} days",
+    "mapSource": "OpenStreetMap | GIIPS",
+    "partialData": "Some data feeds are offline",
+    "feedsOffline": "Offline feeds: {{feeds}}",
+    "simulationFailed": "Simulation failed. Please try again.",
+    "noDistrictData": "No data available for this district",
+    "noIncidentsDistrict": "No incidents in this district",
+    "simPlusTeams": "+{{count}} teams",
+    "simResult": "Simulation Result",
+    "legend": {
+      "low": "Low",
+      "medium": "Medium",
+      "high": "High",
+      "critical": "Critical",
+      "activeHotspot": "Active Hotspot"
+    },
+    "detail": {
+      "complaints": "Complaints",
+      "riskScore": "Risk Score",
+      "healthScore": "Health Score",
+      "criticalIncidents": "Critical Incidents",
+      "topCategory": "Top Category",
+      "aiRecommendation": "AI Recommendation",
+      "resourceSimulation": "Resource Simulation",
+      "incidentsInDistrict": "Incidents in District"
+    },
+    "footer": {
+      "brand": "GIIPS Spatial Intelligence",
+      "systemOperational": "System Operational",
+      "dataRefreshed": "Data refreshed",
+      "stateBadge": "Tamil Nadu"
+    },
+    "popup": {
+      "category": "Category",
+      "priority": "Priority",
+      "age": "Age",
+      "affectedPopulation": "Affected Population",
+      "recommendedAction": "Recommended Action",
+      "pendingReview": "Pending review",
+      "openDetails": "Open Details"
+    },
+    "aiRecHighRisk": "High risk score detected — immediate attention required.",
+    "aiRecDeployTeams": "Deploy {{teams}} additional teams to handle {{count}} critical incidents.",
+    "aiRecHealthReview": "Low health score — review resource allocation.",
+    "aiRecMonitor": "All metrics normal — continue monitoring."
   }
 }
