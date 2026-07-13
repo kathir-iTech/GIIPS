@@ -4,6 +4,7 @@ import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as 
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
+import { getDeptI18nKey } from '../data/departments';
 import { AgingBadge } from '../components/AgingBadge';
 import './IncidentFeed.css';
 
@@ -219,7 +220,7 @@ const IncidentFeed = () => {
                     <td className="expand-cell" onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
                     <td className="incident-id">{incident.incident_number}</td>
                     <td><span className="category-badge">{incident.category}</span></td>
-                    <td className="dept-cell">{incident.department || incident.category}</td>
+                    <td className="dept-cell">{t(getDeptI18nKey(incident.department || incident.category))}</td>
                     <td className="cluster-size"><span className="cluster-badge">{incident.cluster_size}</span></td>
                     <td className="ward-cell">{incident.ward?.replace('Ward ', 'W').split(' - ')[0]}</td>
                     <td className="days-cell"><AgingBadge daysOpen={incident.days_open} /></td>

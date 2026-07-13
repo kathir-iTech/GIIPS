@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
+import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
 import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2 } from 'lucide-react';
 import './ComplaintDetail.css';
@@ -122,7 +123,7 @@ const ComplaintDetailPage = () => {
               <div className="meta-item"><Tag size={16} /> <span>{data.ward || t('common.na')}</span></div>
               <div className="meta-item"><Calendar size={16} /> <span>{data.date_received ? new Date(data.date_received).toLocaleString('en-IN') : t('common.na')}</span></div>
               <div className="meta-item"><AlertTriangle size={16} /> <span>{data.predicted_category || t('common.uncategorized')}</span></div>
-              {data.department && <div className="meta-item"><Building2 size={16} /> <span>{data.department}</span></div>}
+              {data.department && <div className="meta-item"><Building2 size={16} /> <span>{t(getDeptI18nKey(data.department))}</span></div>}
             </div>
 
             <div className="ai-section">
@@ -147,7 +148,7 @@ const ComplaintDetailPage = () => {
                 <div className="incident-card">
                   <div className="incident-row"><span>{t('complaintDetail.fieldIncidentId')}</span><strong>{data.incident.incident_number}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldCategory')}</span><strong>{data.incident.category}</strong></div>
-                  <div className="incident-row"><span>{t('complaintDetail.fieldDepartment')}</span><strong>{data.department || data.incident.category || t('common.na')}</strong></div>
+                  <div className="incident-row"><span>{t('complaintDetail.fieldDepartment')}</span><strong>{t(getDeptI18nKey(data.department || data.incident.category || ''))}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldStatus')}</span><strong>{t(STATUS_KEY[data.incident.status || 'open'] || 'common.status.open')}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldPriority')}</span><strong>{data.incident.priority_label}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldClusterSize')}</span><strong>{data.incident.cluster_size}</strong></div>

@@ -87,6 +87,18 @@ COMPLAINT_TEMPLATES = {
         "Bikers falling daily on bad stretch near Padi junction no action yet",
         "Court allapuram road near VelloreCollectorate has large sinkhole report",
     ],
+    "Road Infrastructure": [
+        "Footpath near bus stand broken pedestrians forced onto road",
+        "No pedestrian crossing near school zone dangerous for children",
+        "Road divider damaged on highway at Tambaram stretch",
+        "Bridge approach road subsiding near Adyar river",
+        "Missing guardrail on flyover at Maduravoyal junction",
+        "Road shoulder erosion on service road near Porur",
+        "Pavement tiles broken on Anna Nagar Tower park pathway",
+        "Cycle track encroached by parked vehicles on OMR",
+        "Junction needs traffic island for safe crossing at Chromepet",
+        "Underpass flooded every rain at Guindy industrial estate",
+    ],
     "Water Supply": [
         "No water supply for past 3 days entire street affected in Anna Nagar",
         "Brownish muddy water coming from taps morning since last week Tambaram",
@@ -310,6 +322,142 @@ COMPLAINT_TEMPLATES = {
         "Generator noise from apartment near hospital at Kilpauk violating noise rules too",
         "Weak load current reaching end of line at Thanjavur North side fans running slow",
         "Low lying transformer waterlogged during every rain near Tiruchirappalli Cantonment",
+        ],
+    "Pollution": [
+        "Factory releasing black smoke early morning near residential area Ambattur",
+        "Construction dust causing breathing trouble in T Nagar locality no action yet",
+        "Burning of plastic waste near school in Chromepet toxic fumes every evening",
+        "Noise pollution from temple speakers late night beyond permitted decibel at Mylapore",
+        "Chemical waste dumped in open drain near Pallavaram industrial area",
+        "Vehicle emission testing not enforced near Koyambedu bus terminus smoke everywhere",
+        "Sewage treatment plant odour unbearable near Perungudi residents suffering",
+        "Boiler stack from nearby laundry blackening buildings in Anna Nagar West",
+        "Industrial effluent discharged into river near Erode tanneries water contaminated",
+        "Burning of leaves and garbage near Velachery lake causing respiratory issues",
+        "Plastic recycling unit operating without pollution board clearance in Madipakkam",
+        "Quarry dust from stone crusher enveloping residential streets in Kanchipuram",
+        "Fish kill in Adyar river due to industrial discharge toxic foam visible",
+        "Hotel generator noise violating norms near Kilpauk medical college",
+        "Fly ash from brick kiln affecting crops in Tiruvallur agricultural belt",
+    ],
+    "Traffic": [
+        "Traffic signal not working at junction near T Nagar bus stand causing chaos",
+        "Road blocked by illegal parking on Anna Salai near Spencer Plaza",
+        "Missing traffic sign at school zone Tambaram east very dangerous",
+        "No pedestrian crossing at signal near Saidapet court heavy traffic",
+        "Auto rickshaws blocking main road near Koyambedu market during peak hours",
+        "Heavy congestion every evening at Maduravoyal junction no traffic police deployed",
+        "U-turn closed without alternative causing 2 km detour at Porur junction",
+        "Encroached pavement forcing pedestrians onto busy road near Broadway",
+        "Traffic bottleneck near toll plaza on Chennai Bypass adds 30 min commute",
+        "Road rage incidents increasing near Guindy signal no police presence",
+        "School zone speed breaker missing warning sign near Pammal tuition centre",
+        "Wrong side driving rampant on one-way street near Mylapore tank",
+        "Traffic police absent during evening peak at Velachery Bypass signal",
+        "Illegal speed breakers installed by local residents on GST road dangerous",
+        "Signal timing too short for elderly crossing near Parrys corner intersection",
+    ],
+    "Animal Nuisance": [
+        "Stray dogs roaming aggressive near school in Anna Nagar children scared",
+        "Cow carcass dumped on roadside near Perambur not removed since 3 days",
+        "Monkey menace in residential area damaging property near Adyar Signal",
+        "Stray cattle eating garbage and blocking traffic near Koyambedu",
+        "Dead dog lying on road near Pallavaram market since two days",
+        "Pig menace in residential locality near Madipakkam garbage strewn around",
+        "Stray dogs barking all night near T Nagar residents unable to sleep",
+        "Cow begging gang forcing vehicles to stop on highway near Chengalpattu",
+        "Rabies vaccination needed after stray dog bites in Saidapet locality",
+        "Packs of dogs chasing two-wheelers near Sholinganallur IT corridor",
+        "Buffaloes roaming on busy OMR stretch near Thoraipakkam causing accidents",
+        "Stray dog birth control programme not implemented in zone 10 Chennai",
+        "Monkeys snatching food from pedestrians near Mylapore Kapaleeswarar temple",
+        "Dead cat in drain near school breeding flies in Velachery",
+        "Donkeys abandoned on road near landfill site at Kodungaiyur unhealthy",
+    ],
+    "Fire Safety": [
+        "Electrical short circuit caused fire in slum near Chetpet no fire extinguisher",
+        "Building near school has no fire exit certificate T Nagar high risk",
+        "Gas cylinder burst in roadside eatery near Koyambedu no fire safety gear",
+        "Fire hydrant on street not working near Kilpauk medical college zone",
+        "Crackers sold illegally near market area in Mylapore without fire permit",
+        "Fire engine could not access narrow lane near George Town during emergency",
+        "Industrial unit operating without fire NOC near Ambattur estate fire risk",
+        "LPG godown in residential area near Madipakkam unauthorised operation",
+        "Transformer fire near school in Chromepet firemen arrived late",
+        "No fire safety equipment in multistorey apartment in Velachery",
+        "Forest fire near reserve forest at Vandalur zoo spreading fast",
+        "Fire alarm not working in cinema theatre near T Nagar",
+        "Petrol bunk operating too close to residential area in Medavakkam",
+        "Stubble burning uncontrolled near Tambaram airbase smoke hazard",
+        "Cracker stall near hospital during Diwali in Perambur fire emergency risk",
+    ],
+    "Building Violation": [
+        "Third floor constructed without approval in residential zone Adyar",
+        "Building under construction dumping debris on road near T Nagar",
+        "Compound wall encroaching footpath in Mylapore hindering walkers",
+        "Commercial building operating in residential zone at Anna Nagar causing nuisance",
+        "Old building dangerous structure near school in Georgetown needs demolition",
+        "Highrise violating FSI norms near Saidapet blocking sunlight to neighbours",
+        "Construction without safety net at Velachery debris falling on road",
+        "Building plan violation in CMDA zone at Chromepet floors added illegally",
+        "Illegal extension on terrace creating load risk near Mambalam railway",
+        "New construction blocking drainage path flooding neighbouring homes Madipakkam",
+        "Shopping mall constructed on lake buffer zone near Pallikaranai marsh",
+        "Property tax evasion building used commercial filed as residential Guindy",
+        "Heritage building demolished illegally in Mylapore urgent CMDA intervention needed",
+        "Construction on water body encroachment near Perungudi marshland",
+        "Real estate project cancelled but no refund to buyers Ambattur area",
+    ],
+    "Encroachment": [
+        "Footpath encroached by vegetable vendor near Tambaram station no walking space",
+        "Roadside hawker blocking bus stop entrance at T Nagar Ranganathan Street",
+        "Temple land encroached by private party at Mylapore water tank road",
+        "Park converted into marriage hall by local body backdoor at Adyar",
+        "Lake bund encroached by resort near Chembarambakkam lake illegal construction",
+        "Water body filled for real estate near Pallavaram encroachment danger",
+        "Road widening stopped due to encroachment near Saidapet court complex",
+        "Government land occupied by unauthorised colony in Velachery marshland",
+        "Footpath encroached by restaurant outdoor seating in Nungambakkam",
+        "Parking lot built on playground at Anna Nagar tower park encroachment",
+        "Shrine encroaching pavement near Mylapore Kapaleeswarar temple tank",
+        "Bus stop area encroached by auto stand operators at Koyambedu",
+        "Street used as godown by nearby shops at George Town congestion",
+        "Lake inlet blocked by encroachment near Korattur water body",
+        "Drainage pathway encroached by building wall in Madipakkam waterlogging",
+    ],
+    "Parks and Gardens": [
+        "Park maintained poorly children cannot play equipment broken in T Nagar park",
+        "Garden fence damaged stray dogs entering park in Adyar unsafe for kids",
+        "Park lights not working near Saidapet people afraid after dark",
+        "Benches broken in park near Mylapore senior citizens have no place to sit",
+        "Park turned into garbage dump by nearby residents in Velachery",
+        "Walking track damaged with loose tiles in Anna Nagar tower park",
+        "Playground encroached by parking at Nungambakkam children have no space",
+        "Park gate locked during evening hours when residents need it most Chromepet",
+        "Garden hose broken water stagnation breeding mosquitoes in Guindy park",
+        "Trees in park need pruning branches falling during wind at Tambaram",
+        "Toilets in park locked and unhygienic near Koyambedu market garden",
+        "Park converted into dumping ground for construction debris in Madipakkam",
+        "Children swing broken sharp edges exposed dangerous in Perambur park",
+        "Bouganvillea overgrowth blocking pathway in Pammal park dangerous thorns",
+        "Park clock tower not functional for years landmark ignored by corporation",
+    ],
+    "Street Vendor": [
+        "Unauthorised street vendor blocking footpath near Tambaram station pedestrian issue",
+        "Vendor selling food without hygiene licence near school Chromepet health risk",
+        "Hawker occupying bus stop area at T Nagar forcing commuters onto road",
+        "Street vendor operating without waste bin littering all over Mylapore road",
+        "Night market noise until 2 AM near residential area in Adyar disturbance",
+        "Vendor encroaching road junction at Saidapet visibility issue for drivers",
+        "Illegal vending near hospital entrance in Kilpauk ambulance blocked",
+        "Vendor using LPG cylinder on footpath dangerous near Velachery market",
+        "Fish vendor waste rotting on roadside near Purasawalkam smell unbearable",
+        "Mobile food vendor near school without any hygiene certification Madipakkam",
+        "Vegetable vendor on road blocking traffic every morning Anna Nagar worst",
+        "Vendor not wearing gloves handling food openly near Koyambedu unsafe",
+        "Hawker using loudspeaker for sales near residential zone Mambalam noise",
+        "Flower vendor waste clogging drain on roadside at Mylapore daily problem",
+        "Street vendor with no designated spot harassing shoppers at Pondy Bazaar",
     ],
 }
 
@@ -467,11 +615,11 @@ def seed_demo_users():
     db = SessionLocal()
     
     users = [
-        {"full_name": "District Collector", "email": "collector@giips.gov.in", "role": "Executive", "password": "password123"},
-        {"full_name": "Government Officer - Roads", "email": "officer1@giips.gov.in", "role": "Officer", "password": "password123"},
-        {"full_name": "Government Officer - Water", "email": "officer2@giips.gov.in", "role": "Officer", "password": "password123"},
-        {"full_name": "Government Officer - Sanitation", "email": "officer3@giips.gov.in", "role": "Officer", "password": "password123"},
-        {"full_name": "Demo Citizen", "email": "citizen@giips.gov.in", "role": "Citizen", "password": "password123"}
+        {"full_name": "District Collector",           "email": "collector@giips.gov.in", "role": "Executive", "password": "password123", "department": None},
+        {"full_name": "Government Officer - Roads",    "email": "officer1@giips.gov.in",   "role": "Officer",   "password": "password123", "department": "Highways and Minor Ports Department"},
+        {"full_name": "Government Officer - Water",    "email": "officer2@giips.gov.in",   "role": "Officer",   "password": "password123", "department": "Municipal Administration and Water Supply Department"},
+        {"full_name": "Government Officer - Sanitation","email": "officer3@giips.gov.in",  "role": "Officer",   "password": "password123", "department": "Municipal Administration and Water Supply Department"},
+        {"full_name": "Demo Citizen",                  "email": "citizen@giips.gov.in",    "role": "Citizen",   "password": "password123", "department": None}
     ]
     
     for user in users:
@@ -481,7 +629,8 @@ def seed_demo_users():
                 full_name=user["full_name"],
                 email=user["email"],
                 password_hash=hash_password(user["password"]),
-                role=user["role"]
+                role=user["role"],
+                department=user["department"]
             )
             db.add(new_user)
     db.commit()
@@ -593,6 +742,38 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
     
     print(f"Seeded database with {len(complaints)} complaints and {len(incidents)} incidents")
     db.close()
+
+def migrate_old_departments():
+    """Migrate old department names to new standardised names in the database.
+    Handles User.department and DepartmentMetrics.department columns."""
+    from department_map import OLD_TO_NEW_DEPT, SLUG_TO_DISPLAY
+    db = SessionLocal()
+    try:
+        # Migrate User.department
+        for old_name, new_name in OLD_TO_NEW_DEPT.items():
+            updated = db.query(User).filter(
+                User.department == old_name,
+                User.role == "Officer"
+            ).update({User.department: new_name})
+            if updated:
+                print(f"[MIGRATION] Updated {updated} officer(s) department: '{old_name}' → '{new_name}'")
+
+        # Migrate DepartmentMetrics.department
+        for old_name, new_name in OLD_TO_NEW_DEPT.items():
+            updated = db.query(DepartmentMetrics).filter(
+                DepartmentMetrics.department == old_name
+            ).update({DepartmentMetrics.department: new_name})
+            if updated:
+                print(f"[MIGRATION] Updated {updated} department metric(s): '{old_name}' → '{new_name}'")
+
+        db.commit()
+        print("[MIGRATION] Department migration complete")
+    except Exception as e:
+        print(f"[MIGRATION] Department migration error: {e}")
+        db.rollback()
+    finally:
+        db.close()
+
 
 def backfill_complaint_user_ids():
     """Assign existing complaints without user_id to the demo citizen account."""

@@ -4,6 +4,7 @@ import { api } from '../services/api';
 import type { Incident, Complaint, PriorityHistory } from '../types';
 import Header from '../components/Header';
 import { AgingBadge } from '../components/AgingBadge';
+import { getDeptI18nKey } from '../data/departments';
 import {
   Brain, ShieldAlert, MapPin, Clock, GitBranch, Lightbulb, Users, Wrench,
   ChevronRight, ChevronLeft, Search, Filter, SortAsc, ArrowUpRight, AlertTriangle,
@@ -667,13 +668,13 @@ const Clusters = () => {
                     <div className="dept-allocation">
                       <div className="dept-primary">
                         <span className="dept-icon-wrap"><Wrench size={18} /></span>
-                        <span className="dept-name">{responsibleDepartment}</span>
+                        <span className="dept-name">{t(getDeptI18nKey(responsibleDepartment))}</span>
                       </div>
                       {resources.length > 0 ? (
                         <div className="resource-recs">
                           {resources.slice(0, 4).map((res: any, i: number) => (
                             <div key={i} className="res-row">
-                              <span className="res-label">{res.department || res.name || t('clusters.resource')}</span>
+                              <span className="res-label">{t(getDeptI18nKey(res.department || res.name || '')) || t('clusters.resource')}</span>
                               <div className="res-bars">
                                 <span className="res-val current">{res.current ?? res.current_teams ?? 5}</span>
                                 <ChevronRight size={10} />

@@ -92,13 +92,17 @@ class ClassificationService:
     async def _fallback_classify(self, request: ClassifyRequest) -> ClassifyResponse:
         text_lower = request.text.lower()
         keywords = {
-            'Road Infrastructure': ['pothole', 'road', 'street'],
-            'Water Supply': ['water', 'pipe', 'leak'],
-            'Waste Management': ['garbage', 'waste', 'trash'],
-            'Sanitation': ['sewage', 'toilet', 'sanitation'],
-            'Street Lighting': ['light', 'lamp', 'bulb'],
+            'Roads': ['pothole', 'road', 'street', 'pavement', 'speed breaker'],
+            'Water Supply': ['water', 'pipe', 'leak', 'tap', 'supply'],
+            'Garbage': ['garbage', 'waste', 'trash', 'bin', 'dump', 'litter'],
+            'Drainage': ['sewage', 'drain', 'blockage', 'overflow', 'stagnant'],
+            'Streetlights': ['light', 'lamp', 'bulb', 'flickering', 'dark'],
+            'Electricity': ['power', 'voltage', 'transformer', 'electric', 'cut'],
+            'Public Health': ['health', 'mosquito', 'dengue', 'fogging', 'disease'],
+            'Pollution': ['pollution', 'smoke', 'dust', 'air', 'toxic'],
+            'Traffic': ['traffic', 'signal', 'congestion', 'accident', 'jam'],
         }
-        predicted, confidence = 'Public Works', 0.5
+        predicted, confidence = 'Roads', 0.5
         supporting_factors = []
         for cat, words in keywords.items():
             matched = [w for w in words if w in text_lower]
@@ -219,8 +223,13 @@ class DecisionService:
         wards = db.query(Incident.ward).distinct().all()
         return [{"ward": w[0], "healthScore": max(0, 100 - db.query(Incident).filter(Incident.ward == w[0]).count() * 10)} for w in wards]
     async def get_dept_workload(self, db) -> List[Dict[str, Any]]:
+        from department_map import get_department
         data = db.query(Incident.category, func.count(Incident.id)).filter(Incident.status != 'resolved').group_by(Incident.category).all()
-        return [{"department": cat, "activeIncidents": count} for cat, count in data]
+        merged: dict[str, int] = {}
+        for cat, count in data:
+            dept = get_department(cat)
+            merged[dept] = merged.get(dept, 0) + count
+        return [{"department": dept, "activeIncidents": cnt} for dept, cnt in merged.items()]
 
 class SpatialService:
     async def get_heatmap(self, db) -> List[Dict[str, Any]]:

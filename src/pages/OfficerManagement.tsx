@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { UserPlus, Search, Lock, Unlock } from 'lucide-react';
+import { DEPARTMENTS } from '../data/departments';
 import './Admin.css';
 
 interface Officer {
@@ -171,7 +172,12 @@ const OfficerManagement = () => {
               <input placeholder={t('officerManagement.fieldFullName')} value={formData.full_name} onChange={e => setFormData({...formData, full_name: e.target.value})} />
               <input placeholder={t('officerManagement.fieldEmail')} value={formData.email} onChange={e => setFormData({...formData, email: e.target.value})} />
               <input placeholder={t('officerManagement.fieldDistrict')} value={formData.district} onChange={e => setFormData({...formData, district: e.target.value})} />
-              <input placeholder={t('officerManagement.fieldDepartment')} value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})} />
+              <select value={formData.department} onChange={e => setFormData({...formData, department: e.target.value})}>
+                <option value="">{t('officerManagement.fieldDepartment')}</option>
+                {DEPARTMENTS.map(d => (
+                  <option key={d.slug} value={d.nameEn}>{d.nameEn}</option>
+                ))}
+              </select>
               <input type="password" placeholder={t('officerManagement.fieldPassword')} value={formData.password} onChange={e => setFormData({...formData, password: e.target.value})} />
             </div>
             {dialogError && <div className="error-state"><p>{dialogError}</p></div>}

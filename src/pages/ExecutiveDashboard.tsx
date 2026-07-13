@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
 import { AgingBadge } from '../components/AgingBadge';
+import { getDeptI18nKey, getDeptIconKeyword } from '../data/departments';
 import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
@@ -16,13 +17,15 @@ import {
 import './ExecutiveDashboard.css';
 
 const EXEC_DEPT_COLORS: Record<string, string> = {
-  Roads: '#ef4444',
-  Water: '#3b82f6',
-  Drainage: '#10b981',
-  Electricity: '#eab308',
-  Streetlights: '#f59e0b',
-  Garbage: '#8b5cf6',
-  'Public Health': '#06b6d4',
+  roads: '#ef4444',
+  water: '#3b82f6',
+  drainage: '#10b981',
+  electricity: '#eab308',
+  streetlight: '#f59e0b',
+  garbage: '#8b5cf6',
+  health: '#06b6d4',
+  traffic: '#f97316',
+  fire: '#dc2626',
 };
 
 const SkeletonCard: React.FC = () => (
@@ -474,14 +477,15 @@ const ExecutiveDashboard = () => {
           {(deptWorkload && deptWorkload.length > 0 ? deptWorkload : []).map((dept: any, idx: number) => {
             const name = dept.department || dept.name || '';
             const efficiency = dept.efficiency ?? dept.score ?? 70;
-            const deptIcon = name.toLowerCase().includes('road') ? Road : name.toLowerCase().includes('water') ? Droplets : name.toLowerCase().includes('drainage') ? Droplets : name.toLowerCase().includes('electricity') ? Zap : name.toLowerCase().includes('streetlight') ? Lightbulb : name.toLowerCase().includes('garbage') ? Trash2 : name.toLowerCase().includes('health') ? Heart : Wrench;
-            const color = EXEC_DEPT_COLORS[name] || '#64748b';
+            const iconKey = getDeptIconKeyword(name);
+            const deptIcon = iconKey === 'road' ? Road : iconKey === 'water' ? Droplets : iconKey === 'electricity' ? Zap : iconKey === 'streetlight' ? Lightbulb : iconKey === 'garbage' ? Trash2 : iconKey === 'health' ? Heart : iconKey === 'traffic' ? AlertOctagon : iconKey === 'fire' ? Flame : Wrench;
+            const color = EXEC_DEPT_COLORS[iconKey] || '#64748b';
             return (
               <div key={idx} className="dept-card" style={{ borderLeftColor: color }}>
                 <div className="dept-header">
                   <div className="dept-icon" style={{ color, background: `${color}18` }}>{React.createElement(deptIcon, { size: 18 })}</div>
                   <div>
-                    <h4>{name}</h4>
+                    <h4>{t(getDeptI18nKey(name))}</h4>
                     <span className="dept-status" style={{ color }}>{efficiency > 75 ? t('common.deptStatus.healthy') : efficiency > 55 ? t('common.deptStatus.stressed') : t('common.deptStatus.underStress')}</span>
                   </div>
                 </div>

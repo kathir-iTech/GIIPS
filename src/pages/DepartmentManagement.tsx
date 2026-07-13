@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp } from 'lucide-react';
+import { getDeptI18nKey } from '../data/departments';
 import './Admin.css';
 
 interface DepartmentData {
@@ -66,7 +67,7 @@ const DepartmentManagement = () => {
             <div className="dept-card" key={dept.department}>
               <div className="dept-header">
                 <Building size={24} />
-                <h3>{dept.department}</h3>
+                <h3>{t(getDeptI18nKey(dept.department))}</h3>
               </div>
               <div className="dept-stats">
                 <div className="stat">

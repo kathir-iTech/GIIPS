@@ -141,6 +141,13 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Complaint backfill skipped: %s", exc)
 
+        # Migrate old department names to new standardised names
+        try:
+            from database import migrate_old_departments
+            migrate_old_departments()
+        except Exception as exc:
+            logger.warning("[STARTUP] Department migration skipped: %s", exc)
+
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
 

@@ -4,6 +4,7 @@ import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip } from '
 import 'leaflet/dist/leaflet.css';
 import { api } from '../services/api';
 import { tamilNaduDistricts, districtCentroids } from '../data/tamil-nadu-districts';
+import { DEPARTMENT_NAMES, getDeptI18nKey } from '../data/departments';
 import {
   AlertTriangle, RefreshCw, MapPin, Filter, Layers,
   Calendar, AlertOctagon, Activity, Brain, Zap,
@@ -143,10 +144,7 @@ const SpatialIntelligence = () => {
     return Array.from(cats).sort();
   }, [incidents]);
 
-  const departments = useMemo(() => {
-    const depts = new Set(incidents.map((i: any) => i.department).filter(Boolean));
-    return Array.from(depts).sort();
-  }, [incidents]);
+  const departments = useMemo(() => DEPARTMENT_NAMES, []);
 
   const districts = useMemo(() => Object.keys(districtData).sort(), [districtData]);
 
@@ -468,7 +466,7 @@ const SpatialIntelligence = () => {
                 <select value={filters.department} onChange={(e) => handleFilterChange('department', e.target.value)}>
                   <option value="all">{t('spatialIntelligence.filter.allDepartments')}</option>
                   {departments.map((d) => (
-                    <option key={d} value={d}>{d}</option>
+                    <option key={d} value={d}>{t(getDeptI18nKey(d))}</option>
                   ))}
                 </select>
               </div>

@@ -33,7 +33,10 @@ from models import (
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit
-from department_map import get_department
+from department_map import (
+    get_department, get_department_slug, get_slug_for_department,
+    CATEGORY_DEPT_MAP, DEPARTMENT_SLUGS, SLUG_TO_DISPLAY, get_i18n_key
+)
 from pipeline import process_complaint_pipeline
 from services import (
     ClassificationService,
@@ -124,8 +127,8 @@ def _notify_department_officers(db: Session, department: str, notification_type:
 
 def _check_aging_notifications(db: Session, department: str):
     """Create aging-warning / aging-critical notifications for officers in a department."""
-    from department_map import DEPARTMENT_MAP
-    dept_categories = [cat for cat, dept in DEPARTMENT_MAP.items() if dept == department]
+    dept_slug = get_slug_for_department(department)
+    dept_categories = [cat for cat, slug in CATEGORY_DEPT_MAP.items() if slug == dept_slug]
 
     if not dept_categories:
         return
@@ -610,8 +613,9 @@ async def get_trend_data(db: Session = Depends(get_db)):
 @dashboard_router.get("/analytics")
 async def get_analytics(db: Session = Depends(get_db)):
     """Get comprehensive analytics data for the Analysis page."""
-    from department_map import get_department
-
+@dashboard_router.get("/analytics")
+async def get_analytics(db: Session = Depends(get_db)):
+    """Get comprehensive analytics data for the Analysis page."""
     six_months_ago = datetime.now() - timedelta(days=180)
 
     # Overview
@@ -1205,6 +1209,18 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "departments_view", "departments", "success")
     depts = db.query(DepartmentMetrics).all()
     return [{"department": d.department, "open_incidents": d.open_incidents, "critical_incidents": d.critical_incidents, "assigned_officers": d.assigned_officers, "avg_resolution_time": d.avg_resolution_time, "completion_percentage": d.completion_percentage, "workload_indicator": d.workload_indicator} for d in depts]
+
+@admin_router.get("/departments/list")
+async def get_department_list(db_user: User = Depends(get_executive_user)):
+    """Get the authoritative list of all departments with slugs and i18n keys."""
+    return [
+        {
+            "slug": slug,
+            "name": SLUG_TO_DISPLAY[slug],
+            "i18nKey": get_i18n_key(slug),
+        }
+        for slug in DEPARTMENT_SLUGS
+    ]
 
 @admin_router.get("/system-health")
 async def get_system_health(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):

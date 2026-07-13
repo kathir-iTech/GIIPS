@@ -4,6 +4,7 @@ import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import { AlertCircle } from 'lucide-react';
+import { getDeptI18nKey } from '../data/departments';
 import './Analysis.css';
 
 interface CategoryItem {
@@ -182,7 +183,7 @@ const Analysis = () => {
               <Plot
                 data={[{
                   x: departmentWorkload.map(d => d.activeIncidents),
-                  y: departmentWorkload.map(d => d.department),
+                  y: departmentWorkload.map(d => t(getDeptI18nKey(d.department))),
                   type: 'bar', orientation: 'h',
                   marker: { color: '#f59e0b' },
                 }]}
