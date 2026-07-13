@@ -20,6 +20,7 @@ class ClassifyResponse(BaseModel):
     top_predictions: List[Dict[str, Any]]
     reason: str
     supporting_factors: List[str]
+    method: str = Field("ml_model", description="Classification method used (ml_model, heuristic_fallback, tamil_keyword_fallback)")
 
 
 class ComplaintModel(BaseModel):
@@ -234,3 +235,15 @@ class CopilotChatResponse(BaseModel):
 
 class MergeIncidentsRequest(BaseModel):
     incident_ids: List[str] = Field(..., min_length=2)
+
+class NotificationResponse(BaseModel):
+    id: str
+    user_id: str
+    complaint_id: Optional[str] = None
+    type: str
+    data: Optional[Dict[str, Any]] = None
+    is_read: bool
+    created_at: str
+
+class UpdateStatusRequest(BaseModel):
+    status: str

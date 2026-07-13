@@ -369,4 +369,39 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  getNotifications: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/notifications`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  markNotificationRead: async (id: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/notifications/${id}/read`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  markAllNotificationsRead: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/notifications/read-all`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  updateIncidentStatus: async (incidentId: string, status: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/status`, {
+      ...FETCH_DEFAULTS,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ status }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 };

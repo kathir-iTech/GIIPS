@@ -11,7 +11,7 @@ import os
 import random
 from datetime import timedelta
 from pathlib import Path
-from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey
+from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey, Boolean
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -447,6 +447,18 @@ class DepartmentMetrics(Base):
     completion_percentage = Column(Float, default=0.0, nullable=False)
     workload_indicator = Column(Float, default=0.0, nullable=False)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+class Notification(Base):
+    """ORM model for in-app citizen notifications."""
+    __tablename__ = "notifications"
+
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), index=True, nullable=False)
+    complaint_id = Column(String, ForeignKey("complaints.id"), nullable=True)
+    type = Column(String, nullable=False)
+    data = Column(Text, nullable=True)
+    is_read = Column(Boolean, default=False, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
 # Seed demo users
 def seed_demo_users():

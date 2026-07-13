@@ -3,6 +3,7 @@ API route definitions for GIIPS backend.
 """
 
 import os
+import json
 import uuid
 import time
 import logging
@@ -13,7 +14,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -26,6 +27,8 @@ from models import (
     CopilotChatRequest,
     CopilotChatResponse,
     MergeIncidentsRequest,
+    NotificationResponse,
+    UpdateStatusRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
 from job_queue import get_complaint_status
@@ -83,6 +86,24 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
         db.commit()
     except Exception:
         logger.error("Audit log write failed for action=%s target=%s", action, target)
+        db.rollback()
+
+
+def _create_notification(db: Session, user_id: str, notification_type: str, complaint_id: Optional[str] = None, data: Optional[dict] = None):
+    """Create an in-app notification for a citizen user."""
+    try:
+        notif = Notification(
+            id=str(uuid.uuid4()),
+            user_id=user_id,
+            complaint_id=complaint_id,
+            type=notification_type,
+            data=json.dumps(data) if data else None,
+            is_read=False,
+        )
+        db.add(notif)
+        db.commit()
+    except Exception:
+        logger.error("Notification creation failed for user=%s type=%s", user_id, notification_type)
         db.rollback()
 
 # ... (router definitions)
@@ -582,6 +603,12 @@ async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_c
         for c in src.complaints:
             c.incident_id = target.id
             c.merge_reason = f"Merged from {src.incident_number} by officer action"
+            if c.user_id:
+                _create_notification(
+                    db, c.user_id, "merged",
+                    complaint_id=c.id,
+                    data={"incident_number": target.incident_number, "src_incident_number": src.incident_number},
+                )
         db.query(PriorityHistory).filter(PriorityHistory.incident_id == src.id).delete()
         db.delete(src)
 
@@ -670,6 +697,13 @@ async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends
     complaint.incident_id = new_incident.id
     complaint.merge_reason = f"Split from {incident.incident_number} by officer action"
 
+    if complaint.user_id:
+        _create_notification(
+            db, complaint.user_id, "split",
+            complaint_id=complaint.id,
+            data={"incident_number": new_incident.incident_number, "src_incident_number": incident.incident_number},
+        )
+
     # Update original incident
     incident.cluster_size = db.query(Complaint).filter(Complaint.incident_id == incident.id).count()
 
@@ -738,6 +772,81 @@ async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends
         "new_incident_id": new_incident.id,
         "new_incident_number": new_incident.incident_number,
     }
+
+
+@incident_router.patch("/{incident_id}/status")
+async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update an incident's status. Creates notifications for all linked complaint owners."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can update incident status")
+    if body.status not in ("open", "in-progress", "resolved"):
+        raise HTTPException(status_code=400, detail="Status must be one of: open, in-progress, resolved")
+
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    old_status = incident.status
+    if old_status == body.status:
+        raise HTTPException(status_code=400, detail="Incident already has this status")
+
+    incident.status = body.status
+    db.commit()
+
+    # Notify all citizens whose complaints are linked to this incident
+    for c in incident.complaints:
+        if c.user_id:
+            _create_notification(
+                db, c.user_id, "status_change",
+                complaint_id=c.id,
+                data={"old_status": old_status, "new_status": body.status, "incident_number": incident.incident_number},
+            )
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
+                     incident.id, "success",
+                     f"Status changed from {old_status} to {body.status}")
+
+    return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
+
+
+notifications_router = APIRouter(prefix="/notifications", tags=["Notifications"])
+
+
+@notifications_router.get("")
+async def get_notifications(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get current user's notifications, most recent first."""
+    notifs = db.query(Notification).filter(Notification.user_id == db_user.id).order_by(Notification.created_at.desc()).limit(50).all()
+    return [
+        NotificationResponse(
+            id=n.id,
+            user_id=n.user_id,
+            complaint_id=n.complaint_id,
+            type=n.type,
+            data=json.loads(n.data) if n.data else None,
+            is_read=n.is_read,
+            created_at=n.created_at.isoformat() if n.created_at else "",
+        )
+        for n in notifs
+    ]
+
+
+@notifications_router.post("/{notification_id}/read")
+async def mark_notification_read(notification_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Mark a single notification as read."""
+    notif = db.query(Notification).filter(Notification.id == notification_id, Notification.user_id == db_user.id).first()
+    if not notif:
+        raise HTTPException(status_code=404, detail="Notification not found")
+    notif.is_read = True
+    db.commit()
+    return {"message": "Notification marked as read"}
+
+
+@notifications_router.post("/read-all")
+async def mark_all_notifications_read(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Mark all of the current user's notifications as read."""
+    db.query(Notification).filter(Notification.user_id == db_user.id, Notification.is_read == False).update({"is_read": True})
+    db.commit()
+    return {"message": "All notifications marked as read"}
 
 
 # === Incident Intelligence Routes ===

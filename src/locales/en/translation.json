@@ -462,6 +462,20 @@
     }
   },
 
+  "notification": {
+    "title": "Notifications",
+    "empty": "No notifications yet",
+    "markAllRead": "Mark all as read",
+    "statusChanged": "Your complaint status changed to {{status}}",
+    "merged": "Your complaint was merged into incident {{incidentNumber}}",
+    "split": "Your complaint was split into a new incident ({{incidentNumber}})",
+    "created": "Your complaint has been registered ({{incidentNumber}})",
+    "justNow": "just now",
+    "minutesAgo": "{{count}} min ago",
+    "hoursAgo": "{{count}}h ago",
+    "daysAgo": "{{count}}d ago"
+  },
+
   "auditLogs": {
     "loadError": "Failed to load audit logs",
     "header": {

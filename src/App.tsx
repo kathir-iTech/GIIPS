@@ -4,6 +4,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { AuthProvider, useAuth } from './context/AuthContext';
 import Sidebar from './components/Sidebar';
 import LanguageSwitcher from './components/LanguageSwitcher';
+import NotificationBell from './components/NotificationBell';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import { RoleGuard } from './components/ProtectedRoute';
 import './App.css';
@@ -57,7 +58,10 @@ function AppLayout() {
 
   return (
     <div className={showSidebar ? 'app-layout' : 'full-content'}>
-      <LanguageSwitcher />
+      <div className="top-bar">
+        <NotificationBell />
+        <LanguageSwitcher />
+      </div>
       {showSidebar && <Sidebar />}
       <main className="main-content">
         <ErrorBoundary>

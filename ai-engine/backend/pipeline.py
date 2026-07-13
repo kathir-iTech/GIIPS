@@ -175,6 +175,18 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
         complaint.merge_reason = merge_reason if is_duplicate else None
         complaint.user_id = user_id
 
+        # Create notification for the citizen when complaint is processed
+        if user_id:
+            from routes import _create_notification
+            notif_data = {"incident_number": incident.incident_number, "is_duplicate": is_duplicate}
+            if is_duplicate:
+                notif_data["merge_reason"] = merge_reason
+            _create_notification(
+                db, user_id, "created" if not is_duplicate else "merged",
+                complaint_id=complaint.id,
+                data=notif_data,
+            )
+
         db.commit()
         db.refresh(complaint)
         db.refresh(incident)

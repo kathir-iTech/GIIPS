@@ -115,3 +115,13 @@ export interface CitizenComplaint {
 }
 
 export interface ComplaintDetail extends CitizenComplaint {}
+
+export interface AppNotification {
+  id: string;
+  user_id: string;
+  complaint_id: string | null;
+  type: string;
+  data: Record<string, any> | null;
+  is_read: boolean;
+  created_at: string;
+}

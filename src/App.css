@@ -1,3 +1,14 @@
+.top-bar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  z-index: 999;
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 8px 16px;
+}
+
 .app-layout {
   display: flex;
   min-height: 100vh;
