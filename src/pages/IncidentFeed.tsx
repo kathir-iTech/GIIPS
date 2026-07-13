@@ -59,7 +59,10 @@ const IncidentFeed = () => {
       if (cancelled) return;
       try {
         const data = await api.getIncidents(sortField);
-        if (!cancelled) setAllIncidents(data || []);
+        if (!cancelled) {
+          setAllIncidents(data || []);
+          setError(null);
+        }
       } catch (e) {
         if (!cancelled) {
           if (showLoader) {
@@ -71,6 +74,9 @@ const IncidentFeed = () => {
         if (showLoader && !cancelled) setLoading(false);
       }
     };
+
+    setMergeError(null);
+    setSplitError(null);
 
     fetchIncidents(true);
     const interval = setInterval(() => fetchIncidents(false), 30000);

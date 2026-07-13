@@ -267,6 +267,48 @@
     "standalone": "Standalone complaint"
   },
 
+  "incidents": {
+    "header": {
+      "title": "Incidents",
+      "subtitle": "Monitor and manage incident clusters"
+    },
+    "loading": "Loading incidents...",
+    "loadError": "Failed to load incidents",
+    "errorPrefix": "Error: ",
+    "searchPlaceholder": "Search by ID, ward, category...",
+    "allPriorities": "All Priorities",
+    "allCategories": "All Categories",
+    "resultsCount": "{{count}} incidents",
+    "sortByDays": "Sort by days open",
+    "oldest": "Oldest",
+    "mergeTitle": "Merge selected incidents",
+    "merge": "Merge",
+    "colIncidentId": "ID",
+    "colCategory": "Category",
+    "colDepartment": "Department",
+    "colCluster": "Cluster",
+    "colWard": "Ward",
+    "colDays": "Days",
+    "colScore": "Score",
+    "colPriority": "Priority",
+    "colRecommendedAction": "Action",
+    "emptyFiltered": "No incidents match your filters",
+    "summary": "Summary",
+    "clusteringReasoning": "Clustering Reasoning",
+    "clusteredWithSimilarity": "Grouped with {{score}}% similarity to cluster",
+    "clusteringDefaultReason": "Complaints grouped based on semantic similarity across text, location, and category fields.",
+    "linkedComplaints": "Linked Complaints ({{count}})",
+    "splitTitle": "Split this complaint into a new incident",
+    "split": "Split",
+    "moreComplaints": "+{{count}} more",
+    "prev": "Previous",
+    "next": "Next",
+    "catch": {
+      "mergeFailed": "Failed to merge incidents",
+      "splitFailed": "Failed to split complaint"
+    }
+  },
+
   "executive": {
     "header": {
       "title": "Executive Decision Intelligence",

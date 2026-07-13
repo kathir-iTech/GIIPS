@@ -267,6 +267,48 @@
     "standalone": "தனி புகார்"
   },
 
+  "incidents": {
+    "header": {
+      "title": "சம்பவங்கள்",
+      "subtitle": "சம்பவ தொகுப்புகளை கண்காணித்து நிர்வகிக்கவும்"
+    },
+    "loading": "சம்பவங்கள் ஏற்றப்படுகின்றன...",
+    "loadError": "சம்பவங்களை ஏற்ற முடியவில்லை",
+    "errorPrefix": "பிழை: ",
+    "searchPlaceholder": "ஐடி, வார்டு, வகை மூலம் தேடவும்...",
+    "allPriorities": "அனைத்து முன்னுரிமைகள்",
+    "allCategories": "அனைத்து வகைகள்",
+    "resultsCount": "{{count}} சம்பவங்கள்",
+    "sortByDays": "திறந்த நாட்கள் வரிசை",
+    "oldest": "பழமையானவை",
+    "mergeTitle": "தேர்ந்தெடுத்த சம்பவங்களை இணைக்கவும்",
+    "merge": "இணை",
+    "colIncidentId": "ஐடி",
+    "colCategory": "வகை",
+    "colDepartment": "துறை",
+    "colCluster": "தொகுப்பு",
+    "colWard": "வார்டு",
+    "colDays": "நாட்கள்",
+    "colScore": "மதிப்பெண்",
+    "colPriority": "முன்னுரிமை",
+    "colRecommendedAction": "நடவடிக்கை",
+    "emptyFiltered": "உங்கள் வடிப்பான்களுடன் பொருந்தும் சம்பவங்கள் எதுவும் இல்லை",
+    "summary": "சுருக்கம்",
+    "clusteringReasoning": "தொகுப்பிற்கான காரணம்",
+    "clusteredWithSimilarity": "{{score}}% ஒற்றுமையுடன் தொகுப்பில் இணைக்கப்பட்டது",
+    "clusteringDefaultReason": "உரை, இருப்பிடம் மற்றும் வகை புலங்களில் உள்ள சொற்பொருள் ஒற்றுமையின் அடிப்படையில் புகார்கள் தொகுக்கப்பட்டன.",
+    "linkedComplaints": "இணைக்கப்பட்ட புகார்கள் ({{count}})",
+    "splitTitle": "இந்த புகாரை புதிய சம்பவமாக பிரிக்கவும்",
+    "split": "பிரி",
+    "moreComplaints": "மேலும் {{count}}",
+    "prev": "முந்தைய",
+    "next": "அடுத்த",
+    "catch": {
+      "mergeFailed": "சம்பவங்களை இணைக்க முடியவில்லை",
+      "splitFailed": "புகாரை பிரிக்க முடியவில்லை"
+    }
+  },
+
   "executive": {
     "header": {
       "title": "நிர்வாக முடிவு நுண்ணறிவு",
