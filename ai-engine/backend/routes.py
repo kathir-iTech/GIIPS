@@ -1579,20 +1579,26 @@ async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(ge
     Requires Executive authentication (collector@giips.gov.in).
     Run this after deploying Coimbatore ward changes to refresh the deployed DB.
     """
+    import traceback
     if db_user.role not in ("Executive", "Collector"):
         raise HTTPException(status_code=403, detail="Executive or Collector access required")
-    from database import seed_demo_users, seed_synthetic_data
-    from sqlalchemy import text
-    # Delete in FK-safe order (child tables first)
-    db.execute(text("DELETE FROM priority_history"))
-    db.execute(text("DELETE FROM complaints"))
-    db.execute(text("DELETE FROM incidents"))
-    db.execute(text("DELETE FROM notifications"))
-    db.execute(text("DELETE FROM department_metrics"))
-    db.commit()
-    seed_demo_users()
-    seed_synthetic_data()
-    return {"message": "Database re-seeded with Coimbatore data"}
+    try:
+        from database import seed_demo_users, seed_synthetic_data
+        from sqlalchemy import text
+        # Delete in FK-safe order for PostgreSQL
+        for tbl in ["priority_history", "notifications", "department_metrics", "complaints", "incidents"]:
+            try:
+                db.execute(text(f"DELETE FROM {tbl}"))
+            except Exception as tbl_err:
+                pass  # table may not exist on older schemas
+        db.commit()
+        seed_demo_users()
+        seed_synthetic_data()
+        return {"message": "Database re-seeded with Coimbatore data"}
+    except Exception as e:
+        db.rollback()
+        detail = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=detail)
 
 
 @debug_router.get("/wards")
