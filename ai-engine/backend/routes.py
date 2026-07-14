@@ -1279,7 +1279,14 @@ async def logout(response: Response):
 @auth_router.get("/me", response_model=UserResponse)
 async def get_me(db_user: User = Depends(get_current_user)):
     """Get current user profile from token."""
-    return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
+    return UserResponse(
+        user_id=db_user.id,
+        full_name=db_user.full_name,
+        email=db_user.email,
+        role=db_user.role,
+        ward=db_user.ward,
+        district=db_user.district,
+    )
 
 @auth_router.put("/profile", response_model=UserResponse)
 async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -1293,7 +1300,14 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
     if data.password: db_user.password_hash = hash_password(data.password)
     db.commit()
     db.refresh(db_user)
-    return UserResponse(user_id=db_user.id, full_name=db_user.full_name, email=db_user.email, role=db_user.role)
+    return UserResponse(
+        user_id=db_user.id,
+        full_name=db_user.full_name,
+        email=db_user.email,
+        role=db_user.role,
+        ward=db_user.ward,
+        district=db_user.district,
+    )
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
