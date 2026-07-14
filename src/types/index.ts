@@ -116,6 +116,8 @@ export interface CitizenComplaint {
 
 export interface ComplaintDetail extends CitizenComplaint {}
 
+export type UserRole = 'Citizen' | 'Officer' | 'Executive' | 'Councillor' | 'Commissioner' | 'MLA' | 'Collector';
+
 export interface AppNotification {
   id: string;
   user_id: string;

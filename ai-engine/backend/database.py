@@ -524,6 +524,12 @@ class Incident(Base):
     days_open = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
+    # Escalation fields
+    escalated = Column(Boolean, default=False, nullable=False)
+    escalated_at = Column(DateTime, nullable=True)
+    escalated_by = Column(String, nullable=True)
+    escalation_reason = Column(Text, nullable=True)
+
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
     priority_history = relationship("PriorityHistory", backref="incident")
@@ -619,7 +625,11 @@ def seed_demo_users():
         {"full_name": "Government Officer - Roads",    "email": "officer1@giips.gov.in",   "role": "Officer",   "password": "password123", "department": "Highways and Minor Ports Department"},
         {"full_name": "Government Officer - Water",    "email": "officer2@giips.gov.in",   "role": "Officer",   "password": "password123", "department": "Municipal Administration and Water Supply Department"},
         {"full_name": "Government Officer - Sanitation","email": "officer3@giips.gov.in",  "role": "Officer",   "password": "password123", "department": "Municipal Administration and Water Supply Department"},
-        {"full_name": "Demo Citizen",                  "email": "citizen@giips.gov.in",    "role": "Citizen",   "password": "password123", "department": None}
+        {"full_name": "Demo Citizen",                  "email": "citizen@giips.gov.in",    "role": "Citizen",   "password": "password123", "department": None, "ward": None, "district": None},
+        {"full_name": "Ward Councillor - Ward 1",      "email": "councillor1@giips.gov.in","role": "Councillor","password": "password123", "department": None, "ward": "Ward 1", "district": "Chennai"},
+        {"full_name": "Municipal Commissioner",         "email": "commr@giips.gov.in",      "role": "Commissioner","password": "password123", "department": None, "ward": None, "district": "Chennai"},
+        {"full_name": "MLA - Chennai Central",          "email": "mla1@giips.gov.in",       "role": "MLA",       "password": "password123", "department": None, "ward": None, "district": "Chennai"},
+        {"full_name": "District Collector - Chennai",   "email": "collector1@giips.gov.in", "role": "Collector", "password": "password123", "department": None, "ward": None, "district": "Chennai"}
     ]
     
     for user in users:
@@ -630,7 +640,9 @@ def seed_demo_users():
                 email=user["email"],
                 password_hash=hash_password(user["password"]),
                 role=user["role"],
-                department=user["department"]
+                department=user.get("department"),
+                ward=user.get("ward"),
+                district=user.get("district"),
             )
             db.add(new_user)
     db.commit()

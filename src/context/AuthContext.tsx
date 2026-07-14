@@ -2,11 +2,15 @@ import React, { createContext, useContext, useState, useEffect, ReactNode } from
 import { useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 
+import type { UserRole } from '../types';
+
 interface User {
   user_id: string;
   full_name: string;
   email: string;
-  role: 'Citizen' | 'Officer' | 'Executive';
+  role: UserRole;
+  ward?: string;
+  district?: string;
 }
 
 interface AuthContextType {
@@ -48,6 +52,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           full_name: data.full_name,
           email: data.email,
           role: data.role,
+          ward: data.ward,
+          district: data.district,
         });
       })
       .catch(() => {
@@ -62,6 +68,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (role === 'Citizen') navigate('/citizen');
     else if (role === 'Officer') navigate('/officer');
     else if (role === 'Executive') navigate('/executive');
+    else if (role === 'Councillor' || role === 'Commissioner') navigate('/local-authority');
+    else if (role === 'MLA' || role === 'Collector') navigate('/oversight');
     else navigate('/');
   };
 

@@ -51,6 +51,14 @@
 
   "nav": {
     "dashboard": "Dashboard",
+    "localAuthority": "Ward Queue",
+    "oversight": "Escalated Cases",
+    "councillorDashboard": "Councillor Dashboard",
+    "commissionerDashboard": "Commissioner Dashboard",
+    "roleCouncillor": "Councillor",
+    "roleCommissioner": "Commissioner",
+    "roleMLA": "MLA",
+    "roleCollector": "Collector",
     "incidents": "Incidents",
     "clusters": "Clusters",
     "spatial": "Spatial Intelligence",
@@ -794,6 +802,16 @@
     "noData": "No data available yet"
   },
 
+  "la": {
+    "flagEscalation": "Flag for Escalation",
+    "markResolved": "Mark Resolved"
+  },
+  "os": {
+    "escalatedIncidents": "Escalated Incidents",
+    "noEscalated": "No escalated incidents",
+    "noEscalatedDesc": "All incidents are within SLA thresholds or have been resolved.",
+    "selectIncident": "Select an incident to view details"
+  },
   "spatialIntelligence": {
     "header": {
       "title": "Spatial Intelligence Command Center",

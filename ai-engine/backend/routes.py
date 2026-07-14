@@ -30,9 +30,10 @@ from models import (
     NotificationResponse,
     UpdateStatusRequest,
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit
+from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
 from department_map import (
     get_department, get_department_slug, get_slug_for_department,
     CATEGORY_DEPT_MAP, DEPARTMENT_SLUGS, SLUG_TO_DISPLAY, get_i18n_key
@@ -165,9 +166,9 @@ def _check_aging_notifications(db: Session, department: str):
 
     for incident in incidents:
         days = incident.days_open or 0
-        if days < 4:
+        if days < AGING_WARNING_DAYS:
             continue
-        aging_type = "aging_critical" if days >= 8 else "aging_warning"
+        aging_type = "aging_critical" if days >= AGING_CRITICAL_DAYS else "aging_warning"
 
         for officer in officers:
             if (officer.id, incident.id) not in already_notified:
@@ -762,8 +763,8 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
 @incident_router.post("/merge")
 async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Merge multiple incidents into one. Moves all complaints to the target and recalculates priority."""
-    if db_user.role not in ("Officer", "Executive"):
-        raise HTTPException(status_code=403, detail="Only officers and executives can merge incidents")
+    if db_user.role not in ("Officer", "Executive", "Commissioner"):
+        raise HTTPException(status_code=403, detail="Only officers, executives, and commissioners can merge incidents")
     if len(body.incident_ids) < 2:
         raise HTTPException(status_code=400, detail="At least two incident IDs are required")
 
@@ -850,8 +851,8 @@ async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_c
 @incident_router.post("/{incident_id}/split/{complaint_id}")
 async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Remove a complaint from an incident and create a new standalone incident for it."""
-    if db_user.role not in ("Officer", "Executive"):
-        raise HTTPException(status_code=403, detail="Only officers and executives can split complaints")
+    if db_user.role not in ("Officer", "Executive", "Commissioner"):
+        raise HTTPException(status_code=403, detail="Only officers, executives, and commissioners can split complaints")
 
     incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
     if not incident:
@@ -977,8 +978,8 @@ async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends
 @incident_router.patch("/{incident_id}/status")
 async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Update an incident's status. Creates notifications for all linked complaint owners."""
-    if db_user.role not in ("Officer", "Executive"):
-        raise HTTPException(status_code=403, detail="Only officers and executives can update incident status")
+    if db_user.role not in ("Officer", "Executive", "Commissioner"):
+        raise HTTPException(status_code=403, detail="Only officers, executives, and commissioners can update incident status")
     if body.status not in ("open", "in-progress", "resolved"):
         raise HTTPException(status_code=400, detail="Status must be one of: open, in-progress, resolved")
 
@@ -1020,6 +1021,156 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     _check_aging_notifications(db, department)
 
     return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
+
+
+# === Escalation & Ward-Level Routes ===
+
+
+@incident_router.post("/{incident_id}/escalate")
+async def escalate_incident(incident_id: str, body: EscalateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Flag an incident for escalation. Councillors and commissioners can escalate.
+    Once escalated, the incident appears in MLA/Collector oversight dashboards."""
+    if db_user.role not in ("Councillor", "Commissioner", "Executive"):
+        raise HTTPException(status_code=403, detail="Only councillors, commissioners, and executives can escalate incidents")
+
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    if incident.escalated:
+        raise HTTPException(status_code=400, detail="Incident is already escalated")
+
+    incident.escalated = True
+    incident.escalated_at = datetime.utcnow()
+    incident.escalated_by = db_user.email
+    incident.escalation_reason = body.reason
+    db.commit()
+
+    # Notify linked complaint owners
+    for c in incident.complaints:
+        if c.user_id:
+            _create_notification(
+                db, c.user_id, "escalated",
+                complaint_id=c.id,
+                data={
+                    "incident_number": incident.incident_number,
+                    "reason": body.reason,
+                    "escalated_by": db_user.email,
+                },
+            )
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_escalate",
+                     incident.id, "success", f"Reason: {body.reason}")
+
+    return {"message": "Incident escalated", "incident_id": incident.id, "reason": body.reason}
+
+
+@incident_router.get("/escalated")
+async def get_escalated_incidents(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List escalated incidents for MLA/Collector oversight dashboards.
+    Collector sees only incidents in their district; MLA sees all escalated."""
+    if db_user.role not in ("MLA", "Collector", "Councillor", "Commissioner", "Executive"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    query = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.escalated == True)
+
+    if db_user.role == "Collector" and db_user.district:
+        collector_wards = db.query(Complaint.ward).filter(
+            Complaint.ward.isnot(None), Complaint.ward != ""
+        ).distinct().all()
+        query = query.filter(Incident.ward.in_([w[0] for w in collector_wards]))
+
+    incidents = query.order_by(Incident.escalated_at.desc().nullslast()).all()
+    return {
+        "incidents": [
+            {
+                "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
+                "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
+                "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
+                "recommended_action": inc.recommended_action, "days_open": inc.days_open,
+                "escalated": inc.escalated, "escalated_at": inc.escalated_at.isoformat() if inc.escalated_at else None,
+                "escalated_by": inc.escalated_by, "escalation_reason": inc.escalation_reason,
+                "complaints": [
+                    {"id": c.id, "complaint_number": c.id, "text": c.title,
+                     "date_received": c.created_at.isoformat() if c.created_at else None}
+                    for c in inc.complaints
+                ] if inc.complaints else [],
+            }
+            for inc in incidents
+        ]
+    }
+
+
+@incident_router.post("/auto-escalate")
+async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
+    """Auto-escalate incidents that have exceeded the AGING_CRITICAL_DAYS threshold.
+    Called periodically (e.g. from a scheduler or on relevant state changes).
+    Follows the same SLA threshold as the aging notification system."""
+    from constants import AGING_CRITICAL_DAYS
+
+    overdue = db.query(Incident).options(joinedload(Incident.complaints)).filter(
+        Incident.status == "open",
+        Incident.escalated == False,
+        Incident.days_open >= AGING_CRITICAL_DAYS,
+    ).all()
+
+    escalated_count = 0
+    for inc in overdue:
+        inc.escalated = True
+        inc.escalated_at = datetime.utcnow()
+        inc.escalated_by = "system"
+        inc.escalation_reason = f"Auto-escalated: incident open for {inc.days_open} days (SLA threshold: {AGING_CRITICAL_DAYS} days)"
+        # Notify linked complaint owners
+        for c in inc.complaints:
+            if c.user_id:
+                _create_notification(
+                    db, c.user_id, "escalated",
+                    complaint_id=c.id,
+                    data={
+                        "incident_number": inc.incident_number,
+                        "reason": inc.escalation_reason,
+                        "escalated_by": "system",
+                    },
+                )
+        escalated_count += 1
+
+    if escalated_count:
+        db.commit()
+    return {"message": f"Auto-escalated {escalated_count} incident(s)", "count": escalated_count}
+
+
+@complaint_router.get("/ward/{ward}")
+async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get complaints for a specific ward. Councillor sees only their assigned ward;
+    Commissioner and Executive can view any ward."""
+    if db_user.role == "Councillor":
+        if db_user.ward and db_user.ward != ward:
+            raise HTTPException(status_code=403, detail="Councillors can only view their assigned ward")
+    elif db_user.role not in ("Commissioner", "Executive", "Officer"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    complaints = db.query(Complaint).filter(
+        Complaint.ward == ward
+    ).order_by(Complaint.created_at.desc()).all()
+
+    result = []
+    for c in complaints:
+        incident = db.query(Incident).filter(Incident.id == c.incident_id).first() if c.incident_id else None
+        result.append({
+            "id": c.id, "title": c.title, "description": c.description,
+            "location": c.location, "ward": c.ward,
+            "predicted_category": c.predicted_category, "confidence": c.confidence,
+            "priority": c.priority, "similarity_score": c.similarity_score,
+            "merge_reason": c.merge_reason,
+            "date_received": c.created_at.isoformat() if c.created_at else None,
+            "incident": {
+                "id": incident.id, "incident_number": incident.incident_number,
+                "category": incident.category, "status": incident.status,
+                "priority_label": incident.priority_label, "cluster_size": incident.cluster_size,
+                "escalated": incident.escalated, "days_open": incident.days_open,
+            } if incident else None,
+        })
+    return {"complaints": result, "ward": ward, "count": len(result)}
 
 
 notifications_router = APIRouter(prefix="/notifications", tags=["Notifications"])

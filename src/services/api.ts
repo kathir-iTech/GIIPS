@@ -431,6 +431,29 @@ export const api = {
     return response.json();
   },
 
+  getWardComplaints: async (ward: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/ward/${encodeURIComponent(ward)}`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  escalateIncident: async (incidentId: string, reason: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/escalate`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  getEscalatedIncidents: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/escalated`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   updateIncidentStatus: async (incidentId: string, status: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/status`, {
       ...FETCH_DEFAULTS,

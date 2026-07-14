@@ -21,6 +21,8 @@ import {
   Database,
   Menu,
   X,
+  Shield,
+  Eye,
 } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Sidebar.css';
@@ -56,10 +58,35 @@ const CITIZEN_NAV = [
   { path: '/profile', key: 'nav.profile', icon: User },
 ];
 
+const COUNCILLOR_NAV = [
+  { path: '/local-authority', key: 'nav.localAuthority', icon: Shield },
+];
+
+const COMMISSIONER_NAV = [
+  { path: '/local-authority', key: 'nav.localAuthority', icon: Shield },
+  { path: '/incident-feed', key: 'nav.incidents', icon: FileText },
+  { path: '/spatial', key: 'nav.spatial', icon: Map },
+  { path: '/analysis', key: 'nav.analytics', icon: BarChart3 },
+];
+
+const MLA_NAV = [
+  { path: '/oversight', key: 'nav.oversight', icon: Eye },
+];
+
+const COLLECTOR_NAV = [
+  { path: '/oversight', key: 'nav.oversight', icon: Eye },
+  { path: '/spatial', key: 'nav.spatial', icon: Map },
+  { path: '/analysis', key: 'nav.analytics', icon: BarChart3 },
+];
+
 const ROLE_KEYS: Record<string, string> = {
   Citizen: 'nav.roleCitizen',
   Officer: 'nav.roleOfficer',
   Executive: 'nav.roleExecutive',
+  Councillor: 'nav.roleCouncillor',
+  Commissioner: 'nav.roleCommissioner',
+  MLA: 'nav.roleMLA',
+  Collector: 'nav.roleCollector',
 };
 
 const Sidebar: React.FC = () => {
@@ -74,7 +101,15 @@ const Sidebar: React.FC = () => {
         ? OFFICER_NAV
         : user?.role === 'Citizen'
           ? CITIZEN_NAV
-          : [];
+          : user?.role === 'Councillor'
+            ? COUNCILLOR_NAV
+            : user?.role === 'Commissioner'
+              ? COMMISSIONER_NAV
+              : user?.role === 'MLA'
+                ? MLA_NAV
+                : user?.role === 'Collector'
+                  ? COLLECTOR_NAV
+                  : [];
 
   const roleLabel = (role?: string) => t(ROLE_KEYS[role || ''] || role || '');
 

@@ -190,6 +190,8 @@ class UserResponse(BaseModel):
     full_name: str
     email: str
     role: str
+    ward: Optional[str] = None
+    district: Optional[str] = None
 
 
 class PredictionSummaryResponse(BaseModel):

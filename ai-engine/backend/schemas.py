@@ -12,6 +12,9 @@ from datetime import datetime
 
 # === New Submission Schemas ===
 
+class EscalateRequest(BaseModel):
+    reason: str = Field(..., min_length=1, max_length=1000, description="Reason for escalation")
+
 class ComplaintCreate(BaseModel):
     title: str = Field(..., min_length=1, max_length=200, description="Short title of the complaint")
     description: str = Field(..., min_length=1, max_length=5000, description="Detailed description of the issue")

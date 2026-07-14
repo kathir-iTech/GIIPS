@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, useLocation } from 'react-router-dom';
 import { useAuth } from '../context/AuthContext';
+import type { UserRole } from '../types';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -22,7 +23,7 @@ export const ProtectedRoute = ({ children }: ProtectedRouteProps) => {
 };
 
 interface RoleGuardProps {
-  allowedRoles: ('Citizen' | 'Officer' | 'Executive')[];
+  allowedRoles: UserRole[];
   children: React.ReactNode;
 }
 

@@ -30,6 +30,8 @@ const OfficerManagement = lazy(() => import('./pages/OfficerManagement'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 const SystemHealth = lazy(() => import('./pages/SystemHealth'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const LocalAuthorityDashboard = lazy(() => import('./pages/LocalAuthorityDashboard'));
+const OversightDashboard = lazy(() => import('./pages/OversightDashboard'));
 
 function LoadingScreen() {
   return (
@@ -133,7 +135,7 @@ function AnimatedRoutes() {
         
         <Route path="/incident-feed" element={
           <PageTransition>
-            <RoleGuard allowedRoles={['Officer', 'Executive']}>
+            <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner']}>
               <IncidentFeed />
             </RoleGuard>
           </PageTransition>
@@ -141,7 +143,7 @@ function AnimatedRoutes() {
         
         <Route path="/analysis" element={
           <PageTransition>
-            <RoleGuard allowedRoles={['Officer', 'Executive']}>
+            <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner', 'Collector']}>
               <Analysis />
             </RoleGuard>
           </PageTransition>
@@ -149,7 +151,7 @@ function AnimatedRoutes() {
         
         <Route path="/clusters" element={
           <PageTransition>
-            <RoleGuard allowedRoles={['Officer', 'Executive']}>
+            <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner', 'Collector']}>
               <Clusters />
             </RoleGuard>
           </PageTransition>
@@ -157,12 +159,26 @@ function AnimatedRoutes() {
         
         <Route path="/spatial" element={
           <PageTransition>
-            <RoleGuard allowedRoles={['Officer', 'Executive']}>
+            <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner', 'Collector']}>
               <SpatialIntelligence />
             </RoleGuard>
           </PageTransition>
         } />
         
+        <Route path="/local-authority" element={
+          <PageTransition>
+            <RoleGuard allowedRoles={['Councillor', 'Commissioner']}>
+              <LocalAuthorityDashboard />
+            </RoleGuard>
+          </PageTransition>
+        } />
+        <Route path="/oversight" element={
+          <PageTransition>
+            <RoleGuard allowedRoles={['MLA', 'Collector']}>
+              <OversightDashboard />
+            </RoleGuard>
+          </PageTransition>
+        } />
         <Route path="/methodology" element={
           <PageTransition>
             <Methodology />

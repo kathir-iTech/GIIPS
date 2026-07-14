@@ -51,6 +51,14 @@
 
   "nav": {
     "dashboard": "டாஷ்போர்டு",
+    "localAuthority": "வார்டு வரிசை",
+    "oversight": "மேல்நிலை வழக்குகள்",
+    "councillorDashboard": "கவுன்சிலர் டாஷ்போர்டு",
+    "commissionerDashboard": "ஆணையர் டாஷ்போர்டு",
+    "roleCouncillor": "கவுன்சிலர்",
+    "roleCommissioner": "ஆணையர்",
+    "roleMLA": "சட்டமன்ற உறுப்பினர்",
+    "roleCollector": "மாவட்ட ஆட்சியர்",
     "incidents": "சம்பவங்கள்",
     "clusters": "தொகுப்புகள்",
     "spatial": "இடவியல் நுண்ணறிவு",
@@ -794,6 +802,16 @@
     "noData": "இதுவரை தரவு எதுவும் இல்லை"
   },
 
+  "la": {
+    "flagEscalation": "மேல்நிலைக்கு அனுப்பவும்",
+    "markResolved": "தீர்க்கப்பட்டது என குறிக்கவும்"
+  },
+  "os": {
+    "escalatedIncidents": "மேல்நிலைக்கு அனுப்பப்பட்ட சம்பவங்கள்",
+    "noEscalated": "மேல்நிலை சம்பவங்கள் இல்லை",
+    "noEscalatedDesc": "அனைத்து சம்பவங்களும் SLA வரம்புகளுக்குள் உள்ளன அல்லது தீர்க்கப்பட்டுவிட்டன.",
+    "selectIncident": "விவரங்களைக் காண ஒரு சம்பவத்தைத் தேர்ந்தெடுக்கவும்"
+  },
   "spatialIntelligence": {
     "header": {
       "title": "இடஞ்சார் நுண்ணறிவு கட்டளை மையம்",
