@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -95,7 +95,8 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
 
 
 def _create_notification(db: Session, user_id: str, notification_type: str, complaint_id: Optional[str] = None, data: Optional[dict] = None):
-    """Create an in-app notification for a user."""
+    """Create an in-app notification for a user.
+    Uses flush (not commit) so it does not interfere with the caller's transaction."""
     try:
         notif = Notification(
             id=str(uuid.uuid4()),
@@ -106,10 +107,9 @@ def _create_notification(db: Session, user_id: str, notification_type: str, comp
             is_read=False,
         )
         db.add(notif)
-        db.commit()
+        db.flush()
     except Exception:
         logger.error("Notification creation failed for user=%s type=%s", user_id, notification_type)
-        db.rollback()
 
 
 def _get_department_officers(db: Session, department: str) -> list[User]:
