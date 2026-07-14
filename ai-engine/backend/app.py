@@ -127,6 +127,13 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] department column already exists or not applicable, skipping")
 
+        # Seed demo users (idempotent: skips users whose email already exists)
+        try:
+            from database import seed_demo_users
+            seed_demo_users()
+        except Exception as exc:
+            logger.warning("[STARTUP] Demo user seeding skipped: %s", exc)
+
         # Seed default executive account
         try:
             from database import seed_default_executive
