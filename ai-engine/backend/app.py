@@ -134,6 +134,13 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Demo user seeding skipped: %s", exc)
 
+        # Backfill ward distribution and incident linkage for existing complaints
+        try:
+            from database import backfill_wards_and_incidents
+            backfill_wards_and_incidents()
+        except Exception as exc:
+            logger.warning("[STARTUP] Backfill skipped: %s", exc)
+
         # Seed default executive account
         try:
             from database import seed_default_executive
@@ -264,7 +271,7 @@ async def csrf_origin_check(request: Request, call_next):
     return await call_next(request)
 
 
-from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router
+from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router
 
 app.include_router(classify_router)
 app.include_router(cluster_router)
@@ -281,6 +288,7 @@ app.include_router(knowledge_router)
 app.include_router(decision_router)
 app.include_router(copilot_router)
 app.include_router(notifications_router)
+app.include_router(debug_router)
 
 
 # === Request/Response Models removed: now centralized in models.py and routes.py ===

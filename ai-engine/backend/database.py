@@ -11,7 +11,7 @@ import os
 import random
 from datetime import timedelta
 from pathlib import Path
-from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey, Boolean
+from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey, Boolean, or_, func
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -750,10 +750,92 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
     
     for inc in incidents:
         db.add(inc)
+    db.flush()
+    
+    # Link complaints to incidents: assign each incident a random slice of complaints
+    # that share the same ward and category, so the escalate button renders on cards.
+    from collections import defaultdict
+    cat_ward_map = defaultdict(list)
+    for c in complaints:
+        cat_ward_map[(c.predicted_category, c.ward)].append(c)
+    
+    for inc in incidents:
+        key = (inc.category, inc.ward)
+        pool = cat_ward_map.get(key, [])
+        # Pick up to cluster_size complaints for this incident
+        batch = pool[:inc.cluster_size]
+        for c in batch:
+            c.incident_id = inc.id
+            pool.remove(c)
+    
     db.commit()
     
     print(f"Seeded database with {len(complaints)} complaints and {len(incidents)} incidents")
     db.close()
+
+
+def backfill_wards_and_incidents():
+    """One-time backfill for existing production data:
+    1. Reassign wards that are stuck on a single value (e.g. \"Ward 1\").
+    2. Create incidents for orphaned complaints that have no incident_id.
+
+    Safe to call on every startup — only touches complaints that still need fixing.
+    """
+    db = SessionLocal()
+    try:
+        # --- 1. Redistribute wards for complaints with an unrealistic default ---
+        stale = db.query(Complaint).filter(
+            or_(
+                Complaint.ward == "Ward 1",
+                Complaint.ward == "",
+            )
+        ).all()
+        if stale:
+            for c in stale:
+                c.ward = f"Ward {random.randint(1, 20)}"
+            db.commit()
+            print(f"[BACKFILL] Reassigned wards for {len(stale)} complaints")
+        else:
+            print("[BACKFILL] No stale wards found")
+
+        # --- 2. Create incidents for complaints without incident_id ---
+        unlinked = db.query(Complaint).filter(Complaint.incident_id.is_(None)).all()
+        if unlinked:
+            max_row = db.query(func.max(Incident.incident_number)).scalar()
+            next_num = (int(max_row.split("-")[1]) + 1) if max_row else (db.query(Incident).count() + 1)
+
+            from collections import defaultdict
+            groups = defaultdict(list)
+            for c in unlinked:
+                groups[(c.ward, c.predicted_category or "General")].append(c)
+
+            for (ward, category), group in groups.items():
+                inc_id = f"INC-{next_num:06d}"
+                incident = Incident(
+                    id=inc_id,
+                    incident_number=inc_id,
+                    category=category,
+                    ward=ward,
+                    cluster_size=len(group),
+                    priority_score=round(random.uniform(30, 95), 1),
+                    priority_label="Medium",
+                    summary=f"Group of {len(group)} {category.lower()} complaints in {ward}",
+                    status="open",
+                    recommended_action="Review and assign",
+                    days_open=random.randint(1, 30),
+                )
+                db.add(incident)
+                db.flush()
+                for c in group:
+                    c.incident_id = inc_id
+                next_num += 1
+
+            db.commit()
+            print(f"[BACKFILL] Created {len(groups)} incidents for {len(unlinked)} unlinked complaints")
+        else:
+            print("[BACKFILL] No unlinked complaints found")
+    finally:
+        db.close()
 
 def migrate_old_departments():
     """Migrate old department names to new standardised names in the database.

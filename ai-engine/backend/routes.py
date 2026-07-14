@@ -1547,3 +1547,28 @@ async def copilot_chat(request: CopilotChatRequest):
         reasoning=result.get("reasoning", "")
     )
 
+
+# === Debug endpoints (not for production use) ===
+
+from fastapi import APIRouter, Depends
+from sqlalchemy import func
+
+debug_router = APIRouter(prefix="/debug", tags=["Debug"])
+
+
+@debug_router.get("/wards")
+async def debug_wards(db: Session = Depends(get_db)):
+    """Show ward distribution and incident linkage counts."""
+    ward_counts = db.query(Complaint.ward, func.count(Complaint.id)).group_by(Complaint.ward).order_by(Complaint.ward).all()
+    total_complaints = db.query(func.count(Complaint.id)).scalar()
+    unlinked = db.query(func.count(Complaint.id)).filter(Complaint.incident_id.is_(None)).scalar()
+    linked = total_complaints - unlinked
+    incident_count = db.query(func.count(Incident.id)).scalar()
+    return {
+        "total_complaints": total_complaints,
+        "linked_to_incident": linked,
+        "unlinked": unlinked,
+        "total_incidents": incident_count,
+        "ward_distribution": {w: c for w, c in ward_counts},
+    }
+
