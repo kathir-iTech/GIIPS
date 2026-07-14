@@ -127,6 +127,24 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] department column already exists or not applicable, skipping")
 
+        # Migration: add escalation columns to incidents table if missing
+        try:
+            with engine.connect() as conn:
+                for col_ddl in [
+                    "ALTER TABLE incidents ADD COLUMN escalated BOOLEAN DEFAULT FALSE",
+                    "ALTER TABLE incidents ADD COLUMN escalated_at TIMESTAMP",
+                    "ALTER TABLE incidents ADD COLUMN escalated_by VARCHAR",
+                    "ALTER TABLE incidents ADD COLUMN escalation_reason TEXT",
+                ]:
+                    try:
+                        conn.execute(text(col_ddl))
+                        conn.commit()
+                    except Exception:
+                        conn.rollback()
+            logger.info("[MIGRATION] Escalation columns added to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] Escalation columns already exist on incidents table, skipping")
+
         # Seed demo users (idempotent: skips users whose email already exists)
         try:
             from database import seed_demo_users
