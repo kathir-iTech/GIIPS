@@ -63,6 +63,18 @@
 .gateway-card:nth-child(2) .gateway-cta { background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(4px); }
 .gateway-card:nth-child(2):hover .gateway-cta { background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-color: transparent; box-shadow: 0 4px 20px rgba(139,92,246,0.25); }
 
+/* ── Public Tools Section ── */
+.public-tools-section { padding-bottom: 20px; }
+.public-tool-links { display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin: 24px auto 0; }
+.tool-link { display: flex; align-items: center; gap: 16px; padding: 16px 20px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.08); border-radius: 16px; text-decoration: none; color: white; transition: all 0.3s; text-align: left; }
+.tool-link:hover { background: rgba(255,255,255,0.06); border-color: rgba(59,130,246,0.3); transform: translateY(-2px); }
+.tool-link svg:first-child { color: #60a5fa; flex-shrink: 0; }
+.tool-link div { flex: 1; }
+.tool-link strong { display: block; font-size: 15px; font-weight: 600; margin-bottom: 2px; }
+.tool-link span { font-size: 13px; color: #94a3b8; }
+.tool-arrow { color: #64748b; transition: transform 0.3s; }
+.tool-link:hover .tool-arrow { transform: translateX(4px); color: #60a5fa; }
+
 /* ── Footer ── */
 .crystal-footer { position: relative; z-index: 10; border-top: 1px solid rgba(255,255,255,0.05); padding: 28px 60px; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 12px; }
 .footer-brand { font-size: 13px; color: #64748b; font-weight: 500; }

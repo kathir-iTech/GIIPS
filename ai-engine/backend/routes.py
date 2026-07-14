@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, ZONE_BY_WARD
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -31,9 +31,9 @@ from models import (
     NotificationResponse,
     UpdateStatusRequest,
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
 from job_queue import get_complaint_status
-from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit
+from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
 from department_map import (
     get_department, get_department_slug, get_slug_for_department,
@@ -1722,4 +1722,118 @@ async def debug_wards(db: Session = Depends(get_db)):
         "total_incidents": incident_count,
         "ward_distribution": {w: c for w, c in ward_counts},
     }
+
+
+# === Public Endpoints (no auth required) ===
+
+public_router = APIRouter(tags=["Public"])
+
+
+@public_router.get("/track/{complaint_id}", response_model=TrackComplaintResponse)
+async def track_complaint(complaint_id: str, request: Request, _: None = Depends(check_track_rate_limit), db: Session = Depends(get_db)):
+    """Public complaint tracking — no auth required. Returns status-only info, no PII."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+
+    incident = db.query(Incident).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
+    status = incident.status if incident else "pending"
+
+    timeline = [
+        TimelineEvent(label="Submitted", date=complaint.created_at.isoformat() if complaint.created_at else None),
+    ]
+    if complaint.predicted_category:
+        timeline.append(TimelineEvent(
+            label="Categorized",
+            date=complaint.created_at.isoformat() if complaint.created_at else None,
+            detail=complaint.predicted_category,
+        ))
+    if incident:
+        timeline.append(TimelineEvent(
+            label="Assigned",
+            date=incident.created_at.isoformat() if incident.created_at else None,
+            detail=incident.incident_number,
+        ))
+    if status in ("in-progress", "pending_verification", "resolved", "closed"):
+        timeline.append(TimelineEvent(
+            label="In Progress",
+            date=None,
+        ))
+    if status in ("pending_verification", "resolved", "closed"):
+        timeline.append(TimelineEvent(
+            label="Resolved" if status == "resolved" else "Pending Verification",
+            date=None,
+        ))
+
+    return TrackComplaintResponse(
+        complaintId=complaint.id,
+        title=complaint.title,
+        category=complaint.predicted_category,
+        ward=complaint.ward,
+        status=status,
+        dateReceived=complaint.created_at.isoformat() if complaint.created_at else "",
+        timeline=timeline,
+    )
+
+
+@public_router.get("/public/stats", response_model=PublicStatsResponse)
+async def public_stats(db: Session = Depends(get_db)):
+    """Public aggregate stats — no auth required. Only anonymized counts, no PII."""
+    now = datetime.utcnow()
+    first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Total complaints this month
+    total_this_month = db.query(func.count(Complaint.id)).filter(
+        Complaint.created_at >= first_of_month
+    ).scalar() or 0
+
+    # Resolution rate: resolved / (resolved + open + in-progress)
+    resolved_count = db.query(func.count(Incident.id)).filter(
+        Incident.status.in_(["resolved", "closed"])
+    ).scalar() or 0
+    open_count = db.query(func.count(Incident.id)).filter(
+        Incident.status.in_(["open", "in-progress", "pending_verification"])
+    ).scalar() or 0
+    total_active = resolved_count + open_count
+    resolution_rate = round((resolved_count / total_active) * 100, 1) if total_active > 0 else 0.0
+
+    # Avg resolution time (days_open for resolved incidents)
+    avg_days = db.query(func.avg(Incident.days_open)).filter(
+        Incident.status.in_(["resolved", "closed"])
+    ).scalar()
+    avg_resolution = round(float(avg_days), 1) if avg_days else 0.0
+
+    # Complaints by category (counts only)
+    cat_raw = db.query(
+        Complaint.predicted_category, func.count(Complaint.id)
+    ).filter(
+        Complaint.predicted_category.isnot(None),
+    ).group_by(Complaint.predicted_category).order_by(func.count(Complaint.id).desc()).all()
+    by_category = [CategoryStat(category=cat or "Uncategorized", count=cnt) for cat, cnt in cat_raw]
+
+    # Complaints by zone (aggregated from ward data, not ward-level)
+    ward_raw = db.query(
+        Complaint.ward, func.count(Complaint.id)
+    ).filter(
+        Complaint.ward.isnot(None), Complaint.ward != "",
+    ).group_by(Complaint.ward).all()
+
+    zone_counts: dict[str, int] = {}
+    for ward_str, cnt in ward_raw:
+        try:
+            ward_num = int(ward_str.split()[-1]) if " " in ward_str else int(ward_str)
+        except ValueError:
+            continue
+        zone = ZONE_BY_WARD.get(ward_num)
+        if zone:
+            zone_counts[zone] = zone_counts.get(zone, 0) + cnt
+    by_zone = [ZoneStat(zone=zone, count=cnt) for zone, cnt in sorted(zone_counts.items())]
+
+    return PublicStatsResponse(
+        totalComplaintsThisMonth=total_this_month,
+        resolutionRate=resolution_rate,
+        avgResolutionDays=avg_resolution,
+        complaintsByCategory=by_category,
+        complaintsByZone=by_zone,
+    )
 

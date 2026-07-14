@@ -122,3 +122,39 @@ class IncidentResponse(IncidentBase):
         orm_mode = True
         # Pydantic v2 support
         from_attributes = True
+
+
+class TimelineEvent(BaseModel):
+    label: str
+    date: Optional[str] = None
+    detail: Optional[str] = None
+
+
+class TrackComplaintResponse(BaseModel):
+    """Public complaint tracking info — no PII exposed."""
+    complaintId: str
+    title: str
+    category: Optional[str] = None
+    ward: str
+    status: str
+    dateReceived: str
+    timeline: List[TimelineEvent]
+
+
+class ZoneStat(BaseModel):
+    zone: str
+    count: int
+
+
+class CategoryStat(BaseModel):
+    category: str
+    count: int
+
+
+class PublicStatsResponse(BaseModel):
+    """Aggregate, anonymized stats — no individual complaint details."""
+    totalComplaintsThisMonth: int
+    resolutionRate: float
+    avgResolutionDays: float
+    complaintsByCategory: List[CategoryStat]
+    complaintsByZone: List[ZoneStat]

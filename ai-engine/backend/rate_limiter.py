@@ -58,8 +58,14 @@ async def check_complaint_rate_limit(request: Request) -> None:
 
 
 VERIFY_RATE_LIMIT_MAX = 3
+TRACK_RATE_LIMIT_MAX = 15
 
 
 async def check_verify_rate_limit(request: Request) -> None:
     """3 req/min per IP on resolution verification (anti-guessing)."""
     await _check_rate_limit(request, "verify", VERIFY_RATE_LIMIT_MAX)
+
+
+async def check_track_rate_limit(request: Request) -> None:
+    """15 req/min per IP on public complaint tracking (anti-scraping)."""
+    await _check_rate_limit(request, "track", TRACK_RATE_LIMIT_MAX)

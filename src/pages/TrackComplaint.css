@@ -1,0 +1,43 @@
+.track-page { min-height: 100vh; background: var(--bg-app); display: flex; align-items: flex-start; justify-content: center; padding: 60px 20px; }
+.track-container { width: 100%; max-width: 640px; }
+.track-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 14px; text-decoration: none; margin-bottom: 32px; transition: color 0.2s; }
+.track-back:hover { color: var(--text-primary); }
+.track-header { text-align: center; margin-bottom: 32px; }
+.track-header h1 { font-size: 28px; font-weight: 700; color: var(--text-primary); margin: 0 0 8px; }
+.track-header p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+.track-search { display: flex; gap: 12px; margin-bottom: 24px; }
+.track-input { flex: 1; padding: 12px 16px; border-radius: 12px; border: 1px solid var(--border-subtle); background: var(--bg-card); color: var(--text-primary); font-size: 14px; font-family: inherit; outline: none; transition: border-color 0.2s; }
+.track-input:focus { border-color: #3b82f6; }
+.track-input::placeholder { color: var(--text-muted); }
+.track-btn { display: inline-flex; align-items: center; gap: 8px; padding: 12px 24px; border-radius: 12px; border: none; background: linear-gradient(135deg, #3b82f6, #2563eb); color: white; font-size: 14px; font-weight: 600; cursor: pointer; transition: all 0.2s; font-family: inherit; white-space: nowrap; }
+.track-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
+.track-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.track-error { padding: 12px 16px; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.2); border-radius: 12px; color: #f87171; font-size: 14px; margin-bottom: 24px; }
+.track-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; color: var(--text-secondary); }
+.spin { animation: spin 0.8s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+.track-result { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: 16px; padding: 24px; backdrop-filter: blur(12px); }
+.track-status-header { display: flex; justify-content: space-between; align-items: flex-start; gap: 16px; margin-bottom: 20px; }
+.track-status-header h2 { font-size: 18px; font-weight: 600; color: var(--text-primary); margin: 0; line-height: 1.4; }
+.status-badge { padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: 600; white-space: nowrap; text-transform: uppercase; letter-spacing: 0.5px; }
+.status-open { background: rgba(59,130,246,0.15); color: #60a5fa; }
+.status-progress { background: rgba(234,179,8,0.15); color: #facc15; }
+.status-resolved { background: rgba(22,163,74,0.15); color: #4ade80; }
+.status-pending-verification { background: rgba(234,88,12,0.15); color: #fb923c; }
+.status-closed { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.status-pending { background: rgba(100,116,139,0.15); color: #94a3b8; }
+.track-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-subtle); }
+.meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
+.meta-item svg { flex-shrink: 0; }
+.track-timeline h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px; }
+.timeline-item { display: flex; gap: 12px; margin-bottom: 16px; }
+.timeline-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
+.timeline-content { flex: 1; }
+.timeline-content strong { display: block; font-size: 14px; color: var(--text-primary); margin-bottom: 2px; }
+.timeline-date { font-size: 12px; color: var(--text-muted); display: block; margin-bottom: 2px; }
+.timeline-detail { font-size: 13px; color: var(--text-secondary); margin: 0; }
+@media (max-width: 640px) {
+  .track-page { padding: 40px 16px; }
+  .track-search { flex-direction: column; }
+  .track-meta { grid-template-columns: 1fr; }
+}

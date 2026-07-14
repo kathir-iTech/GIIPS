@@ -2,7 +2,7 @@ import React from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Trans } from 'react-i18next';
-import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, X } from 'lucide-react';
+import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import './Landing.css';
 
@@ -98,6 +98,30 @@ const Landing = () => {
           <p>{t('landing.govCardBody')}</p>
           <span className="gateway-cta">{t('landing.govCardCta')} <ArrowRight size={16} /></span>
         </Link>
+      </section>
+
+      <section className="crystal-section public-tools-section">
+        <div className="section-badge"><Search size={14} /> {t('landing.toolsBadge')}</div>
+        <h2>{t('landing.toolsTitle')}</h2>
+        <p>{t('landing.toolsBody')}</p>
+        <div className="public-tool-links">
+          <Link to="/track" className="tool-link">
+            <Search size={20} />
+            <div>
+              <strong>{t('landing.trackTitle')}</strong>
+              <span>{t('landing.trackDesc')}</span>
+            </div>
+            <ArrowRight size={16} className="tool-arrow" />
+          </Link>
+          <Link to="/transparency" className="tool-link">
+            <Eye size={20} />
+            <div>
+              <strong>{t('landing.transparencyTitle')}</strong>
+              <span>{t('landing.transparencyDesc')}</span>
+            </div>
+            <ArrowRight size={16} className="tool-arrow" />
+          </Link>
+        </div>
       </section>
 
       <footer className="crystal-footer">

@@ -26,6 +26,8 @@ const ComplaintDetail = lazy(() => import('./pages/ComplaintDetail'));
 const CitizenProfile = lazy(() => import('./pages/CitizenProfile'));
 const CitizenServices = lazy(() => import('./pages/CitizenServices'));
 const GovernmentPortal = lazy(() => import('./pages/GovernmentPortal'));
+const TrackComplaint = lazy(() => import('./pages/TrackComplaint'));
+const Transparency = lazy(() => import('./pages/Transparency'));
 const OfficerManagement = lazy(() => import('./pages/OfficerManagement'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 const SystemHealth = lazy(() => import('./pages/SystemHealth'));
@@ -51,7 +53,7 @@ const PageTransition = ({ children }: { children: React.ReactNode }) => (
   </motion.div>
 );
 
-const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal'];
+const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency'];
 
 function AppLayout() {
   const { user } = useAuth();
@@ -87,6 +89,8 @@ function AnimatedRoutes() {
         <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
         <Route path="/citizen-services" element={<PageTransition><CitizenServices /></PageTransition>} />
         <Route path="/government-portal" element={<PageTransition><GovernmentPortal /></PageTransition>} />
+        <Route path="/track" element={<PageTransition><TrackComplaint /></PageTransition>} />
+        <Route path="/transparency" element={<PageTransition><Transparency /></PageTransition>} />
         
         <Route path="/citizen" element={
           <PageTransition>

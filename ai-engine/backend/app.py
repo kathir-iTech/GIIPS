@@ -288,7 +288,7 @@ app.add_middleware(
 async def csrf_origin_check(request: Request, call_next):
     if request.method in ("POST", "PUT", "PATCH", "DELETE"):
         path = request.url.path
-        exempt_prefixes = ("/docs", "/redoc", "/openapi.json", "/health", "/")
+        exempt_prefixes = ("/docs", "/redoc", "/openapi.json", "/health", "/", "/track/", "/public/")
         if path.startswith(exempt_prefixes):
             return await call_next(request)
 
@@ -327,7 +327,7 @@ async def csrf_origin_check(request: Request, call_next):
     return await call_next(request)
 
 
-from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router
+from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router
 
 app.include_router(classify_router)
 app.include_router(cluster_router)
@@ -345,6 +345,7 @@ app.include_router(decision_router)
 app.include_router(copilot_router)
 app.include_router(notifications_router)
 app.include_router(debug_router)
+app.include_router(public_router)
 
 
 # === Request/Response Models removed: now centralized in models.py and routes.py ===

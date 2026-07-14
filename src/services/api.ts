@@ -475,4 +475,19 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  trackComplaint: async (complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/track/${encodeURIComponent(complaintId)}`);
+    if (!response.ok) {
+      const err = await safeJson(response);
+      throw new Error(detailToMessage(err.detail) || `Complaint not found (${response.status})`);
+    }
+    return response.json();
+  },
+
+  getPublicStats: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/public/stats`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 };

@@ -108,7 +108,8 @@
       "inProgress": "In Progress",
       "resolved": "Resolved",
       "pendingVerification": "Pending Citizen Verification",
-      "closed": "Closed"
+      "closed": "Closed",
+      "pending": "Pending"
     },
     "confidence": {
       "high": "High",
@@ -184,6 +185,13 @@
     "govCardTitle": "Government Login",
     "govCardBody": "Review incidents, monitor department performance, and access AI-assisted insights.",
     "govCardCta": "Secure Access",
+    "toolsBadge": "Public Tools",
+    "toolsTitle": "Citizen Services Without Login",
+    "toolsBody": "Track your complaint or view aggregate civic data — no account required.",
+    "trackTitle": "Track Your Complaint",
+    "trackDesc": "Enter your complaint ID to see real-time status without logging in.",
+    "transparencyTitle": "Transparency Dashboard",
+    "transparencyDesc": "View aggregate civic statistics — monthly totals, resolution rates, and more.",
     "footerBrand": "GIIPS — AI triage layer prototype",
     "footerCopy": "Not affiliated with or endorsed by any government entity."
   },
@@ -920,5 +928,35 @@
     "aiRecDeployTeams": "Deploy {{teams}} additional teams to handle {{count}} critical incidents.",
     "aiRecHealthReview": "Low health score — review resource allocation.",
     "aiRecMonitor": "All metrics normal — continue monitoring."
+  },
+
+  "track": {
+    "title": "Track Your Complaint",
+    "subtitle": "Enter your complaint ID to check its current status.",
+    "placeholder": "Enter complaint ID (e.g. COMP-000001)",
+    "searchButton": "Track",
+    "searching": "Searching...",
+    "backButton": "Back to Home",
+    "notFound": "Complaint not found. Please check the ID and try again.",
+    "fieldId": "Complaint ID",
+    "fieldWard": "Ward",
+    "fieldCategory": "Category",
+    "fieldDate": "Submitted",
+    "timelineTitle": "Status Timeline"
+  },
+
+  "transparency": {
+    "title": "Transparency Dashboard",
+    "subtitle": "Aggregate civic data — no individual complaint details are shown.",
+    "backButton": "Back to Home",
+    "loading": "Loading statistics...",
+    "noData": "No data available yet.",
+    "kpiComplaintsMonth": "Complaints This Month",
+    "kpiResolutionRate": "Resolution Rate",
+    "kpiAvgDays": "Avg Resolution Days",
+    "categoryChartTitle": "Complaints by Category",
+    "categoryChartSubtitle": "Counts only — no individual details",
+    "zoneChartTitle": "Complaints by Zone",
+    "zoneChartSubtitle": "Aggregated by zone only"
   }
 }
