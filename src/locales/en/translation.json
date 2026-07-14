@@ -107,6 +107,7 @@
       "open": "Open",
       "inProgress": "In Progress",
       "resolved": "Resolved",
+      "pendingVerification": "Pending Citizen Verification",
       "closed": "Closed"
     },
     "confidence": {
@@ -399,7 +400,13 @@
     "fieldPriority": "Priority:",
     "fieldClusterSize": "Similar complaints grouped:",
     "fieldAction": "Action:",
-    "imageAlt": "Complaint evidence"
+    "imageAlt": "Complaint evidence",
+    "verifyTitle": "Resolution Pending Your Confirmation",
+    "verifyPrompt": "An officer has marked this issue as fixed. Please confirm by entering the 6-digit verification code sent to you.",
+    "verifyPlaceholder": "Enter 6-digit code",
+    "verifySubmit": "Confirm Resolution",
+    "verifySuccess": "Resolution confirmed. Thank you!",
+    "verifyError": "Invalid code. Please check and try again."
   },
 
   "myComplaints": {
@@ -752,7 +759,8 @@
     "agingCritical": "{{incidentNumber}} has been open for {{days}} days — CRITICAL aging",
     "officerMerged": "Incident {{incidentNumber}} was merged in your department",
     "officerSplit": "Complaint split from {{incidentNumber_orig}} into new incident {{incidentNumberNew}}",
-    "officerStatusChange": "{{incidentNumber}} status changed to {{newStatus}}"
+    "officerStatusChange": "{{incidentNumber}} status changed to {{newStatus}}",
+    "pendingVerification": "{{incidentNumber}} marked as fixed — please confirm with the code sent to you"
   },
 
   "auditLogs": {

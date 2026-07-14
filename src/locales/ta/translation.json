@@ -107,6 +107,7 @@
       "open": "திறந்த",
       "inProgress": "செயல்பாட்டில்",
       "resolved": "தீர்க்கப்பட்டது",
+      "pendingVerification": "குடிமகன் உறுதிப்படுத்தல் நிலுவையில்",
       "closed": "மூடப்பட்டது"
     },
     "confidence": {
@@ -399,7 +400,13 @@
     "fieldPriority": "முன்னுரிமை:",
     "fieldClusterSize": "தொகுக்கப்பட்ட இதே புகார்கள்:",
     "fieldAction": "நடவடிக்கை:",
-    "imageAlt": "புகாரின் ஆதாரம்"
+    "imageAlt": "புகாரின் ஆதாரம்",
+    "verifyTitle": "உறுதிப்படுத்தல் நிலுவையில்",
+    "verifyPrompt": "அதிகாரி இந்த பிரச்சினை சரி செய்யப்பட்டதாக குறித்துள்ளார். உங்களுக்கு அனுப்பப்பட்ட 6 இலக்க சரிபார்ப்பு குறியீட்டை உள்ளிட்டு உறுதிப்படுத்தவும்.",
+    "verifyPlaceholder": "6 இலக்க குறியீட்டை உள்ளிடுக",
+    "verifySubmit": "தீர்வை உறுதிப்படுத்து",
+    "verifySuccess": "தீர்வு உறுதிப்படுத்தப்பட்டது. நன்றி!",
+    "verifyError": "தவறான குறியீடு. மீண்டும் முயற்சிக்கவும்."
   },
 
   "myComplaints": {
@@ -752,7 +759,8 @@
     "agingCritical": "{{incidentNumber}} {{days}} நாட்களாக திறந்துள்ளது — மிக முக்கியமான கால எச்சரிக்கை",
     "officerMerged": "சம்பவம் {{incidentNumber}} உங்கள் துறையில் இணைக்கப்பட்டது",
     "officerSplit": "புகார் {{incidentNumber_orig}} இலிருந்து பிரிக்கப்பட்டு புதிய சம்பவம் {{incidentNumberNew}} ஆக மாற்றப்பட்டது",
-    "officerStatusChange": "{{incidentNumber}} இன் நிலை {{newStatus}} ஆக மாற்றப்பட்டது"
+    "officerStatusChange": "{{incidentNumber}} இன் நிலை {{newStatus}} ஆக மாற்றப்பட்டது",
+    "pendingVerification": "{{incidentNumber}} சரி செய்யப்பட்டதாக குறிக்கப்பட்டது — குறியீட்டுடன் உறுதிப்படுத்தவும்"
   },
 
   "auditLogs": {

@@ -6,6 +6,7 @@ import os
 import json
 import uuid
 import time
+import random
 import logging
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response
 from sqlalchemy.orm import Session, joinedload
@@ -30,9 +31,9 @@ from models import (
     NotificationResponse,
     UpdateStatusRequest,
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest
 from job_queue import get_complaint_status
-from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit
+from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
 from department_map import (
     get_department, get_department_slug, get_slug_for_department,
@@ -1042,11 +1043,13 @@ async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends
 
 @incident_router.patch("/{incident_id}/status")
 async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Update an incident's status. Creates notifications for all linked complaint owners."""
+    """Update an incident's status. Creates notifications for all linked complaint owners.
+    If the requested status is 'resolved', the incident goes to 'pending_verification'
+    instead, and the citizen must confirm via POST /incidents/{id}/verify-resolution."""
     if db_user.role not in ("Officer", "Executive", "Commissioner"):
         raise HTTPException(status_code=403, detail="Only officers, executives, and commissioners can update incident status")
-    if body.status not in ("open", "in-progress", "resolved"):
-        raise HTTPException(status_code=400, detail="Status must be one of: open, in-progress, resolved")
+    if body.status not in ("open", "in-progress", "resolved", "pending_verification"):
+        raise HTTPException(status_code=400, detail="Status must be one of: open, in-progress, resolved, pending_verification")
 
     incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
     if not incident:
@@ -1056,6 +1059,49 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     if old_status == body.status:
         raise HTTPException(status_code=400, detail="Incident already has this status")
 
+    # Intercept 'resolved' — set to pending_verification and notify citizen
+    if body.status == "resolved":
+        code = f"{random.randint(100000, 999999)}"
+        incident.status = "pending_verification"
+        incident.verification_code = code
+        db.commit()
+
+        # Notify citizens with the verification code
+        for c in incident.complaints:
+            if c.user_id:
+                _create_notification(
+                    db, c.user_id, "pending_verification",
+                    complaint_id=c.id,
+                    data={
+                        "incident_number": incident.incident_number,
+                        "verification_code": code,
+                        "message": "Your issue has been marked as fixed. Please confirm with the verification code.",
+                    },
+                )
+
+        _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
+                         incident.id, "success",
+                         f"Status set to pending_verification (awaiting citizen confirmation)")
+
+        # Notify officers
+        department = get_department(incident.category)
+        _notify_department_officers(
+            db, department, "officer_status_change",
+            data={
+                "incident_number": incident.incident_number,
+                "incident_id": incident.id,
+                "old_status": old_status,
+                "new_status": "pending_verification",
+            }
+        )
+
+        return {
+            "message": "Citizen verification required. A confirmation code has been sent to the complainant.",
+            "incident_id": incident.id,
+            "status": "pending_verification",
+        }
+
+    # Non-resolution status change: apply directly
     incident.status = body.status
     db.commit()
 
@@ -1128,6 +1174,54 @@ async def escalate_incident(incident_id: str, body: EscalateRequest, db_user: Us
                      incident.id, "success", f"Reason: {body.reason}")
 
     return {"message": "Incident escalated", "incident_id": incident.id, "reason": body.reason}
+
+
+@incident_router.post("/{incident_id}/verify-resolution")
+async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: None = Depends(check_verify_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Verify resolution as the citizen who filed the original complaint.
+    Only the citizen who owns a complaint linked to this incident can confirm.
+    Rate-limited to 3 attempts/min to prevent code-guessing."""
+    if db_user.role != "Citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can verify resolution")
+
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    if incident.status != "pending_verification":
+        raise HTTPException(status_code=400, detail="Incident is not awaiting citizen verification")
+
+    # Verify the citizen owns at least one complaint linked to this incident
+    complaint = db.query(Complaint).filter(
+        Complaint.incident_id == incident_id,
+        Complaint.user_id == db_user.id
+    ).first()
+    if not complaint:
+        raise HTTPException(status_code=403, detail="You are not authorized to verify this incident")
+
+    if incident.verification_code != body.code:
+        _write_audit_log(db, db_user.id, db_user.email, db_user.role, "verify_resolution",
+                         incident.id, "failure", "Invalid verification code")
+        raise HTTPException(status_code=400, detail="Invalid verification code. Please check the code sent to you.")
+
+    # Code matches — mark as truly resolved
+    old_status = incident.status
+    incident.status = "resolved"
+    incident.verification_code = None
+    db.commit()
+
+    # Notify the citizen
+    _create_notification(
+        db, db_user.id, "status_change",
+        complaint_id=complaint.id,
+        data={"old_status": old_status, "new_status": "resolved", "incident_number": incident.incident_number,
+              "message": "Resolution confirmed. Thank you for confirming!"},
+    )
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "verify_resolution",
+                     incident.id, "success", "Citizen confirmed resolution")
+
+    return {"message": "Resolution confirmed. Thank you!", "incident_id": incident.id, "status": "resolved"}
 
 
 @complaint_router.get("/ward/{ward}")

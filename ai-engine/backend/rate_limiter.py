@@ -55,3 +55,11 @@ async def check_auth_rate_limit(request: Request) -> None:
 async def check_complaint_rate_limit(request: Request) -> None:
     """10 req/min per IP on complaint submission."""
     await _check_rate_limit(request, "complaint", COMPLAINT_RATE_LIMIT_MAX)
+
+
+VERIFY_RATE_LIMIT_MAX = 3
+
+
+async def check_verify_rate_limit(request: Request) -> None:
+    """3 req/min per IP on resolution verification (anti-guessing)."""
+    await _check_rate_limit(request, "verify", VERIFY_RATE_LIMIT_MAX)

@@ -312,6 +312,9 @@ class Incident(Base):
     escalated_by = Column(String, nullable=True)
     escalation_reason = Column(Text, nullable=True)
 
+    # Citizen verification for resolution
+    verification_code = Column(String, nullable=True)
+
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
     priority_history = relationship("PriorityHistory", backref="incident")

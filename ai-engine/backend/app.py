@@ -145,6 +145,15 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] Escalation columns already exist on incidents table, skipping")
 
+        # Migration: add verification_code column to incidents table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN verification_code VARCHAR"))
+                conn.commit()
+            logger.info("[MIGRATION] Added verification_code column to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] verification_code column already exists, skipping")
+
         # Migration: fix district for government users from old Chennai data
         try:
             from database import User, Base

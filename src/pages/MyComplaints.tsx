@@ -11,6 +11,7 @@ const STATUS_STYLES: Record<string, string> = {
   open: 'status-open',
   'in-progress': 'status-progress',
   resolved: 'status-resolved',
+  pending_verification: 'status-pending-verification',
   closed: 'status-closed',
 };
 
@@ -18,6 +19,7 @@ const STATUS_KEY: Record<string, string> = {
   open: 'common.status.open',
   'in-progress': 'common.status.inProgress',
   resolved: 'common.status.resolved',
+  pending_verification: 'common.status.pendingVerification',
   closed: 'common.status.closed',
 };
 
@@ -104,6 +106,7 @@ const MyComplaints = () => {
               <option value="all">{t('common.status.all')}</option>
               <option value="open">{t('common.status.open')}</option>
               <option value="in-progress">{t('common.status.inProgress')}</option>
+              <option value="pending_verification">{t('common.status.pendingVerification')}</option>
               <option value="resolved">{t('common.status.resolved')}</option>
               <option value="closed">{t('common.status.closed')}</option>
             </select>

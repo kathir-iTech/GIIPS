@@ -26,6 +26,7 @@ function getNotificationMessage(n: AppNotification, t: (key: string, opts?: any)
     'open': t('common.status.open'),
     'in-progress': t('common.status.inProgress'),
     'resolved': t('common.status.resolved'),
+    'pending_verification': t('common.status.pendingVerification'),
   };
 
   switch (n.type) {
@@ -41,6 +42,8 @@ function getNotificationMessage(n: AppNotification, t: (key: string, opts?: any)
       return t('notification.created', { incidentNumber: n.data?.incident_number || '' });
     case 'complaint_assigned':
       return t('notification.complaintAssigned', { incidentNumber: n.data?.incident_number || '' });
+    case 'pending_verification':
+      return t('notification.pendingVerification', { incidentNumber: n.data?.incident_number || '' });
     case 'aging_warning':
       return t('notification.agingWarning', { incidentNumber: n.data?.incident_number || '', days: n.data?.days_open || '' });
     case 'aging_critical':

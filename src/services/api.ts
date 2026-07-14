@@ -464,4 +464,15 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  verifyResolution: async (incidentId: string, code: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/verify-resolution`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ code }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 };

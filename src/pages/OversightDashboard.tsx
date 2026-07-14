@@ -26,6 +26,7 @@ const STATUS_KEY: Record<string, string> = {
   open: 'common.status.open',
   'in-progress': 'common.status.inProgress',
   resolved: 'common.status.resolved',
+  pending_verification: 'common.status.pendingVerification',
 };
 
 const OversightDashboard = () => {

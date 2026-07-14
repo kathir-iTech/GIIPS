@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
+import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
@@ -12,6 +13,7 @@ const STATUS_STYLES: Record<string, string> = {
   open: 'status-open',
   'in-progress': 'status-progress',
   resolved: 'status-resolved',
+  pending_verification: 'status-pending-verification',
   closed: 'status-closed',
 };
 
@@ -19,6 +21,7 @@ const STATUS_KEY: Record<string, string> = {
   open: 'common.status.open',
   'in-progress': 'common.status.inProgress',
   resolved: 'common.status.resolved',
+  pending_verification: 'common.status.pendingVerification',
   closed: 'common.status.closed',
 };
 
@@ -33,10 +36,14 @@ const ComplaintDetailPage = () => {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [data, setData] = useState<ComplaintDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [verifyCode, setVerifyCode] = useState('');
+  const [verifyLoading, setVerifyLoading] = useState(false);
+  const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -66,6 +73,24 @@ const ComplaintDetailPage = () => {
       });
     return () => { cancelled = true; };
   }, [id]);
+
+  const handleVerify = async () => {
+    if (!data?.incident?.id) return;
+    setVerifyLoading(true);
+    setVerifyResult(null);
+    try {
+      const res = await api.verifyResolution(data.incident.id, verifyCode);
+      setVerifyResult({ success: true, message: t('complaintDetail.verifySuccess') });
+      setVerifyCode('');
+      // Refresh data to show resolved status
+      const refreshed = await api.getComplaintDetail(id!);
+      setData(refreshed);
+    } catch (err: any) {
+      setVerifyResult({ success: false, message: err.message || t('complaintDetail.verifyError') });
+    } finally {
+      setVerifyLoading(false);
+    }
+  };
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('complaintDetail.loading')}</span></div>;
   if (error) return <div className="page-error">{t('common.error')}: {error}</div>;
@@ -154,6 +179,36 @@ const ComplaintDetailPage = () => {
                   <div className="incident-row"><span>{t('complaintDetail.fieldClusterSize')}</span><strong>{data.incident.cluster_size}</strong></div>
                   {data.incident.recommended_action && <div className="incident-row"><span>{t('complaintDetail.fieldAction')}</span><span>{data.incident.recommended_action}</span></div>}
                 </div>
+
+                {user?.role === 'Citizen' && data.incident.status === 'pending_verification' && (
+                  <div className="verify-section">
+                    <h4><CheckCircle size={16} /> {t('complaintDetail.verifyTitle')}</h4>
+                    <p className="verify-prompt">{t('complaintDetail.verifyPrompt')}</p>
+                    <div className="verify-input-group">
+                      <input
+                        type="text"
+                        maxLength={6}
+                        placeholder={t('complaintDetail.verifyPlaceholder')}
+                        value={verifyCode}
+                        onChange={e => setVerifyCode(e.target.value.replace(/\D/g, '').slice(0, 6))}
+                        className="verify-input"
+                        disabled={verifyLoading}
+                      />
+                      <button
+                        className="verify-btn"
+                        onClick={handleVerify}
+                        disabled={verifyLoading || verifyCode.length !== 6}
+                      >
+                        {verifyLoading ? <div className="spinner-sm" /> : t('complaintDetail.verifySubmit')}
+                      </button>
+                    </div>
+                    {verifyResult && (
+                      <p className={`verify-result ${verifyResult.success ? 'verify-success' : 'verify-error'}`}>
+                        {verifyResult.message}
+                      </p>
+                    )}
+                  </div>
+                )}
               </div>
             )}
           </div>
