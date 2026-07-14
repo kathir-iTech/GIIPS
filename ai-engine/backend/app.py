@@ -145,6 +145,28 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] Escalation columns already exist on incidents table, skipping")
 
+        # Migration: fix district for government users from old Chennai data
+        try:
+            from database import User, Base
+            from sqlalchemy.orm import sessionmaker
+            FixSession = sessionmaker(bind=engine)
+            with FixSession() as fix_db:
+                fix_db.query(User).filter(
+                    User.email.in_(["mla1@giips.gov.in", "collector1@giips.gov.in",
+                                    "councillor1@giips.gov.in", "councillor2@giips.gov.in",
+                                    "councillor3@giips.gov.in", "councillor4@giips.gov.in",
+                                    "councillor5@giips.gov.in", "councillor6@giips.gov.in",
+                                    "councillor7@giips.gov.in", "councillor8@giips.gov.in",
+                                    "commr-north@giips.gov.in", "commr-south@giips.gov.in",
+                                    "commr-east@giips.gov.in", "commr-west@giips.gov.in",
+                                    "commr-central@giips.gov.in"]),
+                    User.district != "Coimbatore"
+                ).update({"district": "Coimbatore"}, synchronize_session=False)
+                fix_db.commit()
+                logger.info("[MIGRATION] Corrected district to Coimbatore for government users")
+        except Exception as exc:
+            logger.warning("[MIGRATION] District fix skipped: %s", exc)
+
         # Seed demo users (idempotent: skips users whose email already exists)
         try:
             from database import seed_demo_users

@@ -192,6 +192,7 @@ class UserResponse(BaseModel):
     role: str
     ward: Optional[str] = None
     district: Optional[str] = None
+    department: Optional[str] = None
 
 
 class PredictionSummaryResponse(BaseModel):

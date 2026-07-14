@@ -735,6 +735,71 @@ async def get_incidents(db: Session = Depends(get_db)):
     return {"incidents": result}
 
 
+@incident_router.get("/escalated")
+async def get_escalated_incidents(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """List escalated incidents for MLA/Collector oversight dashboards.
+    Collector sees only incidents in their district; MLA sees all escalated."""
+    if db_user.role not in ("MLA", "Collector", "Councillor", "Commissioner", "Executive"):
+        raise HTTPException(status_code=403, detail="Access denied")
+
+    query = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.escalated == True)
+
+    if db_user.role == "Collector" and db_user.district:
+        collector_wards = db.query(Complaint.ward).filter(
+            Complaint.ward.isnot(None), Complaint.ward != ""
+        ).distinct().all()
+        query = query.filter(Incident.ward.in_([w[0] for w in collector_wards]))
+
+    incidents = query.order_by(Incident.escalated_at.desc().nullslast()).all()
+    return {
+        "incidents": [
+            {
+                "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
+                "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
+                "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
+                "recommended_action": inc.recommended_action, "days_open": inc.days_open,
+                "escalated": inc.escalated, "escalated_at": inc.escalated_at.isoformat() if inc.escalated_at else None,
+                "escalated_by": inc.escalated_by, "escalation_reason": inc.escalation_reason,
+                "complaints": [
+                    {"id": c.id, "complaint_number": c.id, "text": c.title,
+                     "date_received": c.created_at.isoformat() if c.created_at else None}
+                    for c in inc.complaints
+                ] if inc.complaints else [],
+            }
+            for inc in incidents
+        ]
+    }
+
+
+@incident_router.post("/auto-escalate")
+async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
+    """Auto-escalate incidents that have exceeded the AGING_CRITICAL_DAYS threshold.
+    Called periodically (e.g. from a scheduler or on relevant state changes).
+    Follows the same SLA threshold as the aging notification system."""
+    from constants import AGING_CRITICAL_DAYS
+
+    incident_id = None
+    try:
+        cut_off = datetime.datetime.utcnow() - timedelta(days=AGING_CRITICAL_DAYS)
+        aging = db.query(Incident).filter(
+            Incident.created_at <= cut_off,
+            Incident.escalated == False
+        ).all()
+        count = 0
+        for inc in aging:
+            inc.escalated = True
+            inc.escalated_at = datetime.datetime.utcnow()
+            inc.escalated_by = "system"
+            count += 1
+        if count:
+            db.commit()
+            return {"message": f"Auto-escalated {count} aging incidents"}
+        return {"message": "No aging incidents to escalate"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=f"Auto-escalation failed: {e}")
+
+
 @incident_router.get("/{incident_id}")
 async def get_incident(incident_id: str, db: Session = Depends(get_db)):
     """Get incident by ID."""
@@ -1065,80 +1130,6 @@ async def escalate_incident(incident_id: str, body: EscalateRequest, db_user: Us
     return {"message": "Incident escalated", "incident_id": incident.id, "reason": body.reason}
 
 
-@incident_router.get("/escalated")
-async def get_escalated_incidents(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """List escalated incidents for MLA/Collector oversight dashboards.
-    Collector sees only incidents in their district; MLA sees all escalated."""
-    if db_user.role not in ("MLA", "Collector", "Councillor", "Commissioner", "Executive"):
-        raise HTTPException(status_code=403, detail="Access denied")
-
-    query = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.escalated == True)
-
-    if db_user.role == "Collector" and db_user.district:
-        collector_wards = db.query(Complaint.ward).filter(
-            Complaint.ward.isnot(None), Complaint.ward != ""
-        ).distinct().all()
-        query = query.filter(Incident.ward.in_([w[0] for w in collector_wards]))
-
-    incidents = query.order_by(Incident.escalated_at.desc().nullslast()).all()
-    return {
-        "incidents": [
-            {
-                "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
-                "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
-                "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
-                "recommended_action": inc.recommended_action, "days_open": inc.days_open,
-                "escalated": inc.escalated, "escalated_at": inc.escalated_at.isoformat() if inc.escalated_at else None,
-                "escalated_by": inc.escalated_by, "escalation_reason": inc.escalation_reason,
-                "complaints": [
-                    {"id": c.id, "complaint_number": c.id, "text": c.title,
-                     "date_received": c.created_at.isoformat() if c.created_at else None}
-                    for c in inc.complaints
-                ] if inc.complaints else [],
-            }
-            for inc in incidents
-        ]
-    }
-
-
-@incident_router.post("/auto-escalate")
-async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
-    """Auto-escalate incidents that have exceeded the AGING_CRITICAL_DAYS threshold.
-    Called periodically (e.g. from a scheduler or on relevant state changes).
-    Follows the same SLA threshold as the aging notification system."""
-    from constants import AGING_CRITICAL_DAYS
-
-    overdue = db.query(Incident).options(joinedload(Incident.complaints)).filter(
-        Incident.status == "open",
-        Incident.escalated == False,
-        Incident.days_open >= AGING_CRITICAL_DAYS,
-    ).all()
-
-    escalated_count = 0
-    for inc in overdue:
-        inc.escalated = True
-        inc.escalated_at = datetime.utcnow()
-        inc.escalated_by = "system"
-        inc.escalation_reason = f"Auto-escalated: incident open for {inc.days_open} days (SLA threshold: {AGING_CRITICAL_DAYS} days)"
-        # Notify linked complaint owners
-        for c in inc.complaints:
-            if c.user_id:
-                _create_notification(
-                    db, c.user_id, "escalated",
-                    complaint_id=c.id,
-                    data={
-                        "incident_number": inc.incident_number,
-                        "reason": inc.escalation_reason,
-                        "escalated_by": "system",
-                    },
-                )
-        escalated_count += 1
-
-    if escalated_count:
-        db.commit()
-    return {"message": f"Auto-escalated {escalated_count} incident(s)", "count": escalated_count}
-
-
 @complaint_router.get("/ward/{ward}")
 async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get complaints for a specific ward. Councillor sees only their assigned ward;
@@ -1270,6 +1261,7 @@ async def login(user: UserLogin, request: Request, response: Response, _: None =
         "full_name": db_user.full_name,
         "ward": db_user.ward,
         "district": db_user.district,
+        "department": db_user.department,
     }
 
 @auth_router.post("/logout")
@@ -1288,7 +1280,9 @@ async def get_me(db_user: User = Depends(get_current_user)):
         role=db_user.role,
         ward=db_user.ward,
         district=db_user.district,
+        department=db_user.department,
     )
+
 
 @auth_router.put("/profile", response_model=UserResponse)
 async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -1309,6 +1303,7 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
         role=db_user.role,
         ward=db_user.ward,
         district=db_user.district,
+        department=db_user.department,
     )
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])

@@ -41,10 +41,13 @@ const LocalAuthorityDashboard = () => {
   const { user } = useAuth();
   const isCommissioner = user?.role === 'Commissioner';
   const isCouncillor = user?.role === 'Councillor';
+  const zoneName = isCommissioner && user?.department
+    ? user.department.replace('CCMC ', '').replace(' Zone', '')
+    : null;
 
   const [ward, setWard] = useState<string>(() => {
     if (isCouncillor && user?.ward) return user.ward;
-    return 'Ward 1';
+    return '1';
   });
   const [complaints, setComplaints] = useState<WardComplaint[]>([]);
   const [loading, setLoading] = useState(true);
@@ -110,7 +113,7 @@ const LocalAuthorityDashboard = () => {
     <div className="la-dashboard">
       <Header
         title={isCommissioner ? t('nav.commissionerDashboard') : t('nav.councillorDashboard')}
-        subtitle={`${t('common.status.open')} — ${t('complaintDetail.fieldStatus')}: ${ward}`}
+        subtitle={isCommissioner && zoneName ? `${zoneName} Zone — Ward ${ward}` : `${t('common.status.open')} — ${t('complaintDetail.fieldStatus')}: ${ward}`}
       />
       <div className="page-content">
         <div className="la-toolbar">
@@ -122,7 +125,7 @@ const LocalAuthorityDashboard = () => {
               onChange={e => setWard(e.target.value)}
               className="ward-input"
               disabled={isCouncillor}
-              placeholder="Ward name"
+              placeholder={isCommissioner ? "Ward number (1-100)" : "Ward name"}
             />
           </div>
           <div className="la-stats">

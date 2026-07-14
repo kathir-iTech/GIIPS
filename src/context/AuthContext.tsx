@@ -11,6 +11,7 @@ interface User {
   role: UserRole;
   ward?: string;
   district?: string;
+  department?: string;
 }
 
 interface AuthContextType {
@@ -54,6 +55,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           role: data.role,
           ward: data.ward,
           district: data.district,
+          department: data.department,
         });
       })
       .catch(() => {
@@ -84,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         role: response.role,
         ward: response.ward,
         district: response.district,
+        department: response.department,
       };
       setUser(userData);
       setTimeout(() => navigateBasedOnRole(response.role), 0);
