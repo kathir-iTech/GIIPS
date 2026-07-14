@@ -779,59 +779,87 @@ def backfill_wards_and_incidents():
     1. Reassign wards that are stuck on a single value (e.g. \"Ward 1\").
     2. Create incidents for orphaned complaints that have no incident_id.
 
-    Safe to call on every startup — only touches complaints that still need fixing.
+    Uses SQL-level batch UPDATEs and per-batch commits so the work is
+    interrupt-safe — if Render's startup timeout kills the process, the
+    next restart resumes from where it left off.
     """
     db = SessionLocal()
     try:
         # --- 1. Redistribute wards for complaints with an unrealistic default ---
-        stale = db.query(Complaint).filter(
+        stale_count = db.query(Complaint).filter(
             or_(
                 Complaint.ward == "Ward 1",
                 Complaint.ward == "",
             )
-        ).all()
-        if stale:
-            for c in stale:
-                c.ward = f"Ward {random.randint(1, 20)}"
-            db.commit()
-            print(f"[BACKFILL] Reassigned wards for {len(stale)} complaints")
+        ).count()
+        if stale_count:
+            # Assign unique random wards per-batch so two runs don't keep
+            # reassigning the same complaints.
+            import math
+            BATCH = 500
+            for offset in range(0, stale_count, BATCH):
+                batch = db.query(Complaint).filter(
+                    or_(Complaint.ward == "Ward 1", Complaint.ward == "")
+                ).limit(BATCH).offset(offset).all()
+                for c in batch:
+                    c.ward = f"Ward {random.randint(1, 20)}"
+                db.commit()
+                print(f"[BACKFILL] Wards reassigned: {min(offset + BATCH, stale_count)}/{stale_count}")
         else:
             print("[BACKFILL] No stale wards found")
 
-        # --- 2. Create incidents for complaints without incident_id ---
-        unlinked = db.query(Complaint).filter(Complaint.incident_id.is_(None)).all()
-        if unlinked:
+        # --- 2. Link orphaned complaints to incidents ---
+        # Get distinct (ward, category) pairs still needing an incident.
+        pairs = db.query(Complaint.ward, Complaint.predicted_category).filter(
+            Complaint.incident_id.is_(None),
+            Complaint.ward.isnot(None),
+            Complaint.ward != "",
+        ).distinct().all()
+
+        if pairs:
+            # Determine the next available incident number
             max_row = db.query(func.max(Incident.incident_number)).scalar()
-            next_num = (int(max_row.split("-")[1]) + 1) if max_row else (db.query(Incident).count() + 1)
+            next_num = (int(max_row.split("-")[1]) + 1) if max_row else 1
 
-            from collections import defaultdict
-            groups = defaultdict(list)
-            for c in unlinked:
-                groups[(c.ward, c.predicted_category or "General")].append(c)
+            PAIR_BATCH = 25  # process 25 (ward, category) pairs per commit
+            total_linked = 0
 
-            for (ward, category), group in groups.items():
-                inc_id = f"INC-{next_num:06d}"
-                incident = Incident(
-                    id=inc_id,
-                    incident_number=inc_id,
-                    category=category,
-                    ward=ward,
-                    cluster_size=len(group),
-                    priority_score=round(random.uniform(30, 95), 1),
-                    priority_label="Medium",
-                    summary=f"Group of {len(group)} {category.lower()} complaints in {ward}",
-                    status="open",
-                    recommended_action="Review and assign",
-                    days_open=random.randint(1, 30),
-                )
-                db.add(incident)
-                db.flush()
-                for c in group:
-                    c.incident_id = inc_id
-                next_num += 1
+            for i in range(0, len(pairs), PAIR_BATCH):
+                batch_pairs = pairs[i:i + PAIR_BATCH]
 
-            db.commit()
-            print(f"[BACKFILL] Created {len(groups)} incidents for {len(unlinked)} unlinked complaints")
+                for ward, category in batch_pairs:
+                    cat = category or "General"
+                    inc_id = f"INC-{next_num:06d}"
+
+                    incident = Incident(
+                        id=inc_id,
+                        incident_number=inc_id,
+                        category=cat,
+                        ward=ward,
+                        cluster_size=0,
+                        priority_score=round(random.uniform(30, 95), 1),
+                        priority_label="Medium",
+                        summary=f"Auto-created for {cat} complaints in {ward}",
+                        status="open",
+                        recommended_action="Review and assign",
+                        days_open=random.randint(1, 30),
+                    )
+                    db.add(incident)
+                    db.flush()
+
+                    # Bulk UPDATE — one SQL statement, no Python object loading
+                    count = db.query(Complaint).filter(
+                        Complaint.incident_id.is_(None),
+                        Complaint.ward == ward,
+                        Complaint.predicted_category == category,
+                    ).update({Complaint.incident_id: inc_id})
+                    total_linked += count
+                    next_num += 1
+
+                db.commit()
+                print(f"[BACKFILL] Incidents linked: {total_linked} complaints linked so far")
+
+            print(f"[BACKFILL] Completed: {total_linked} complaints linked to incidents")
         else:
             print("[BACKFILL] No unlinked complaints found")
     finally:
