@@ -1267,7 +1267,9 @@ async def login(user: UserLogin, request: Request, response: Response, _: None =
     return {
         "role": db_user.role,
         "user_id": db_user.id,
-        "full_name": db_user.full_name
+        "full_name": db_user.full_name,
+        "ward": db_user.ward,
+        "district": db_user.district,
     }
 
 @auth_router.post("/logout")

@@ -81,7 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         user_id: response.user_id || email,
         full_name: response.full_name || email.split('@')[0],
         email,
-        role: response.role
+        role: response.role,
+        ward: response.ward,
+        district: response.district,
       };
       setUser(userData);
       setTimeout(() => navigateBasedOnRole(response.role), 0);
