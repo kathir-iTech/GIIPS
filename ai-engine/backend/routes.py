@@ -1583,8 +1583,12 @@ async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(ge
         raise HTTPException(status_code=403, detail="Executive or Collector access required")
     from database import seed_demo_users, seed_synthetic_data
     from sqlalchemy import text
+    # Delete in FK-safe order (child tables first)
+    db.execute(text("DELETE FROM priority_history"))
     db.execute(text("DELETE FROM complaints"))
     db.execute(text("DELETE FROM incidents"))
+    db.execute(text("DELETE FROM notifications"))
+    db.execute(text("DELETE FROM department_metrics"))
     db.commit()
     seed_demo_users()
     seed_synthetic_data()
