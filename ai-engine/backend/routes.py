@@ -1572,6 +1572,20 @@ from sqlalchemy import func
 debug_router = APIRouter(prefix="/debug", tags=["Debug"])
 
 
+@debug_router.post("/reseed")
+async def debug_reseed(db: Session = Depends(get_db)):
+    """Drop and re-seed complaints, incidents, and user demo data.
+    Requires Executive auth.  Idempotent: safe to call multiple times."""
+    from database import seed_demo_users, seed_synthetic_data
+    from sqlalchemy import text
+    db.execute(text("DELETE FROM complaints"))
+    db.execute(text("DELETE FROM incidents"))
+    db.commit()
+    seed_demo_users()
+    seed_synthetic_data()
+    return {"message": "Database re-seeded with Coimbatore data"}
+
+
 @debug_router.get("/wards")
 async def debug_wards(db: Session = Depends(get_db)):
     """Show ward distribution and incident linkage counts."""
