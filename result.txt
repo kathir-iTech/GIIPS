@@ -1,0 +1,1112 @@
+# GIIPS Project — Complete Codebase Audit
+
+**Generated:** 14 July 2026  
+**Source:** `C:\Users\jeeva\Desktop\GIIPS-opencode`  
+**Description:** Governance Incident Intelligence & Prioritization System — civic complaint triage for Tamil Nadu, India
+
+---
+
+## 1. PROJECT STRUCTURE
+
+### 1.1 Root Directory
+
+```
+C:\Users\jeeva\Desktop\GIIPS-opencode\
+├── .env                              # VITE_API_BASE_URL=https://giips-backend.onrender.com
+├── .gitignore                        # 31 lines — Python, Node, DB, env, IDE, OS, logs
+├── .kilo/kilo.jsonc                  # Kilo AI config snapshot
+├── Dockerfile                        # Multi-stage Python 3.11 build for FastAPI (backend)
+├── docker-compose.yml                # MinIO + PostgreSQL + Redis + backend + frontend
+├── index.html                        # Vite entry HTML (Inter font, favicon)
+├── package.json                      # React 19 + Vite 8 frontend dependencies
+├── package-lock.json
+├── vercel.json                       # SPA rewrite rule for Vercel
+├── vite.config.ts                    # Rollup chunk splitting (vendor, leaflet, plotly)
+├── vite.config.js                    # Redundant duplicate of vite.config.ts
+├── tsconfig.json                     # ES2020, React JSX, strict, bundler module resolution
+├── tsconfig.node.json                # For vite.config.ts
+├── train_classifier.py               # Standalone TF-IDF + LogisticRegression training script
+├── nyc311_filtered.csv               # NYC 311 dataset for model training
+├── nyc311_working.csv                # Same dataset, 50k rows
+├── result.html                       # Static result page
+├── check_syntax.mjs                  # TypeScript syntax checker
+│
+├── public/
+│   └── favicon.svg                   # Crosshair-in-shield icon
+│
+├── dist/                             # Vite production build output
+├── node_modules/
+│
+├── models/                           # Root-trained ML models
+│   ├── classifier.pkl
+│   ├── label_encoder.pkl
+│   └── vectorizer.pkl
+│
+├── metrics/                          # Impact calculations and spot checks
+│   ├── calculate_impact.py           # 99.97% dedup reduction calculator
+│   ├── impact_metrics.json
+│   ├── cluster_spot_check.txt
+│   ├── judge_qa_impact_block.txt
+│   ├── readme_impact_block.txt
+│   └── cache/
+│       ├── embeddings_sbert.npy
+│       └── complaint_texts.json
+│
+├── duplicate-detection/              # Standalone duplicate detection research data
+│   └── data/nyc311_filtered.csv
+│
+├── ai-engine/                        # Full Python backend
+├── src/                              # Full React frontend
+│
+│   ── Documentation files ──
+├── SYSTEM_ARCHITECTURE.md
+├── ARCHITECTURE.md
+├── ARCHITECTURE_COMPLETE.md
+├── API_DOCUMENTATION.md
+├── DATABASE_SCHEMA.md
+├── DEPLOYMENT_GUIDE.md
+├── DEMO_SCRIPT.md
+├── CONTRIBUTING.md
+├── JUDGE_QUESTIONS.md
+├── PROJECT_STRUCTURE.md
+└── README.md                         # Empty (single blank line)
+```
+
+### 1.2 Backend: `ai-engine/`
+
+```
+ai-engine/
+├── README.md                         # AI engine docs (309 lines)
+├── train_pipeline.py                 # Standalone training: TF-IDF + LR
+│
+├── data/
+│   ├── giips.db                      # Default SQLite database
+│   ├── synthetic_complaints.json
+│   ├── generate_tn_dataset.py
+│   └── nyc311_filtered.csv
+│
+├── models/
+│   └── classification/
+│       ├── classifier.pkl            # Trained LogisticRegression
+│       ├── label_encoder.pkl         # 5-category label encoder
+│       ├── vectorizer.pkl            # TF-IDF vectorizer
+│       └── metadata.json             # Accuracy 57.1%, 5 classes
+│
+├── outputs/
+│   ├── .gitkeep
+│   └── dashboard_data.json
+│
+├── backend/                          # FastAPI application (the running server)
+│   ├── __init__.py
+│   ├── app.py                        # FastAPI app, lifespan, CORS, CSRF, 16 routers registered
+│   ├── routes.py                     # ~1574 lines — all 47 API endpoints across 16 routers
+│   ├── services.py                   # 6 service classes (Classification, Clustering, Priority, Dashboard, Decision, Spatial, Complaint)
+│   ├── database.py                   # SQLAlchemy engine/session, 7 ORM models, seed/migration functions
+│   ├── models.py                     # 22 Pydantic models for API request/response
+│   ├── schemas.py                    # 8 Pydantic schemas for complaint/incident submission
+│   ├── pipeline.py                   # Inline async ML pipeline (classify → dedup → incident → priority → notify)
+│   ├── worker.py                     # DEPRECATED arq worker (kept for reference)
+│   ├── job_queue.py                  # Redis pool, complaint status queries, arq enqueue (deprecated)
+│   ├── auth_service.py               # JWT + bcrypt + httpOnly cookie management
+│   ├── storage.py                    # S3/MinIO client with presigned URLs (Backblaze B2)
+│   ├── rate_limiter.py               # Redis-backed rate limiting (5/min auth, 10/min complaint)
+│   ├── constants.py                  # AGING_WARNING_DAYS=4, AGING_CRITICAL_DAYS=8
+│   ├── department_map.py             # 44 Tamil Nadu government departments with i18n slugs
+│   ├── requirements.txt              # Core Python production dependencies
+│   └── requirements-ai.txt           # Optional AI dependencies (sentence-transformers, torch)
+│
+├── classification/                   # ML Classification Module
+│   ├── __init__.py
+│   ├── train.py                      # ComplaintClassifier — TF-IDF + LogisticRegression
+│   ├── predict.py                    # ComplaintPredictor — inference wrapper
+│   ├── evaluate.py                   # Metrics, cross-validation, error analysis
+│   ├── utils.py                      # Text cleaning, TF-IDF grid search, dataset validation
+│   └── tamil_fallback.py             # Phase 1.5 Tamil keyword fallback (temporary; to be replaced by IndicBERT/LaBSE)
+│
+├── clustering/                       # ML Clustering Module
+│   ├── __init__.py
+│   ├── cluster.py                    # ComplaintClusterer — SBERT all-MiniLM-L6-v2 + DBSCAN eps=0.17
+│   ├── evaluate.py                   # Silhouette, CH, DB, ARI, NMI metrics
+│   └── utils.py                      # Preprocessing, location grouping, param validation
+│
+├── priority/                         # Priority Scoring Module
+│   ├── __init__.py
+│   ├── priority.py                   # PriorityEngine — 4-factor weighted scoring (cluster_size×30% + age×25% + severity×25% + location×20%)
+│   ├── rules.py                      # PriorityRulesEngine — 8 rule adjustments, EscalationPolicy with 4 levels
+│   ├── utils.py                      # Days open, urgency keywords, impact severity, workload
+│   └── intelligence.py               # IncidentIntelligenceEngine — mock severity scoring
+│
+├── duplicate_detection/              # Duplicate Detection Module
+│   ├── __init__.py
+│   ├── engine.py                     # DuplicateDetector — SBERT + NearestNeighbors / Jaccard fallback
+│   ├── utils.py                      # UnionFind DSU, preprocessing, reports, statistics
+│   ├── train_embeddings.py           # EmbeddingTrainer — batch-embeds with all-MiniLM-L6-v2
+│   ├── build_faiss.py                # FAISSIndexBuilder — flat/IVF/HNSW indices
+│   └── requirements.txt              # sentence-transformers, faiss-cpu, numpy, pandas, tqdm
+│
+├── prediction/                       # Predictive Module
+│   ├── __init__.py
+│   └── engine.py                     # PredictiveEngine — linear trend forecasting, escalation prediction
+│
+├── knowledge/                        # Governance Knowledge Module
+│   ├── __init__.py
+│   └── engine.py                     # GovernanceKnowledgeEngine — root cause, cascade impact, policy recommendations
+│
+├── decision/                         # Decision Support Module
+│   ├── __init__.py
+│   └── support.py                    # DecisionSupportEngine — district/ward rankings, recommendations
+│
+└── copilot/                          # AI Copilot Module
+    ├── __init__.py
+    └── engine.py                     # CopilotEngine — intent-based NL chat with simple keyword responses
+```
+
+### 1.3 Frontend: `src/`
+
+```
+src/
+├── main.tsx                          # React 19 entry point, StrictMode, Suspense
+├── App.tsx                           # BrowserRouter, AuthProvider, all routes with lazy-loaded pages, RoleGuard
+├── App.css                           # Layout: top-bar, app-layout, full-content, page-loading, spinner
+├── index.css                         # Liquid Crystal Dark Theme CSS variables, glass-card styles, global resets
+├── i18n.ts                           # i18next setup, LanguageDetector, localStorage cache, en/ta
+├── vite-env.d.ts                     # Vite type declarations
+│
+├── context/
+│   └── AuthContext.tsx               # AuthProvider + useAuth hook (login, register, logout, getMe, role-based nav)
+│
+├── components/
+│   ├── Sidebar.tsx + .css            # Role-based navigation drawer (7 role configs, mobile hamburger)
+│   ├── Header.tsx + .css             # Page title, date/time (en-IN), system status badge
+│   ├── ProtectedRoute.tsx            # ProtectedRoute + RoleGuard (redirects to /login or /unauthorized)
+│   ├── KPICard.tsx + .css            # Animated KPI metric card (framer-motion hover)
+│   ├── LanguageSwitcher.tsx + .css   # English/Tamil toggle (localStorage persistence)
+│   ├── NotificationBell.tsx + .css   # Polling bell (45s), unread count, dropdown with mark-all-read
+│   ├── ErrorBoundary.tsx             # Class-based React error boundary with reload button
+│   ├── AddressSearch.tsx             # Nominatim OSM geocoder (500ms debounce, Tamil Nadu viewbox)
+│   └── AgingBadge.tsx                # Color-coded days-open badge (normal/warning/critical)
+│
+├── pages/
+│   ├── Landing.tsx + .css            # Public landing — problem/solution/impact, citizen/gov gateway cards
+│   ├── Login.tsx                     # Email/password login form
+│   ├── Register.tsx                  # Citizen registration form (blocks @gov.in)
+│   ├── CitizenServices.tsx           # Citizen gateway (Register/Login buttons)
+│   ├── GovernmentPortal.tsx          # Government gateway (info about @gov.in accounts)
+│   ├── CitizenPortal.tsx + .css      # 6-step complaint submission wizard + polling
+│   ├── MyComplaints.tsx + .css       # Citizen's complaint list with search/filter
+│   ├── ComplaintDetail.tsx + .css    # Single complaint detail with photo, timeline, incident linkage
+│   ├── CitizenProfile.tsx + .css     # View/edit profile
+│   ├── Overview.tsx + .css           # Officer dashboard — KPIs, Plotly charts (category, trend, ward), 30s auto-refresh
+│   ├── ExecutiveDashboard.tsx + .css # AI Command Center — 9 sections, 8 parallel API calls, 30s refresh
+│   ├── IncidentFeed.tsx + .css       # Sortable/filterable incident table with merge/split
+│   ├── Analysis.tsx + .css           # Analytics — 4 KPIs + 5 Plotly charts (volume, category, resolution, dept, ward)
+│   ├── Clusters.tsx + .css           # Cluster investigation cards + slide-over workspace panel
+│   ├── SpatialIntelligence.tsx + .css # Full-screen Leaflet GIS — 6 layers, 32 TN districts, heatmap, forecast, resource sim
+│   ├── LocalAuthorityDashboard.tsx + .css # Ward complaint queue — escalate/resolve for Councillors/Commissioners
+│   ├── OversightDashboard.tsx + .css # Escalated incidents review — split-pane for MLA/Collector
+│   ├── Methodology.tsx + .css        # Public AI pipeline documentation
+│   ├── OfficerManagement.tsx         # Executive CRUD for government officers
+│   ├── DepartmentManagement.tsx      # Executive department workload monitoring
+│   ├── SystemHealth.tsx              # Executive system health grid
+│   ├── AuditLogs.tsx                 # Executive audit log viewer
+│   └── Unauthorized.tsx + .css       # 403 access denied page
+│   └── Auth.css                      # Shared auth form styles
+│
+├── services/
+│   └── api.ts                        # Custom Fetch API client — 30+ methods, fetchWithTimeout(30s), safeJson
+│
+├── types/
+│   └── index.ts                      # 18 TypeScript interfaces/types (DashboardData, Incident, Complaint, etc.)
+│
+├── constants/
+│   └── aging.ts                      # AGING.WARNING_DAYS=4, AGING.CRITICAL_DAYS=8, getAgingLevel()
+│
+├── data/
+│   ├── departments.ts                # 44 Tamil Nadu gov departments with slugs, names (en/ta), icons
+│   └── tamil-nadu-districts.ts       # 31 districts with bounding boxes, GeoJSON FeatureCollection, centroids
+│
+├── utils/
+│   └── imageCompress.ts              # Client-side JPEG compression (1600px max, 0.8 quality, <1MB)
+│
+└── locales/
+    ├── en/translation.json           # ~916 keys — full English UI strings
+    └── ta/translation.json            # ~916 keys — full Tamil UI strings
+```
+
+---
+
+## 2. TECH STACK
+
+### 2.1 Languages
+
+| Language | Where Used |
+|----------|-----------|
+| Python 3.11+ | Backend (FastAPI, SQLAlchemy, ML modules) |
+| TypeScript 6 | Frontend (React, all .tsx/.ts files) |
+| CSS3 | Frontend styling (CSS variables, dark theme, glass cards) |
+| HTML5 | Vite entry point (index.html) |
+| YAML | docker-compose.yml |
+| JSON | i18n, package.json, metadata, config |
+
+### 2.2 Backend Python Dependencies (`requirements.txt`)
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `fastapi` | >=0.100.0 | Web framework with async support |
+| `pydantic` | >=2.0.0 | Data validation and serialization |
+| `sqlalchemy` | >=2.0.0 | ORM with session management |
+| `numpy` | >=1.24.0 | Numerical operations |
+| `pandas` | >=2.0.0 | Data manipulation |
+| `scikit-learn` | >=1.3.0 | ML: TF-IDF, LogisticRegression, DBSCAN |
+| `uvicorn[standard]` | >=0.23.0 | ASGI server for FastAPI |
+| `python-multipart` | >=0.0.6 | Multipart form parsing (file uploads) |
+| `python-dotenv` | >=1.0.0 | .env file loading |
+| `gunicorn` | >=21.0.0 | WSGI server (alternative to uvicorn) |
+| `PyJWT` | ==2.10.1 | JWT token encoding/decoding (HS256) |
+| `bcrypt` | >=4.1.2 | Password hashing |
+| `psycopg2-binary` | >=2.9.9 | PostgreSQL adapter |
+| `geopy` | >=2.4.1 | Geodesic distance calculation for dedup |
+| `arq` | >=0.28.0 | Redis job queue (DEPRECATED — inline asyncio used instead) |
+| `redis[hiredis]` | >=5.3.0 | Redis client for rate limiting + status tracking |
+| `boto3` | >=1.34.0 | S3-compatible object storage (Backblaze B2) |
+| `sentence-transformers` | commented out | Enhanced duplicate detection (SBERT) |
+| `torch` | commented out | PyTorch for sentence-transformers |
+
+### 2.3 Frontend Dependencies (`package.json`)
+
+| Package | Version | Purpose |
+|---------|---------|---------|
+| `react` | ^19.2.7 | UI framework |
+| `react-dom` | ^19.2.7 | React DOM renderer |
+| `react-router-dom` | ^7.18.0 | Client-side routing with role guards |
+| `react-plotly.js` | ^4.0.0 | Statistical charts (dashboard, analysis) |
+| `react-leaflet` | ^5.0.0 | GIS map component (Spatial Intelligence page) |
+| `leaflet` | ^1.9.4 | Map rendering engine |
+| `i18next` | ^26.3.6 | Internationalization framework |
+| `react-i18next` | ^17.0.9 | React bindings for i18next |
+| `i18next-browser-languagedetector` | ^8.2.1 | Browser language detection |
+| `framer-motion` | ^12.42.2 | Animation (KPIs, page transitions, hover) |
+| `lucide-react` | ^1.21.0 | Icon library (MapPin, Bell, Shield, etc.) |
+| `typescript` | ^6.0.3 | Type checking |
+| `vite` | ^8.1.0 | Build tool and dev server |
+| `@vitejs/plugin-react` | ^6.0.3 | Vite React plugin |
+| `@types/react` | ^19.2.17 | React type definitions |
+| `@types/react-dom` | ^19.2.3 | React DOM type definitions |
+| `@types/leaflet` | ^1.9.21 | Leaflet type definitions |
+| `csstype` | ^3.2.3 | CSS type definitions |
+
+### 2.4 Backend Optional AI Dependencies (`requirements-ai.txt`)
+
+| Package | Purpose |
+|---------|---------|
+| `sentence-transformers` >=3.0.1 | Enhanced duplicate detection with SBERT |
+| `torch` >=2.3.0 | PyTorch for sentence-transformers |
+
+### 2.5 Duplicate Detection Dependencies (`duplicate_detection/requirements.txt`)
+
+| Package | Purpose |
+|---------|---------|
+| `sentence-transformers` | SBERT embedding model |
+| `faiss-cpu` | Fast similarity search indices |
+| `numpy` | Array operations |
+| `pandas` | Data handling |
+| `tqdm` | Progress bars |
+
+### 2.6 External Services
+
+| Service | Purpose | Status |
+|---------|---------|--------|
+| **Backblaze B2** (S3-compatible) | Complaint photo storage + presigned URLs | Optional (falls back if not configured) |
+| **Redis** (Upstash / self-hosted) | Rate limiting, complaint status tracking, deprecated arq job queue | Optional (falls open if unavailable) |
+| **OpenStreetMap Nominatim** | Geocoding address search (Tamil Nadu bounded) | External API (free, rate-limited) |
+| **OpenStreetMap tiles** | Leaflet map base tiles | External API (free, no key required) |
+
+### 2.7 Deployment Infrastructure
+
+| Component | Platform | URL | Tier |
+|-----------|----------|-----|------|
+| Backend | Render | `https://giips-backend.onrender.com` | Free tier |
+| Frontend | Vercel | `https://giips.vercel.app` (default) | Free tier |
+| Database | Render / embedded | PostgreSQL (prod) / SQLite (dev) | Free tier PostgreSQL |
+| Object storage | Backblaze B2 | S3-compatible | Free tier (10GB) |
+| Cache/Queue | Upstash / embedded Redis | Redis | Free tier (100MB) |
+| Maps | OpenStreetMap + Leaflet | Free (no API key) | Unlimited |
+
+---
+
+## 3. DATA MODELS
+
+All 7 ORM models are defined in `ai-engine/backend/database.py`. Database is SQLite in development, PostgreSQL in production (via `DATABASE_URL` env var).
+
+### 3.1 `User` — `users` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `full_name` | `String` | — | `nullable=False` |
+| `email` | `String` | — | `unique=True, index=True, nullable=False` |
+| `phone` | `String` | `nullable=True` | — |
+| `password_hash` | `String` | — | `nullable=False` |
+| `district` | `String` | `nullable=True` | — |
+| `ward` | `String` | `nullable=True` | — |
+| `role` | `String` | — | `nullable=False` — one of: `'Citizen', 'Officer', 'Executive', 'Councillor', 'Commissioner', 'MLA', 'Collector'` |
+| `department` | `String` | `nullable=True` | — |
+| `created_at` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+| `last_login` | `DateTime` | `nullable=True` | — |
+| `status` | `String` | `"active"` | `nullable=False` |
+
+**Relationships:** None defined.
+
+---
+
+### 3.2 `Incident` — `incidents` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `incident_number` | `String` | — | `unique=True, index=True, nullable=False` |
+| `category` | `String` | — | `nullable=False` |
+| `ward` | `String` | — | `nullable=False` |
+| `cluster_size` | `Integer` | `1` | `nullable=False` |
+| `priority_score` | `Float` | `0.0` | `nullable=False` |
+| `priority_label` | `String` | `"Low"` | `nullable=False` |
+| `summary` | `Text` | `nullable=True` | — |
+| `status` | `String` | `"open"` | `nullable=False` |
+| `recommended_action` | `Text` | `nullable=True` | — |
+| `days_open` | `Integer` | `0` | `nullable=False` |
+| `created_at` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+| `escalated` | `Boolean` | `False` | `nullable=False` |
+| `escalated_at` | `DateTime` | `nullable=True` | — |
+| `escalated_by` | `String` | `nullable=True` | — |
+| `escalation_reason` | `Text` | `nullable=True` | — |
+
+**Relationships:**
+- `complaints = relationship("Complaint", back_populates="incident")` — one-to-many
+- `priority_history = relationship("PriorityHistory", backref="incident")` — one-to-many
+
+---
+
+### 3.3 `Complaint` — `complaints` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `title` | `String` | — | `nullable=False` |
+| `description` | `Text` | — | `nullable=False` |
+| `location` | `String` | — | `nullable=False` |
+| `ward` | `String` | — | `nullable=False` |
+| `image_path` | `String` | `nullable=True` | — |
+| `predicted_category` | `String` | `nullable=True` | — |
+| `confidence` | `Float` | `nullable=True` | — |
+| `priority` | `String` | `nullable=True` | — |
+| `incident_id` | `String` | `nullable=True` | `ForeignKey("incidents.id")` |
+| `user_id` | `String` | `nullable=True` | `index=True` |
+| `created_at` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+| `address` | `String` | `nullable=True` | — |
+| `latitude` | `Float` | `nullable=True` | — |
+| `longitude` | `Float` | `nullable=True` | — |
+| `similarity_score` | `Float` | `nullable=True` | — |
+| `merge_reason` | `Text` | `nullable=True` | — |
+| `merged_at` | `DateTime` | `nullable=True` | — |
+
+**Relationships:**
+- `incident = relationship("Incident", back_populates="complaints")` — many-to-one
+
+---
+
+### 3.4 `PriorityHistory` — `priority_history` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `incident_id` | `String` | — | `ForeignKey("incidents.id"), index=True, nullable=False` |
+| `old_score` | `Float` | — | `nullable=False` |
+| `new_score` | `Float` | — | `nullable=False` |
+| `reason` | `Text` | — | `nullable=False` |
+| `changed_at` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+
+---
+
+### 3.5 `Notification` — `notifications` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `user_id` | `String` | — | `ForeignKey("users.id"), index=True, nullable=False` |
+| `complaint_id` | `String` | `nullable=True` | `ForeignKey("complaints.id")` |
+| `type` | `String` | — | `nullable=False` — see list below |
+| `data_json` | `Text` | `nullable=True` | JSON string with context-dependent payload |
+| `is_read` | `Boolean` | `False` | `nullable=False` |
+| `created_at` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+
+**Notification types:**
+- `created` — Complaint submitted successfully
+- `merged` — Complaint merged into an existing incident (duplicate found)
+- `status_change` — Incident status updated (open → in-progress → resolved)
+- `escalated` — Incident flagged for escalation
+- `split` — Complaint split into new standalone incident
+- `aging_warning` — Incident approaching SLA threshold (≥4 days)
+- `aging_critical` — Incident past SLA threshold (≥8 days)
+- `officer_merged` — Officer notification about a merge action
+- `officer_split` — Officer notification about a split action
+- `officer_status_change` — Officer notification about status change
+- `complaint_assigned` — New complaint assigned to the department
+
+---
+
+### 3.6 `AuditLog` — `audit_logs` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `timestamp` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+| `user_id` | `String` | `nullable=True` | — |
+| `user_email` | `String` | `nullable=True` | — |
+| `role` | `String` | `nullable=True` | — |
+| `action` | `String` | — | `nullable=False` |
+| `target` | `String` | `nullable=True` | — |
+| `details` | `Text` | `nullable=True` | — |
+| `status` | `String` | `"success"` | `nullable=False` |
+| `ip_address` | `String` | `nullable=True` | — |
+
+---
+
+### 3.7 `DepartmentMetrics` — `department_metrics` table
+
+| Column | Type | Default | Constraints |
+|--------|------|---------|-------------|
+| `id` | `String` | — | `primary_key=True, index=True` |
+| `department` | `String` | — | `nullable=False` |
+| `open_incidents` | `Integer` | `0` | `nullable=False` |
+| `critical_incidents` | `Integer` | `0` | `nullable=False` |
+| `assigned_officers` | `Integer` | `0` | `nullable=False` |
+| `avg_resolution_time` | `Float` | `0.0` | `nullable=False` |
+| `completion_percentage` | `Float` | `0.0` | `nullable=False` |
+| `workload_indicator` | `Float` | `0.0` | `nullable=False` |
+| `updated_at` | `DateTime` | `datetime.datetime.utcnow` | `nullable=False` |
+
+---
+
+### 3.8 Entity Relationship Summary
+
+```
+User (1) ──< (N) Complaint (N) >── (1) Incident (1) ──< (N) PriorityHistory
+  │                                    │
+  └──< (N) Notification               └──< (N) Notification (via complaint_id)
+
+AuditLog ── standalone (references user_id + target_id as strings, no FK)
+DepartmentMetrics ── standalone (keyed by department name string)
+```
+
+---
+
+## 4. ALL API ENDPOINTS
+
+**Base URL (production):** `https://giips-backend.onrender.com`  
+**Authentication:** JWT in httpOnly cookie (`access_token`) or `Authorization: Bearer <token>` header  
+**Rate limits:** 5/min on auth endpoints, 10/min on complaint submission and merge/split
+
+16 routers + 3 top-level endpoints = **47 total endpoints**.
+
+### 4.1 Root (on `app` directly)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/` | No | Root — returns name, version, status, endpoint list |
+| `GET` | `/health` | No | Health check — status, models_loaded, timestamp |
+| `POST` | `/similar` | No | Find similar complaints by keyword overlap (deprecated? kept from early version) |
+
+### 4.2 Auth Router (`/auth`)
+
+| Method | Path | Auth | Rate Limit | Purpose |
+|--------|------|------|------------|---------|
+| `POST` | `/auth/register` | No | 5/min | Register new citizen (`@gov.in` blocked) |
+| `POST` | `/auth/login` | No | 5/min | Login, returns JWT as httpOnly cookie |
+| `POST` | `/auth/logout` | Yes | — | Clear auth cookie |
+| `GET` | `/auth/me` | Yes | — | Get current user profile (session restore) |
+| `PUT` | `/auth/profile` | Yes | — | Update profile (name, email, phone, district, ward, password) |
+
+### 4.3 Complaint Router (`/complaints`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/complaints` | Yes (10/min) | Submit complaint, returns 202 with statusUrl, triggers async ML pipeline |
+| `GET` | `/complaints/{complaint_id}/status` | Yes | Poll async processing status (Redis or DB fallback) |
+| `POST` | `/complaints/{complaint_id}/upload` | Yes (owner) | Upload photo (jpg/png, max 5MB) to S3 |
+| `GET` | `/complaints/{complaint_id}/photo` | Yes | Get presigned S3 photo URL |
+| `GET` | `/complaints/{complaint_id}` | Yes | Get complaint detail with nested incident + priority_history |
+| `GET` | `/complaints/my` | Yes | List current user's complaints |
+| `GET` | `/complaints/coordinates` | No | Get all complaint coordinates for map pins (max 500) |
+| `GET` | `/complaints/ward/{ward}` | Yes (role-restricted) | Get complaints by ward — Councillor sees own ward only; Officer/Executive/Commissioner see any |
+| `GET` | `/complaints/debug/env` | No | Check S3 env vars (debug endpoint) |
+
+### 4.4 Incident Router (`/incidents`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/incidents` | Yes | Get all incidents with nested complaints (sortable) |
+| `GET` | `/incidents/{incident_id}` | Yes | Get single incident with complaints + priority_history |
+| `POST` | `/incidents/merge` | Yes, role-restricted | Merge ≥2 incidents into one (Officer/Executive/Commissioner, 10/min) |
+| `POST` | `/incidents/{incident_id}/split/{complaint_id}` | Yes, role-restricted | Split complaint into new standalone incident (Officer/Executive/Commissioner, 10/min) |
+| `PATCH` | `/incidents/{incident_id}/status` | Yes, role-restricted | Update status (open/in-progress/resolved), creates notifications (Officer/Executive/Commissioner) |
+| `POST` | `/incidents/{incident_id}/escalate` | Yes, role-restricted | Flag incident for escalation (Councillor/Commissioner/Executive) |
+| `GET` | `/incidents/escalated` | Yes, role-restricted | List escalated incidents (MLA/Collector/Councillor/Commissioner/Executive) |
+| `POST` | `/incidents/auto-escalate` | No | Auto-escalate incidents past AGING_CRITICAL_DAYS (8) — called from scheduler |
+
+### 4.5 Dashboard Router (`/dashboard`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/dashboard` | Yes | Summary: total complaints/incidents, priority distribution, category breakdown, recent incidents |
+| `GET` | `/dashboard/metrics` | Yes | Classification model performance (accuracy, precision, recall, f1, processing_time_ms) |
+| `GET` | `/dashboard/trend` | Yes | Monthly complaint/incident volume for last 6 months |
+| `GET` | `/dashboard/analytics` | Yes | Comprehensive analytics: overview, category, department, volume trend, resolution trend, ward hotspots |
+
+### 4.6 Spatial Router (`/spatial`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/spatial/heatmap` | Yes | Ward-level complaint density with avg lat/lng |
+| `GET` | `/spatial/hotspots` | Yes | Ward-level hotspot analysis: severity, growth trend, counts |
+| `GET` | `/spatial/forecast` | Yes | Spatial forecast for N days (default 7) |
+| `GET` | `/spatial/risk` | Yes | Ward-level risk scores based on heatmap density |
+| `POST` | `/spatial/simulate` | Yes | Resource allocation simulation based on additional teams |
+
+### 4.7 Executive Router (`/executive`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/executive/summary` | Yes | Critical count, worst ward, emerging issue, top recommendation |
+| `GET` | `/executive/ward-health` | Yes | Ward health scores (100 - count*10, min 0) |
+| `GET` | `/executive/department-workload` | Yes | Department workload breakdown by unresolved incidents |
+
+### 4.8 Admin Router (`/admin`) — all require Executive role
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/admin/officers` | List all officers |
+| `POST` | `/admin/officers` | Create new officer (`@gov.in` only) |
+| `PATCH` | `/admin/officers/{officer_id}/disable` | Disable officer account |
+| `PATCH` | `/admin/officers/{officer_id}/enable` | Enable officer account |
+| `GET` | `/admin/departments` | Department workload metrics from DB |
+| `GET` | `/admin/departments/list` | Authoritative department list with slugs and i18n keys |
+| `GET` | `/admin/system-health` | System health status (backend, database, AI engine, JWT, models) |
+| `GET` | `/admin/audit-logs` | Last 100 audit log entries |
+
+### 4.9 Notification Router (`/notifications`) — all require auth
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `GET` | `/notifications` | Get current user's notifications (most recent 50) |
+| `POST` | `/notifications/{notification_id}/read` | Mark single notification as read |
+| `POST` | `/notifications/read-all` | Mark all notifications as read |
+
+### 4.10 Classification Router (`/classify`) — no auth
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/classify` | Classify single complaint text into category (ML or Tamil fallback) |
+| `POST` | `/classify/batch` | Classify multiple texts at once |
+| `POST` | `/classify/predict` | Alias for `/classify`, accepts `PredictCategoryRequest` with just `text` |
+
+### 4.11 Cluster Router (`/cluster`) — no auth
+
+| Method | Path | Purpose |
+|--------|------|---------|
+| `POST` | `/cluster` | Cluster complaints into groups (currently text-prefix fallback) |
+| `POST` | `/cluster/similar` | Find similar complaints to given text |
+| `GET` | `/cluster/config` | Get current clustering config (eps=0.3, min_samples=2, model=all-MiniLM-L6-v2) |
+
+### 4.12 Priority Router (`/priority`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/priority` | No | Calculate priority score for an incident with factor breakdown |
+| `POST` | `/priority/batch` | No | Calculate priority for multiple incidents |
+| `GET` | `/priority/rules` | Yes | Get active priority adjustment rules |
+
+### 4.13 Prediction Router (`/predictions`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/predictions/summary` | Yes | Forecast, escalation risks (5 recent incidents), active alerts |
+
+### 4.14 Knowledge Router (`/knowledge`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/knowledge/summary` | Yes | District risk index, policy recommendations, root causes, cascade chains |
+
+### 4.15 Decision Support Router (`/decision-support`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/decision-support/summary` | Yes | District/ward rankings, top critical recommendation, executive report |
+
+### 4.16 Copilot Router (`/copilot`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `POST` | `/copilot/chat` | Yes | Process NL chat query, returns response + confidence + data sources + reasoning |
+
+### 4.17 Debug Router (`/debug`)
+
+| Method | Path | Auth | Purpose |
+|--------|------|------|---------|
+| `GET` | `/debug/wards` | No | Ward distribution + incident linkage counts (total, linked, unlinked, incidents, ward distribution) |
+
+---
+
+## 5. ROLES & PERMISSIONS
+
+### 5.1 Role Definitions
+
+Seven distinct roles, stored in `User.role`:
+
+| # | Role | Description | Typical User |
+|---|------|-------------|-------------|
+| 1 | `Citizen` | Regular citizens who submit and track complaints | Public users |
+| 2 | `Officer` | Government department officers who manage incidents | Department staff |
+| 3 | `Executive` | Senior administrators with full system access | District Collector / Admin |
+| 4 | `Councillor` | Ward councillors who monitor local complaints | Ward representative |
+| 5 | `Commissioner` | Municipal commissioners with broad authority | City commissioner |
+| 6 | `MLA` | Member of Legislative Assembly (state-level oversight) | Elected legislator |
+| 7 | `Collector` | District Collector (district-level oversight) | District magistrate |
+
+### 5.2 Permission Matrix
+
+| Capability | Citizen | Officer | Executive | Councillor | Commissioner | MLA | Collector |
+|------------|---------|---------|-----------|------------|-------------|-----|-----------|
+| Register account | Yes | No | No | No | No | No | No |
+| Login | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| Submit complaint | Yes | Yes | Yes | Yes | Yes | Yes | Yes |
+| View own complaints | Yes | No* | No* | No* | No* | No* | No* |
+| View all incidents | No | Yes | Yes | No | Yes | No | No |
+| View ward complaints | No | Yes | Yes | Own ward only | Yes | No | No |
+| Merge incidents | No | Yes | Yes | No | Yes | No | No |
+| Split complaints | No | Yes | Yes | No | Yes | No | No |
+| Update incident status | No | Yes | Yes | No | Yes | No | No |
+| Escalate incidents | No | No | Yes | Yes | Yes | No | No |
+| View escalated incidents | No | No | Yes | Yes | Yes | Yes | Yes (filtered by district) |
+| Manage officers | No | No | Yes | No | No | No | No |
+| View department metrics | No | No | Yes | No | No | No | No |
+| View system health | No | No | Yes | No | No | No | No |
+| View audit logs | No | No | Yes | No | No | No | No |
+
+*Officers, Executives, Councillors, Commissioners, MLA, and Collector do NOT have a "my complaints" view — they view incidents/ward complaints instead.
+
+### 5.3 Frontend Route → Role Mapping
+
+| Route | Component | Allowed Roles |
+|-------|-----------|---------------|
+| `/` | Landing | Public |
+| `/login` | Login | Public |
+| `/register` | Register | Public |
+| `/citizen-services` | CitizenServices | Public |
+| `/government-portal` | GovernmentPortal | Public |
+| `/methodology` | Methodology | Public |
+| `/unauthorized` | Unauthorized | Public |
+| `/citizen` | CitizenPortal | Citizen |
+| `/my-complaints` | MyComplaints | Citizen |
+| `/complaint/:id` | ComplaintDetail | Citizen |
+| `/profile` | CitizenProfile | Citizen |
+| `/officer` | Overview | Officer |
+| `/executive` | ExecutiveDashboard | Executive |
+| `/incident-feed` | IncidentFeed | Officer, Executive, Commissioner |
+| `/analysis` | Analysis | Officer, Executive, Commissioner, Collector |
+| `/clusters` | Clusters | Officer, Executive, Commissioner, Collector |
+| `/spatial` | SpatialIntelligence | Officer, Executive, Commissioner, Collector |
+| `/local-authority` | LocalAuthorityDashboard | Councillor, Commissioner |
+| `/oversight` | OversightDashboard | MLA, Collector |
+| `/admin/officers` | OfficerManagement | Executive |
+| `/admin/departments` | DepartmentManagement | Executive |
+| `/admin/system-health` | SystemHealth | Executive |
+| `/admin/audit-logs` | AuditLogs | Executive |
+
+### 5.4 Role Enforcement Mechanisms
+
+1. **`get_current_user()` dependency** (`routes.py:59-73`): Extracts JWT from httpOnly cookie or `Authorization` header, decodes, looks up User in DB. Applied to all auth-required endpoints via `Depends(get_current_user)`.
+
+2. **`get_executive_user()` dependency** (`routes.py:1300-1304`): Verifies `role == "Executive"`. Applied to all admin endpoints.
+
+3. **Inline role checks:** Used on merge (line ~766), split (line ~854), status update (line ~981), escalate (line ~1033), escalated incidents list (line ~1072), ward complaints (lines ~1146-1149). Pattern: `if db_user.role not in [...] raise HTTPException(403)`.
+
+4. **Rate limiting:** `check_auth_rate_limit` (5/min) on auth endpoints via `Depends`. `check_complaint_rate_limit` (10/min) on complaint submission and merge/split.
+
+5. **Registration restriction:** `@gov.in` emails blocked from public registration. Only Executives can create government accounts via `/admin/officers`.
+
+### 5.5 Sidebar Navigation by Role
+
+| Role | Navigation Items |
+|------|-----------------|
+| Citizen | Submit Complaint, My Complaints, Profile |
+| Officer | Dashboard, Incidents, Clusters, Spatial, Analytics, Methodology |
+| Executive | Dashboard + all Officer items + Administration: Officer Management, Department Management, System Health, Audit Logs |
+| Councillor | Ward Queue |
+| Commissioner | Ward Queue, Incidents, Spatial, Analytics |
+| MLA | Escalated Cases |
+| Collector | Escalated Cases, Spatial, Analytics |
+
+---
+
+## 6. FEATURES
+
+### 6.1 Citizen Features
+
+- **Self-registration**: Email/password signup with `@gov.in` domain block. Fields: full_name, email, password, phone, district, ward.
+- **Multi-step complaint submission wizard** (`/citizen`):
+  - Step 1: Personal details (pre-filled from profile)
+  - Step 2: Complaint title + description
+  - Step 3: Location — address search via OSM Nominatim (Tamil Nadu bounded, 500ms debounce)
+  - Step 4: Photo upload — JPG/PNG, max 5MB, client-side compression to <1MB (1600px max, quality 0.8)
+  - Step 5: Review all entered data
+  - Step 6: Submit — polls `/complaints/{id}/status` every 1.5s until completed or failed (120s timeout)
+- **My Complaints** (`/my-complaints`): Searchable, filterable list of own complaints with status, category, confidence, duplicate indicator.
+- **Complaint Detail** (`/complaint/:id`): Photo gallery, meta grid (location, ward, date, category, department), AI category/confidence, merge reason, linked incident details, full timeline with priority history.
+- **Profile management** (`/profile`): View/edit full_name, email, phone, district, ward with edit/save toggle.
+- **Notifications**: Real-time polling (45s interval) for: complaint created, merged into incident, status changes, aging warnings. Dropdown with unread count, mark-all-read, click-to-navigate.
+- **Language switching**: English ↔ Tamil (தமிழ்) toggle stored in localStorage (`giips_lang`). Full 916-key i18n coverage for both languages.
+
+### 6.2 AI/ML Features
+
+#### 6.2.1 Complaint Classification
+
+- **Primary model:** TF-IDF vectorization + LogisticRegression, trained on NYC 311 dataset (50k rows, mapped to 5 Tamil Nadu categories)
+- **Model accuracy:** 57.1% (acknowledged as Phase 1)
+- **5 output classes:** Road Infrastructure, Sanitation, Street Lighting, Waste Management, Water Supply
+- **Heuristic fallback:** Keyword-based classification for 10 categories (Roads, Water Supply, Garbage, Drainage, Streetlights, Electricity, Public Health, Pollution, Traffic) with confidence 0.75
+- **Explainability:** Returns reason string, supporting factors (keyword matches), and method used (ML/heuristic/Tamil)
+- **Training pipeline:** Standalone `train_classifier.py` at root + `ai-engine/classification/train.py`
+
+#### 6.2.2 Duplicate Detection
+
+- **Primary model:** SentenceTransformer (`all-MiniLM-L6-v2`) + NearestNeighbors (n_neighbors=5, cosine distance)
+- **Fallback:** Jaccard keyword overlap on tokenized text (used when sentence-transformers/torch unavailable)
+- **Confidence formula:** `text_similarity × 0.6 + location_proximity × 0.3 + category_match × 0.1`
+  - Location proximity: geodesic distance via `geopy.distance`, scaled [0,1] (1000m = 0)
+  - Category match: 1.0 if same, else 0.0
+  - Threshold: `dup_conf > 0.8` → flagged as duplicate
+- **FAISS indices:** Optional FAISS index building (flat/IVF/HNSW) for faster similarity search
+- **Impact metrics (claimed):** 99.97% duplicate reduction via SBERT, 49.7% via keyword fallback; estimated 99,970 officer-minutes saved
+
+#### 6.2.3 Clustering
+
+- **Primary model:** ComplaintClusterer — SBERT all-MiniLM-L6-v2 + DBSCAN (eps=0.17, min_samples=2)
+- **Fallback:** Text-prefix bucketing (first 50 chars) — very simplistic
+- **Backend `ClusteringService._fallback_cluster()`** currently used: groups by first 50 chars of text
+- **Evaluation:** Silhouette, Calinski-Harabasz, Davies-Bouldin, ARI, NMI metrics available
+
+#### 6.2.4 Tamil Language Support
+
+- **Tamil keyword fallback** (`tamil_fallback.py`): Phase 1.5 temporary keyword-based classification for Tamil text
+- **Intended replacement:** IndicBERT / LaBSE multilingual embeddings (Phase 3 — deferred due to memory constraints on free tier)
+- **Full Tamil UI:** 916-key i18n JSON with complete Tamil translation of all UI strings
+
+#### 6.2.5 Priority Scoring
+
+- **PriorityEngine** (`priority/priority.py`): 4 weighted factors:
+  - Cluster size: 30% — sigmoid(complaint_count), normalized [0,1]
+  - Complaint age: 25% — exponential decay based on days open
+  - Category severity: 25% — lookup: Water=0.90, Road=0.85, Sanitation=0.80, etc.
+  - Location importance: 20% — keyword match: school=1.0, hospital=0.95, market=0.85
+- **Final score:** `weighted_sum × 100`, clamped [0, 100]
+- **Labels:** Critical (90+), High (75-89), Medium (50-74), Low (0-49)
+- **PriorityRulesEngine** (`priority/rules.py`): 8 rule adjustments:
+  - Safety Critical: +20 (injury, accident, hazardous keywords)
+  - School Proximity: +15 (school, playground, daycare in location)
+  - Hospital Proximity: +12 (hospital, clinic, medical in location)
+  - Water/Public Health: +10 (water, sewage, contamination keywords)
+  - Long Standing: +8 (>21 days unresolved)
+  - Large Cluster: +7 (>20 complaints)
+  - Recurring: +5 (recurring issue detected)
+  - Minor Issue: -5 (cosmetic categories)
+- **EscalationPolicy:** 4 levels — Immediate (90+), Urgent (75+), Standard (50+), Routine — with response times, notification rules, and category-specific recommended actions
+
+#### 6.2.6 Predictive Engine
+
+- **Simple linear trend forecasting** for complaint volume (weekly)
+- **Escalation probability** for each incident (mock — returns static/deterministic values)
+- **Active alerts** generation (mock)
+
+#### 6.2.7 Governance Knowledge Engine
+
+- District risk index (mock — returns static values)
+- Infrastructure risk index (mock)
+- Policy recommendations (mock — returns canned strings like "Increase water supply maintenance in high-density wards")
+- Root cause analysis (mock)
+- Cascade/chain impact analysis (mock)
+
+#### 6.2.8 Decision Support Engine
+
+- District rankings (mock — returns static ranked list)
+- Ward rankings (mock)
+- Top critical incident recommendations with resource plans, estimated costs, completion hours
+- Executive report generation (mock — returns static markdown string)
+
+#### 6.2.9 AI Copilot
+
+- Intent-based NL chat (keyword matching against a small set of known intents: "dashboard", "critical incidents", "trend", "recommendation", "ward health", "risk", "forecast", "greeting")
+- Returns canned responses with confidence scores, data source citations, and reasoning
+
+### 6.3 Authority/Hierarchy Features
+
+- **Incident merge** (`POST /incidents/merge`): Merge ≥2 incidents into one target. Moves all complaints, recalculates priority, records PriorityHistory, creates notifications. Role-restricted: Officer/Executive/Commissioner. Rate-limited: 10/min.
+- **Incident split** (`POST /incidents/{id}/split/{complaint_id}`): Remove a complaint from its incident and create a new standalone incident. Same role/rate restrictions.
+- **Incident status update** (`PATCH /incidents/{id}/status`): Transition open ↔ in-progress ↔ resolved. Creates notifications for all linked complaint owners.
+- **Incident escalation** (`POST /incidents/{id}/escalate`): Flag incident for upper-level review. Councillor/Commissioner/Executive. Requires `reason` field.
+- **Escalation oversight** (`GET /incidents/escalated`): List all escalated incidents. MLA sees all, Collector sees filtered by district. Used by OversightDashboard.
+- **Auto-escalation** (`POST /incidents/auto-escalate`): Automated — escalates incidents past `AGING_CRITICAL_DAYS = 8`. No auth required (scheduler endpoint).
+- **Executive admin panel** (`/admin/*`): Full CRUD for officers, department monitoring, system health checks, audit logs.
+- **Audit logging**: Every officer create/disable/enable, department view, system health view is logged to `audit_logs` table with timestamp, user, action, target, status, IP.
+
+### 6.4 Notification System
+
+- **11 notification types** (see §3.5): created, merged, status_change, escalated, split, aging_warning, aging_critical, officer_merged, officer_split, officer_status_change, complaint_assigned
+- **Created during pipeline** (citizen notified: `created` or `merged`; officers notified: `complaint_assigned`)
+- **Created on status change** (all linked complaint owners notified)
+- **Created on merge/split** (both citizen and officer notifications)
+- **Aging checks** run during pipeline — `aging_warning` at 4 days, `aging_critical` at 8 days
+- **Frontend polling:** `NotificationBell` polls every 45 seconds, shows unread count (capped at 99+), dropdown with mark-all-read, click navigates to `/complaint/:id`
+
+### 6.5 Security Features
+
+- **JWT authentication** (HS256, 60-min expiry) stored in httpOnly, Secure, SameSite=None cookie (cross-origin Vercel → Render)
+- **CSRF protection** via Origin/Referer header check on all POST/PUT/PATCH/DELETE (except docs, health, root)
+- **CORS** restricted to configured origins (default: `https://giips.vercel.app`)
+- **Password hashing** with bcrypt
+- **Rate limiting** (Redis-backed, falls open if Redis unavailable): 5/min on auth, 10/min on complaint submission and merge/split
+- **File upload validation**: .jpg/.jpeg/.png only, MIME check, max 5MB
+- **Government account restriction**: `@gov.in` email registration blocked; only Executive can create gov accounts
+- **Input validation**: Pydantic models with length limits (title 1-200, description 1-5000, location 1-500, escalation reason 1-1000)
+
+### 6.6 Localization
+
+- **Languages:** English (en) and Tamil (ta)
+- **Framework:** i18next + react-i18next + i18next-browser-languagedetector
+- **Detection:** localStorage key `giips_lang`, fallback to `en`
+- **Coverage:** ~916 translation keys per language covering all pages, components, departments, notification types, and error messages
+- **Department i18n:** 44 Tamil Nadu government departments with both English names and Tamil names, mapped via i18n key convention
+
+### 6.7 Performance / UX Features
+
+- **30-second auto-refresh** on Overview, ExecutiveDashboard, IncidentFeed (dashboard data stays current)
+- **45-second poll interval** on NotificationBell (balance between freshness and API load)
+- **1.5-second poll interval** on CitizenPortal after complaint submission (until completed or 120s timeout)
+- **Client-side image compression** before upload (1600px max, JPEG quality 0.8, target <1MB)
+- **Geocoding debounce** 500ms on AddressSearch (avoids hitting Nominatim rate limits)
+- **Vite chunk splitting** (vendor, leaflet, plotly — reduces initial load size)
+- **Error boundary** on all routes (catches React render errors without white-screen)
+- **Graceful degradation**: Dashboard/Executive Dashboard use `Promise.allSettled` — partial data still renders
+- **Animated transitions**: framer-motion for page transitions, KPI card hover effects, sidebar animations
+- **Dark theme** via CSS custom properties (`--bg-primary: #0a0e1a` and related tokens)
+
+---
+
+## 7. KNOWN LIMITATIONS / DEFERRED ITEMS
+
+### 7.1 ML Model Limitations
+
+| Issue | Status | Notes |
+|-------|--------|-------|
+| Classification accuracy 57.1% | **Accepted (Phase 1)** | Trained on NYC 311 data mapped to 5 TN categories. Planned: IndicBERT/LaBSE with TN-specific training data in Phase 3. |
+| No Tamil NLP model deployed | **Deferred (Phase 3)** | `tamil_fallback.py` uses keyword matching. IndicBERT/LaBSE reverted during Phase 1.5 for memory reasons (free tier constraints). |
+| SBERT/torch commented out in requirements.txt | **Deferred** | Sentence-transformers and torch removed from default `pip install` to keep free-tier memory under 512MB. Falls back to Jaccard keyword overlap. |
+| Clustering service uses text-prefix fallback | **Unimplemented** | `ClusteringService._fallback_cluster()` groups by first 50 chars of text — no real ML clustering in the live service. The `ComplaintClusterer` (SBERT + DBSCAN) exists in `clustering/cluster.py` but is not wired into services.py. |
+| Duplicate detection requires data loading | **Performance note** | Loads all recent complaints (up to 1000) into memory each time. Could be slow with large datasets. |
+| Dataset is NYC 311, not Tamil Nadu | **Known gap** | No real Tamil Nadu complaint dataset available for training. Synthetic data generated via `generate_tn_dataset.py`. |
+
+### 7.2 Backend Limitations
+
+| Issue | Status | Notes |
+|-------|--------|-------|
+| Inline pipeline blocks startup | **Accepted** | `asyncio.create_task()` runs during lifespan — if it takes too long (10k+ complaints), Render's free tier 15s startup timeout may kill the process. Mitigated by batch processing. |
+| No message queue in production | **Deferred** | arq worker deprecated. Inline `asyncio.create_task()` is not durable — if the process crashes mid-pipeline, that complaint is lost. Redis-based job queue planned for Phase 3. |
+| No write-through caching | **Deferred** | Redis used only for rate limiting and complaint status — no query result caching. Every dashboard load hits the DB. |
+| No database migrations (Alembic) | **Deferred** | Schema changes handled by `ALTER TABLE ... ADD COLUMN` in startup with try/except. Not safe for production. Column additions are applied on theory rather than versioned migration. |
+| Audit log only tracks officer operations | **Partial** | Only officer create/disable/enable, department view, system health view are logged. Complaint submission, incident merge/split/status/escalate are NOT audited. |
+| Backfill silently crashes on hex incident numbers | **Fixed 14 July 2026** | `int(max_row.split("-")[1])` fails on `INC-A1B2C3` format. Now uses UUID-based IDs. |
+| `WorkerSettings` references wrong module path | **Broken** | `arq ai_engine.backend.worker.WorkerSettings` — the actual module is at `ai-engine/backend/worker.py`, which Python would import as `backend.worker`, not `ai_engine.backend.worker`. The deprecated worker path is incorrect. |
+
+### 7.3 Frontend Limitations
+
+| Issue | Status | Notes |
+|-------|--------|-------|
+| No comprehensive test suite | **Missing** | Zero test files found anywhere in the codebase (no Jest, Vitest, Playwright, or pytest files). |
+| No service worker / PWA support | **Deferred** | No offline support. App requires network for all functionality. |
+| No loading skeletons | **Missing** | Uses spinner/loading bars only — no skeleton screens for perceived performance. |
+| No error toast system | **Missing** | Errors shown inline on pages. No centralized toast/snackbar component. |
+| No pagination on Spatial map pins | **Current limit** | Complaint coordinates endpoint limited to 500 — on larger datasets, older complaints won't appear on map. |
+| No frontend caching | **Deferred** | Every page load re-fetches data. No SWR/React Query/TanStack Query for caching or stale-while-revalidate. |
+| Notification polling (45s) not real-time | **Accepted** | No WebSocket or SSE. Polling interval is a trade-off. |
+| Address geocoder uses free Nominatim API | **Accepted** | No API key. Rate-limited to ~1 req/s. Debounce set to 500ms to avoid hitting limits. |
+
+### 7.4 Deployment Limitations
+
+| Issue | Status | Notes |
+|-------|--------|-------|
+| Render free tier cold starts | **Accepted** | Backend sleeps after 15min of inactivity. First request after inactivity takes 30-60s. |
+| Render free tier 512MB RAM | **Constraint** | Limits: no PyTorch/sentence-transformers, no large in-memory datasets, limited concurrent requests. |
+| Render free tier 15s startup timeout | **Constraint** | Backfill must process in batches and be interrupt-safe. Current backfill design accounts for this. |
+| SQLite in development ≠ PostgreSQL in production | **Known** | Dev uses SQLite (`giips.db`), prod uses PostgreSQL. Feature parity is good, but some SQL differences exist (e.g., JSON operators, full-text search). |
+| No CI/CD pipeline | **Missing** | No GitHub Actions, Render Blueprint, or similar. Deployment is manual. |
+| No monitoring/alerting | **Missing** | No Sentry, New Relic, Datadog, or similar. Only Render's built-in logs. |
+
+### 7.5 Deferred / Phase 3+ Items
+
+| Feature | Phase | Notes |
+|---------|-------|-------|
+| Real Tamil Nadu complaint dataset | Phase 3 | Replace NYC 311 with actual TN corporation data |
+| IndicBERT/LaBSE multilingual embeddings | Phase 3 | Deferred from Phase 1.5 due to memory |
+| REST API-based job queue (durable) | Phase 3 | Replace inline asyncio pipeline |
+| Full-text search | Phase 3 | PostgreSQL `tsvector` or Elasticsearch |
+| Real-time notifications (WebSocket/SSE) | Phase 3 | Replace 45s polling |
+| Mobile app (React Native) | Phase 3 | Not started |
+| SMS/WhatsApp notifications | Phase 3 | Not started |
+| Payment integration (citizen fees) | Phase 3 | Not started |
+| GIS shapefile import (real ward boundaries) | Phase 3 | Currently using bounding box rectangles |
+| Data export (CSV, PDF reports) | Phase 3 | Not started |
+| Multi-language support beyond en/ta | Phase 3 | Telugu, Kannada, Malayalam, Hindi |
+| Dark mode toggle (currently always dark) | Phase 3 | Theme is hardcoded as dark |
+
+---
+
+## 8. ENVIRONMENT & DEPLOYMENT
+
+### 8.1 Deployment Architecture
+
+```
+                                    ┌──────────────┐
+                                    │   Vercel     │
+                                    │  (Frontend)  │
+                                    │ giips.vercel │
+                                    │  .app        │
+                                    └──────┬───────┘
+                                           │ HTTPS
+                                           │
+                                    ┌──────▼───────┐
+                                    │   Render     │
+                                    │  (Backend)   │
+                                    │ giips-backend│
+                                    │ .onrender.com│
+                                    └──────┬───────┘
+                                           │
+                      ┌────────────────────┼────────────────────┐
+                      │                    │                    │
+               ┌──────▼───────┐    ┌──────▼───────┐    ┌──────▼───────┐
+               │  PostgreSQL   │    │    Redis     │    │  Backblaze   │
+               │  (Render)     │    │   (Upstash)  │    │  B2 (S3)     │
+               │  prod DB      │    │ rate-limit + │    │  photos      │
+               │               │    │ status track │    │              │
+               └───────────────┘    └──────────────┘    └──────────────┘
+```
+
+### 8.2 Frontend (Vercel)
+
+- **Framework:** Vite + React SPA
+- **Build:** `npm run build` → `tsc -b && vite build` → outputs to `dist/`
+- **Deploy:** Vercel auto-detects Vite, applies `vercel.json` rewrite (`/*` → `/index.html`)
+- **Environment variable:** `VITE_API_BASE_URL=https://giips-backend.onrender.com`
+- **Domain:** Custom domain or `giips.vercel.app`
+- **Free tier limits:** 100GB bandwidth, 100 deployments/day, 3000 build minutes/month
+
+### 8.3 Backend (Render)
+
+- **Runtime:** Docker — `python:3.11-slim-bookworm`
+- **Process:** `uvicorn ai-engine.backend.app:app --host 0.0.0.0 --port 8000 --log-level info --workers 1`
+- **Healthcheck:** `curl -fsS http://localhost:8000/health` every 30s
+- **Free tier limits:** 512MB RAM, 0.1 CPU, 15s startup timeout, sleeps after 15min idle
+- **No `render.yaml` or `Procfile` — Render auto-detects the Dockerfile**
+
+### 8.4 Docker Compose (Local Development)
+
+```yaml
+Services:
+  minio:    # S3-compatible storage on localhost:9000/9001
+  postgres: # PostgreSQL 16 on port 5432
+  redis:    # Redis 7 on port 6379
+  backend:  # Build from Dockerfile, exposed on port 8000
+  frontend: # nginx serving the built frontend on port 3000/443
+```
+
+### 8.5 All Environment Variables
+
+| Variable | Required | Default | Used In | Purpose |
+|----------|----------|---------|---------|---------|
+| `DATABASE_URL` | No | `sqlite:///{DB_PATH}` | `database.py` | PostgreSQL connection string (production) |
+| `GIIPS_JWT_SECRET` | **Yes** | — | `auth_service.py` | JWT signing key — startup aborts if not set |
+| `GIIPS_ALLOWED_ORIGINS` | No | `https://giips.vercel.app` | `app.py` | CORS allowed origins (comma-separated) |
+| `REDIS_URL` | No | (parsed from REDIS_HOST etc.) | `job_queue.py` | Redis connection string |
+| `REDIS_HOST` | No | `127.0.0.1` | `job_queue.py` | Redis host |
+| `REDIS_PORT` | No | `6379` | `job_queue.py` | Redis port |
+| `REDIS_DB` | No | `0` | `job_queue.py` | Redis DB index |
+| `REDIS_PASSWORD` | No | (none) | `job_queue.py` | Redis password |
+| `REDIS_TLS` | No | (empty) | `job_queue.py` | Redis TLS mode |
+| `S3_ENDPOINT_URL` | No | `http://localhost:9000` | `storage.py`, `routes.py` | S3-compatible endpoint |
+| `S3_ACCESS_KEY_ID` | No | `minioadmin` | `storage.py`, `routes.py` | S3 access key |
+| `S3_SECRET_ACCESS_KEY` | No | `minioadmin` | `storage.py`, `routes.py` | S3 secret key |
+| `S3_BUCKET_NAME` | No | `giips-complaints` | `storage.py`, `routes.py` | S3 bucket name |
+| `S3_REGION` | No | `us-east-1` | `storage.py` | S3 region |
+| `VITE_API_BASE_URL` | **Yes** (frontend) | — | `.env`, `api.ts` | Backend API base URL |
+| `AI_ENGINE_DATA_DIR` | No | `/app/ai-engine/data` | Dockerfile | Data directory path |
+| `AI_ENGINE_MODELS_DIR` | No | `/app/ai-engine/models` | Dockerfile | Models directory path |
+| `PYTHONDONTWRITEBYTECODE` | No | `1` | Dockerfile | Suppress .pyc files |
+| `PYTHONUNBUFFERED` | No | `1` | Dockerfile | Unbuffered stdout/stderr |
+| `PYTHONPATH` | No | `/app/ai-engine/backend` | Dockerfile | Python module path |
+
+### 8.6 Database
+
+- **Development:** SQLite at `ai-engine/data/giips.db`
+- **Production:** PostgreSQL via `DATABASE_URL`
+- **ORM:** SQLAlchemy 2.0+ with auto table creation (`Base.metadata.create_all`) on every startup
+- **Schema migrations:** Manual `ALTER TABLE` in startup (not safe for production — see §7.2)
+- **Seed data:** `seed_demo_users()` creates 9 demo users; `seed_default_executive()` creates collector@gov.in; `seed_synthetic_data(10000, 0.15)` generates 10k complaints + 150 incidents
+
+### 8.7 Startup Sequence (lifespan in `app.py`)
+
+```
+1. Load classifier model (TF-IDF + LR)
+2. Initialize PriorityEngine
+3. Create/verify database tables (Base.metadata.create_all)
+4. ALTER TABLE complaints ADD COLUMN address (silent if exists)
+5. ALTER TABLE users ADD COLUMN department (silent if exists)
+6. Seed demo users (idempotent)
+7. BACKFILL: ward redistribution + incident linking
+8. Seed default executive (collector@gov.in)
+9. Backfill complaint user_ids
+10. Migrate old department names
+11. Ensure outputs directory exists
+12. Log S3 storage availability
+13. Initialize Redis pool (arq, for status tracking)
+```
+
+---
+
+## APPENDIX: SYSTEM METRICS SUMMARY
+
+| Metric | Value |
+|--------|-------|
+| Backend API endpoints | 47 |
+| Database tables (ORM models) | 7 |
+| User roles | 7 |
+| Frontend routes | 24 |
+| Frontend pages | 22 |
+| Frontend components | 9 |
+| i18n keys per language | ~916 |
+| TN government departments mapped | 44 |
+| TN districts with GeoJSON | 32 |
+| ML classification categories | 5 (with 10-category heuristic fallback) |
+| ML model accuracy | 57.1% |
+| Duplicate detection threshold | 0.8 confidence |
+| Aging warning threshold | 4 days |
+| Aging critical threshold | 8 days |
+| Priority score range | 0–100 |
+| Priority label thresholds | Critical 90+, High 75-89, Medium 50-74, Low 0-49 |
+| Priority rule adjustments | 8 |
+| Notification types | 11 |
+| Audit log actions tracked | 4 (officer CRUD + department/system views) |
+| Python dependencies | 17 active + 2 commented out |
+| JavaScript/TypeScript dependencies | 18 |
+| Rate limits | 5/min (auth), 10/min (complaints, merge, split) |
+| Token expiry | 60 minutes |
+| Photo upload limits | 5MB, .jpg/.jpeg/.png only |
+| Frontend auto-refresh intervals | 30s (dashboards), 45s (notifications), 1.5s (submission polling) |
