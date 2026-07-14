@@ -611,6 +611,90 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
     print(f"  Wards used: {len(set(c.ward for c in complaints_list))} / 100")
     print(f"  Zones used: {len(set(ZONE_BY_WARD.get(int(c.ward), '?') for c in complaints_list))} / 5")
     print(f"  Categories: {len(set(c.predicted_category for c in complaints_list))} (civic only)")
+
+    # -- Top-up: ensure every ward has at least 50 complaints --
+    ward_counts = defaultdict(int)
+    for c in complaints_list:
+        ward_counts[c.ward] += 1
+
+    MIN_PER_WARD = 50
+    topup_list = []
+    for wn in ALL_WARD_NUMBERS:
+        wn_str = str(wn)
+        current = ward_counts.get(wn_str, 0)
+        needed = max(0, MIN_PER_WARD - current)
+        for _ in range(needed):
+            category = random.choice(categories)
+            base_text = random.choice(CCMC_COMPLAINT_TEMPLATES[category])
+            zone = ZONE_BY_WARD[wn]
+            areas = AREAS_BY_WARD[wn]
+            area_label = random.choice(areas)
+            lat_lng = zone_lat_lng[zone]
+            ref = f"COMP-{i+1:06d}"
+            i += 1
+            description = f"{base_text} [Ward {wn_str} | {zone} Zone | Coimbatore]"
+            title = f"{category} in {area_label}, Ward {wn_str} ({zone} Zone)"
+            complaint = Complaint(
+                id=ref,
+                title=title,
+                description=description,
+                location=f"{area_label}, Ward {wn_str}, {zone} Zone, Coimbatore",
+                ward=wn_str,
+                predicted_category=category,
+                priority=random.choices(PRIORITY_LABELS, weights=PRIORITY_WEIGHTS)[0],
+                created_at=datetime.datetime.utcnow() - timedelta(days=random.randint(0, 60)),
+                latitude=round(lat_lng[0] + random.uniform(-0.04, 0.04), 6),
+                longitude=round(lat_lng[1] + random.uniform(-0.04, 0.04), 6),
+                user_id=citizen_id,
+            )
+            topup_list.append(complaint)
+
+    if topup_list:
+        for c in topup_list:
+            db.add(c)
+        db.commit()
+
+        # Group into incidents similarly
+        all_complaints = complaints_list + topup_list
+        cat_ward_buckets2 = defaultdict(list)
+        for c in all_complaints:
+            cat_ward_buckets2[(c.predicted_category, c.ward)].append(c)
+
+        topup_incidents = []
+        inc_idx = len(incidents)
+        for (cat, ward), pool in cat_ward_buckets2.items():
+            if len(pool) < 3:
+                continue
+            cluster_sz = min(len(pool), random.randint(3, min(25, len(pool))))
+            zone = ZONE_BY_WARD.get(int(ward), "Central")
+            inc_idx += 1
+            inc_id = f"INC-{inc_idx:06d}"
+            incident = Incident(
+                id=inc_id,
+                incident_number=inc_id,
+                category=cat,
+                ward=str(ward),
+                cluster_size=cluster_sz,
+                priority_score=round(random.uniform(30, 95), 1),
+                priority_label=random.choices(PRIORITY_LABELS, weights=PRIORITY_WEIGHTS)[0],
+                summary=f"Cluster of {cat.lower()} complaints in Ward {ward} ({zone} Zone)",
+                status=random.choice(["open", "in-progress", "resolved"]),
+                recommended_action=f"Deploy {cat.lower()} maintenance crew to Ward {ward}, {zone} Zone",
+                days_open=random.randint(1, 30),
+            )
+            topup_incidents.append(incident)
+            batch = pool[:cluster_sz]
+            for c in batch:
+                c.incident_id = inc_id
+                pool.remove(c)
+
+        for inc in topup_incidents:
+            db.add(inc)
+        db.commit()
+        print(f"  Topped up {len(topup_list)} complaints across {len(topup_incidents)} incidents")
+
+    total_seeded = len(complaints_list) + len(topup_list)
+    print(f"  Final total: {total_seeded} complaints")
     db.close()
 
 
