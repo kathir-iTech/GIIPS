@@ -1573,9 +1573,14 @@ debug_router = APIRouter(prefix="/debug", tags=["Debug"])
 
 
 @debug_router.post("/reseed")
-async def debug_reseed(db: Session = Depends(get_db)):
-    """Drop and re-seed complaints, incidents, and user demo data.
-    Requires Executive auth.  Idempotent: safe to call multiple times."""
+async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    """Drop and re-seed complaints/incidents/users with Coimbatore data.
+
+    Requires Executive authentication (collector@giips.gov.in).
+    Run this after deploying Coimbatore ward changes to refresh the deployed DB.
+    """
+    if db_user.role not in ("Executive", "Collector"):
+        raise HTTPException(status_code=403, detail="Executive or Collector access required")
     from database import seed_demo_users, seed_synthetic_data
     from sqlalchemy import text
     db.execute(text("DELETE FROM complaints"))
