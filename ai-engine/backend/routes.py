@@ -1601,6 +1601,23 @@ async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(ge
         raise HTTPException(status_code=500, detail=detail)
 
 
+@debug_router.post("/topup")
+async def debug_topup(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    """Top up wards to ensure each has at least 50 complaints.
+    Idempotent — safe to call multiple times.
+    """
+    if db_user.role not in ("Executive", "Collector"):
+        raise HTTPException(status_code=403, detail="Executive or Collector access required")
+    try:
+        from database import topup_wards
+        topup_wards(min_per_ward=50)
+        return {"message": "Wards topped up successfully"}
+    except Exception as e:
+        import traceback
+        detail = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
+        raise HTTPException(status_code=500, detail=detail)
+
+
 @debug_router.get("/wards")
 async def debug_wards(db: Session = Depends(get_db)):
     """Show ward distribution and incident linkage counts."""

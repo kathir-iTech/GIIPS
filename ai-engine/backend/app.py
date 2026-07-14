@@ -159,6 +159,13 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Backfill skipped: %s", exc)
 
+        # Top-up wards: ensure every ward has at least 50 complaints
+        try:
+            from database import topup_wards
+            topup_wards(min_per_ward=50)
+        except Exception as exc:
+            logger.warning("[STARTUP] Ward top-up skipped: %s", exc)
+
         # Seed default executive account
         try:
             from database import seed_default_executive

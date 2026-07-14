@@ -611,64 +611,97 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
     print(f"  Wards used: {len(set(c.ward for c in complaints_list))} / 100")
     print(f"  Zones used: {len(set(ZONE_BY_WARD.get(int(c.ward), '?') for c in complaints_list))} / 5")
     print(f"  Categories: {len(set(c.predicted_category for c in complaints_list))} (civic only)")
+    db.close()
 
-    # -- Top-up: ensure every ward has at least 50 complaints --
-    ward_counts = defaultdict(int)
-    for c in complaints_list:
-        ward_counts[c.ward] += 1
+    topup_wards(min_per_ward=50)
 
-    MIN_PER_WARD = 50
-    topup_list = []
-    for wn in ALL_WARD_NUMBERS:
-        wn_str = str(wn)
-        current = ward_counts.get(wn_str, 0)
-        needed = max(0, MIN_PER_WARD - current)
-        for _ in range(needed):
-            category = random.choice(categories)
-            base_text = random.choice(CCMC_COMPLAINT_TEMPLATES[category])
-            zone = ZONE_BY_WARD[wn]
-            areas = AREAS_BY_WARD[wn]
-            area_label = random.choice(areas)
-            lat_lng = zone_lat_lng[zone]
-            ref = f"COMP-{i+1:06d}"
-            i += 1
-            description = f"{base_text} [Ward {wn_str} | {zone} Zone | Coimbatore]"
-            title = f"{category} in {area_label}, Ward {wn_str} ({zone} Zone)"
-            complaint = Complaint(
-                id=ref,
-                title=title,
-                description=description,
-                location=f"{area_label}, Ward {wn_str}, {zone} Zone, Coimbatore",
-                ward=wn_str,
-                predicted_category=category,
-                priority=random.choices(PRIORITY_LABELS, weights=PRIORITY_WEIGHTS)[0],
-                created_at=datetime.datetime.utcnow() - timedelta(days=random.randint(0, 60)),
-                latitude=round(lat_lng[0] + random.uniform(-0.04, 0.04), 6),
-                longitude=round(lat_lng[1] + random.uniform(-0.04, 0.04), 6),
-                user_id=citizen_id,
-            )
-            topup_list.append(complaint)
 
-    if topup_list:
+def topup_wards(min_per_ward: int = 50):
+    """Ensure every ward has at least min_per_ward complaints.
+
+    Queries existing complaints from the DB, tops up short wards,
+    and assigns topped-up complaints to new incidents.
+    Idempotent and safe to call multiple times.
+    """
+    from collections import defaultdict
+    db = SessionLocal()
+    try:
+        rows = db.query(Complaint.ward, func.count(Complaint.id)).group_by(Complaint.ward).all()
+        ward_counts = defaultdict(int, {w: c for w, c in rows})
+
+        last_ref = db.query(func.max(Complaint.id)).scalar()
+        if last_ref and last_ref.startswith("COMP-"):
+            counter = int(last_ref.split("-")[1])
+        else:
+            counter = 0
+
+        categories = list(CCMC_COMPLAINT_TEMPLATES.keys())
+        citizen = db.query(User).filter(User.role == 'Citizen').first()
+        citizen_id = citizen.id if citizen else None
+
+        zone_lat_lng = {
+            "North":   (11.052, 76.96),
+            "South":   (10.975, 76.94),
+            "East":    (11.025, 77.02),
+            "West":    (11.015, 76.88),
+            "Central": (11.000, 76.96),
+        }
+
+        topup_list = []
+        for wn in ALL_WARD_NUMBERS:
+            wn_str = str(wn)
+            current = ward_counts.get(wn_str, 0)
+            needed = max(0, min_per_ward - current)
+            for _ in range(needed):
+                category = random.choice(categories)
+                base_text = random.choice(CCMC_COMPLAINT_TEMPLATES[category])
+                zone = ZONE_BY_WARD[wn]
+                areas = AREAS_BY_WARD[wn]
+                area_label = random.choice(areas)
+                lat_lng = zone_lat_lng[zone]
+                counter += 1
+                ref = f"COMP-{counter:06d}"
+                complaint = Complaint(
+                    id=ref,
+                    title=f"{category} in {area_label}, Ward {wn_str} ({zone} Zone)",
+                    description=f"{base_text} [Ward {wn_str} | {zone} Zone | Coimbatore]",
+                    location=f"{area_label}, Ward {wn_str}, {zone} Zone, Coimbatore",
+                    ward=wn_str,
+                    predicted_category=category,
+                    priority=random.choices(PRIORITY_LABELS, weights=PRIORITY_WEIGHTS)[0],
+                    created_at=datetime.datetime.utcnow() - timedelta(days=random.randint(0, 60)),
+                    latitude=round(lat_lng[0] + random.uniform(-0.04, 0.04), 6),
+                    longitude=round(lat_lng[1] + random.uniform(-0.04, 0.04), 6),
+                    user_id=citizen_id,
+                )
+                topup_list.append(complaint)
+
+        if not topup_list:
+            print(f"[TOPUP] All {len(ALL_WARD_NUMBERS)} wards already have >= {min_per_ward} complaints")
+            return
+
         for c in topup_list:
             db.add(c)
         db.commit()
 
-        # Group into incidents similarly
-        all_complaints = complaints_list + topup_list
-        cat_ward_buckets2 = defaultdict(list)
-        for c in all_complaints:
-            cat_ward_buckets2[(c.predicted_category, c.ward)].append(c)
+        # Group topped-up complaints into incidents
+        cat_ward_buckets = defaultdict(list)
+        # Re-read all complaints for accurate bucket counts
+        all_rows = db.query(Complaint).all()
+        for c in all_rows:
+            cat_ward_buckets[(c.predicted_category, c.ward)].append(c)
 
-        topup_incidents = []
-        inc_idx = len(incidents)
-        for (cat, ward), pool in cat_ward_buckets2.items():
+        last_inc = db.query(func.max(Incident.id)).scalar()
+        inc_counter = int(last_inc.split("-")[1]) if last_inc and last_inc.startswith("INC-") else 0
+
+        new_incidents = []
+        for (cat, ward), pool in cat_ward_buckets.items():
             if len(pool) < 3:
                 continue
             cluster_sz = min(len(pool), random.randint(3, min(25, len(pool))))
             zone = ZONE_BY_WARD.get(int(ward), "Central")
-            inc_idx += 1
-            inc_id = f"INC-{inc_idx:06d}"
+            inc_counter += 1
+            inc_id = f"INC-{inc_counter:06d}"
             incident = Incident(
                 id=inc_id,
                 incident_number=inc_id,
@@ -682,20 +715,20 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
                 recommended_action=f"Deploy {cat.lower()} maintenance crew to Ward {ward}, {zone} Zone",
                 days_open=random.randint(1, 30),
             )
-            topup_incidents.append(incident)
+            new_incidents.append(incident)
             batch = pool[:cluster_sz]
             for c in batch:
                 c.incident_id = inc_id
                 pool.remove(c)
 
-        for inc in topup_incidents:
+        for inc in new_incidents:
             db.add(inc)
         db.commit()
-        print(f"  Topped up {len(topup_list)} complaints across {len(topup_incidents)} incidents")
 
-    total_seeded = len(complaints_list) + len(topup_list)
-    print(f"  Final total: {total_seeded} complaints")
-    db.close()
+        print(f"[TOPUP] Added {len(topup_list)} complaints across {len(new_incidents)} incidents")
+        print(f"[TOPUP] All {len(ALL_WARD_NUMBERS)} wards now have >= {min_per_ward} complaints")
+    finally:
+        db.close()
 
 
 def backfill_wards_and_incidents():
