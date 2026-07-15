@@ -183,8 +183,8 @@
 }
 
 .command-map .leaflet-tile-pane {
-  filter: invert(0.9) hue-rotate(180deg) saturate(0.6) brightness(0.85) !important;
-  -webkit-filter: invert(0.9) hue-rotate(180deg) saturate(0.6) brightness(0.85) !important;
+  filter: brightness(0.83) invert(1) hue-rotate(180deg) saturate(0.4) !important;
+  -webkit-filter: brightness(0.83) invert(1) hue-rotate(180deg) saturate(0.4) !important;
 }
 
 
@@ -992,6 +992,51 @@
 
 .incident-tooltip::before {
   display: none !important;
+}
+
+.marker-cluster-small {
+  background-color: rgba(59, 130, 246, 0.25) !important;
+}
+.marker-cluster-small div {
+  background-color: rgba(59, 130, 246, 0.45) !important;
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+.marker-cluster-medium {
+  background-color: rgba(234, 179, 8, 0.25) !important;
+}
+.marker-cluster-medium div {
+  background-color: rgba(234, 179, 8, 0.45) !important;
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+.marker-cluster-large {
+  background-color: rgba(239, 68, 68, 0.25) !important;
+}
+.marker-cluster-large div {
+  background-color: rgba(239, 68, 68, 0.45) !important;
+  color: #f8fafc !important;
+  font-weight: 600 !important;
+  font-size: 13px !important;
+}
+.marker-cluster {
+  background-clip: padding-box;
+  border-radius: 20px;
+}
+.marker-cluster div {
+  width: 30px;
+  height: 30px;
+  margin-left: 5px;
+  margin-top: 5px;
+  text-align: center;
+  border-radius: 15px;
+  font-family: 'Inter', system-ui, sans-serif;
+  line-height: 30px;
+}
+.marker-cluster span {
+  line-height: 30px;
 }
 
 @media (max-width: 1200px) {

@@ -1,7 +1,11 @@
-import React, { useEffect, useState, useMemo, useCallback } from 'react';
+import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap } from 'react-leaflet';
+import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
+import 'leaflet.markercluster';
+import 'leaflet.markercluster/dist/MarkerCluster.css';
+import 'leaflet.markercluster/dist/MarkerCluster.Default.css';
 import { api } from '../services/api';
 import { tamilNaduDistricts, districtCentroids } from '../data/tamil-nadu-districts';
 import { DEPARTMENT_NAMES, getDeptI18nKey } from '../data/departments';
@@ -46,10 +50,69 @@ const getPriorityColor = (priority: string): string => {
   }
 };
 
-const TN_BOUNDS: [[number, number], [number, number]] = [
-  [6.5, 76.0],
-  [13.5, 80.5],
+const COIMBATORE_BOUNDS: [[number, number], [number, number]] = [
+  [10.75, 76.80],
+  [11.15, 77.10],
 ];
+
+const ComplaintClusterLayer = ({ pins, visible }: { pins: any[]; visible: boolean }) => {
+  const map = useMap();
+  const mcgRef = useRef<L.MarkerClusterGroup | null>(null);
+
+  useEffect(() => {
+    if (!mcgRef.current) {
+      mcgRef.current = L.markerClusterGroup({
+        chunkedLoading: true,
+        maxClusterRadius: 60,
+        spiderfyOnMaxZoom: true,
+        showCoverageOnHover: false,
+        zoomToBoundsOnClick: true,
+        disableClusteringAtZoom: 16,
+      });
+    }
+
+    const mcg = mcgRef.current;
+
+    if (!visible) {
+      if (map.hasLayer(mcg)) map.removeLayer(mcg);
+      return;
+    }
+
+    if (!map.hasLayer(mcg)) map.addLayer(mcg);
+
+    mcg.clearLayers();
+
+    const markers = pins
+      .filter(pin => pin.latitude != null && pin.longitude != null)
+      .map(pin => {
+        const marker = L.circleMarker([pin.latitude, pin.longitude], {
+          radius: 6,
+          fillColor: getPriorityColor(pin.priority),
+          fillOpacity: 0.7,
+          color: '#fff',
+          weight: 2,
+        });
+        const html = `
+          <div style="max-width:220px;font-size:12px;line-height:1.4;color:#f8fafc;">
+            <strong>${pin.title || 'Complaint'}</strong><br/>
+            <span style="color:#94a3b8;">${pin.address || ''}</span>
+            ${pin.priority ? `<br/><span style="color:${getPriorityColor(pin.priority)}">${pin.priority}</span>` : ''}
+          </div>`;
+        marker.bindTooltip(html, { direction: 'top', offset: [0, -8], className: 'complaint-pin-tooltip' });
+        return marker;
+      });
+
+    mcg.addLayers(markers);
+
+    return () => {
+      if (mcgRef.current && map.hasLayer(mcgRef.current)) {
+        map.removeLayer(mcgRef.current);
+      }
+    };
+  }, [map, pins, visible]);
+
+  return null;
+};
 
 const SpatialIntelligence = () => {
   const { t, i18n } = useTranslation();
@@ -524,18 +587,19 @@ const SpatialIntelligence = () => {
         <div className="command-map">
           <MapContainer
             key={mapKey}
-            center={[10.9, 78.6]}
-            zoom={7}
+            center={[11.0168, 76.9558]}
+            zoom={13}
             style={{ height: '100%', width: '100%' }}
             zoomControl={false}
             attributionControl={false}
-            maxBounds={TN_BOUNDS}
-            minZoom={7}
-            maxZoom={12}
+            maxBounds={COIMBATORE_BOUNDS}
+            minZoom={11}
+            maxZoom={18}
           >
             <TileLayer
               url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
               maxZoom={19}
+              attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
 
             {layers.complaints && (
@@ -657,30 +721,7 @@ const SpatialIntelligence = () => {
               );
             })}
 
-            {layers.complaintPins && complaintPins.map((pin: any) => {
-              if (pin.latitude == null || pin.longitude == null) return null;
-              return (
-                <CircleMarker
-                  key={`pin-${pin.id}`}
-                  center={[pin.latitude, pin.longitude] as any}
-                  radius={5}
-                  pathOptions={{
-                    fillColor: getPriorityColor(pin.priority),
-                    fillOpacity: 0.6,
-                    color: '#fff',
-                    weight: 2,
-                  }}
-                >
-                  <Tooltip direction="top" offset={[0, -8]} className="complaint-pin-tooltip">
-                    <div style={{ maxWidth: 220, fontSize: 12, lineHeight: 1.4 }}>
-                      <strong>{pin.title || 'Complaint'}</strong><br />
-                      <span style={{ color: '#94a3b8' }}>{pin.address || ''}</span>
-                      {pin.priority && <><br /><span style={{ color: getPriorityColor(pin.priority) }}>{pin.priority}</span></>}
-                    </div>
-                  </Tooltip>
-                </CircleMarker>
-              );
-            })}
+            <ComplaintClusterLayer pins={complaintPins} visible={layers.complaintPins} />
           </MapContainer>
 
           <div className="map-overlay-info">
