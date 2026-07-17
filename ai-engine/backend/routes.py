@@ -39,6 +39,7 @@ from department_map import (
     get_department, get_department_slug, get_slug_for_department,
     CATEGORY_DEPT_MAP, DEPARTMENT_SLUGS, SLUG_TO_DISPLAY, get_i18n_key
 )
+from officer_routing import route_complaint
 from pipeline import process_complaint_pipeline
 from services import (
     ClassificationService,
@@ -238,6 +239,15 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Submit a new citizen complaint. Runs ML pipeline inline via asyncio.create_task
     (no separate worker process needed — keeps Render free tier viable)."""
+
+    # ── E-khata/Khata rejection upstream ─────────────────────────────────
+    # Property document requests are not civic grievances.
+    from department_map import is_khata_complaint, get_khata_rejection_response
+    combined_text = f"{request.title} {request.description}"
+    if is_khata_complaint(combined_text):
+        khata_resp = get_khata_rejection_response()
+        raise HTTPException(status_code=400, detail=khata_resp["message"])
+
     complaint_id = str(uuid.uuid4())
     complaint = Complaint(
         id=complaint_id,
@@ -354,8 +364,8 @@ async def get_complaint_photo(complaint_id: str, db_user: User = Depends(get_cur
 
 
 @complaint_router.get("/debug/env")
-async def debug_env():
-    """Check S3 environment variable status (no auth required, for debugging)."""
+async def debug_env(db_user: User = Depends(get_current_user)):
+    """Check S3 environment variable status (auth-protected)."""
     from storage import S3Storage
     s3 = S3Storage()
     return {
@@ -388,6 +398,7 @@ async def get_my_complaints(db_user: User = Depends(get_current_user), db: Sessi
             "similarity_score": c.similarity_score,
             "merge_reason": c.merge_reason,
             "date_received": c.created_at.isoformat() if c.created_at else None,
+            "assigned_officer": route_complaint(c.ward or "", c.predicted_category or ""),
             "incident": {
                 "id": incident.id if incident else None,
                 "incident_number": incident.incident_number if incident else None,
@@ -438,6 +449,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
         "predicted_category": complaint.predicted_category,
         "department": get_department(complaint.predicted_category),
         "confidence": complaint.confidence,
+        "assigned_officer": route_complaint(complaint.ward or "", complaint.predicted_category or ""),
         "priority": complaint.priority,
         "similarity_score": complaint.similarity_score,
         "merge_reason": complaint.merge_reason,
@@ -1663,27 +1675,26 @@ debug_router = APIRouter(prefix="/debug", tags=["Debug"])
 
 @debug_router.post("/reseed")
 async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
-    """Drop and re-seed complaints/incidents/users with Coimbatore data.
+    """Drop and re-seed complaints/incidents/users with Bangalore (BBMP) data.
 
     Requires Executive authentication (collector@giips.gov.in).
-    Run this after deploying Coimbatore ward changes to refresh the deployed DB.
+    Seeds from the 126K-row Bangalore training dataset + 369 GBA wards.
     """
     import traceback
     if db_user.role not in ("Executive", "Collector"):
         raise HTTPException(status_code=403, detail="Executive or Collector access required")
     try:
-        from database import seed_demo_users, seed_synthetic_data
+        from database import seed_demo_users, seed_bangalore_data
         from sqlalchemy import text
-        # Delete in FK-safe order for PostgreSQL
         for tbl in ["priority_history", "notifications", "department_metrics", "complaints", "incidents"]:
             try:
                 db.execute(text(f"DELETE FROM {tbl}"))
-            except Exception as tbl_err:
-                pass  # table may not exist on older schemas
+            except Exception:
+                pass
         db.commit()
         seed_demo_users()
-        seed_synthetic_data()
-        return {"message": "Database re-seeded with Coimbatore data"}
+        seed_bangalore_data()
+        return {"message": "Database re-seeded with Bangalore (BBMP) data"}
     except Exception as e:
         db.rollback()
         detail = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
@@ -1692,15 +1703,15 @@ async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(ge
 
 @debug_router.post("/topup")
 async def debug_topup(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
-    """Top up wards to ensure each has at least 50 complaints.
+    """Top up Bangalore wards to ensure each has at least 50 complaints.
     Idempotent — safe to call multiple times.
     """
     if db_user.role not in ("Executive", "Collector"):
         raise HTTPException(status_code=403, detail="Executive or Collector access required")
     try:
-        from database import topup_wards
-        topup_wards(min_per_ward=50)
-        return {"message": "Wards topped up successfully"}
+        from database import topup_bangalore_wards
+        topup_bangalore_wards(min_per_ward=50)
+        return {"message": "Bangalore wards topped up successfully"}
     except Exception as e:
         import traceback
         detail = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"

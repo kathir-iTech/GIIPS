@@ -160,6 +160,11 @@ const MyComplaints = () => {
                     <span className="meta-item"><Calendar size={14} /> {c.date_received ? new Date(c.date_received).toLocaleDateString('en-IN') : t('common.na')}</span>
                     <span className="meta-item"><AlertCircle size={14} /> {c.predicted_category || t('common.uncategorized')}</span>
                   </div>
+                  {c.assigned_officer?.name && (
+                    <div style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: 12 }}>
+                      {t('myComplaints.assignedTo', { name: c.assigned_officer.name })}
+                    </div>
+                  )}
                   <div className="card-footer">
                     <div className="confidence-bar">
                       <div className="confidence-fill" style={{ width: `${Math.round((c.confidence || 0) * 100)}%` }}></div>

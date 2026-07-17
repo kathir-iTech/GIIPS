@@ -80,6 +80,22 @@ export interface ClusterDetail {
 export type SortDirection = 'asc' | 'desc';
 export type SortField = 'priority_score' | 'cluster_size' | 'days_open' | 'category' | 'incident_number' | 'ward';
 
+export interface AssignedOfficer {
+  name?: string | null;
+  phone?: string | null;
+  role?: string | null;
+  zone_name?: string | null;
+  corporation_id?: string | null;
+  department?: string | null;
+  category?: string | null;
+  primary_role?: string | null;
+  kml_id?: string | null;
+  ward_name?: string | null;
+  ward_number?: string | null;
+  error?: string | null;
+  fallback_reason?: string | null;
+}
+
 export interface CitizenComplaint {
   id: string;
   title: string;
@@ -95,6 +111,7 @@ export interface CitizenComplaint {
   date_received: string;
   image_path?: string | null;
   image_url?: string | null;
+  assigned_officer?: AssignedOfficer | null;
   incident?: {
     id: string | null;
     incident_number: string | null;

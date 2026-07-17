@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2 } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User } from 'lucide-react';
 import './ComplaintDetail.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -211,6 +211,63 @@ const ComplaintDetailPage = () => {
                 )}
               </div>
             )}
+
+            {data.predicted_category === 'General / Manual Triage' ? (
+              <div className="incident-section">
+                <h3><User size={18} /> {t('complaintDetail.sectionOfficer')}</h3>
+                <div className="incident-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+                  <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    <strong style={{ color: 'var(--text-primary)' }}>{t('complaintDetail.noOfficerYet')}</strong><br />
+                    {t('complaintDetail.underReview')}
+                  </p>
+                </div>
+              </div>
+            ) : data.assigned_officer && data.assigned_officer.name ? (
+              <div className="incident-section">
+                <h3><User size={18} /> {t('complaintDetail.sectionOfficer')}</h3>
+                <div className="incident-card">
+                  <div className="incident-row">
+                    <span>{t('complaintDetail.fieldOfficerName')}</span>
+                    <strong>{data.assigned_officer.name}</strong>
+                  </div>
+                  <div className="incident-row">
+                    <span>{t('complaintDetail.fieldOfficerRole')}</span>
+                    <strong>{data.assigned_officer.role}</strong>
+                  </div>
+                  <div className="incident-row">
+                    <span>{t('complaintDetail.fieldOfficerPhone')}</span>
+                    <strong>
+                      {data.assigned_officer.phone ? (
+                        <a href={`tel:${data.assigned_officer.phone}`} style={{ color: 'inherit', textDecoration: 'none' }}>
+                          <Phone size={14} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                          {data.assigned_officer.phone}
+                        </a>
+                      ) : t('common.na')}
+                    </strong>
+                  </div>
+                  <div className="incident-row">
+                    <span>{t('complaintDetail.fieldOfficerZone')}</span>
+                    <strong>{data.assigned_officer.zone_name || t('common.na')}</strong>
+                  </div>
+                  <div className="incident-row">
+                    <span>{t('complaintDetail.fieldOfficerCorporation')}</span>
+                    <strong>{data.assigned_officer.corporation_id || t('common.na')}</strong>
+                  </div>
+                  {data.assigned_officer.fallback_reason && (
+                    <p style={{ margin: '8px 0 0', fontSize: 12, color: 'var(--text-muted)', borderTop: '1px solid var(--border-subtle)', paddingTop: 8 }}>{data.assigned_officer.fallback_reason}</p>
+                  )}
+                </div>
+              </div>
+            ) : data.assigned_officer?.error ? (
+              <div className="incident-section">
+                <h3><User size={18} /> {t('complaintDetail.sectionOfficer')}</h3>
+                <div className="incident-card" style={{ borderLeft: '3px solid #f59e0b' }}>
+                  <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)' }}>
+                    {t('complaintDetail.officerNotFound')}
+                  </p>
+                </div>
+              </div>
+            ) : null}
           </div>
 
           <div className="side-card glass-card">

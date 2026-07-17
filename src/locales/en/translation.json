@@ -414,7 +414,16 @@
     "verifyPlaceholder": "Enter 6-digit code",
     "verifySubmit": "Confirm Resolution",
     "verifySuccess": "Resolution confirmed. Thank you!",
-    "verifyError": "Invalid code. Please check and try again."
+    "verifyError": "Invalid code. Please check and try again.",
+    "sectionOfficer": "Assigned Officer",
+    "fieldOfficerName": "Officer:",
+    "fieldOfficerRole": "Role:",
+    "fieldOfficerPhone": "Phone:",
+    "fieldOfficerZone": "Zone:",
+    "fieldOfficerCorporation": "Corporation:",
+    "noOfficerYet": "No officer assigned yet",
+    "underReview": "This complaint is under manual review. An officer will be assigned shortly.",
+    "officerNotFound": "Officer assignment pending"
   },
 
   "myComplaints": {
@@ -428,7 +437,8 @@
     "emptyTitle": "No complaints found",
     "emptyBody": "You have not submitted any complaints yet, or none match your filters.",
     "confidenceLabel": "Match confidence:",
-    "standalone": "Standalone complaint"
+    "standalone": "Standalone complaint",
+    "assignedTo": "Assigned to: {{name}}"
   },
 
   "incidents": {
@@ -831,7 +841,7 @@
   "spatialIntelligence": {
     "header": {
       "title": "Spatial Intelligence Command Center",
-      "subtitle": "AI-Powered Governance GIS — Tamil Nadu State Overview"
+      "subtitle": "AI-Powered Governance GIS — Coimbatore City Overview"
     },
     "loading": {
       "feeds": "Loading data feeds...",
@@ -913,7 +923,7 @@
       "brand": "GIIPS Spatial Intelligence",
       "systemOperational": "System Operational",
       "dataRefreshed": "Data refreshed",
-      "stateBadge": "Tamil Nadu"
+      "stateBadge": "Coimbatore"
     },
     "popup": {
       "category": "Category",

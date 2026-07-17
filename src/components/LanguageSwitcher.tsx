@@ -2,9 +2,16 @@ import type React from 'react';
 import { useTranslation } from 'react-i18next';
 import './LanguageSwitcher.css';
 
+const LANG_MAP: Record<string, string> = {
+  en: 'en',
+  ta: 'ta',
+  kn: 'kn',
+};
+
 const LanguageSwitcher: React.FC = () => {
   const { i18n } = useTranslation();
-  const current = i18n.language?.startsWith('ta') ? 'ta' : 'en';
+  const lang = i18n.language?.split('-')[0] || 'en';
+  const current = LANG_MAP[lang] || 'en';
 
   return (
     <div className="lang-switcher">
@@ -19,6 +26,12 @@ const LanguageSwitcher: React.FC = () => {
         onClick={() => i18n.changeLanguage('ta')}
       >
         தமிழ்
+      </button>
+      <button
+        className={`lang-option ${current === 'kn' ? 'active' : ''}`}
+        onClick={() => i18n.changeLanguage('kn')}
+      >
+        ಕನ್ನಡ
       </button>
     </div>
   );
