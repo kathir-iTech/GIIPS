@@ -27,5 +27,9 @@ Thumbs.db
 # Logs
 *.log
 
+# Build artifacts
+tsconfig.tsbuildinfo
+tsconfig.node.tsbuildinfo
+
 # Metrics cache (embeddings, etc.)
 metrics/cache/

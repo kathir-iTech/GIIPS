@@ -129,3 +129,31 @@ def migrate_old_department(old_dept: Optional[str]) -> str:
     if old_dept and old_dept in SLUG_TO_DISPLAY.values():
         return old_dept
     return SLUG_TO_DISPLAY[DEFAULT_DEPT_SLUG]
+
+
+# ── E-khata / Khata rejection (upstream filter) ──────────────────────────
+
+KHATA_KEYWORDS = [
+    "khata", "e-khata", "ekhata", "property document",
+    "property card", "title deed", "land record",
+    "patta", "chitta", "adangal", "fmb", "tSLR",
+]
+
+def is_khata_complaint(text: str) -> bool:
+    """Return True if the complaint text is about property document requests,
+    which are not civic grievances and should be rejected upstream."""
+    lower = text.lower()
+    return any(kw in lower for kw in KHATA_KEYWORDS)
+
+
+KHATA_REJECTION_RESPONSE = {
+    "message": (
+        "E-khata / Khata requests are not civic grievances. "
+        "Please visit the Tamil Nadu e-Service Centre or "
+        "https://eservices.tn.gov.in for property document services."
+    ),
+}
+
+def get_khata_rejection_response() -> dict:
+    """Return the standard rejection response for khata-related submissions."""
+    return KHATA_REJECTION_RESPONSE

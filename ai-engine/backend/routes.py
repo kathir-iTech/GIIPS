@@ -1743,16 +1743,17 @@ debug_router = APIRouter(prefix="/debug", tags=["Debug"])
 
 @debug_router.post("/reseed")
 async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
-    """Drop and re-seed complaints/incidents/users with Bangalore (BBMP) data.
+    """Drop and re-seed complaints/incidents/users with Coimbatore CCMC data.
 
     Requires Executive authentication (collector@giips.gov.in).
-    Seeds from the 126K-row Bangalore training dataset + 369 GBA wards.
+    Seeds real CCMC ward structure with 10K synthetic civic complaints
+    across all 100 wards and 5 zones.
     """
     import traceback
     if db_user.role not in ("Executive", "Collector"):
         raise HTTPException(status_code=403, detail="Executive or Collector access required")
     try:
-        from database import seed_demo_users, seed_bangalore_data
+        from database import seed_demo_users, seed_synthetic_data
         from sqlalchemy import text
         for tbl in ["priority_history", "notifications", "department_metrics", "complaints", "incidents"]:
             try:
@@ -1761,8 +1762,8 @@ async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(ge
                 pass
         db.commit()
         seed_demo_users()
-        seed_bangalore_data()
-        return {"message": "Database re-seeded with Bangalore (BBMP) data"}
+        seed_synthetic_data(num_complaints=10000, duplicate_rate=0.15)
+        return {"message": "Database re-seeded with Coimbatore (CCMC) data"}
     except Exception as e:
         db.rollback()
         detail = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
@@ -1771,15 +1772,15 @@ async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(ge
 
 @debug_router.post("/topup")
 async def debug_topup(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
-    """Top up Bangalore wards to ensure each has at least 50 complaints.
+    """Top up Coimbatore CCMC wards to ensure each has at least 50 complaints.
     Idempotent — safe to call multiple times.
     """
     if db_user.role not in ("Executive", "Collector"):
         raise HTTPException(status_code=403, detail="Executive or Collector access required")
     try:
-        from database import topup_bangalore_wards
-        topup_bangalore_wards(min_per_ward=50)
-        return {"message": "Bangalore wards topped up successfully"}
+        from database import topup_wards
+        topup_wards(min_per_ward=50)
+        return {"message": "Coimbatore wards topped up successfully"}
     except Exception as e:
         import traceback
         detail = f"{type(e).__name__}: {e}\n{traceback.format_exc()}"
