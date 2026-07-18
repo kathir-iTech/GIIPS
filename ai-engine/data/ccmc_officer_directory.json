@@ -1,0 +1,3924 @@
+{
+    "meta": {
+        "source": "Coimbatore City Municipal Corporation - ccmc.gov.in (mirrored via HTTrack)",
+        "extraction_date": "2026-07-15",
+        "description": "Structured grievance routing directory extracted from CCMC mirrored website and PDF documents",
+        "sites_used": [
+            "c_1/ccmc.gov.in/img/upload/Property_Tax_-_Top_Defualters_List1.pdf",
+            "https://www.ccmc.gov.in/index.php/createpage/right-to-information-act",
+            "https://www.ccmc.gov.in/index.php/administration/payment-collection-centers",
+            "c_1/ccmc.gov.in/img/upload/MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        ]
+    },
+    "officer_directory": [
+        {
+            "id": 1,
+            "officer_name": "Dr. M. Sharmila",
+            "designation": "Appellate Authority / Deputy Commissioner",
+            "department": "General Administration",
+            "complaint_category": "Right to Information",
+            "subjects_original": "Subject related to Right to Information",
+            "phone": "9443777666",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Appellate Authority"
+        },
+        {
+            "id": 2,
+            "officer_name": "Mr. Arasu Selvaraj",
+            "designation": "City Engineer",
+            "department": "Engineering",
+            "complaint_category": "Engineering Section",
+            "subjects_original": "Subjects related to Engineering Section",
+            "phone": "9443799211",
+            "zones": [
+                "EAST",
+                "WEST",
+                "CENTRAL",
+                "NORTH",
+                "SOUTH"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 3,
+            "officer_name": "Mr. Murugesan",
+            "designation": "Executive Engineer (North & South)",
+            "department": "Engineering",
+            "complaint_category": "Civil Works, Water Supply, Engineering",
+            "subjects_original": "Subjects related to Civil works, Water supply connection, Engineering works etc. relating to East and North zone",
+            "phone": "9865190905",
+            "zones": [
+                "EAST",
+                "NORTH"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 4,
+            "officer_name": "Mrs. K. Jayalakshmi",
+            "designation": "Executive Engineer (East)",
+            "department": "Engineering",
+            "complaint_category": "Civil Works, Water Supply, Engineering",
+            "subjects_original": "Subjects related to Civil works, Water supply connection, Engineering works relating to South and West zone",
+            "phone": "9442104122",
+            "zones": [
+                "SOUTH",
+                "WEST"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 5,
+            "officer_name": "Ms. Sasipriya",
+            "designation": "Executive Engineer (JNNURM) (i/c)",
+            "department": "JNNURM",
+            "complaint_category": "JNNURM Schemes",
+            "subjects_original": "Subjects related to Jnnurm Schemes",
+            "phone": "9489206018",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 6,
+            "officer_name": "Dr. Pradeep V. Krishankumar",
+            "designation": "City Health Officer",
+            "department": "Public Health",
+            "complaint_category": "Public Health",
+            "subjects_original": "Subjects related to Public Health etc.",
+            "phone": "9443799202",
+            "zones": [
+                "EAST",
+                "WEST",
+                "CENTRAL",
+                "NORTH",
+                "SOUTH"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 7,
+            "officer_name": "Mr. K. Pandia Raja Sekaran",
+            "designation": "Corporation Education Officer (i/c)",
+            "department": "Education",
+            "complaint_category": "Education",
+            "subjects_original": "Subjects related to Education",
+            "phone": "9443799229",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 8,
+            "officer_name": "Mrs. K. Karuppathal",
+            "designation": "Executive Engineer (Planning)",
+            "department": "Town Planning",
+            "complaint_category": "Town Planning",
+            "subjects_original": "Subjects related to Town Planning",
+            "phone": "9787715156",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 9,
+            "officer_name": "Mr. R. Sundarajan",
+            "designation": "Assistant Commissioner (Accounts)",
+            "department": "Accounts",
+            "complaint_category": "Accounts",
+            "subjects_original": "Subjects related to Accounts",
+            "phone": "9442104146",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 10,
+            "officer_name": "Mr. V. Saravanan",
+            "designation": "Assistant Commissioner (Personnel)",
+            "department": "Personnel Administration",
+            "complaint_category": "Personnel Administration",
+            "subjects_original": "Subjects related to Personnel Administration",
+            "phone": "9442501877",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 11,
+            "officer_name": "Mr. T. Muthuramalingam",
+            "designation": "Assistant Commissioner (East)",
+            "department": "Zonal Administration",
+            "complaint_category": "East Zone",
+            "subjects_original": "Subjects related to East Zone",
+            "phone": "9443799207",
+            "zones": [
+                "EAST"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 12,
+            "officer_name": "Mr. V. Saravanan",
+            "designation": "Assistant Commissioner (West)",
+            "department": "Zonal Administration",
+            "complaint_category": "West Zone",
+            "subjects_original": "Subjects related to West Zone",
+            "phone": "9442501877",
+            "zones": [
+                "WEST"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 13,
+            "officer_name": "Mr. N. Annadurai",
+            "designation": "Assistant Commissioner (South)",
+            "department": "Zonal Administration",
+            "complaint_category": "South Zone",
+            "subjects_original": "Subjects related to South Zone",
+            "phone": "9443799212",
+            "zones": [
+                "SOUTH"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 14,
+            "officer_name": "Mr. A. Sankar",
+            "designation": "Assistant Commissioner (Central)",
+            "department": "Zonal Administration",
+            "complaint_category": "Central Zone",
+            "subjects_original": "Subjects related to Central Zone",
+            "phone": "9443799236",
+            "zones": [
+                "CENTRAL"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 15,
+            "officer_name": "Mrs. R. Mohanasundari",
+            "designation": "Assistant Commissioner (North)",
+            "department": "Zonal Administration",
+            "complaint_category": "North Zone",
+            "subjects_original": "Subjects related to North Zone",
+            "phone": "9489206045",
+            "zones": [
+                "NORTH"
+            ],
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 16,
+            "officer_name": "Mr. Senthilkumar Rathinam",
+            "designation": "Assistant Commissioner (Revenue)",
+            "department": "Revenue",
+            "complaint_category": "Revenue",
+            "subjects_original": "Subjects related to Revenue",
+            "phone": "9443799201",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 17,
+            "officer_name": "Mr. A. Amalraj",
+            "designation": "Council Secretary",
+            "department": "Council",
+            "complaint_category": "Council Secretary",
+            "subjects_original": "Subjects related to Council Secretary",
+            "phone": "9442104128",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 18,
+            "officer_name": "Mr. Tamilvendan",
+            "designation": "Account Officer (Water Supply)",
+            "department": "Accounts",
+            "complaint_category": "Water Supply Accounts",
+            "subjects_original": "Subjects related to Water Supply",
+            "phone": "9443799220",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 19,
+            "officer_name": "Mr. Lakshmanan",
+            "designation": "PF Officer",
+            "department": "Accounts",
+            "complaint_category": "Provident Fund",
+            "subjects_original": "Subjects related to PF",
+            "phone": "9894826510",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 20,
+            "officer_name": "Mr. A. Amalraj",
+            "designation": "Law Officer",
+            "department": "Legal Wing",
+            "complaint_category": "Court Cases",
+            "subjects_original": "Subjects related to Court Cases",
+            "phone": "9442104128",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        },
+        {
+            "id": 21,
+            "officer_name": "Mrs. R. Kavitha",
+            "designation": "Deputy Tahsildar (Election)",
+            "department": "Election",
+            "complaint_category": "Election",
+            "subjects_original": "Subjects related to Election",
+            "phone": "9944876710",
+            "zones": null,
+            "ward_numbers": null,
+            "role_type": "Public Information Officer"
+        }
+    ],
+    "payment_collection_centers": [
+        {
+            "id": 1,
+            "center_name": "EAST ZONE - Wide Area Network",
+            "type": "ZONAL OFFICE - FACILITATION CENTER",
+            "address": "Trichy Road, Singanallur",
+            "zone": "EAST ZONE"
+        },
+        {
+            "id": 2,
+            "center_name": "WEST ZONE - Wide Area Network",
+            "type": "ZONAL OFFICE - FACILITATION CENTER",
+            "address": "Ramachandra Road, R.S.Puram",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 3,
+            "center_name": "CENTRAL ZONE - Wide Area Network",
+            "type": "ZONAL OFFICE - FACILITATION CENTER",
+            "address": "Hosur Road, Coimbatore",
+            "zone": "CENTRAL ZONE"
+        },
+        {
+            "id": 4,
+            "center_name": "NORTH ZONE - Wide Area Network",
+            "type": "ZONAL OFFICE - FACILITATION CENTER",
+            "address": "R.T.O Office Road, Gandhipuram",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 5,
+            "center_name": "SOUTH ZONE - Internet",
+            "type": "ZONAL OFFICE - FACILITATION CENTER",
+            "address": "Palakkad Main Road, Kuniyamuthur (POST), Coimbatore",
+            "zone": "SOUTH ZONE"
+        },
+        {
+            "id": 6,
+            "center_name": "MAIN OFFICE - Collection Center",
+            "type": "COLLECTION CENTER (WIDE AREA NETWORK)",
+            "address": "Corporation Office, Town Hall",
+            "zone": "CENTRAL ZONE"
+        },
+        {
+            "id": 7,
+            "center_name": "SUNGAM - Collection Center",
+            "type": "COLLECTION CENTER (WIDE AREA NETWORK)",
+            "address": "Trichy Road, Sungam",
+            "zone": "CENTRAL ZONE"
+        },
+        {
+            "id": 8,
+            "center_name": "METTUPALAYAM ROAD - Collection Center",
+            "type": "COLLECTION CENTER (WIDE AREA NETWORK)",
+            "address": "Mettupalayam Road, Coimbatore",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 9,
+            "center_name": "TATABAD - Collection Center",
+            "type": "COLLECTION CENTER (WIDE AREA NETWORK)",
+            "address": "Tatabad, Coimbatore",
+            "zone": "CENTRAL ZONE"
+        },
+        {
+            "id": 10,
+            "center_name": "SAIBABA COLONY - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Mettupalayam Road, Coimbatore",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 11,
+            "center_name": "P.N.PUDUR - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "P.N.Pudur, Coimbatore",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 12,
+            "center_name": "SELVAPURAM - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Selvapuram, Coimbatore",
+            "zone": "SOUTH ZONE"
+        },
+        {
+            "id": 13,
+            "center_name": "PEELAMEDU - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Pioneer Mill Road, Peelamedu",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 14,
+            "center_name": "KOVUNDAMPALAYAM - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Near Fire Station, Kovundampalayam",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 15,
+            "center_name": "GANAPATHY - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Near Rayappa Tank, Ganapathy",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 16,
+            "center_name": "RATHINAPURI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Corporation Elementary School Campus, Rathinapuri",
+            "zone": "CENTRAL ZONE"
+        },
+        {
+            "id": 17,
+            "center_name": "RAMAKRISHNAPURAM (MSR TANK) - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Sathy Road MSR Tank, Ramakrishnapuram",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 18,
+            "center_name": "VARATHARAJAPURAM - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "J.J Kalyana Mandapam, Uppilipalayam",
+            "zone": "EAST ZONE"
+        },
+        {
+            "id": 19,
+            "center_name": "KURICHI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Podanur, Coimbatore",
+            "zone": "SOUTH ZONE"
+        },
+        {
+            "id": 20,
+            "center_name": "KOVUNDAMPALAYAM - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Kovundampalayam, Coimbatore",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 21,
+            "center_name": "KALAPATTI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "V.K.Road, Kalapatti (post), Coimbatore",
+            "zone": "EAST ZONE"
+        },
+        {
+            "id": 22,
+            "center_name": "SARAVANAMPATTI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "155, Sathy Main Road, Saravanampatti",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 23,
+            "center_name": "THUDIYALUR - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Railway Station Road, Thudiyalur",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 24,
+            "center_name": "VADAVALLI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Maruthamalai Main Road, Vadavalli, Coimbatore",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 25,
+            "center_name": "VELLAKINAR - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Thudiyalur Main Road, Coimbatore",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 26,
+            "center_name": "VEERAKERALAM - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Mariamman Koil Street, Veerakeralam, Coimbatore",
+            "zone": "WEST ZONE"
+        },
+        {
+            "id": 27,
+            "center_name": "CHINNAVEDAMPATTI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "74, Athipalayam Road, Chinnavedampatti, Coimbatore",
+            "zone": "NORTH ZONE"
+        },
+        {
+            "id": 28,
+            "center_name": "VILLANKURICHI - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Gandhi Street, Villankurichi, Coimbatore",
+            "zone": "EAST ZONE"
+        },
+        {
+            "id": 29,
+            "center_name": "SUNDARAPURAM - Collection Center",
+            "type": "COLLECTION CENTER (INTERNET)",
+            "address": "Pollachi Main Road, Sundarapuram, Coimbatore",
+            "zone": "SOUTH ZONE"
+        }
+    ],
+    "general_contact": {
+        "office_name": "Corporation of Coimbatore",
+        "address": "Coimbatore - 641 001, Tamil Nadu",
+        "phone_numbers": [
+            "+91 - 422 - 2390261",
+            "+91 - 422 - 2390262",
+            "+91 - 422 - 2390263"
+        ],
+        "fax": "91 - 422 - 2390167",
+        "email": "commr.coimbatore@tn.gov.in",
+        "whatsapp_grievance": "8190000200",
+        "grievance_portal": "http://grievance.smartccmc.com/",
+        "working_hours": {
+            "monday_friday": "10am to 5.45pm",
+            "saturday": "10am to 2pm",
+            "sunday": "Closed",
+            "help_desk": "Open 24/7"
+        }
+    },
+    "administrative_boundaries_coimbatore_district": {
+        "source": "https://coimbatore.nic.in/local-bodies/ and https://coimbatore.nic.in/revenue-administration/",
+        "local_bodies": {
+            "corporation": {
+                "count": 1,
+                "names": [
+                    "Coimbatore Municipal Corporation"
+                ],
+                "zones": [
+                    "EAST",
+                    "WEST",
+                    "CENTRAL",
+                    "NORTH",
+                    "SOUTH"
+                ],
+                "wards": "100 wards (per 2022 delimitation, exact count referenced in Ward Delimitation PDF on ccmc.gov.in)"
+            },
+            "municipalities": {
+                "count": 7,
+                "names": [
+                    "Mettupalayam Municipality",
+                    "Pollachi Municipality",
+                    "Valparai Municipality",
+                    "Kovilpalayam Municipality",
+                    "Thondamuthur Municipality",
+                    "Sulur Municipality",
+                    "Annur Municipality"
+                ]
+            },
+            "district_panchayat": {
+                "count": 1,
+                "name": "Coimbatore District Panchayat"
+            },
+            "panchayat_unions": {
+                "count": 12,
+                "names": [
+                    "Annur",
+                    "Avinashi",
+                    "Gudimangalam",
+                    "Karimangalam",
+                    "Kinathukadavu",
+                    "Madukkarai",
+                    "Periyanaickenpalayam",
+                    "Pollachi (North)",
+                    "Pollachi (South)",
+                    "Sarkar Samakulam",
+                    "Sulur",
+                    "Thondamuthur"
+                ]
+            },
+            "town_panchayats": {
+                "count": 33,
+                "names": [
+                    "Achipatti",
+                    "Anaimalai",
+                    "Chinnakalar",
+                    "Chittanatham",
+                    "Chinna Thadagam",
+                    "Devarayapuram",
+                    "Dhaliyur",
+                    "Ettimadai",
+                    "Goundampalayam",
+                    "Irugur",
+                    "Kaniyur",
+                    "Kannampalayam",
+                    "Karumathampatti",
+                    "Kottur",
+                    "Malumichampatti",
+                    "Mandripatti",
+                    "Mopperipalayam",
+                    "Othakalmandapam",
+                    "Pallapalayam",
+                    "Pannimadai",
+                    "Periyanegamam",
+                    "Perur",
+                    "Pooluvapatti",
+                    "Samathur",
+                    "Sarkarsamakulam",
+                    "Sevur",
+                    "Sirumugai",
+                    "Sulur",
+                    "Thirumalayampalayam",
+                    "Vadakkipalayam",
+                    "Vadiyur",
+                    "Vellalur",
+                    "Vettaikaranpudur"
+                ]
+            },
+            "village_panchayats": {
+                "count": 227,
+                "note": "Full list available in coimbatore.nic.in/local-bodies/"
+            }
+        },
+        "revenue_administration": {
+            "revenue_divisions": [
+                "Coimbatore",
+                "Pollachi",
+                "Tiruppur"
+            ],
+            "taluks": [
+                "Coimbatore (North)",
+                "Coimbatore (South)",
+                "Pollachi",
+                "Anaimalai",
+                "Valparai",
+                "Sulur",
+                "Palladam",
+                "Udumalaipettai",
+                "Madathukulam",
+                "Avinashi",
+                "Tiruppur"
+            ],
+            "revenue_villages": 295
+        },
+        "development_administration": {
+            "blocks": 12,
+            "panchayat_union_names": [
+                "Annur",
+                "Avinashi",
+                "Gudimangalam",
+                "Karimangalam",
+                "Kinathukadavu",
+                "Madukkarai",
+                "Periyanaickenpalayam",
+                "Pollachi (North)",
+                "Pollachi (South)",
+                "Sarkar Samakulam",
+                "Sulur",
+                "Thondamuthur"
+            ]
+        },
+        "village_boundaries": {
+            "source": "c__3.pdf through c__13.pdf",
+            "taluks": {
+                "Anaimalai": [
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI ANAIMALAI",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI KALIYAPURAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI ODAYAKULAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI PETHANAICKENUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI SOMANTHURAI",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI THENSANGAMPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI THENSITTOR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE ANAIMALAI VETTAIKARANPUTHUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR ANGALAKURICHI",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR ARTHANARIPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR JALLIPATTY",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR KAMBALAPATTY",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR KARIYAMCHEITTIPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR KOTTUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR NALLUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR PAZHAYUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR PILSINAMPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR S. PONNAPURAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR SAMATHUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR THALAVAIPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR THENKUMARAPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR THONDAMUTHUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR THURAIYUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE KOTTUR VEERALPATTI",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM AATHUPOLLACHI",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM AMBARAMPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM MARCHANAICKENPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM NAICKENPALAYAM",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM PERIYAPODU",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM SINGANALLUR",
+                    "COIMBATORE POLLACHI ANAIMALAI ANAIMALAI ZONE MARCHANAICKENPALAYAM VAKKAMPALAYAM"
+                ],
+                "Annur": [
+                    "AAMBOTHI",
+                    "AKKARI SENGAPALLY",
+                    "ALLAPALAYAM",
+                    "ANNUR",
+                    "ANNUR METTUPALAYAM",
+                    "BOGALUR",
+                    "KANJAMPALLY",
+                    "KANUVAKARAI",
+                    "KAREGOUNDENPALAYAM",
+                    "KARIYAMPALAYAM",
+                    "KATTAMPATTY",
+                    "KUNNATHUR",
+                    "KUPPANUR",
+                    "KUPPEPALAYAM",
+                    "MASAGOUNDENPALAYAM",
+                    "NARANAPURAM",
+                    "ODDERPALAYAM",
+                    "PACHAPALAYAM",
+                    "PASOOR",
+                    "PILLAYAPAMPALAYAM",
+                    "SARKAR SAMAKULAM AGRAHARASAMAKULAM",
+                    "SARKAR SAMAKULAM IDIKARAI",
+                    "SARKAR SAMAKULAM KALLIPALAYAM",
+                    "SARKAR SAMAKULAM KEERANATHAM",
+                    "SARKAR SAMAKULAM KONDAYAMPALAYAM",
+                    "SARKAR SAMAKULAM SARKAR SAMAKULAM",
+                    "SARKAR SAMAKULAM VELLAMADAI",
+                    "SARKAR SAMAKULAM VELLANAIPATTY",
+                    "VADAKKALUR",
+                    "VADAVALLI"
+                ],
+                "Coimbatore North": [
+                    "ANUPPERPALAYAM",
+                    "BILLICHI (E) and (W)",
+                    "CHINNAVEDAMPATTY",
+                    "GANAPATHY (E) and (W)",
+                    "GUDALUR (N) and (S)",
+                    "KALAPATTY (EAST)",
+                    "KALAPATTY (WEST)",
+                    "KRISHNARAYAPUARAM",
+                    "PERIANAICKANPALAYAM Perianaickenpalayam KURUDAMPALAYAM",
+                    "PERIANAICKANPALAYAM Perianaickenpalayam NAIKENPALAYAM",
+                    "PERIANAICKANPALAYAM Perianaickenpalayam NARASIMMANAIKENPALAYAM",
+                    "PERIANAICKANPALAYAM Perianaickenpalayam PERIYANAIKANPALAYAM",
+                    "PERIANAICKANPALAYAM Perianaickenpalayam VEERAPANDI",
+                    "PERIANAICKANPALAYAM Thudiyalur CHINNATHADAGAM",
+                    "PERIANAICKANPALAYAM Thudiyalur GOUNDENPALAYAM",
+                    "PERIANAICKANPALAYAM Thudiyalur NANJUNDAPURAM",
+                    "PERIANAICKANPALAYAM Thudiyalur PANNIMADAI",
+                    "PERIANAICKANPALAYAM Thudiyalur SOMAYAMPALAYAM",
+                    "PERIANAICKANPALAYAM Thudiyalur THUDIYALUR",
+                    "PERIANAICKANPALAYAM Thudiyalur VEERAPANDI",
+                    "PULIYAKULAM",
+                    "SANGANUR",
+                    "SARAVANMPATTY",
+                    "THELUNGUPALAYAM",
+                    "VELLAKINAR",
+                    "VILANKURICHY"
+                ],
+                "Kinathukadavu": [
+                    "ANDIPALAYAM",
+                    "ARASAMPALAYAM",
+                    "CHETTIYAKKAPALAYAM",
+                    "DEVANAMPALAYAM",
+                    "DEVARAYAPURAM",
+                    "GOVINDAPURAM",
+                    "KAKKADAVU",
+                    "KANIYALAMPALYAM",
+                    "KAPPALANKARAI",
+                    "KATTAMPATTY",
+                    "KINTHUKADAVU",
+                    "KODANGIPALAYAM",
+                    "KODAVADI",
+                    "KONDAMPATTY",
+                    "KRISHNARAYAPURAM",
+                    "KURUNALLIPALAYAM",
+                    "KUTHIRAYALAMPALAYAM",
+                    "METTUBAVI",
+                    "METTUPALAYAM",
+                    "MULLIPATTI",
+                    "MUTHUR",
+                    "NALLATTIPALAYAM",
+                    "PANAPATTI",
+                    "PERIYAKALANDAI",
+                    "POTTAYANDIPURAM",
+                    "SANKARAYAPURAM",
+                    "SOKKANUR",
+                    "SOLAVAMPALAYAM",
+                    "SOOLAKAL",
+                    "SOZHANUR",
+                    "SURUKALANDAI",
+                    "VADACHITTOR",
+                    "VADAPUDUR",
+                    "VAKUTHAMPALAYAM",
+                    "VARADANUR"
+                ],
+                "MADUKKARAI": [
+                    "MADUKARAI MADUKKARAI KURICHY KURICHY",
+                    "MADUKARAI MADUKKARAI KURICHY VELLALUR",
+                    "MADUKARAI MADUKKARAI MADUKARAI MADUKARAI",
+                    "MADUKARAI MADUKKARAI MADUKARAI MAVUTHAMPATHY",
+                    "MADUKARAI MADUKKARAI MADUKARAI PICHANUR",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM ARISIPALAYAM",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM CHETTYPALAYAM",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM KARUNCHAMIGOUNDENPALAYAM",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM MALUMICHAMPATTY",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM MYLERIPALAYAM",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM NACHIPALAYAM",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM OORATTUKUPPAI",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM OTHAKALMANDAPAM",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM PALATHURAI",
+                    "MADUKARAI MADUKKARAI OTHAKALMANDAPAM THAMMAGOUNDANPALAYAM",
+                    "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM ETTIMADAI",
+                    "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM SEERAPALAYAM",
+                    "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM THIRUMALAYAMPALAYAM (N)",
+                    "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM THIRUMALAYAMPALAYAM (S)",
+                    "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM VAZHUKUPARAI"
+                ],
+                "Mettupalayam": [
+                    "BELLATHI",
+                    "BELLEPALAYAM",
+                    "CHINNAKALLIPATTY",
+                    "ILUPPANATHAM",
+                    "IRUMBURAI",
+                    "JADAYAMPALAYAM",
+                    "KALAMPALAYAM",
+                    "KARAMADAI",
+                    "KEMMAARAMPALAYAM",
+                    "MARUDUR",
+                    "MOODUTHURAI",
+                    "NELLITHURAI",
+                    "ODANTHURAI",
+                    "SIKKADASAMPALAYAM",
+                    "SIKKARAMPALAYAM",
+                    "SIRUMUGAI",
+                    "THEKKAMPATTY",
+                    "THOLAMPALAYAM",
+                    "VELLIYANKADU"
+                ],
+                "PERUR": [
+                    "PERUR PERUR ALANTHURAI ALANTHURAI",
+                    "PERUR PERUR ALANTHURAI IKARAIPOLUVAMPATTY (N)",
+                    "PERUR PERUR ALANTHURAI MADAVARAYAPURAM",
+                    "PERUR PERUR ALANTHURAI POOLUVAMPATTI",
+                    "PERUR PERUR ALANTHURAI SEMMEDU",
+                    "PERUR PERUR KUNIAMUTHUR KOMARAPALAYAM",
+                    "PERUR PERUR KUNIAMUTHUR KUNIAMUTHUR",
+                    "PERUR PERUR MADAMPATTY. MADAMPATTY",
+                    "PERUR PERUR MADAMPATTY. PERURCHETTIPALAYM",
+                    "PERUR PERUR MADAMPATTY. THEETHIPALAYAM",
+                    "PERUR PERUR MADAMPATTY. THENKARAI",
+                    "PERUR PERUR PERUR PERUR",
+                    "PERUR PERUR PERUR SUNDAKAMUTHUR",
+                    "PERUR PERUR PERUR VEDAPATTY",
+                    "PERUR PERUR PERUR VEERA KERALAM",
+                    "PERUR PERUR THONDAMUTHUR. DEVARAYANPURAM",
+                    "PERUR PERUR THONDAMUTHUR. JAKIRNAIKENPALAYAM",
+                    "PERUR PERUR THONDAMUTHUR. NARASIPURAM",
+                    "PERUR PERUR THONDAMUTHUR. THENAMANALLUR",
+                    "PERUR PERUR THONDAMUTHUR. THONDAMUTHUR",
+                    "PERUR PERUR THONDAMUTHUR. VELLIMALAIPATTINAM",
+                    "PERUR PERUR VADAVALLI EAST CHITHIRAI CHAVADI",
+                    "PERUR PERUR VADAVALLI KALIKANAIKEN PALAYAM",
+                    "PERUR PERUR VADAVALLI VADAVALLI",
+                    "PERUR PERUR VADAVALLI WEST CHITHIRAI CHAVADI"
+                ],
+                "Pollachi": [
+                    "A. NAGUR",
+                    "ACHIPATTY",
+                    "ANUPPERPALAYAM",
+                    "AVALAPPAMPATTY",
+                    "AYYAMPALAYAM",
+                    "BODIPALAYAM",
+                    "CHANDIRA PURAM",
+                    "CHINNA NEGAMAM",
+                    "CHINNAMPALAYAM",
+                    "DEVAMPADI",
+                    "ERIPATTY",
+                    "GOMANGALAM",
+                    "GOMANGALAMPUDUR",
+                    "KALLIPATTY",
+                    "KANJAMPATTI",
+                    "KAVILIPALAYAM",
+                    "KITTASOORAMPALAYAM",
+                    "KOLARPATTI",
+                    "KOLLAPATTY",
+                    "KONDEGOUNDENPALAYAM",
+                    "KOOLANAIKENPATTI",
+                    "KULATHUR",
+                    "KULLAKAPALAYAM",
+                    "KULLICHETTIPALAYAM",
+                    "KUMARAPALAYAM",
+                    "KURUMBAPALAYAM",
+                    "MAKKINAMPATTY",
+                    "MANNUR",
+                    "MULANUR",
+                    "MUTHUR",
+                    "NALLAMPALLI",
+                    "NALLUTHUKUZHULI",
+                    "NATTUKALPALAYAM",
+                    "OKKULIPALAYAM",
+                    "OONJAVELAMPATTY",
+                    "PERIYA NEGAMAM",
+                    "POLLACHI",
+                    "POLYGOUNDAMPALAYAM",
+                    "POOSANAICKENTHALI",
+                    "POOSARIPATTY",
+                    "PORAVIPALAYAM",
+                    "PULIYAMPATTY",
+                    "R. PONNAPURAM",
+                    "RAMAPATTANAM",
+                    "RASAKKAPALAYAM",
+                    "RASICHETTIPALAYAM",
+                    "S.MALAYANDIPATTINAM",
+                    "SANDEGOUNDANPALAYAM",
+                    "SANGAMPALAYAM",
+                    "SEELAKAMPATTI",
+                    "SERVAKARAnPALAYAM",
+                    "SERVUKARANPALAYAM",
+                    "SIKKARAYAPURAM",
+                    "SINJUVADI",
+                    "SOLAPALAYAM",
+                    "SOOLEESWARANPATTY",
+                    "T. KOTTAMPATTY",
+                    "THALAKKARAI",
+                    "THIMAMKUTHU",
+                    "THIPPAMPATTY",
+                    "THOPPAMPATTY",
+                    "VADAKIPALAYAM",
+                    "VELLALAPALAYAM",
+                    "ZAMIN KOTTAMPPATTY",
+                    "ZAMIN UTHUKULI"
+                ],
+                "Sulur": [
+                    "APPANAIKENPATTY",
+                    "ARASUR",
+                    "BOGAMPATTY",
+                    "IDAYAPALAYAM",
+                    "IRUGUR",
+                    "J.KRISNAPURAM",
+                    "JALLIPATTY",
+                    "KADAMPADI",
+                    "KADUVETTIPALAYAM",
+                    "KALLAPALAYAM",
+                    "KALLENGAL",
+                    "KAMMALAPATTY",
+                    "KANGAYAMPALAYAM",
+                    "KANIYUR",
+                    "KANNAMPALAYAM",
+                    "KARAVAZHIMADAMPOOR",
+                    "KARUMATHAMPATTY",
+                    "KITTAMPALAYAM",
+                    "KUMARAPALAYAM",
+                    "MALAIPALAYAM",
+                    "MOPPIRIPALAYAM",
+                    "MYLAMPATTY",
+                    "NEELAMBUR",
+                    "OTTERPALAYAM",
+                    "PACHAPALAYAM",
+                    "PADUVAMPALLI",
+                    "PAPPAMPATTY",
+                    "PATTANAM",
+                    "PEEDAMPALLI",
+                    "POORANDAMPALAYAM",
+                    "RASIPALAYAM",
+                    "S.AYYAMPALAYAM",
+                    "SELAKKARICHEL",
+                    "SEMMANDAMPALAYAM",
+                    "SENCHERIPUDUR",
+                    "SULUR",
+                    "THALAKARI",
+                    "VADAMBACHERI",
+                    "VADAVALLI",
+                    "VADAVEDAMPATTY",
+                    "VARAPATTY"
+                ],
+                "Valparai": [
+                    "ANAMALAI KUNDRUGAL"
+                ]
+            },
+            "firka_details": {
+                "Anaimalai": {},
+                "Annur": {
+                    "Annur south": [
+                        "ANNUR",
+                        "KAREGOUNDENPALAYAM",
+                        "KARIYAMPALAYAM",
+                        "KATTAMPATTY",
+                        "KUNNATHUR",
+                        "KUPPEPALAYAM",
+                        "MASAGOUNDENPALAYAM",
+                        "NARANAPURAM",
+                        "PACHAPALAYAM",
+                        "PILLAYAPAMPALAYAM",
+                        "VADAVALLI"
+                    ],
+                    "Annur North": [
+                        "AAMBOTHI",
+                        "AKKARI SENGAPALLY",
+                        "ALLAPALAYAM",
+                        "ANNUR METTUPALAYAM",
+                        "BOGALUR",
+                        "KANJAMPALLY",
+                        "KANUVAKARAI",
+                        "KUPPANUR",
+                        "ODDERPALAYAM",
+                        "PASOOR",
+                        "VADAKKALUR"
+                    ],
+                    "Annur Annur": [
+                        "SARKAR SAMAKULAM AGRAHARASAMAKULAM",
+                        "SARKAR SAMAKULAM IDIKARAI",
+                        "SARKAR SAMAKULAM KALLIPALAYAM",
+                        "SARKAR SAMAKULAM KEERANATHAM",
+                        "SARKAR SAMAKULAM KONDAYAMPALAYAM",
+                        "SARKAR SAMAKULAM SARKAR SAMAKULAM",
+                        "SARKAR SAMAKULAM VELLAMADAI",
+                        "SARKAR SAMAKULAM VELLANAIPATTY"
+                    ]
+                },
+                "Coimbatore North": {
+                    "Saravanam Patty": [
+                        "CHINNAVEDAMPATTY",
+                        "KALAPATTY (EAST)",
+                        "KALAPATTY (WEST)",
+                        "SARAVANMPATTY",
+                        "VELLAKINAR",
+                        "VILANKURICHY"
+                    ],
+                    "Anupperpalayam Ganapathy": [
+                        "GANAPATHY (E) and (W)",
+                        "KRISHNARAYAPUARAM",
+                        "SANGANUR"
+                    ],
+                    "Anupar palayam": [
+                        "ANUPPERPALAYAM",
+                        "PULIYAKULAM",
+                        "THELUNGUPALAYAM"
+                    ],
+                    "Coimbatore North": [
+                        "PERIANAICKANPALAYAM Perianaickenpalayam KURUDAMPALAYAM",
+                        "PERIANAICKANPALAYAM Perianaickenpalayam NAIKENPALAYAM",
+                        "PERIANAICKANPALAYAM Perianaickenpalayam NARASIMMANAIKENPALAYAM",
+                        "PERIANAICKANPALAYAM Perianaickenpalayam PERIYANAIKANPALAYAM",
+                        "PERIANAICKANPALAYAM Perianaickenpalayam VEERAPANDI",
+                        "PERIANAICKANPALAYAM Thudiyalur CHINNATHADAGAM",
+                        "PERIANAICKANPALAYAM Thudiyalur GOUNDENPALAYAM",
+                        "PERIANAICKANPALAYAM Thudiyalur NANJUNDAPURAM",
+                        "PERIANAICKANPALAYAM Thudiyalur PANNIMADAI",
+                        "PERIANAICKANPALAYAM Thudiyalur SOMAYAMPALAYAM",
+                        "PERIANAICKANPALAYAM Thudiyalur THUDIYALUR",
+                        "PERIANAICKANPALAYAM Thudiyalur VEERAPANDI"
+                    ],
+                    "PERIANAICKANPALAYAM Perianaickenpalayam": [
+                        "BILLICHI (E) and (W)",
+                        "GUDALUR (N) and (S)"
+                    ]
+                },
+                "Kinathukadavu": {
+                    "Kinathukadavu Vadasithur.": [
+                        "ANDIPALAYAM",
+                        "KAPPALANKARAI",
+                        "KATTAMPATTY",
+                        "KURUNALLIPALAYAM",
+                        "METTUBAVI",
+                        "PANAPATTI",
+                        "PERIYAKALANDAI",
+                        "SURUKALANDAI",
+                        "VADACHITTOR"
+                    ],
+                    "Kinathukadavu Kinathukadavu": [
+                        "ARASAMPALAYAM",
+                        "CHETTIYAKKAPALAYAM",
+                        "KINTHUKADAVU",
+                        "KODANGIPALAYAM",
+                        "KODAVADI",
+                        "KONDAMPATTY",
+                        "KUTHIRAYALAMPALAYAM",
+                        "NALLATTIPALAYAM",
+                        "POTTAYANDIPURAM",
+                        "SOKKANUR",
+                        "SOLAVAMPALAYAM",
+                        "VADAPUDUR"
+                    ],
+                    "Kinathukadavu Kovilpalayam": [
+                        "DEVANAMPALAYAM",
+                        "DEVARAYAPURAM",
+                        "GOVINDAPURAM",
+                        "KAKKADAVU",
+                        "KANIYALAMPALYAM",
+                        "KRISHNARAYAPURAM",
+                        "METTUPALAYAM",
+                        "MULLIPATTI",
+                        "MUTHUR",
+                        "SANKARAYAPURAM",
+                        "SOOLAKAL",
+                        "SOZHANUR",
+                        "VAKUTHAMPALAYAM",
+                        "VARADANUR"
+                    ]
+                },
+                "MADUKKARAI": {
+                    "Coimbatore": [
+                        "MADUKARAI MADUKKARAI KURICHY KURICHY",
+                        "MADUKARAI MADUKKARAI KURICHY VELLALUR",
+                        "MADUKARAI MADUKKARAI MADUKARAI MADUKARAI",
+                        "MADUKARAI MADUKKARAI MADUKARAI MAVUTHAMPATHY",
+                        "MADUKARAI MADUKKARAI MADUKARAI PICHANUR",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM ARISIPALAYAM",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM CHETTYPALAYAM",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM KARUNCHAMIGOUNDENPALAYAM",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM MALUMICHAMPATTY",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM MYLERIPALAYAM",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM NACHIPALAYAM",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM OORATTUKUPPAI",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM OTHAKALMANDAPAM",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM PALATHURAI",
+                        "MADUKARAI MADUKKARAI OTHAKALMANDAPAM THAMMAGOUNDANPALAYAM",
+                        "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM ETTIMADAI",
+                        "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM SEERAPALAYAM",
+                        "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM THIRUMALAYAMPALAYAM (N)",
+                        "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM THIRUMALAYAMPALAYAM (S)",
+                        "MADUKARAI MADUKKARAI THIRUMALAYAMPALAYAM VAZHUKUPARAI"
+                    ]
+                },
+                "Mettupalayam": {
+                    "1 Mettupalayam": [
+                        "BELLEPALAYAM",
+                        "CHINNAKALLIPATTY",
+                        "ILUPPANATHAM",
+                        "IRUMBURAI",
+                        "JADAYAMPALAYAM",
+                        "MOODUTHURAI",
+                        "NELLITHURAI",
+                        "ODANTHURAI",
+                        "SIKKADASAMPALAYAM",
+                        "SIRUMUGAI",
+                        "THEKKAMPATTY"
+                    ],
+                    "1 Karamadai": [
+                        "BELLATHI",
+                        "KALAMPALAYAM",
+                        "KARAMADAI",
+                        "KEMMAARAMPALAYAM",
+                        "MARUDUR",
+                        "SIKKARAMPALAYAM",
+                        "THOLAMPALAYAM",
+                        "VELLIYANKADU"
+                    ]
+                },
+                "PERUR": {
+                    "Coimbatore": [
+                        "PERUR PERUR ALANTHURAI ALANTHURAI",
+                        "PERUR PERUR ALANTHURAI IKARAIPOLUVAMPATTY (N)",
+                        "PERUR PERUR ALANTHURAI MADAVARAYAPURAM",
+                        "PERUR PERUR ALANTHURAI POOLUVAMPATTI",
+                        "PERUR PERUR ALANTHURAI SEMMEDU",
+                        "PERUR PERUR KUNIAMUTHUR KOMARAPALAYAM",
+                        "PERUR PERUR KUNIAMUTHUR KUNIAMUTHUR",
+                        "PERUR PERUR MADAMPATTY. MADAMPATTY",
+                        "PERUR PERUR MADAMPATTY. PERURCHETTIPALAYM",
+                        "PERUR PERUR MADAMPATTY. THEETHIPALAYAM",
+                        "PERUR PERUR MADAMPATTY. THENKARAI",
+                        "PERUR PERUR PERUR PERUR",
+                        "PERUR PERUR PERUR SUNDAKAMUTHUR",
+                        "PERUR PERUR PERUR VEDAPATTY",
+                        "PERUR PERUR PERUR VEERA KERALAM",
+                        "PERUR PERUR THONDAMUTHUR. DEVARAYANPURAM",
+                        "PERUR PERUR THONDAMUTHUR. JAKIRNAIKENPALAYAM",
+                        "PERUR PERUR THONDAMUTHUR. NARASIPURAM",
+                        "PERUR PERUR THONDAMUTHUR. THENAMANALLUR",
+                        "PERUR PERUR THONDAMUTHUR. THONDAMUTHUR",
+                        "PERUR PERUR THONDAMUTHUR. VELLIMALAIPATTINAM",
+                        "PERUR PERUR VADAVALLI EAST CHITHIRAI CHAVADI",
+                        "PERUR PERUR VADAVALLI KALIKANAIKEN PALAYAM",
+                        "PERUR PERUR VADAVALLI VADAVALLI",
+                        "PERUR PERUR VADAVALLI WEST CHITHIRAI CHAVADI"
+                    ]
+                },
+                "Pollachi": {
+                    "Pollachi Periyanekamam": [
+                        "A. NAGUR",
+                        "AVALAPPAMPATTY",
+                        "CHANDIRA PURAM",
+                        "CHINNA NEGAMAM",
+                        "ERIPATTY",
+                        "KALLIPATTY",
+                        "KOLLAPATTY",
+                        "KONDEGOUNDENPALAYAM",
+                        "MULANUR",
+                        "PERIYA NEGAMAM",
+                        "POLYGOUNDAMPALAYAM",
+                        "POOSARIPATTY",
+                        "THIPPAMPATTY"
+                    ],
+                    "Pollachi Ramapattinam": [
+                        "AYYAMPALAYAM",
+                        "BODIPALAYAM",
+                        "DEVAMPADI",
+                        "KULATHUR",
+                        "KUMARAPALAYAM",
+                        "MANNUR",
+                        "MUTHUR",
+                        "NALLUTHUKUZHULI",
+                        "PORAVIPALAYAM",
+                        "RAMAPATTANAM",
+                        "RASICHETTIPALAYAM",
+                        "SERVAKARAnPALAYAM",
+                        "SERVUKARANPALAYAM",
+                        "THALAKKARAI",
+                        "THIMAMKUTHU",
+                        "VADAKIPALAYAM"
+                    ],
+                    "Pollachi North": [
+                        "ACHIPATTY",
+                        "ANUPPERPALAYAM",
+                        "KAVILIPALAYAM",
+                        "KITTASOORAMPALAYAM",
+                        "KULLAKAPALAYAM",
+                        "KULLICHETTIPALAYAM",
+                        "KURUMBAPALAYAM",
+                        "OKKULIPALAYAM",
+                        "POLLACHI",
+                        "POOSANAICKENTHALI",
+                        "PULIYAMPATTY",
+                        "R. PONNAPURAM",
+                        "RASAKKAPALAYAM",
+                        "SANDEGOUNDANPALAYAM",
+                        "SANGAMPALAYAM",
+                        "SIKKARAYAPURAM",
+                        "T. KOTTAMPATTY",
+                        "THOPPAMPATTY",
+                        "VELLALAPALAYAM"
+                    ],
+                    "Pollachi Kolarpatty": [
+                        "GOMANGALAM",
+                        "GOMANGALAMPUDUR",
+                        "KANJAMPATTI",
+                        "KOLARPATTI",
+                        "KOOLANAIKENPATTI",
+                        "NALLAMPALLI",
+                        "NATTUKALPALAYAM",
+                        "S.MALAYANDIPATTINAM",
+                        "SEELAKAMPATTI",
+                        "SINJUVADI",
+                        "SOLAPALAYAM"
+                    ],
+                    "Pollachi South": [
+                        "CHINNAMPALAYAM",
+                        "MAKKINAMPATTY",
+                        "OONJAVELAMPATTY",
+                        "SOOLEESWARANPATTY",
+                        "ZAMIN KOTTAMPPATTY",
+                        "ZAMIN UTHUKULI"
+                    ]
+                },
+                "Sulur": {
+                    "Sulur Karumathampatty": [
+                        "ARASUR",
+                        "KADUVETTIPALAYAM",
+                        "KANIYUR",
+                        "KARAVAZHIMADAMPOOR",
+                        "KARUMATHAMPATTY",
+                        "KITTAMPALAYAM",
+                        "MOPPIRIPALAYAM",
+                        "MYLAMPATTY",
+                        "NEELAMBUR",
+                        "PADUVAMPALLI",
+                        "SEMMANDAMPALAYAM"
+                    ],
+                    "Sulur Sulur": [
+                        "IRUGUR",
+                        "KADAMPADI",
+                        "KALLENGAL",
+                        "KANGAYAMPALAYAM",
+                        "KANNAMPALAYAM",
+                        "OTTERPALAYAM",
+                        "PATTANAM",
+                        "PEEDAMPALLI",
+                        "RASIPALAYAM",
+                        "SULUR"
+                    ],
+                    "Sulur Selakarichal": [
+                        "APPANAIKENPATTY",
+                        "BOGAMPATTY",
+                        "IDAYAPALAYAM",
+                        "KALLAPALAYAM",
+                        "PACHAPALAYAM",
+                        "PAPPAMPATTY",
+                        "POORANDAMPALAYAM",
+                        "SELAKKARICHEL",
+                        "VADAVALLI"
+                    ],
+                    "Sulur Vaarapatty": [
+                        "J.KRISNAPURAM",
+                        "JALLIPATTY",
+                        "KAMMALAPATTY",
+                        "KUMARAPALAYAM",
+                        "MALAIPALAYAM",
+                        "S.AYYAMPALAYAM",
+                        "SENCHERIPUDUR",
+                        "THALAKARI",
+                        "VADAMBACHERI",
+                        "VADAVEDAMPATTY",
+                        "VARAPATTY"
+                    ]
+                },
+                "Valparai": {
+                    "Valparai Valparai": [
+                        "ANAMALAI KUNDRUGAL"
+                    ]
+                }
+            }
+        }
+    },
+    "zonal_officers": [
+        {
+            "phone": "9443799207",
+            "name": "K. Dakshinamurthy",
+            "zone": "EAST",
+            "designation": "Assistant Commissioner"
+        },
+        {
+            "phone": "9442501792",
+            "name": "Ezhil",
+            "zone": "EAST",
+            "designation": "Executive Engineer"
+        },
+        {
+            "phone": "9489206022",
+            "name": "C. Elagovan",
+            "zone": "EAST",
+            "designation": "Assistant Executive Engineer"
+        },
+        {
+            "phone": "9442104114",
+            "name": "S. Govindaprabhakar",
+            "zone": "EAST",
+            "designation": "Assistant Town Planning Officer"
+        },
+        {
+            "phone": "8925975928",
+            "name": "Lakshmanan",
+            "zone": "EAST",
+            "designation": "Administrative Officer"
+        },
+        {
+            "phone": "8925975903",
+            "name": "M. Murali",
+            "zone": "EAST",
+            "designation": "Assistant Revenue Officer"
+        },
+        {
+            "phone": "9442104152",
+            "name": "Rajendran",
+            "zone": "EAST",
+            "designation": "Zonal Sanitary Officer"
+        },
+        {
+            "phone": "9443754100",
+            "name": "Chandran",
+            "zone": "EAST",
+            "designation": "Zonal Sanitary Officer"
+        },
+        {
+            "phone": "9489206055",
+            "name": "S. Narmadha",
+            "zone": "WEST",
+            "designation": "Assistant Commissioner"
+        },
+        {
+            "phone": "9442501792",
+            "name": "Ezhil",
+            "zone": "WEST",
+            "designation": "Executive Engineer"
+        },
+        {
+            "phone": "9442104103",
+            "name": "S.R. Savitha",
+            "zone": "WEST",
+            "designation": "Assistant Executive Engineer"
+        },
+        {
+            "phone": "9489046640",
+            "name": "M. Mahendran",
+            "zone": "WEST",
+            "designation": "Assistant Town Planning Officer"
+        },
+        {
+            "phone": "9443799218",
+            "name": "Madhusudharan",
+            "zone": "WEST",
+            "designation": "Administrative Officer"
+        },
+        {
+            "phone": "8925975923",
+            "name": "K. Ferozkhan",
+            "zone": "WEST",
+            "designation": "Assistant Revenue Officer"
+        },
+        {
+            "phone": "9442104156",
+            "name": "Radhakrishnan",
+            "zone": "WEST",
+            "designation": "Zonal Sanitary Officer"
+        },
+        {
+            "phone": "9443748498",
+            "name": "R. Mohanasundari",
+            "zone": "NORTH",
+            "designation": "Assistant Commissioner"
+        },
+        {
+            "phone": "9442104103",
+            "name": "Savitha",
+            "zone": "NORTH",
+            "designation": "Executive Engineer"
+        },
+        {
+            "phone": "9489206000",
+            "name": "Sathyamoorthy",
+            "zone": "NORTH",
+            "designation": "Assistant Executive Engineer"
+        },
+        {
+            "phone": "9489903386",
+            "name": "K. Sathya",
+            "zone": "NORTH",
+            "designation": "Assistant Town Planning Officer"
+        },
+        {
+            "phone": "8925975869",
+            "name": "Gunasundaram",
+            "zone": "NORTH",
+            "designation": "Administrative Officer"
+        },
+        {
+            "phone": "8925968022",
+            "name": "Ramachandran",
+            "zone": "NORTH",
+            "designation": "Assistant Revenue Officer"
+        },
+        {
+            "phone": "8925968042",
+            "name": "S. Murugan",
+            "zone": "NORTH",
+            "designation": "Zonal Sanitary Officer"
+        },
+        {
+            "phone": "9489206055",
+            "name": "S. Narmadha",
+            "zone": "SOUTH",
+            "designation": "Assistant Commissioner"
+        },
+        {
+            "phone": "9442501796",
+            "name": "Yogachithra",
+            "zone": "SOUTH",
+            "designation": "Executive Engineer"
+        },
+        {
+            "phone": "9442501794",
+            "name": "S. Kanagaraj",
+            "zone": "SOUTH",
+            "designation": "Assistant Executive Engineer"
+        },
+        {
+            "phone": "9489046640",
+            "name": "M. Mahendran",
+            "zone": "SOUTH",
+            "designation": "Assistant Town Planning Officer"
+        },
+        {
+            "phone": "8925975965",
+            "name": "Vanitha",
+            "zone": "SOUTH",
+            "designation": "Administrative Officer"
+        },
+        {
+            "phone": "8925975836",
+            "name": "R. Anandhi",
+            "zone": "SOUTH",
+            "designation": "Assistant Revenue Officer"
+        },
+        {
+            "phone": "9442104144",
+            "name": "M.V. Andiappan",
+            "zone": "SOUTH",
+            "designation": "Zonal Sanitary Officer"
+        },
+        {
+            "phone": "9443799212",
+            "name": "N. Dakshinamurthy",
+            "zone": "CENTRAL",
+            "designation": "Assistant Commissioner"
+        },
+        {
+            "phone": "9442501796",
+            "name": "Yogachithra",
+            "zone": "CENTRAL",
+            "designation": "Executive Engineer"
+        },
+        {
+            "phone": "9976982121",
+            "name": "K. Saravanakumar",
+            "zone": "CENTRAL",
+            "designation": "Assistant Executive Engineer"
+        },
+        {
+            "phone": "9442104114",
+            "name": "S. Govindaprabhakar",
+            "zone": "CENTRAL",
+            "designation": "Assistant Town Planning Officer"
+        },
+        {
+            "phone": "8925975800",
+            "name": "R. Senthilkumar",
+            "zone": "CENTRAL",
+            "designation": "Administrative Officer"
+        },
+        {
+            "phone": "8925975838",
+            "name": "G. Kirubhakaran",
+            "zone": "CENTRAL",
+            "designation": "Assistant Revenue Officer"
+        },
+        {
+            "phone": "9442104151",
+            "name": "R. Gunasekaran",
+            "zone": "CENTRAL",
+            "designation": "Zonal Sanitary Officer"
+        }
+    ],
+    "ward_contacts": [
+        {
+            "zone": "EAST",
+            "ae_je": "Tamilselvan",
+            "ws_ae_je": "Tamilselvan",
+            "ward": 5,
+            "sanitary_inspector_phone": "7598031333",
+            "ws_ae_je_phone": "8925893936",
+            "bc_name": "MAHADEVAN",
+            "ae_je_phone": "8925893936",
+            "sanitary_inspector": "Chandran",
+            "bc_phone": "9787722081"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "R. Muthukumar",
+            "ws_ae_je": "R. Muthukumar",
+            "ward": 6,
+            "sanitary_inspector_phone": "7598031333",
+            "ws_ae_je_phone": "9489206013",
+            "bc_name": "C SELVARAJ",
+            "ae_je_phone": "9489206013",
+            "sanitary_inspector": "Chandran",
+            "bc_phone": "6382902227"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Tamilselvan",
+            "ws_ae_je": "R. Muthukumar",
+            "ward": 7,
+            "sanitary_inspector_phone": "7598031333",
+            "ws_ae_je_phone": "9489206013",
+            "bc_name": "MAHADEVAN",
+            "ae_je_phone": "8925893936",
+            "sanitary_inspector": "Chandran",
+            "bc_phone": "9787722081"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "R. Muthukumar",
+            "ws_ae_je": "R. Muthukumar",
+            "ward": 8,
+            "sanitary_inspector_phone": "7598031333",
+            "ws_ae_je_phone": "9489206013",
+            "bc_name": "AHAMED SHERIF",
+            "ae_je_phone": "9489206013",
+            "sanitary_inspector": "Chandran",
+            "bc_phone": "9003104062"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "P. Shanthi",
+            "ws_ae_je": "S. Fermanali",
+            "ward": 9,
+            "sanitary_inspector_phone": "9442504589",
+            "ws_ae_je_phone": "9489206048",
+            "bc_name": "AHAMED SHERIF",
+            "ae_je_phone": "9442104122",
+            "sanitary_inspector": "S.R. Jerald",
+            "bc_phone": "9003104062"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "P. Shanthi",
+            "ws_ae_je": "S. Fermanali",
+            "ward": 22,
+            "sanitary_inspector_phone": "9442504589",
+            "ws_ae_je_phone": "9489206048",
+            "bc_name": "C RAMESH",
+            "ae_je_phone": "9442104122",
+            "sanitary_inspector": "S.R. Jerald",
+            "bc_phone": "7448573321"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "R. Muthukumar",
+            "ws_ae_je": "R. Muthukumar",
+            "ward": 23,
+            "sanitary_inspector_phone": "7598031333",
+            "ws_ae_je_phone": "9489206013",
+            "bc_name": "C RAMESH",
+            "ae_je_phone": "9489206013",
+            "sanitary_inspector": "Chandran",
+            "bc_phone": "7448573321"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "S. Fermanali",
+            "ws_ae_je": "S. Fermanali",
+            "ward": 24,
+            "sanitary_inspector_phone": "9442504589",
+            "ws_ae_je_phone": "9489206048",
+            "bc_name": "SAKTHI KAVITHA",
+            "ae_je_phone": "9489206048",
+            "sanitary_inspector": "S.R. Jerald",
+            "bc_phone": "9384766031"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "K. Ganeshan",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 50,
+            "sanitary_inspector_phone": "9489457403",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "Arulanatham",
+            "ae_je_phone": "9442504594",
+            "sanitary_inspector": "A. Salaith",
+            "bc_phone": "8015202221"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Poornachandran",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 51,
+            "sanitary_inspector_phone": "9489457403",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "Suresh",
+            "ae_je_phone": "8925893940",
+            "sanitary_inspector": "A. Salaith",
+            "bc_phone": "7862287041"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "S. Farmanali",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 52,
+            "sanitary_inspector_phone": "9442504589",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "C SELVARAJ",
+            "ae_je_phone": "9489206048",
+            "sanitary_inspector": "S.R. Jerald",
+            "bc_phone": "6382902227"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "S. Farmanali",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 53,
+            "sanitary_inspector_phone": "9489457403",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "SURESH",
+            "ae_je_phone": "9489206048",
+            "sanitary_inspector": "A. Salaith",
+            "bc_phone": "7862287041"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Rajeshwaran",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 54,
+            "sanitary_inspector_phone": "9442504589",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "SAKTHI KAVITHA",
+            "ae_je_phone": "9384092679",
+            "sanitary_inspector": "S.R. Jerald",
+            "bc_phone": "9384766031"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Rajeshwaran",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 55,
+            "sanitary_inspector_phone": "9842915687",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "Sathishkumar",
+            "ae_je_phone": "9384092679",
+            "sanitary_inspector": "Naveenkumar",
+            "bc_phone": "7708654528"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Roja",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 56,
+            "sanitary_inspector_phone": "9842915687",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "Sathishkumar",
+            "ae_je_phone": "9384092671",
+            "sanitary_inspector": "Naveenkumar",
+            "bc_phone": "7708654528"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Roja",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 57,
+            "sanitary_inspector_phone": "9842915687",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "RAMESHKUMAR",
+            "ae_je_phone": "9384092671",
+            "sanitary_inspector": "Naveenkumar",
+            "bc_phone": "8870125004"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "Anitha Rani",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 58,
+            "sanitary_inspector_phone": "9842915687",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "Usharani",
+            "ae_je_phone": "8438078548",
+            "sanitary_inspector": "Naveenkumar",
+            "bc_phone": "9443759459"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "C. Elagovan",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 59,
+            "sanitary_inspector_phone": "9842915687",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "RAMESHKUMAR",
+            "ae_je_phone": "9489206022",
+            "sanitary_inspector": "Naveenkumar",
+            "bc_phone": "9489046615"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "K. Ganeshan",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 60,
+            "sanitary_inspector_phone": "9489457403",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "RAMESH",
+            "ae_je_phone": "9442504594",
+            "sanitary_inspector": "A. Salaith",
+            "bc_phone": "8870125004"
+        },
+        {
+            "zone": "EAST",
+            "ae_je": "K. Ganeshan",
+            "ws_ae_je": "S. Sabariraj",
+            "ward": 61,
+            "sanitary_inspector_phone": "9489457403",
+            "ws_ae_je_phone": "9489206003",
+            "bc_name": "KALAPANA",
+            "ae_je_phone": "9442504594",
+            "sanitary_inspector": "A. Salaith",
+            "bc_phone": "9500242472"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S. Brintha",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 16,
+            "sanitary_inspector_phone": "8925968002",
+            "ws_ae_je_phone": "9489206016",
+            "bc_name": "BABY",
+            "ae_je_phone": "8838286880",
+            "sanitary_inspector": "S. Rajendran",
+            "bc_phone": "8428198586"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "L. Babu",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 17,
+            "sanitary_inspector_phone": "8925968002",
+            "ws_ae_je_phone": "9489206016",
+            "bc_name": "JAYAPRIYA",
+            "ae_je_phone": "9489206012",
+            "sanitary_inspector": "S. Rajendran",
+            "bc_phone": "8248941909"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S. Karthikeyan",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 33,
+            "sanitary_inspector_phone": "8925968002",
+            "ws_ae_je_phone": "9489206016",
+            "bc_name": "S SYED SAMEER",
+            "ae_je_phone": "9952121576",
+            "sanitary_inspector": "S. Rajendran",
+            "bc_phone": "7337625772"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S. Karthikeyan",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 34,
+            "sanitary_inspector_phone": "8925968002",
+            "ws_ae_je_phone": "9489206016",
+            "bc_name": "S SYED SAMEER",
+            "ae_je_phone": "9952121576",
+            "sanitary_inspector": "S. Rajendran",
+            "bc_phone": "7337625772"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "Rajesh Venugopal",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 35,
+            "sanitary_inspector_phone": "8925968002",
+            "ws_ae_je_phone": "9489206016",
+            "bc_name": "ELIZABETH",
+            "ae_je_phone": "9489206016",
+            "sanitary_inspector": "S. Rajendran",
+            "bc_phone": "9003655099"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "B. Vimala",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 36,
+            "sanitary_inspector_phone": "8925968002",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "ELIZABETH",
+            "ae_je_phone": "9443799232",
+            "sanitary_inspector": "S. Rajendran",
+            "bc_phone": "9003655099"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "B. Vimala",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 37,
+            "sanitary_inspector_phone": "9629612973",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "MOHANKUMAR",
+            "ae_je_phone": "9443799232",
+            "sanitary_inspector": "M. Ramesh",
+            "bc_phone": "9894849944"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "Vanathi",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 38,
+            "sanitary_inspector_phone": "9629612973",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "SIVAKUMAR",
+            "ae_je_phone": "8925893944",
+            "sanitary_inspector": "M. Ramesh",
+            "bc_phone": "9500947787"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "B. Vimala",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 39,
+            "sanitary_inspector_phone": "9629612973",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "SIVAKUMAR",
+            "ae_je_phone": "9443799232",
+            "sanitary_inspector": "M. Ramesh",
+            "bc_phone": "9500947787"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S.M. Hari Prasath",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 40,
+            "sanitary_inspector_phone": "9629612973",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "JABARNEESA",
+            "ae_je_phone": "9442104129",
+            "sanitary_inspector": "M. Ramesh",
+            "bc_phone": "9865533246"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "J. Nithya",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 41,
+            "sanitary_inspector_phone": "9629612973",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "Mohan Prabhu",
+            "ae_je_phone": "9489206004",
+            "sanitary_inspector": "M. Ramesh",
+            "bc_phone": "8610024930"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "C.S. Rajesh Venugopal",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 42,
+            "sanitary_inspector_phone": "8925968030",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "VENKATESH",
+            "ae_je_phone": "9489206016",
+            "sanitary_inspector": "S. Vijayakumar",
+            "bc_phone": "8838352953"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "J. Nithya",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 43,
+            "sanitary_inspector_phone": "8925968030",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "MOHANKUMAR",
+            "ae_je_phone": "9489206004",
+            "sanitary_inspector": "S. Vijayakumar",
+            "bc_phone": "7094593916"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "J. Nithya",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 44,
+            "sanitary_inspector_phone": "8925968030",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "MOHANKUMAR",
+            "ae_je_phone": "9489206004",
+            "sanitary_inspector": "S. Vijayakumar",
+            "bc_phone": "7094593916"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "J. Nithya",
+            "ws_ae_je": "Rajesh Venugopal",
+            "ward": 45,
+            "sanitary_inspector_phone": "8925968030",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "MURUGESHWARI",
+            "ae_je_phone": "9489206004",
+            "sanitary_inspector": "S. Vijayakumar",
+            "bc_phone": "9486824306"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S. Manjiladevi",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 71,
+            "sanitary_inspector_phone": "9442104156",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "L. Saravanakumar",
+            "ae_je_phone": "9442104147",
+            "sanitary_inspector": "R. Radhakrishnan",
+            "bc_phone": "9944277006"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S. Manjiladevi",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 72,
+            "sanitary_inspector_phone": "9442104156",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "Shabana Begum",
+            "ae_je_phone": "9442104147",
+            "sanitary_inspector": "R. Radhakrishnan",
+            "bc_phone": "N/A"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S. Manjiladevi",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 73,
+            "sanitary_inspector_phone": "8925968030",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "Saravanan",
+            "ae_je_phone": "9442104147",
+            "sanitary_inspector": "S. Vijayakumar",
+            "bc_phone": "9123516882"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S.M. Hari Prasath",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 74,
+            "sanitary_inspector_phone": "8925968030",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "VENKATESH",
+            "ae_je_phone": "9442104129",
+            "sanitary_inspector": "S. Vijayakumar",
+            "bc_phone": "8838352953"
+        },
+        {
+            "zone": "WEST",
+            "ae_je": "S.M. Hari Prasath",
+            "ws_ae_je": "N. Nagaraj",
+            "ward": 75,
+            "sanitary_inspector_phone": "9629612973",
+            "ws_ae_je_phone": "9442104131",
+            "bc_name": "Jayakumar",
+            "ae_je_phone": "9442104129",
+            "sanitary_inspector": "M. Ramesh",
+            "bc_phone": "7598444437"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "Gopinath",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 1,
+            "sanitary_inspector_phone": "8925975855",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "SAHID ALI",
+            "ae_je_phone": "7904192365",
+            "sanitary_inspector": "K. Jeevamurugaraj",
+            "bc_phone": "9443446149"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "Gopinath",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 2,
+            "sanitary_inspector_phone": "8925975855",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "KEERTHANA",
+            "ae_je_phone": "7904192365",
+            "sanitary_inspector": "K. Jeevamurugaraj",
+            "bc_phone": "9597502329"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "P. Ganeshan",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 3,
+            "sanitary_inspector_phone": "9442104133",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "THAMBURAJ",
+            "ae_je_phone": "9489206049",
+            "sanitary_inspector": "P. Dhanapalan",
+            "bc_phone": "9442256888"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "S. Saranya",
+            "ws_ae_je": "R. Uthaman",
+            "ward": 4,
+            "sanitary_inspector_phone": "9442104133",
+            "ws_ae_je_phone": "9489206006",
+            "bc_name": "THAMBU RAJ",
+            "ae_je_phone": "9442104134",
+            "sanitary_inspector": "P. Dhanapalan",
+            "bc_phone": "9442256888"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "S. Saranya",
+            "ws_ae_je": "R. Uthaman",
+            "ward": 10,
+            "sanitary_inspector_phone": "9442104133",
+            "ws_ae_je_phone": "9489206006",
+            "bc_name": "SHANTHI",
+            "ae_je_phone": "9442104134",
+            "sanitary_inspector": "P. Dhanapalan",
+            "bc_phone": "9791532525"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "S. Saranya",
+            "ws_ae_je": "R. Uthaman",
+            "ward": 11,
+            "sanitary_inspector_phone": "9442104133",
+            "ws_ae_je_phone": "9489206006",
+            "bc_name": "SELVI RUKMANI",
+            "ae_je_phone": "9442104134",
+            "sanitary_inspector": "P. Dhanapalan",
+            "bc_phone": "8056535555"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "P. Ganeshan",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 12,
+            "sanitary_inspector_phone": "8925975855",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "Mareeswari",
+            "ae_je_phone": "9489206049",
+            "sanitary_inspector": "K. Jeevamurugaraj",
+            "bc_phone": "9500623573"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "M. Abishraj",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 13,
+            "sanitary_inspector_phone": "8925975855",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "Jaikrishnan",
+            "ae_je_phone": "8925893935",
+            "sanitary_inspector": "K. Jeevamurugaraj",
+            "bc_phone": "9092997766"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "M. Abishraj",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 14,
+            "sanitary_inspector_phone": "8925975855",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "M Bhuvaneshwaran",
+            "ae_je_phone": "8925893935",
+            "sanitary_inspector": "K. Jeevamurugaraj",
+            "bc_phone": "8072093076"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "R. Thirumoorthy",
+            "ws_ae_je": "K. Jeyanraj",
+            "ward": 15,
+            "sanitary_inspector_phone": "8925975855",
+            "ws_ae_je_phone": "9442104112",
+            "bc_name": "SUGANTHAPRIYAN",
+            "ae_je_phone": "9489206020",
+            "sanitary_inspector": "K. Jeevamurugaraj",
+            "bc_phone": "9500702706"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "R. Thirumoorthy",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 18,
+            "sanitary_inspector_phone": "6382236837",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "BHUVANESHWARAN",
+            "ae_je_phone": "9489206020",
+            "sanitary_inspector": "S. Saranya",
+            "bc_phone": "8072093076"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "R. Sakthivel",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 19,
+            "sanitary_inspector_phone": "6382236837",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "SHANTHI",
+            "ae_je_phone": "8925975890",
+            "sanitary_inspector": "S. Saranya",
+            "bc_phone": "9791532525"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "R. Sakthivel",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 20,
+            "sanitary_inspector_phone": "6382236837",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "VIVEK KUMAR",
+            "ae_je_phone": "8925975890",
+            "sanitary_inspector": "S. Saranya",
+            "bc_phone": "9003457750"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "S. Sangeetha",
+            "ws_ae_je": "R. Uthaman",
+            "ward": 21,
+            "sanitary_inspector_phone": "9442104133",
+            "ws_ae_je_phone": "9489206006",
+            "bc_name": "SELVI RUKMANI",
+            "ae_je_phone": "9489046672",
+            "sanitary_inspector": "P. Dhanapalan",
+            "bc_phone": "8056535555"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "P. Kumar",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 25,
+            "sanitary_inspector_phone": "9442504588",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "NIRMALA",
+            "ae_je_phone": "9489206007",
+            "sanitary_inspector": "Basker",
+            "bc_phone": "9080296741"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "P. Kumar",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 26,
+            "sanitary_inspector_phone": "9442504588",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "AMALA",
+            "ae_je_phone": "9489206007",
+            "sanitary_inspector": "Basker",
+            "bc_phone": "9585836868"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "P. Kumar",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 27,
+            "sanitary_inspector_phone": "9442504588",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "N SENTHILKUMAR",
+            "ae_je_phone": "9489206007",
+            "sanitary_inspector": "Basker",
+            "bc_phone": "9003314747"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "L.S. Mahesh",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 28,
+            "sanitary_inspector_phone": "9442504588",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "ABUDHAHIR",
+            "ae_je_phone": "9489046700",
+            "sanitary_inspector": "Basker",
+            "bc_phone": "9843020701"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "R. Sakthivel",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 29,
+            "sanitary_inspector_phone": "6382236837",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "PRADEEP KUMAR",
+            "ae_je_phone": "8925975890",
+            "sanitary_inspector": "S. Saranya",
+            "bc_phone": "9944075365"
+        },
+        {
+            "zone": "NORTH",
+            "ae_je": "R. Sakthivel",
+            "ws_ae_je": "Sathyamoorthy",
+            "ward": 30,
+            "sanitary_inspector_phone": "6382236837",
+            "ws_ae_je_phone": "9489206000",
+            "bc_name": "N. Senthilkumar",
+            "ae_je_phone": "8925975890",
+            "sanitary_inspector": "S. Saranya",
+            "bc_phone": "9003314747"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "A. Anjelina",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 76,
+            "sanitary_inspector_phone": "9442104153",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "Tamil Selvi",
+            "ae_je_phone": "9489206005",
+            "sanitary_inspector": "M. Dhanapalan",
+            "bc_phone": "9043009761"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "R. Sundarajan",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 77,
+            "sanitary_inspector_phone": "9442104153",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "TAMILSELVI i/c",
+            "ae_je_phone": "9489206002",
+            "sanitary_inspector": "M. Dhanapalan",
+            "bc_phone": "9043009761"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "A. Anjelina",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 78,
+            "sanitary_inspector_phone": "9442104153",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "DURGA DEVI",
+            "ae_je_phone": "9489206005",
+            "sanitary_inspector": "M. Dhanapalan",
+            "bc_phone": "8220683556"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "A. Anjelina",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 79,
+            "sanitary_inspector_phone": "9442104153",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "DURGA DEVI",
+            "ae_je_phone": "9489206005",
+            "sanitary_inspector": "M. Dhanapalan",
+            "bc_phone": "8220683556"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "S. Sandeep Kumar",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 85,
+            "sanitary_inspector_phone": "9442104153",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "GOPALAN",
+            "ae_je_phone": "8925893441",
+            "sanitary_inspector": "M. Dhanapalan",
+            "bc_phone": "9585314312"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "R. Sundarajan",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 86,
+            "sanitary_inspector_phone": "7339404132",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "MURALI",
+            "ae_je_phone": "9489206002",
+            "sanitary_inspector": "Zakir Hussain",
+            "bc_phone": "9789197841"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "R. Sundarajan",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 87,
+            "sanitary_inspector_phone": "7339404132",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "SIVAKUMAR",
+            "ae_je_phone": "9489206002",
+            "sanitary_inspector": "Zakir Hussain",
+            "bc_phone": "9994097999"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "R. Vishali",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 88,
+            "sanitary_inspector_phone": "9489206054",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "KEERTHIKA",
+            "ae_je_phone": "9488703705",
+            "sanitary_inspector": "Balakumar",
+            "bc_phone": "8925975815"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "S. Navaneethakrishnan",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 89,
+            "sanitary_inspector_phone": "9489206054",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "KEERTHIKA",
+            "ae_je_phone": "9489206019",
+            "sanitary_inspector": "Balakumar",
+            "bc_phone": "8925975815"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "S. Navaneethakrishnan",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 90,
+            "sanitary_inspector_phone": "9489206054",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "SENTHILKUMAR",
+            "ae_je_phone": "9489206019",
+            "sanitary_inspector": "Balakumar",
+            "bc_phone": "9944560654"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "S. Navaneethakrishnan",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 91,
+            "sanitary_inspector_phone": "9489206054",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "GEETHA N",
+            "ae_je_phone": "9489206019",
+            "sanitary_inspector": "Balakumar",
+            "bc_phone": "9500891814"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "S. Navaneethakrishnan",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 92,
+            "sanitary_inspector_phone": "9489206054",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "KAVIYA",
+            "ae_je_phone": "9489206019",
+            "sanitary_inspector": "Balakumar",
+            "bc_phone": "9688919707"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "R. Vishali",
+            "ws_ae_je": "P. Kalyanasundaram",
+            "ward": 93,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9489206051",
+            "bc_name": "SENTHILKUMAR",
+            "ae_je_phone": "9488703705",
+            "sanitary_inspector": "M.V. Andiappan",
+            "bc_phone": "9944560654"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "V. Jagadeesawri",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 94,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "SANAFA",
+            "ae_je_phone": "9442504593",
+            "sanitary_inspector": "M.V. Andiappan",
+            "bc_phone": "9003795708"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "V. Jagadeesawri",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 95,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "SANAFA",
+            "ae_je_phone": "9442504593",
+            "sanitary_inspector": "M. Dhanapalan",
+            "bc_phone": "9003795708"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "N. Indiragandhi",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 96,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "GOPALAN",
+            "ae_je_phone": "8925893938",
+            "sanitary_inspector": "M.V. Andiappan",
+            "bc_phone": "9585314312"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "Natarajan",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 97,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "YAMUNADEVI",
+            "ae_je_phone": "9442104115",
+            "sanitary_inspector": "M.V. Andiappan",
+            "bc_phone": "9952609049"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "V. Jagadeesawri",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 98,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "KARTHIK",
+            "ae_je_phone": "9442504593",
+            "sanitary_inspector": "M.V. Andiappan",
+            "bc_phone": "9843446254"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "S. Sandeep Kumar",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 99,
+            "sanitary_inspector_phone": "9489206054",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "KARTHIK",
+            "ae_je_phone": "6381237833",
+            "sanitary_inspector": "Balakumar",
+            "bc_phone": "9843446254"
+        },
+        {
+            "zone": "SOUTH",
+            "ae_je": "Natarajan",
+            "ws_ae_je": "S. Kanagaraj",
+            "ward": 100,
+            "sanitary_inspector_phone": "9442104144",
+            "ws_ae_je_phone": "9442501794",
+            "bc_name": "K. SARAVANAKUMAR",
+            "ae_je_phone": "9442104115",
+            "sanitary_inspector": "M.V. Andiappan",
+            "bc_phone": "7708076220"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "M. Kumaresan",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 31,
+            "sanitary_inspector_phone": "9489046675",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "RAVICHANDRAN",
+            "ae_je_phone": "9489206010",
+            "sanitary_inspector": "T. Jeganathan",
+            "bc_phone": "9943586654"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "M. Kumaresan",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 32,
+            "sanitary_inspector_phone": "9489046675",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "PREETHA",
+            "ae_je_phone": "9489206010",
+            "sanitary_inspector": "T. Jeganathan",
+            "bc_phone": "7598249490"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "M. Kumaresan",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 46,
+            "sanitary_inspector_phone": "8072337673",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "YUVARAJAN",
+            "ae_je_phone": "9489206010",
+            "sanitary_inspector": "P. Saravana Kumar",
+            "bc_phone": "7010156733"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "K. Saravanakumar",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 47,
+            "sanitary_inspector_phone": "8072337673",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "YUVARAJAN",
+            "ae_je_phone": "9976982121",
+            "sanitary_inspector": "P. Saravana Kumar",
+            "bc_phone": "7010156733"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "K. Saravanakumar",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 48,
+            "sanitary_inspector_phone": "8072337673",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "NITHYA",
+            "ae_je_phone": "9976982121",
+            "sanitary_inspector": "P. Saravana Kumar",
+            "bc_phone": "9629459270"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "K. Saravanakumar",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 49,
+            "sanitary_inspector_phone": "9489206052",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "MURUGESHAN",
+            "ae_je_phone": "9976982121",
+            "sanitary_inspector": "N. Loganathan",
+            "bc_phone": "9952639696"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "G. Kamalakannan",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 62,
+            "sanitary_inspector_phone": "9442104150",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "PRIYADHARSHINI",
+            "ae_je_phone": "9442104101",
+            "sanitary_inspector": "B. Jayaparvathi",
+            "bc_phone": "7540052132"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "B. Pragadeeswaran",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 63,
+            "sanitary_inspector_phone": "9442104150",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "PRIYADHARSHINI",
+            "ae_je_phone": "6380756353",
+            "sanitary_inspector": "B. Jayaparvathi",
+            "bc_phone": "7540052132"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "G. Kamalakannan",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 64,
+            "sanitary_inspector_phone": "9442104150",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "RANJITH KUMAR",
+            "ae_je_phone": "9442104101",
+            "sanitary_inspector": "B. Jayaparvathi",
+            "bc_phone": "8056475866"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "K. Maragatham",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 65,
+            "sanitary_inspector_phone": "9442104150",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "RANJITH KUMAR",
+            "ae_je_phone": "9489206024",
+            "sanitary_inspector": "B. Jayaparvathi",
+            "bc_phone": "8056475866"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "G. Kamalakannan",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 66,
+            "sanitary_inspector_phone": "9442104150",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "Srinivasan",
+            "ae_je_phone": "9442104101",
+            "sanitary_inspector": "B. Jayaparvathi",
+            "bc_phone": "7871981000"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "K. Maragatham",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 67,
+            "sanitary_inspector_phone": "9489046675",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "MURUGESHAN",
+            "ae_je_phone": "9489206024",
+            "sanitary_inspector": "T. Jeganathan",
+            "bc_phone": "9952639696"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "R. Rahul",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 68,
+            "sanitary_inspector_phone": "8072337673",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "S SUMATHI",
+            "ae_je_phone": "8925893947",
+            "sanitary_inspector": "P. Saravanakumar",
+            "bc_phone": "9043161721"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "R. Rahul",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 69,
+            "sanitary_inspector_phone": "9489046675",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "BHUVANESHWARI",
+            "ae_je_phone": "8925893947",
+            "sanitary_inspector": "T. Jeganathan",
+            "bc_phone": "9894085088"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "Sathish",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 70,
+            "sanitary_inspector_phone": "9442104151",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "PRIYA",
+            "ae_je_phone": "9442272924",
+            "sanitary_inspector": "R. Gunasekaran",
+            "bc_phone": "6380097022"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "S. Anitha",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 80,
+            "sanitary_inspector_phone": "9442104151",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "GOMATHI",
+            "ae_je_phone": "9025551230",
+            "sanitary_inspector": "R. Gunasekaran",
+            "bc_phone": "9790118841"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "S. Anitha",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 81,
+            "sanitary_inspector_phone": "9442104151",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "GOMATHI",
+            "ae_je_phone": "9025551230",
+            "sanitary_inspector": "R. Gunasekaran",
+            "bc_phone": "9790118841"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "Sathish",
+            "ws_ae_je": "C. Muralidharan",
+            "ward": 82,
+            "sanitary_inspector_phone": "9489206052",
+            "ws_ae_je_phone": "9442104106",
+            "bc_name": "GEETHA S",
+            "ae_je_phone": "9442272924",
+            "sanitary_inspector": "N. Loganathan",
+            "bc_phone": "9944439672"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "Sathish",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 83,
+            "sanitary_inspector_phone": "9489206052",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "GEETHA S",
+            "ae_je_phone": "9442272924",
+            "sanitary_inspector": "N. Loganathan",
+            "bc_phone": "9944439672"
+        },
+        {
+            "zone": "CENTRAL",
+            "ae_je": "B. Pragadeeswaran",
+            "ws_ae_je": "N. Sakthivel",
+            "ward": 84,
+            "sanitary_inspector_phone": "9489206052",
+            "ws_ae_je_phone": "9489206030",
+            "bc_name": "N/A",
+            "ae_je_phone": "6380756353",
+            "sanitary_inspector": "N. Loganathan",
+            "bc_phone": "N/A"
+        }
+    ],
+    "councilors": [
+        {
+            "ward_number": 59,
+            "councilor_name": "ொ௠மொ ோபா தளபொ இளங்ேகா எம்",
+            "phone": "9865519999",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 16,
+            "councilor_name": "ொ௠ த௘ழ்ெசல்வன ் ௔",
+            "phone": "9994483561",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 32,
+            "councilor_name": "ொ௠ பார்த்ோபன ் ரா",
+            "phone": "9489819186",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 33,
+            "councilor_name": "ொ௠ ழ௠ஷ ் ண௛ர்த்ொ எ",
+            "phone": "9865478386",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 61,
+            "councilor_name": "ொ௠மொ ஆொமேகஸ ் வரி D",
+            "phone": "9944742425",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 66,
+            "councilor_name": "ொ௠மொ ௚னியம்மாள ் பா",
+            "phone": "9843020666",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 77,
+            "councilor_name": "ொ௠மொ ராஜலட்ா௘ ெச",
+            "phone": "9788449261",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 83,
+            "councilor_name": "ொ௠மொ ாமா ௳",
+            "phone": "7871674531",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 34,
+            "councilor_name": "ொ௠மொ மாலொ நா",
+            "phone": "9894512669",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 2,
+            "councilor_name": "ொ௠மொ ௖ஷ ் பமணி அ",
+            "phone": "9842205802",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 7,
+            "councilor_name": "ொ௠ ேகா௳ந்தராஜ் எம்",
+            "phone": "9443348618",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 22,
+            "councilor_name": "ொ௠ ேகாைவ பா௖ ெசல்வஶமார் ௚",
+            "phone": "7373111111",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 29,
+            "councilor_name": "ொ௠மொ ரங்கநாயழ ேக",
+            "phone": "8122200981",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 41,
+            "councilor_name": "ொ௠மொ சாந்ொ ேக",
+            "phone": "8220173334",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 44,
+            "councilor_name": "ொ௠மொ காயத்ொரி ஆர்",
+            "phone": "9894951133",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 76,
+            "councilor_name": "ொ௠ ராஜ்ஶமார் ௗ",
+            "phone": "9715250005",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 86,
+            "councilor_name": "ொ௠ அஹமௌ க௕ர் இ",
+            "phone": "9443177150",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 80,
+            "councilor_name": "ொ௠ மாரிெசல்வன ் ெப",
+            "phone": "9894315344",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 23,
+            "councilor_name": "ொ௠ மணியன ் ேக",
+            "phone": "9994402464",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 35,
+            "councilor_name": "ொ௠ சம்பத் ந",
+            "phone": "9843047486",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 37,
+            "councilor_name": "ொ௠மொ ஶ௚தம் ஶ",
+            "phone": "9442267666",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 51,
+            "councilor_name": "ொ௠மொ அம்சேவணி ம",
+            "phone": "9952737773",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 58,
+            "councilor_name": "ொ௠மொ ா௘த்ரா எம்",
+            "phone": "9994672184",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 68,
+            "councilor_name": "ொ௠மொ கமலாவொ ேபாஸ ்",
+            "phone": "9655407679",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 79,
+            "councilor_name": "ொ௠மொ வசந்தாமணி ப",
+            "phone": "9095802345",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 99,
+            "councilor_name": "ொ௠ அஸ ் லாம் பாஷா ௚",
+            "phone": "9566900212",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 82,
+            "councilor_name": "ொ௠மொ ௚ப஽ரா V B",
+            "phone": "7010315929",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 11,
+            "councilor_name": "ொ௠ பழனிசா௘ எ ஼ரைவ ஼வா ெப",
+            "phone": "9843257507",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 12,
+            "councilor_name": "ொ௠ இராம௛ர்த்ொ ௳",
+            "phone": "9843147100",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 15,
+            "councilor_name": "ொ௠மொ சாந்தாமணி ொ",
+            "phone": "9952406262",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 20,
+            "councilor_name": "ொ௠ மரியராஜ் அ",
+            "phone": "9566493086",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 39,
+            "councilor_name": "ொ௠மொ லட்ா௘ B",
+            "phone": "9489914014",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 40,
+            "councilor_name": "ொ௠மொ பத்மாவொ A",
+            "phone": "9894353531",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 54,
+            "councilor_name": "ொ௠மொ பாக்ழயம் S",
+            "phone": "9965463666",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 56,
+            "councilor_name": "ொ௠ ழ௠ஷ ் ண௛ர்த்ொ M",
+            "phone": "8428446789",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 67,
+            "councilor_name": "ொ௠மொ ௳த்யா R",
+            "phone": "9486163500",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 75,
+            "councilor_name": "ொ௠மொ அங்ஶலட்ா௘ S",
+            "phone": "9940903803",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 88,
+            "councilor_name": "ொ௠ ெசந்ொல்ஶமார் ப",
+            "phone": "9965517174",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 93,
+            "councilor_name": "ொ௠ இளஞ்ேசகரன ் ெபா",
+            "phone": "9789502282",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 73,
+            "councilor_name": "ொ௠ சந்ேதாஷ ் த",
+            "phone": "9865251000",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 3,
+            "councilor_name": "ொ௠மொ க௳தா ெசௗ",
+            "phone": "9790559086",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 8,
+            "councilor_name": "ொ௠ ௳ஜயஶமார் ேக",
+            "phone": "9600949911",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 17,
+            "councilor_name": "ொ௠மொ ாபఁ ப ேவ",
+            "phone": "9940918118",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 21,
+            "councilor_name": "ொ௠மொ ௗங்ெகாூ ேசாமாந்தரம் எஸ ்",
+            "phone": "9788916158",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 27,
+            "councilor_name": "ொ௠மொ அம்௔கா தனபால்",
+            "phone": "9944555927",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 30,
+            "councilor_name": "ொ௠மொ சரண ் யா ெச",
+            "phone": "9698557000",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 48,
+            "councilor_name": "ொ௠மொ ௔ரபா ர௴ந்ொரன ்",
+            "phone": "9894555594",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 49,
+            "councilor_name": "ொ௠மொ அன ் னக்ெகாூ E",
+            "phone": "9095390398",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 72,
+            "councilor_name": "ொ௠ ெசல்வராஜ் ேக",
+            "phone": "9443423339",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 78,
+            "councilor_name": "ொ௠மொ ஼வசக்ொ ச",
+            "phone": "9944208639",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 81,
+            "councilor_name": "ொ௠ மேனாகரன ் மா",
+            "phone": "9500695572",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 87,
+            "councilor_name": "ொ௠ பா௖ ப",
+            "phone": "9894600338",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 98,
+            "councilor_name": "ொ௠ உதயஶமார் இரா",
+            "phone": "9865199393",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 100,
+            "councilor_name": "ொ௠ கார் த்ொேகயன ் இரா",
+            "phone": "9092238800",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 63,
+            "councilor_name": "ொ௠மொ சாந்ொ ௚௠கன ்",
+            "phone": "9123502351",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 1,
+            "councilor_name": "ொ௠மொ கற்பகம் இரா",
+            "phone": "9787046702",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 4,
+            "councilor_name": "ொ௠ கொர்ேவ௩சா௘ ரா",
+            "phone": "9843406950",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 6,
+            "councilor_name": "ொ௠ ெபான ் ௑சா௘ எஸ ்",
+            "phone": "9363200878",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 9,
+            "councilor_name": "ொ௠மொ சரஸ ் வொ ெப",
+            "phone": "9842753211",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 14,
+            "councilor_name": "ொ௠மொ ஼த்ரா ூ",
+            "phone": "9443744100",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 24,
+            "councilor_name": "ொ௠ ௗபொ ர",
+            "phone": "9843055095",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 25,
+            "councilor_name": "ொ௠மொ தவமணி பழனியப்பன ்",
+            "phone": "9443714888",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 42,
+            "councilor_name": "ொ௠ ௔ர௳ன ் ராஜ் M K",
+            "phone": "9842066522",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 50,
+            "councilor_name": "ொ௠மொ வதா C",
+            "phone": "8637486472",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 57,
+            "councilor_name": "ொ௠மொ சாந்தாமணி ப",
+            "phone": "9942309072",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 60,
+            "councilor_name": "ொ௠ ஼வா ௚",
+            "phone": "9597269999",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 65,
+            "councilor_name": "ொ௠மொ ராேஜஸ ் வரி ேமகநாதன ்",
+            "phone": "8015782575",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 74,
+            "councilor_name": "ொ௠ ஷங்கர் A S",
+            "phone": "8072648987",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 96,
+            "councilor_name": "ொ௠ ஶணேசகரன ் ப",
+            "phone": "9791331998",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 91,
+            "councilor_name": "ொ௠ ராேஜந்ொரன ் ௚",
+            "phone": "9842492243",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 10,
+            "councilor_name": "கொர்ேவல் ேவ",
+            "phone": "9843864444",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 13,
+            "councilor_name": "ாமொ என ்",
+            "phone": "9698220796",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 18,
+            "councilor_name": "ராதாழ௠ஷ ் ணன ் ஆ",
+            "phone": "9894234720",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 19,
+            "councilor_name": "கல்பனா ஆ",
+            "phone": "9600822822",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 26,
+            "councilor_name": "஼த்ரா ெவள்ளியங்ழரி",
+            "phone": "9842159445",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 28,
+            "councilor_name": "கண ் ணழ ேஜாொபாா",
+            "phone": "7598454600",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 52,
+            "councilor_name": "இலக்ஶ௘ இளஞ்ெசல்௳ கார்த்ொக் தா",
+            "phone": "9965065045",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 5,
+            "councilor_name": "ந௴ன ் ஶமார் ௷ ௳",
+            "phone": "9944558640",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 53,
+            "councilor_name": "ேமாகன ் ௚ ௌ",
+            "phone": "9842697054",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 55,
+            "councilor_name": "தர்மராஜ் த",
+            "phone": "9952419219",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 94,
+            "councilor_name": "தனலட்ா௘ ர",
+            "phone": "9952288778",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 85,
+            "councilor_name": "சரளா வ",
+            "phone": "9043137088",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 89,
+            "councilor_name": "௚௠ேகசன ் ேக",
+            "phone": "9600508788",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 90,
+            "councilor_name": "ரேமஷ ் ௌ",
+            "phone": "9842216050",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 92,
+            "councilor_name": "ெவற்௣ ெசல்வன ் ரா",
+            "phone": "9944220383",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 95,
+            "councilor_name": "அப்ௌல் காதர் சா",
+            "phone": "9047110811",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 97,
+            "councilor_name": "ெசல்௳ நிேவதா ேச",
+            "phone": "8248709822",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 36,
+            "councilor_name": "ெதய்வயாைன க அ",
+            "phone": "9443342202",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 38,
+            "councilor_name": "சர்௘ளா எஸ ்",
+            "phone": "9894080652",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 43,
+            "councilor_name": "மல்௧கா ௔",
+            "phone": "9344464537",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 45,
+            "councilor_name": "ேப௔ாதா ஆர்",
+            "phone": "9894363963",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 71,
+            "councilor_name": "அழஶ ெஜயபாலன ்",
+            "phone": "9994611511",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 46,
+            "councilor_name": "௙னா எல ்",
+            "phone": "9442702345",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 31,
+            "councilor_name": "ைவர௚௠கன ் என ் ழன ் ற ௚௠கன ் ர",
+            "phone": "9363123300",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 47,
+            "councilor_name": "௔ரபாகரன ் ஆர்",
+            "phone": "9842291277",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 62,
+            "councilor_name": "ேரவொ ௚ரளி",
+            "phone": "9952525681",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 64,
+            "councilor_name": "ெஜயப்௔ரதா ேத௳ ஽னிவாசன ் எஸ ்",
+            "phone": "9367111108",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 69,
+            "councilor_name": "சரவணக்ஶமார் ௔ எஸ ்",
+            "phone": "8012355666",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 70,
+            "councilor_name": "சர்௘ளா ாேரஷ ் நாராயணன ்",
+            "phone": "9487470830",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        },
+        {
+            "ward_number": 84,
+            "councilor_name": "அ௧மா ேபகம்",
+            "phone": "9171174146",
+            "role": "Ward Councilor",
+            "source": "MCs_List_Offical_Mobile_Number_1.4_.2022_.pdf"
+        }
+    ],
+    "property_tax_defaulters": [
+        {
+            "ward_number": 48,
+            "owner_name": "LAKSHMI NARAYANA INVESTMENTS",
+            "phone": "7871600007",
+            "zone": "CENTRAL",
+            "address": "SATHY ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 49,
+            "owner_name": "THE LAKSHMIMILLS COMPANY LTD",
+            "phone": "9894626009",
+            "zone": "CENTRAL",
+            "address": "B2A/B2, AVANASHI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "K.THIYAKARAJAN",
+            "phone": "9003890229",
+            "zone": "CENTRAL",
+            "address": "GOKULE STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 83,
+            "owner_name": "RADHAKRISHNAN CHUNILAL BHATIA",
+            "phone": "8681099999",
+            "zone": "CENTRAL",
+            "address": "A.T.T. COLONY,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 49,
+            "owner_name": "THE LAKSHMIMILLS COMPANY LTD",
+            "phone": "9894626009",
+            "zone": "CENTRAL",
+            "address": "B1, AVANASHI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 83,
+            "owner_name": "FERNANDO XAVIER,ALLEN XAVIER,PATRICIASAM,GANI MOHINUDEEN",
+            "phone": "9363140961",
+            "zone": "CENTRAL",
+            "address": "A-101, Akshaya Orbit-11, TRICHY ROAD(950-1178 TO 1654-1766),",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 83,
+            "owner_name": "M.K.ABDULAAH KUTTY",
+            "phone": "9894370777",
+            "zone": "CENTRAL",
+            "address": "DEVI AND CO SANTHU,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "S. SEENIVASAN , R. RAMAMANI",
+            "phone": "9840597049",
+            "zone": "CENTRAL",
+            "address": "PONNAY STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "M/s.A.V.PROPERTIES (INDIA) PRIVATE LIMITED",
+            "phone": "9952293317",
+            "zone": "CENTRAL",
+            "address": "GANDHIPURAM STREET 2,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "KOWSALYA .S",
+            "phone": "9791834496",
+            "zone": "CENTRAL",
+            "address": "TATABAD STREET 3,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 69,
+            "owner_name": "C.R.MANJUNATHAN",
+            "phone": "9843016286",
+            "zone": "CENTRAL",
+            "address": "METTUPALAYAM ROAD,,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "R.VENKATRAMAN",
+            "phone": "9952499716",
+            "zone": "CENTRAL",
+            "address": "B, NEHRU STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "DURAISAMY",
+            "phone": "9894591417",
+            "zone": "CENTRAL",
+            "address": "GANDHIPURAM STREET 2,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "B.A. YUNAS SALEEM",
+            "phone": "9894006258",
+            "zone": "CENTRAL",
+            "address": "RIGHT HONOURABLE SASTRI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "S.ARBUTHAMPILLAI,TMT.MA RIYASEBASTHIAMMAL",
+            "phone": "8947783839",
+            "zone": "CENTRAL",
+            "address": "DESABANDHU STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "S.K.JAYARAJ & V.CHANDRASEKARAN",
+            "phone": "9894790063",
+            "zone": "CENTRAL",
+            "address": "DR.NANJAPPA ROAD(1-6)(368-LAST),",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "S.MOHANRAJ, S.PRABHU",
+            "phone": "9842222422",
+            "zone": "CENTRAL",
+            "address": "GANDHIPURAM STREET -08,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 70,
+            "owner_name": "M.PUSHPALATHA",
+            "phone": "8754916844",
+            "zone": "CENTRAL",
+            "address": "A, 126, PATTUPOOCHI SANDHU NO.3 1-167,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 81,
+            "owner_name": "K.V.N.K.VEERAPPA CHETTIAR",
+            "phone": "9047080372",
+            "zone": "CENTRAL",
+            "address": "UPPU KINARU LANE,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "P. SUBARAMANIAM SARAVANAN",
+            "phone": "9843027872",
+            "zone": "CENTRAL",
+            "address": "DR. RAJENDERA PRASAD ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 63,
+            "owner_name": "VEERASAMY & MARAGATHAMANI",
+            "phone": "9994399953",
+            "zone": "CENTRAL",
+            "address": "SRI RAM COLONY,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 69,
+            "owner_name": "K.R.PALANISAMY",
+            "phone": "7373371000",
+            "zone": "CENTRAL",
+            "address": "RAGUPATHI LAYOUT,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 83,
+            "owner_name": "D.DHANDAPANI",
+            "phone": "9344833082",
+            "zone": "CENTRAL",
+            "address": "GOPALAPURAM STREET NO:1,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 83,
+            "owner_name": "D.DHANDAPANI",
+            "phone": "9344833082",
+            "zone": "CENTRAL",
+            "address": "GOPALAPURAM STREET NO:1,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "INDUMATHI & SREEDEVI",
+            "phone": "9842255999",
+            "zone": "CENTRAL",
+            "address": "BHARATHIAR STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "FARUK SULTHANA",
+            "phone": "9843078600",
+            "zone": "CENTRAL",
+            "address": "PONNAY STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 66,
+            "owner_name": "PHAVAN KUMAR GUPTA & SAROJA GUPTA",
+            "phone": "7094827608",
+            "zone": "CENTRAL",
+            "address": "P, THIRUGNANASAMBATHAM RD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "JEBAMALAI MARY",
+            "phone": "9524291280",
+            "zone": "CENTRAL",
+            "address": "DR. SUBBARAYAN ROAD,,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 49,
+            "owner_name": "N.RAMASANTHERN",
+            "phone": "9952222066",
+            "zone": "CENTRAL",
+            "address": "BHARATHIYAR ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "M.S. NATESA GOUNDER",
+            "phone": "9043004960",
+            "zone": "CENTRAL",
+            "address": "SAKTHI CROSS II,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 6,
+            "owner_name": "GANESAN",
+            "phone": "8625522333",
+            "zone": "EAST",
+            "address": "VEERIAMPALAYAM ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 24,
+            "owner_name": "P. KUMARESAN K.SHANTHI",
+            "phone": "9442627034",
+            "zone": "EAST",
+            "address": "SFNO.421/2, V.K ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 24,
+            "owner_name": "P. KUMARESAN K.SHANTHI",
+            "phone": "9442627034",
+            "zone": "EAST",
+            "address": "SF NO 421/2, V.K ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 8,
+            "owner_name": "R SOUNDARARAJAN",
+            "phone": "7708012229",
+            "zone": "EAST",
+            "address": "SF NO 216, ANNAMALAI INDUSTRIES PARK,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 23,
+            "owner_name": "M.VIJAYA SAMUNDESWARI",
+            "phone": "9791841855",
+            "zone": "EAST",
+            "address": "B, PMR LAYOUT,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 7,
+            "owner_name": "PERIYA MARUDHACHALAM",
+            "phone": "9943030424",
+            "zone": "EAST",
+            "address": "AVINASHI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 55,
+            "owner_name": "P.MUTHAIYA",
+            "phone": "9843231066",
+            "zone": "EAST",
+            "address": "MAHATMA GANDHI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 57,
+            "owner_name": "SELVARAJ",
+            "phone": "9842236700",
+            "zone": "EAST",
+            "address": "A, RAMASAMY NAIDU INDUSTRIAL ESTATE,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 2,
+            "owner_name": "S RAJASEKARAN",
+            "phone": "9443437689",
+            "zone": "NORTH",
+            "address": "B, VELLAKINAR VILLAGE,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 18,
+            "owner_name": "R.THANGAVELU (M/S THANGAM CHAMBERRS)",
+            "phone": "9843245758",
+            "zone": "NORTH",
+            "address": "METTUPALAYAM ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 3,
+            "owner_name": "JAYANTHI, CHANDRA,RAMACHANDRAN",
+            "phone": "9367474743",
+            "zone": "NORTH",
+            "address": "ATHIPALAYAM ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 89,
+            "owner_name": "D.THIRUGNANAM",
+            "phone": "9176622745",
+            "zone": "SOUTH",
+            "address": "B, SATSANG - SUNDAKKAMUTHUR,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 88,
+            "owner_name": "P.SELVARAJ",
+            "phone": "8056666222",
+            "zone": "SOUTH",
+            "address": "SUNDAKAMUTHUR MAIN ROAD- KUNIAMUTHUR,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 36,
+            "owner_name": "K.DEVARAJ",
+            "phone": "9360825359",
+            "zone": "WEST",
+            "address": "NEW THILLAI NAGAR,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 7,
+            "owner_name": "C BALACHANDRAN",
+            "phone": "6380377935",
+            "zone": "EAST",
+            "address": "STNO 20 CHITRA, AVINASHI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "SULOCHANA",
+            "phone": "9894333362",
+            "zone": "CENTRAL",
+            "address": "DR. RAJENDRA PRASAD ROAD,,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 83,
+            "owner_name": "D.DHANDAPANI",
+            "phone": "9344833082",
+            "zone": "CENTRAL",
+            "address": "GOPALAPURAM STREET NO:1,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "A.SEENIVASAN, S.SARASWATHI",
+            "phone": "9791489001",
+            "zone": "CENTRAL",
+            "address": "GANDHIPURAM STREET 1,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 1,
+            "owner_name": "S SENTHILKUMAR",
+            "phone": "9443128850",
+            "zone": "NORTH",
+            "address": "SF NO 26/2B PART, METTUPALAYAM ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 69,
+            "owner_name": "P.SHANMUGAM",
+            "phone": "7829277717",
+            "zone": "CENTRAL",
+            "address": "THADAGAM ROAD,,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 49,
+            "owner_name": "JAYANTHILAL MAALU",
+            "phone": "9488161259",
+            "zone": "CENTRAL",
+            "address": "KATTUR ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "A KANNAN",
+            "phone": "9952499716",
+            "zone": "CENTRAL",
+            "address": "SAROJINI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 82,
+            "owner_name": "EE, TAMILNADU POLICE HOUSING CORPN",
+            "phone": "9489642714",
+            "zone": "CENTRAL",
+            "address": "ISMAIL STREET NO.1,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 68,
+            "owner_name": "M. RANGANAYAGI",
+            "phone": "9943214545",
+            "zone": "CENTRAL",
+            "address": "TATABAD STREET-6,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 67,
+            "owner_name": "S.DASAMUTHU",
+            "phone": "9443354729",
+            "zone": "CENTRAL",
+            "address": "SENGUPTA STREET,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 70,
+            "owner_name": "J. HITESH KUMAR",
+            "phone": "9894200000",
+            "zone": "CENTRAL",
+            "address": "METTUPALAYAM ROAD (NO.795- 911),",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 48,
+            "owner_name": "SARASWATHI & KAMALAM",
+            "phone": "9841187089",
+            "zone": "CENTRAL",
+            "address": "GANDHIPURAM STREET 1,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 88,
+            "owner_name": "K.P.RAMAMOORTHY",
+            "phone": "9443935556",
+            "zone": "SOUTH",
+            "address": "PALAKADU ROAD- KUNIAMUTHUR,",
+            "source": "property_tax_defaulter_list_2025-26"
+        },
+        {
+            "ward_number": 23,
+            "owner_name": "K.N.C.RAJENDAR",
+            "phone": "7200038790",
+            "zone": "EAST",
+            "address": "A, AVINASHI ROAD,",
+            "source": "property_tax_defaulter_list_2025-26"
+        }
+    ],
+    "lease_cases": {
+        "source": "c__1.pdf",
+        "description": "List of lease cases - Coimbatore District",
+        "details": [
+            "LIST OF LEASE CASES -",
+            "COIMBATORE ",
+            "DISTRICT ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            " ",
+            "Lease - Abstract ",
+            "Sl.No. Name of the Taluk Name of the Lessee No. of cases ",
+            "1. Coimbatore (South) 1. Elgi Equipments Ltd., "
+        ]
+    }
+}
