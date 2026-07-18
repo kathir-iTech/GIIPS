@@ -345,6 +345,11 @@ class Complaint(Base):
     merge_reason = Column(Text, nullable=True)
     merged_at = Column(DateTime, nullable=True)
 
+    # Photo duplicate detection fields
+    photo_hash = Column(String, nullable=True, index=True)
+    photo_duplicate_flag = Column(String, nullable=True)
+    photo_duplicate_of = Column(String, nullable=True)
+
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")
 

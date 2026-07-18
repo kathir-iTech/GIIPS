@@ -423,7 +423,14 @@
     "fieldOfficerCorporation": "Corporation:",
     "noOfficerYet": "No officer assigned yet",
     "underReview": "This complaint is under manual review. An officer will be assigned shortly.",
-    "officerNotFound": "Officer assignment pending"
+    "officerNotFound": "Officer assignment pending",
+    "photoDuplicate": {
+      "title": "Photo Review Flag",
+      "possibleDuplicateSubmission": "This photo looks very similar to another photo you uploaded. It has been flagged for officer review and the priority has been lowered.",
+      "reusedImage": "This photo matches an image from a different complaint. It has been flagged for officer review.",
+      "reusedImageShort": "Reused image — flagged for review",
+      "possibleDuplicateShort": "Possible duplicate photo"
+    }
   },
 
   "myComplaints": {

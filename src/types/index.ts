@@ -48,6 +48,8 @@ export interface Complaint {
   similarity_score: number;
   date_received: string;
   merge_reason?: string;
+  photo_duplicate_flag?: string | null;
+  photo_duplicate_of?: string | null;
 }
 
 export interface ClassificationMetrics {
@@ -111,6 +113,8 @@ export interface CitizenComplaint {
   date_received: string;
   image_path?: string | null;
   image_url?: string | null;
+  photo_duplicate_flag?: string | null;
+  photo_duplicate_of?: string | null;
   assigned_officer?: AssignedOfficer | null;
   incident?: {
     id: string | null;

@@ -37,6 +37,7 @@
 .incident-row.selected { background: rgba(99, 102, 241, 0.06); }
 .split-btn { padding: 2px 8px; border-radius: var(--radius-sm); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); font-size: 11px; font-weight: 600; color: #dc2626; cursor: pointer; margin-left: 8px; white-space: nowrap; }
 .split-btn:hover { background: rgba(239, 68, 68, 0.15); }
+.photo-dup-badge { font-size: 14px; cursor: help; opacity: 0.8; margin-left: 4px; }
 .feed-error { display: flex; align-items: center; gap: 8px; padding: 8px 14px; border-radius: var(--radius-sm); background: rgba(239, 68, 68, 0.08); border: 1px solid rgba(239, 68, 68, 0.2); font-size: 13px; color: #dc2626; }
 .feed-error button { margin-left: auto; background: none; border: none; color: #dc2626; cursor: pointer; font-size: 14px; font-weight: 700; }
 .complaint-header { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }

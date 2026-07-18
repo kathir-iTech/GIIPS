@@ -317,7 +317,15 @@ async def upload_complaint_photo(
     db_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
-    """Upload a photo for complaint evidence (jpg/png, max 5MB)."""
+    """Upload a photo for complaint evidence (jpg/png, max 5MB).
+
+    On upload, a perceptual hash (pHash) is computed and compared against
+    all existing complaint photos. If a near-duplicate is found:
+      - Same user → flagged 'possible_duplicate_submission' (spam guard)
+      - Different user → flagged 'reused_image' (fraud guard)
+    The complaint's auto-priority is lowered for same-user matches, but
+    never auto-rejected — false positives are reviewed by officers/admins.
+    """
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
@@ -327,21 +335,71 @@ async def upload_complaint_photo(
     if err:
         raise HTTPException(status_code=400, detail=err)
 
+    # Compute perceptual hash for duplicate detection
+    from storage import compute_phash, find_duplicate_photo
+    phash_str = compute_phash(data)
+    if phash_str:
+        match_id, flag_type, _ = find_duplicate_photo(db, db_user.id, phash_str)
+        if flag_type == "same_user":
+            complaint.photo_duplicate_flag = "possible_duplicate_submission"
+            complaint.photo_duplicate_of = match_id
+            logger.info(
+                "Photo duplicate (same user %s): complaint %s matches %s",
+                db_user.id, complaint_id, match_id,
+            )
+            # Lower auto-priority for same-user duplicate photo submissions
+            if complaint.priority not in (None, "Low"):
+                complaint.priority = "Low"
+        elif flag_type == "cross_user":
+            complaint.photo_duplicate_flag = "reused_image"
+            complaint.photo_duplicate_of = match_id
+            logger.info(
+                "Photo reused (cross-user): complaint %s (user %s) matches %s (different user)",
+                complaint_id, db_user.id, match_id,
+            )
+    else:
+        logger.info("No pHash computed for complaint %s — proceeding without duplicate check", complaint_id)
+
+    complaint.photo_hash = phash_str
+
     storage = S3Storage()
     if not storage.available:
         logger.warning("S3 not configured — skipping photo upload for complaint %s", complaint_id)
-        raise HTTPException(status_code=502, detail="S3 storage is not configured. Set S3_ENDPOINT_URL and related env vars.")
+        db.commit()
+        return {
+            "imageKey": None,
+            "complaintId": complaint_id,
+            "photoHash": phash_str,
+            "photoDuplicateFlag": complaint.photo_duplicate_flag,
+            "photoDuplicateOf": complaint.photo_duplicate_of,
+            "message": "Photo hash stored but upload skipped (S3 not configured).",
+        }
 
     try:
         object_key = storage.upload(data, file.filename, file.content_type)
     except Exception as e:
         logger.error("S3 upload failed for complaint %s: %s", complaint_id, e)
+        # Hash and flags are already set — commit so they're not lost
+        db.commit()
         raise HTTPException(status_code=502, detail=f"Storage upload failed: {e}")
 
     complaint.image_path = object_key
     db.commit()
 
-    return {"imageKey": object_key, "complaintId": complaint_id, "message": "Photo uploaded successfully."}
+    flag_msg = ""
+    if complaint.photo_duplicate_flag == "possible_duplicate_submission":
+        flag_msg = " Photo matches your earlier upload — marked as possible duplicate for review."
+    elif complaint.photo_duplicate_flag == "reused_image":
+        flag_msg = " Photo matches an existing complaint from another user — flagged for review."
+
+    return {
+        "imageKey": object_key,
+        "complaintId": complaint_id,
+        "photoHash": phash_str,
+        "photoDuplicateFlag": complaint.photo_duplicate_flag,
+        "photoDuplicateOf": complaint.photo_duplicate_of,
+        "message": "Photo uploaded successfully." + flag_msg,
+    }
 
 
 @complaint_router.get("/{complaint_id}/photo")
@@ -397,6 +455,8 @@ async def get_my_complaints(db_user: User = Depends(get_current_user), db: Sessi
             "priority": c.priority,
             "similarity_score": c.similarity_score,
             "merge_reason": c.merge_reason,
+            "photo_duplicate_flag": c.photo_duplicate_flag,
+            "photo_duplicate_of": c.photo_duplicate_of,
             "date_received": c.created_at.isoformat() if c.created_at else None,
             "assigned_officer": route_complaint(c.ward or "", c.predicted_category or ""),
             "incident": {
@@ -453,6 +513,8 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
         "priority": complaint.priority,
         "similarity_score": complaint.similarity_score,
         "merge_reason": complaint.merge_reason,
+        "photo_duplicate_flag": complaint.photo_duplicate_flag,
+        "photo_duplicate_of": complaint.photo_duplicate_of,
         "date_received": complaint.created_at.isoformat() if complaint.created_at else None,
         "incident": {
             "id": incident.id if incident else None,
@@ -741,7 +803,9 @@ async def get_incidents(db: Session = Depends(get_db)):
             "complaints": [{
                 "id": c.id, "complaint_number": c.id,
                 "date_received": c.created_at.isoformat() if c.created_at else None,
-                "text": c.title, "similarity_score": c.similarity_score or 0.85
+                "text": c.title, "similarity_score": c.similarity_score or 0.85,
+                "photo_duplicate_flag": c.photo_duplicate_flag,
+                "photo_duplicate_of": c.photo_duplicate_of,
             } for c in inc.complaints] if inc.complaints else []
         }
         result.append(inc_dict)
@@ -775,7 +839,9 @@ async def get_escalated_incidents(db_user: User = Depends(get_current_user), db:
                 "escalated_by": inc.escalated_by, "escalation_reason": inc.escalation_reason,
                 "complaints": [
                     {"id": c.id, "complaint_number": c.id, "text": c.title,
-                     "date_received": c.created_at.isoformat() if c.created_at else None}
+                     "date_received": c.created_at.isoformat() if c.created_at else None,
+                     "photo_duplicate_flag": c.photo_duplicate_flag,
+                     "photo_duplicate_of": c.photo_duplicate_of}
                     for c in inc.complaints
                 ] if inc.complaints else [],
             }
@@ -829,7 +895,9 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         "complaints": [{
             "id": c.id, "complaint_number": c.id,
             "date_received": c.created_at.isoformat() if c.created_at else None,
-            "text": c.title, "similarity_score": c.similarity_score or 0.85
+            "text": c.title, "similarity_score": c.similarity_score or 0.85,
+            "photo_duplicate_flag": c.photo_duplicate_flag,
+            "photo_duplicate_of": c.photo_duplicate_of,
         } for c in inc.complaints] if inc.complaints else [],
         "priority_history": [{
             "id": ph.id, "old_score": ph.old_score, "new_score": ph.new_score,

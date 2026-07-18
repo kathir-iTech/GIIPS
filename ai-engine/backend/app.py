@@ -154,6 +154,20 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] verification_code column already exists, skipping")
 
+        # Migration: add photo duplicate detection columns to complaints table
+        for col_ddl in [
+            "ALTER TABLE complaints ADD COLUMN photo_hash VARCHAR",
+            "ALTER TABLE complaints ADD COLUMN photo_duplicate_flag VARCHAR",
+            "ALTER TABLE complaints ADD COLUMN photo_duplicate_of VARCHAR",
+        ]:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text(col_ddl))
+                    conn.commit()
+                logger.info("[MIGRATION] Added column to complaints table")
+            except Exception:
+                pass
+
         # Migration: fix district for government users from old Chennai data
         try:
             from database import User, Base

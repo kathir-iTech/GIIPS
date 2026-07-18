@@ -167,6 +167,21 @@ const ComplaintDetailPage = () => {
               {data.merge_reason && <p className="merge-reason">{friendlyMergeReason(data.merge_reason)}</p>}
             </div>
 
+            {data.photo_duplicate_flag && (
+              <div className="incident-section">
+                <h3><AlertTriangle size={18} /> {t('complaintDetail.photoDuplicate.title')}</h3>
+                <div className="incident-card" style={{
+                  borderLeft: data.photo_duplicate_flag === 'reused_image'
+                    ? '3px solid #ef4444'
+                    : '3px solid #f59e0b'
+                }}>
+                  <p style={{ margin: 0, fontSize: 14, color: 'var(--text-secondary)', lineHeight: 1.6 }}>
+                    {t(`complaintDetail.photoDuplicate.${data.photo_duplicate_flag}`)}
+                  </p>
+                </div>
+              </div>
+            )}
+
             {data.incident && (
               <div className="incident-section">
                 <h3><LinkIcon size={18} /> {t('complaintDetail.sectionIncident')}</h3>

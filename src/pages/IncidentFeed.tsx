@@ -257,6 +257,11 @@ const IncidentFeed = () => {
                                 <span className="complaint-id">{c.complaint_number}</span>
                                 <span className="complaint-date">{c.date_received}</span>
                                 <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{((c.similarity_score || 0) * 100).toFixed(0)}%</span></div>
+                                {c.photo_duplicate_flag && (
+                                  <span className="photo-dup-badge" title={c.photo_duplicate_flag === 'reused_image' ? t('complaintDetail.photoDuplicate.reusedImage') : t('complaintDetail.photoDuplicate.possibleDuplicateSubmission')}>
+                                    {c.photo_duplicate_flag === 'reused_image' ? '🔄' : '📷'}
+                                  </span>
+                                )}
                                 <button className="split-btn" onClick={(e) => { e.stopPropagation(); handleSplit(incident.id, c.id); }} title={t('incidents.splitTitle')}>{t('incidents.split')}</button>
                               </div>
                               <p className="complaint-text">{c.text}</p>

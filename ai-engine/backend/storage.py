@@ -1,13 +1,18 @@
 """
 S3-compatible storage for complaint photo evidence (Backblaze B2 / MinIO / AWS S3).
 Uses a private bucket with presigned URLs — no public bucket or credit card needed.
+Includes perceptual-hash-based duplicate/fraud detection for uploaded photos.
 """
 
 import os
 import uuid
 import logging
+import io
 from pathlib import Path
-from typing import Optional
+from typing import Optional, List, Tuple
+
+from imagehash import phash
+from PIL import Image
 
 logger = logging.getLogger(__name__)
 
@@ -15,6 +20,82 @@ ALLOWED_EXTENSIONS = {".jpg", ".jpeg", ".png"}
 ALLOWED_MIME_TYPES = {"image/jpeg", "image/png"}
 MAX_FILE_SIZE = 5 * 1024 * 1024  # 5 MB
 PRESIGNED_URL_EXPIRY = 3600  # 1 hour
+
+# ── Perceptual hash settings ────────────────────────────────────────────────
+PHASH_HAMMING_THRESHOLD = 8  # max Hamming distance to consider a near-duplicate
+PHASH_SIZE = 8               # 8×8 DCT-based pHash = 64-bit hash
+
+
+def compute_phash(data: bytes) -> str:
+    """Compute a perceptual hash (pHash) from raw image bytes.
+
+    Returns a 16-character hex string representing the 64-bit hash.
+    Catches resized, re-compressed, and slightly cropped duplicates.
+    """
+    try:
+        img = Image.open(io.BytesIO(data))
+        # Convert to RGB if paletted/RGBA so pHash is consistent
+        if img.mode not in ("RGB", "L"):
+            img = img.convert("RGB")
+        return str(phash(img, hash_size=PHASH_SIZE))
+    except Exception as e:
+        logger.warning("Failed to compute pHash: %s", e)
+        return ""
+
+
+def hamming_distance(hash_a: str, hash_b: str) -> int:
+    """Compute Hamming distance between two hex-encoded pHash strings."""
+    if len(hash_a) != len(hash_b):
+        return 64  # max possible distance for 64-bit hash
+    val = int(hash_a, 16) ^ int(hash_b, 16)
+    return bin(val).count("1")
+
+
+def find_duplicate_photo(
+    db_session,
+    current_user_id: str,
+    phash_str: str,
+    threshold: int = PHASH_HAMMING_THRESHOLD,
+) -> Tuple[Optional[str], Optional[str], Optional[str]]:
+    """Search for near-duplicate photos in the database.
+
+    Returns (match_complaint_id, flag_type, matched_user_id) where flag_type is:
+      - "same_user"    — exact/near-exact match from the SAME user (possible spam)
+      - "cross_user"   — match from a DIFFERENT user (reused image)
+      - None           — no match found
+    """
+    if not phash_str:
+        return None, None, None
+
+    # Import here to avoid circular import at module level
+    from database import Complaint
+
+    existing: List[Complaint] = (
+        db_session.query(Complaint)
+        .filter(Complaint.photo_hash.isnot(None), Complaint.photo_hash != "")
+        .all()
+    )
+
+    best_match_id = None
+    best_match_user = None
+    best_distance = threshold + 1
+
+    for c in existing:
+        if not c.photo_hash:
+            continue
+        dist = hamming_distance(phash_str, c.photo_hash)
+        if dist <= threshold and dist < best_distance:
+            best_distance = dist
+            best_match_id = c.id
+            best_match_user = c.user_id
+
+    if best_match_id is None:
+        return None, None, None
+
+    if best_match_user == current_user_id:
+        return best_match_id, "same_user", best_match_user
+    else:
+        return best_match_id, "cross_user", best_match_user
 
 
 def _config(key: str, default: str) -> str:
