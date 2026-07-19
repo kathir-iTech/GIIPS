@@ -816,14 +816,32 @@ async def get_analytics(db: Session = Depends(get_db)):
 
 
 @incident_router.get("")
-async def get_incidents(db: Session = Depends(get_db)):
-    """Get all incidents."""
-    incidents = db.query(Incident).options(joinedload(Incident.complaints)).all()
+async def get_incidents(
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    limit: int = Query(50, ge=1, le=200, description="Items per page"),
+    db: Session = Depends(get_db),
+):
+    """Get all incidents, paginated.
+
+    Uses eager-loaded complaints relation to avoid N+1 queries.
+    """
+    total = db.query(Incident).count()
+    offset_val = (page - 1) * limit
+    incidents = db.query(Incident).options(joinedload(Incident.complaints)).order_by(
+        Incident.priority_score.desc().nullslast(),
+        Incident.created_at.desc().nullslast(),
+    ).offset(offset_val).limit(limit).all()
+
+    _dept_cache: dict[str, str] = {}
+
     result = []
     for inc in incidents:
+        cat = inc.category or ""
+        if cat not in _dept_cache:
+            _dept_cache[cat] = get_department(cat)
         inc_dict = {
             "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
-            "department": get_department(inc.category),
+            "department": _dept_cache[cat],
             "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
             "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
             "recommended_action": inc.recommended_action, "days_open": inc.days_open,
@@ -836,7 +854,13 @@ async def get_incidents(db: Session = Depends(get_db)):
             } for c in inc.complaints] if inc.complaints else []
         }
         result.append(inc_dict)
-    return {"incidents": result}
+    return {
+        "incidents": result,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit,
+    }
 
 
 @incident_router.get("/escalated")
