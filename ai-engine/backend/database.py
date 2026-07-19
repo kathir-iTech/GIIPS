@@ -420,8 +420,12 @@ def seed_demo_users():
         {"full_name": "CCMC Sanitation Officer",         "email": "officer3@giips.gov.in",  "role": "Officer", "password": "password123", "department": "CCMC Health Department", "ward": None, "district": "Coimbatore"},
         {"full_name": "TANGEDCO - Coimbatore Region",    "email": "officer4@giips.gov.in",  "role": "Officer", "password": "password123", "department": "TANGEDCO - Coimbatore Region", "ward": None, "district": "Coimbatore"},
 
-        # ── Demo Citizen (Coimbatore resident) ──
+        # ── Demo Citizens (Coimbatore residents, spread across wards) ──
         {"full_name": "Ravi Krishnan",                   "email": "citizen@giips.gov.in",    "role": "Citizen", "password": "password123", "department": None, "ward": "27", "district": "Coimbatore"},
+        {"full_name": "Lakshmi Priya",                   "email": "citizen2@giips.gov.in",   "role": "Citizen", "password": "password123", "department": None, "ward": "1",  "district": "Coimbatore"},
+        {"full_name": "Muruganantham",                   "email": "citizen3@giips.gov.in",   "role": "Citizen", "password": "password123", "department": None, "ward": "15", "district": "Coimbatore"},
+        {"full_name": "Kavitha Ramesh",                  "email": "citizen4@giips.gov.in",   "role": "Citizen", "password": "password123", "department": None, "ward": "48", "district": "Coimbatore"},
+        {"full_name": "Senthil Kumar",                   "email": "citizen5@giips.gov.in",   "role": "Citizen", "password": "password123", "department": None, "ward": "76", "district": "Coimbatore"},
 
         # ── Ward Councillors for specific real wards across all 5 zones ──
         {"full_name": "Councillor - Thudiyalur (Ward 1)",      "email": "councillor1@giips.gov.in", "role": "Councillor", "password": "password123", "department": None, "ward": "1", "district": "Coimbatore"},
@@ -517,8 +521,7 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
     complaints_list = []
     incidents = []
 
-    citizen = db.query(User).filter(User.role == 'Citizen').first()
-    citizen_id = citizen.id if citizen else None
+    citizens = db.query(User).filter(User.role == 'Citizen').all()
 
     zone_lat_lng = {
         "North":   (11.052, 76.96),
@@ -557,6 +560,9 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
         description = f"{base_text} [{ref} | Ward {ward_num} | {zone} Zone | Coimbatore]"
         title       = f"{category} in {area_label}, Ward {ward_num} ({zone} Zone) — {ref}"
 
+        # Distribute complaints round-robin across all citizens
+        owner = citizens[i % len(citizens)] if citizens else None
+
         complaint = Complaint(
             id=ref,
             title=title,
@@ -568,7 +574,7 @@ def seed_synthetic_data(num_complaints: int = 10000, duplicate_rate: float = 0.1
             created_at=datetime.datetime.utcnow() - timedelta(days=random.randint(0, 60)),
             latitude=round(lat_lng[0] + random.uniform(-0.04, 0.04), 6),
             longitude=round(lat_lng[1] + random.uniform(-0.04, 0.04), 6),
-            user_id=citizen_id,
+            user_id=owner.id if owner else None,
         )
         complaints_list.append(complaint)
 
@@ -644,8 +650,7 @@ def topup_wards(min_per_ward: int = 50):
             counter = 0
 
         categories = list(CCMC_COMPLAINT_TEMPLATES.keys())
-        citizen = db.query(User).filter(User.role == 'Citizen').first()
-        citizen_id = citizen.id if citizen else None
+        citizens = db.query(User).filter(User.role == 'Citizen').all()
 
         zone_lat_lng = {
             "North":   (11.052, 76.96),
@@ -656,6 +661,7 @@ def topup_wards(min_per_ward: int = 50):
         }
 
         topup_list = []
+        topup_citizen_idx = 0
         for wn in ALL_WARD_NUMBERS:
             wn_str = str(wn)
             current = ward_counts.get(wn_str, 0)
@@ -669,6 +675,8 @@ def topup_wards(min_per_ward: int = 50):
                 lat_lng = zone_lat_lng[zone]
                 counter += 1
                 ref = f"COMP-{counter:06d}"
+                owner = citizens[topup_citizen_idx % len(citizens)] if citizens else None
+                topup_citizen_idx += 1
                 complaint = Complaint(
                     id=ref,
                     title=f"{category} in {area_label}, Ward {wn_str} ({zone} Zone)",
@@ -680,7 +688,7 @@ def topup_wards(min_per_ward: int = 50):
                     created_at=datetime.datetime.utcnow() - timedelta(days=random.randint(0, 60)),
                     latitude=round(lat_lng[0] + random.uniform(-0.04, 0.04), 6),
                     longitude=round(lat_lng[1] + random.uniform(-0.04, 0.04), 6),
-                    user_id=citizen_id,
+                    user_id=owner.id if owner else None,
                 )
                 topup_list.append(complaint)
 

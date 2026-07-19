@@ -438,12 +438,33 @@ async def debug_env(db_user: User = Depends(get_current_user)):
 
 
 @complaint_router.get("/my")
-async def get_my_complaints(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
-    """Get complaints for the current authenticated user."""
-    complaints = db.query(Complaint).filter(Complaint.user_id == db_user.id).order_by(Complaint.created_at.desc()).all()
+async def get_my_complaints(
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    limit: int = Query(50, ge=1, le=200, description="Items per page"),
+    db_user: User = Depends(get_current_user),
+    db: Session = Depends(get_db),
+):
+    """Get complaints for the current authenticated user, paginated.
+
+    Uses eager-loaded incident relation to avoid N+1 queries.
+    Caches officer assignments per (ward, category) pair.
+    """
+    q = db.query(Complaint).options(joinedload(Complaint.incident)).filter(
+        Complaint.user_id == db_user.id
+    ).order_by(Complaint.created_at.desc())
+
+    total = db.query(Complaint).filter(Complaint.user_id == db_user.id).count()
+    offset_val = (page - 1) * limit
+    complaints = q.offset(offset_val).limit(limit).all()
+
+    _officer_cache: dict[tuple[str, str], dict] = {}
+
     result = []
     for c in complaints:
-        incident = db.query(Incident).filter(Incident.id == c.incident_id).first() if c.incident_id else None
+        incident = c.incident
+        key = (c.ward or "", c.predicted_category or "")
+        if key not in _officer_cache:
+            _officer_cache[key] = route_complaint(*key)
         result.append({
             "id": c.id,
             "title": c.title,
@@ -458,7 +479,7 @@ async def get_my_complaints(db_user: User = Depends(get_current_user), db: Sessi
             "photo_duplicate_flag": c.photo_duplicate_flag,
             "photo_duplicate_of": c.photo_duplicate_of,
             "date_received": c.created_at.isoformat() if c.created_at else None,
-            "assigned_officer": route_complaint(c.ward or "", c.predicted_category or ""),
+            "assigned_officer": _officer_cache[key],
             "incident": {
                 "id": incident.id if incident else None,
                 "incident_number": incident.incident_number if incident else None,
@@ -469,7 +490,13 @@ async def get_my_complaints(db_user: User = Depends(get_current_user), db: Sessi
                 "recommended_action": incident.recommended_action if incident else None,
             } if incident else None
         })
-    return {"complaints": result}
+    return {
+        "complaints": result,
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit,
+    }
 
 
 @complaint_router.get("/coordinates")
@@ -1314,13 +1341,13 @@ async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_use
     elif db_user.role not in ("Commissioner", "Executive", "Officer"):
         raise HTTPException(status_code=403, detail="Access denied")
 
-    complaints = db.query(Complaint).filter(
+    complaints = db.query(Complaint).options(joinedload(Complaint.incident)).filter(
         Complaint.ward == ward
     ).order_by(Complaint.created_at.desc()).all()
 
     result = []
     for c in complaints:
-        incident = db.query(Incident).filter(Incident.id == c.incident_id).first() if c.incident_id else None
+        incident = c.incident
         result.append({
             "id": c.id, "title": c.title, "description": c.description,
             "location": c.location, "ward": c.ward,
