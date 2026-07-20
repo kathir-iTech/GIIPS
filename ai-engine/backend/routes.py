@@ -910,7 +910,7 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
 
     incident_id = None
     try:
-        cut_off = datetime.datetime.utcnow() - timedelta(days=AGING_CRITICAL_DAYS)
+        cut_off = datetime.utcnow() - timedelta(days=AGING_CRITICAL_DAYS)
         aging = db.query(Incident).filter(
             Incident.created_at <= cut_off,
             Incident.escalated == False
@@ -918,7 +918,7 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
         count = 0
         for inc in aging:
             inc.escalated = True
-            inc.escalated_at = datetime.datetime.utcnow()
+            inc.escalated_at = datetime.utcnow()
             inc.escalated_by = "system"
             count += 1
         if count:

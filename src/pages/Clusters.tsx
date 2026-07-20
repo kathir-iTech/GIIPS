@@ -140,13 +140,16 @@ const Clusters = () => {
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [overriddenIds, setOverriddenIds] = useState<Set<string>>(new Set());
 
-  const toggleOverride = (complaintId: string) => {
-    setOverriddenIds(prev => {
-      const next = new Set(prev);
-      if (next.has(complaintId)) next.delete(complaintId);
-      else next.add(complaintId);
-      return next;
-    });
+  const toggleOverride = async (complaintId: string) => {
+    if (!selectedIncident) return;
+    if (overriddenIds.has(complaintId)) return;
+    try {
+      await api.splitComplaint(selectedIncident.id, complaintId);
+      setOverriddenIds(prev => new Set(prev).add(complaintId));
+      await fetchIncidentDetail(selectedIncident);
+    } catch (err: any) {
+      setError(err.message || t('clusters.detailLoadError'));
+    }
   };
 
   const [search, setSearch] = useState('');
@@ -628,9 +631,11 @@ const Clusters = () => {
                                 <p className="tl-text">{c.text}</p>
                                 {c.merge_reason && <span className="tl-merge-reason">{c.merge_reason}</span>}
                                 {overriddenIds.has(c.id) && <span className="tl-override-label">{t('clusters.manuallyExcluded')}</span>}
-                                <button className="override-btn" onClick={() => toggleOverride(c.id)}>
-                                  {overriddenIds.has(c.id) ? t('clusters.undo') : t('clusters.markNotDuplicate')}
-                                </button>
+                                {!overriddenIds.has(c.id) && (
+                                  <button className="override-btn" onClick={() => toggleOverride(c.id)}>
+                                    <X size={12} /> {t('clusters.markNotDuplicate')}
+                                  </button>
+                                )}
                               </div>
                             </div>
                           ))}
@@ -725,9 +730,11 @@ const Clusters = () => {
                             <span className="lc-num">{c.complaint_number}</span>
                             <span className="lc-text">{c.text?.substring(0, 60)}{c.text?.length > 60 ? '…' : ''}</span>
                             <span className="lc-sim">{Math.round((c.similarity_score || 0) * 100)}%</span>
-                            <button className="override-btn-small" onClick={() => toggleOverride(c.id)} title={overriddenIds.has(c.id) ? t('clusters.undoOverride') : t('clusters.flagNotDuplicate')}>
-                              {overriddenIds.has(c.id) ? t('clusters.undo') : t('clusters.notDup')}
-                            </button>
+                            {!overriddenIds.has(c.id) && (
+                              <button className="override-btn-small" onClick={() => toggleOverride(c.id)} title={t('clusters.flagNotDuplicate')}>
+                                <X size={10} /> {t('clusters.notDup')}
+                              </button>
+                            )}
                           </div>
                         ))}
                       </div>
