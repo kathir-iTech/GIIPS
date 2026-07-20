@@ -34,7 +34,7 @@ const IncidentFeed = () => {
       await api.mergeIncidents(ids);
       setSelectedIds(new Set());
       setExpandedId(null);
-      const data = await api.getIncidents(sortField);
+      const data = await api.getIncidents(sortField, 2000);
       setAllIncidents(data || []);
     } catch (err: any) {
       setMergeError(err.message || t('incidents.catch.mergeFailed'));
@@ -46,7 +46,7 @@ const IncidentFeed = () => {
     try {
       await api.splitComplaint(incidentId, complaintId);
       setExpandedId(null);
-      const data = await api.getIncidents(sortField);
+      const data = await api.getIncidents(sortField, 2000);
       setAllIncidents(data || []);
     } catch (err: any) {
       setSplitError(err.message || t('incidents.catch.splitFailed'));
@@ -59,7 +59,7 @@ const IncidentFeed = () => {
     const fetchIncidents = async (showLoader = false) => {
       if (cancelled) return;
       try {
-        const data = await api.getIncidents(sortField);
+        const data = await api.getIncidents(sortField, 2000);
         if (!cancelled) {
           setAllIncidents(data || []);
           setError(null);

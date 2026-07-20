@@ -134,7 +134,7 @@ const ExecutiveDashboard = () => {
           api.getExecutiveSummary(),
           api.getWardHealth(),
           api.getDeptWorkload(),
-          api.getIncidents(),
+          api.getIncidents(undefined, 2000),
           api.getPredictionsSummary(),
           api.getKnowledgeSummary(),
           api.getDecisionSupportSummary(),

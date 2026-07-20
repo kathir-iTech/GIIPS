@@ -239,7 +239,7 @@ const SpatialIntelligence = () => {
       api.getHotspots(),
       api.getRiskAnalysis(),
       api.getForecast(timelineDays),
-      api.getIncidents(),
+      api.getIncidents(undefined, 2000),
       api.getComplaintCoordinates(),
     ]).then((results: any) => {
       if (cancelled) return;
@@ -296,7 +296,7 @@ const SpatialIntelligence = () => {
       api.getHotspots(),
       api.getRiskAnalysis(),
       api.getForecast(timelineDays),
-      api.getIncidents(),
+      api.getIncidents(undefined, 2000),
       api.getComplaintCoordinates(),
     ]).then((results: any) => {
       if (results[0].status === 'fulfilled') setHeatmap(Array.isArray(results[0].value) ? results[0].value : []);

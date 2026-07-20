@@ -440,7 +440,7 @@ async def debug_env(db_user: User = Depends(get_current_user)):
 @complaint_router.get("/my")
 async def get_my_complaints(
     page: int = Query(1, ge=1, description="Page number (1-based)"),
-    limit: int = Query(50, ge=1, le=200, description="Items per page"),
+    limit: int = Query(50, ge=1, le=2000, description="Items per page"),
     db_user: User = Depends(get_current_user),
     db: Session = Depends(get_db),
 ):
@@ -818,7 +818,7 @@ async def get_analytics(db: Session = Depends(get_db)):
 @incident_router.get("")
 async def get_incidents(
     page: int = Query(1, ge=1, description="Page number (1-based)"),
-    limit: int = Query(50, ge=1, le=200, description="Items per page"),
+    limit: int = Query(50, ge=1, le=2000, description="Items per page"),
     db: Session = Depends(get_db),
 ):
     """Get all incidents, paginated.

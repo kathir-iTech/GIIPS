@@ -133,10 +133,12 @@ export const api = {
     return response.json();
   },
 
-  getIncidents: async (sortField?: string): Promise<any[]> => {
-    const url = sortField
-      ? `${BASE_URL}/incidents?sort=${encodeURIComponent(sortField)}`
-      : `${BASE_URL}/incidents`;
+  getIncidents: async (sortField?: string, limit?: number): Promise<any[]> => {
+    let url = `${BASE_URL}/incidents`;
+    const params: string[] = [];
+    if (sortField) params.push(`sort=${encodeURIComponent(sortField)}`);
+    if (limit) params.push(`limit=${limit}`);
+    if (params.length) url += `?${params.join('&')}`;
     const response = await fetch(url, FETCH_DEFAULTS);
     if (!response.ok) {
       throw new Error(await getErrorMessage(response));

@@ -164,7 +164,7 @@ const Clusters = () => {
         setLoading(true);
         setError(null);
         const [incs, rules, preds, know, dec] = await Promise.allSettled([
-          api.getIncidents(),
+          api.getIncidents(undefined, 2000),
           api.getPriorityRules().catch(() => []),
           api.getPredictionsSummary().catch(() => null),
           api.getKnowledgeSummary().catch(() => null),
