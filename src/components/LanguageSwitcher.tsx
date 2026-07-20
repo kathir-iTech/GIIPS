@@ -5,7 +5,6 @@ import './LanguageSwitcher.css';
 const LANG_MAP: Record<string, string> = {
   en: 'en',
   ta: 'ta',
-  kn: 'kn',
 };
 
 const LanguageSwitcher: React.FC = () => {
@@ -27,12 +26,7 @@ const LanguageSwitcher: React.FC = () => {
       >
         தமிழ்
       </button>
-      <button
-        className={`lang-option ${current === 'kn' ? 'active' : ''}`}
-        onClick={() => i18n.changeLanguage('kn')}
-      >
-        ಕನ್ನಡ
-      </button>
+
     </div>
   );
 };
