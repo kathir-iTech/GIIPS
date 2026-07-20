@@ -6,7 +6,8 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity } from 'lucide-react';
+import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -98,6 +99,12 @@ const ComplaintDetailPage = () => {
 
   const incidentStatus = data.incident?.status || 'open';
   const confidenceLabel = data.confidence != null ? `${getConfidenceLabel(data.confidence, t)} ${t('common.confidence.label')}` : '';
+  const statusStages = useStatusStages(
+    data.date_received,
+    data.incident?.status,
+    !!(data.assigned_officer?.name || data.assigned_officer?.phone),
+    !!data.predicted_category,
+  );
 
   const timeline = [
     { label: t('complaintDetail.timelineSubmitted'), date: data.date_received, icon: CheckCircle, color: '#3b82f6' },
@@ -286,7 +293,10 @@ const ComplaintDetailPage = () => {
           </div>
 
           <div className="side-card glass-card">
-            <h3>{t('complaintDetail.sectionTimeline')}</h3>
+            <h3><Activity size={16} /> {t('complaintDetail.statusTimelineTitle')}</h3>
+            <StatusTimeline stages={statusStages} />
+
+            <h3 style={{ marginTop: 20 }}>{t('complaintDetail.sectionTimeline')}</h3>
             <div className="timeline">
               {fullTimeline.map((item, idx) => (
                 <div key={idx} className="timeline-item">

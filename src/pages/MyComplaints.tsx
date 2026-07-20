@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import type { CitizenComplaint } from '../types';
-import { FileText, MapPin, Calendar, Tag, AlertCircle, CheckCircle, Clock, Search, ChevronRight, X, Filter } from 'lucide-react';
+import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check } from 'lucide-react';
 import './MyComplaints.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -86,6 +86,23 @@ const MyComplaints = () => {
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('myComplaints.loading')}</span></div>;
   if (error) return <div className="page-error">{t('common.error')}: {error}</div>;
 
+  const getActiveStages = (c: CitizenComplaint): number[] => {
+    const st = c.incident?.status || 'pending';
+    const hasOfficer = !!(c.assigned_officer?.name || c.assigned_officer?.phone);
+    const hasIncident = st !== 'pending';
+    const isResolved = ['resolved', 'pending_verification', 'closed'].includes(st);
+    const isInProgress = isResolved || st === 'in-progress';
+    const isRouted = isInProgress || (hasIncident && hasOfficer);
+    const isVerified = isRouted || hasIncident;
+    const active: number[] = [];
+    if (true) active.push(0);
+    if (isVerified) active.push(1);
+    if (isRouted) active.push(2);
+    if (isInProgress) active.push(3);
+    if (isResolved) active.push(4);
+    return active;
+  };
+
   return (
     <div className="my-complaints-page">
       <Header title={t('myComplaints.headerTitle')} subtitle={t('myComplaints.headerSubtitle')} />
@@ -144,18 +161,25 @@ const MyComplaints = () => {
             {filtered.map(c => {
               const incidentStatus = c.incident?.status || 'open';
               return (
-                <div key={c.id} className="complaint-card" onClick={() => navigate(`/complaint/${c.id}`)}>
-                  <div className="card-header">
-                    <div className="card-title">
-                      <Tag size={16} />
-                      <span>{c.title || t('common.untitled')}</span>
+                  <div key={c.id} className="complaint-card" onClick={() => navigate(`/complaint/${c.id}`)}>
+                    <div className="card-header">
+                      <div className="card-title">
+                        <Tag size={16} />
+                        <span>{c.title || t('common.untitled')}</span>
+                      </div>
+                      <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>
+                        {t(STATUS_KEY[incidentStatus] || 'common.status.open')}
+                      </span>
                     </div>
-                    <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>
-                      {t(STATUS_KEY[incidentStatus] || 'common.status.open')}
-                    </span>
-                  </div>
-                  <p className="card-desc">{c.description}</p>
-                  <div className="card-meta">
+                    <p className="card-desc">{c.description}</p>
+                    <div className="sc-steps">
+                      {[0, 1, 2, 3, 4].map(i => (
+                        <div key={i} className={`sc-step ${getActiveStages(c).includes(i) ? 'done' : ''}`}>
+                          {getActiveStages(c).includes(i) ? <Check size={10} /> : null}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="card-meta">
                     <span className="meta-item"><MapPin size={14} /> {c.ward || t('common.na')}</span>
                     <span className="meta-item"><Calendar size={14} /> {c.date_received ? new Date(c.date_received).toLocaleDateString('en-IN') : t('common.na')}</span>
                     <span className="meta-item"><AlertCircle size={14} /> {c.predicted_category || t('common.uncategorized')}</span>

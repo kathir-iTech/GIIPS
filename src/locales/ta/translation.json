@@ -384,6 +384,12 @@
   },
 
   "complaintDetail": {
+    "stageReceived": "பெறப்பட்டது",
+    "stageVerified": "சரிபார்க்கப்பட்டது",
+    "stageRouted": "துறைக்கு அனுப்பப்பட்டது",
+    "stageInProgress": "செயல்பாட்டில் உள்ளது",
+    "stageResolved": "தீர்க்கப்பட்டது",
+    "statusTimelineTitle": "நிலை முன்னேற்றம்",
     "headerTitle": "புகாரின் விவரங்கள்",
     "headerSubtitle": "குறிப்பு எண்:",
     "backButton": "எனது புகார்களுக்கு திரும்பவும்",

@@ -384,6 +384,12 @@
   },
 
   "complaintDetail": {
+    "stageReceived": "Received",
+    "stageVerified": "Verified",
+    "stageRouted": "Routed to Department",
+    "stageInProgress": "In Progress",
+    "stageResolved": "Resolved",
+    "statusTimelineTitle": "Status Progress",
     "headerTitle": "Complaint Details",
     "headerSubtitle": "Reference:",
     "backButton": "Back to My Complaints",
