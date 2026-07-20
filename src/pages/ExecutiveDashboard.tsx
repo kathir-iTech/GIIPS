@@ -208,7 +208,7 @@ const ExecutiveDashboard = () => {
 
   const criticalIncidents = useMemo(() => incidents.filter((i: any) => i.priority_label?.toLowerCase() === 'critical').slice(0, 5), [incidents]);
   const highIncidents = useMemo(() => incidents.filter((i: any) => i.priority_label?.toLowerCase() === 'high').slice(0, 10), [incidents]);
-  const agingCount = useMemo(() => incidents.filter((i: any) => (i.days_open ?? 0) > 30).length, [incidents]);
+  const agingCount = useMemo(() => incidents.filter((i: any) => (i.days_open ?? 0) >= 30).length, [incidents]);
   const topDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 5), [wardHealth]);
   const criticalDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 5), [wardHealth]);
 

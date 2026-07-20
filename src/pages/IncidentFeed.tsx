@@ -103,7 +103,7 @@ const IncidentFeed = () => {
         (i.category || '').toLowerCase().includes(q)
       );
     }
-    if (agingOnly) result = result.filter(i => (i.days_open ?? 0) > 30);
+    if (agingOnly) result = result.filter(i => (i.days_open ?? 0) >= 30);
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -170,9 +170,9 @@ const IncidentFeed = () => {
           <button
             className={`aging-filter-btn ${agingOnly ? 'active' : ''}`}
             onClick={() => { setAgingOnly(v => !v); setCurrentPage(1); }}
-            title="Show only incidents >30 days old"
+            title="Show only incidents aged 30+ days"
           >
-            <Clock size={14} /> &gt;30d
+            <Clock size={14} /> 30+d
           </button>
           {selectedIds.size >= 2 && (
             <button className="merge-btn" onClick={handleMerge} title={t('incidents.mergeTitle')}>
