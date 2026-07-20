@@ -25,6 +25,7 @@ const IncidentFeed = () => {
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [splitError, setSplitError] = useState<string | null>(null);
+  const [agingOnly, setAgingOnly] = useState(false);
 
   const handleMerge = useCallback(async () => {
     const ids = Array.from(selectedIds);
@@ -102,6 +103,7 @@ const IncidentFeed = () => {
         (i.category || '').toLowerCase().includes(q)
       );
     }
+    if (agingOnly) result = result.filter(i => (i.days_open ?? 0) > 30);
     result.sort((a, b) => {
       const aVal = a[sortField];
       const bVal = b[sortField];
@@ -110,7 +112,7 @@ const IncidentFeed = () => {
       return String(aVal || '').localeCompare(String(bVal || '')) * modifier;
     });
     return result;
-  }, [allIncidents, priorityFilter, categoryFilter, searchQuery, sortField, sortDirection]);
+  }, [allIncidents, priorityFilter, categoryFilter, searchQuery, sortField, sortDirection, agingOnly]);
 
   const totalPages = Math.ceil(filteredAndSorted.length / PAGE_SIZE);
   const pagedIncidents = filteredAndSorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
@@ -164,6 +166,13 @@ const IncidentFeed = () => {
             title={t('incidents.sortByDays')}
           >
             <ArrowUpDown size={14} /> {t('incidents.oldest')}
+          </button>
+          <button
+            className={`aging-filter-btn ${agingOnly ? 'active' : ''}`}
+            onClick={() => { setAgingOnly(v => !v); setCurrentPage(1); }}
+            title="Show only incidents >30 days old"
+          >
+            <Clock size={14} /> &gt;30d
           </button>
           {selectedIds.size >= 2 && (
             <button className="merge-btn" onClick={handleMerge} title={t('incidents.mergeTitle')}>
