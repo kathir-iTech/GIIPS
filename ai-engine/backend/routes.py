@@ -944,6 +944,8 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
         "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
         "recommended_action": inc.recommended_action, "days_open": inc.days_open,
+        "resolution_note": inc.resolution_note,
+        "verification_code": inc.verification_code,
         "created_at": inc.created_at.isoformat() if inc.created_at else None,
         "complaints": [{
             "id": c.id, "complaint_number": c.id,
