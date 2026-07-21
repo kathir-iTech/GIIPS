@@ -125,6 +125,7 @@ export interface CitizenComplaint {
     cluster_size: number | null;
     recommended_action: string | null;
     summary: string | null;
+    resolution_note?: string | null;
     priority_history: Array<{
       id: string;
       old_score: number;

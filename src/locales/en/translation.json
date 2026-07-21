@@ -430,6 +430,11 @@
     "noOfficerYet": "No officer assigned yet",
     "underReview": "This complaint is under manual review. An officer will be assigned shortly.",
     "officerNotFound": "Officer assignment pending",
+    "resolutionNote": "Resolution Note",
+    "reopenPrompt": "If your issue is not fully resolved, you can reopen this complaint.",
+    "reopenButton": "Reopen Complaint",
+    "reopenSuccess": "Your complaint has been reopened. The department will review it again.",
+    "reopenError": "Could not reopen. Please try again later.",
     "photoDuplicate": {
       "title": "Photo Review Flag",
       "possibleDuplicateSubmission": "This photo looks very similar to another photo you uploaded. It has been flagged for officer review and the priority has been lowered.",

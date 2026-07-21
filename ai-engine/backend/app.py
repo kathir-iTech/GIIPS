@@ -168,6 +168,15 @@ async def lifespan(app: FastAPI):
             except Exception:
                 pass
 
+        # Migration: add resolution_note column to incidents table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN resolution_note TEXT"))
+                conn.commit()
+            logger.info("[MIGRATION] Added resolution_note column to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] resolution_note column already exists, skipping")
+
         # Migration: fix district for government users from old Chennai data
         try:
             from database import User, Base

@@ -488,6 +488,7 @@ async def get_my_complaints(
                 "status": incident.status if incident else None,
                 "cluster_size": incident.cluster_size if incident else None,
                 "recommended_action": incident.recommended_action if incident else None,
+                "resolution_note": incident.resolution_note if incident else None,
             } if incident else None
         })
     return {
@@ -552,6 +553,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
             "cluster_size": incident.cluster_size if incident else None,
             "recommended_action": incident.recommended_action if incident else None,
             "summary": incident.summary if incident else None,
+            "resolution_note": incident.resolution_note if incident else None,
             "priority_history": [
                 {
                     "id": ph.id,
@@ -1195,6 +1197,7 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
         code = f"{random.randint(100000, 999999)}"
         incident.status = "pending_verification"
         incident.verification_code = code
+        incident.resolution_note = body.resolution_note
         db.commit()
 
         # Notify citizens with the verification code
@@ -1353,6 +1356,43 @@ async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: 
                      incident.id, "success", "Citizen confirmed resolution")
 
     return {"message": "Resolution confirmed. Thank you!", "incident_id": incident.id, "status": "resolved"}
+
+
+@incident_router.post("/{incident_id}/reopen")
+async def reopen_incident(incident_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Reopen a resolved/pending_verification incident. Only the complaint submitter can reopen."""
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    if incident.status not in ("resolved", "pending_verification", "closed"):
+        raise HTTPException(status_code=400, detail="Only resolved or closed incidents can be reopened")
+
+    # Verify the citizen owns at least one complaint linked to this incident
+    complaint = db.query(Complaint).filter(
+        Complaint.incident_id == incident_id,
+        Complaint.user_id == db_user.id
+    ).first()
+    if not complaint:
+        raise HTTPException(status_code=403, detail="You are not authorized to reopen this incident")
+
+    old_status = incident.status
+    incident.status = "open"
+    incident.verification_code = None
+    incident.resolution_note = None
+    db.commit()
+
+    _create_notification(
+        db, db_user.id, "status_change",
+        complaint_id=complaint.id,
+        data={"old_status": old_status, "new_status": "open", "incident_number": incident.incident_number,
+              "message": "Your complaint has been reopened."},
+    )
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_reopen",
+                     incident.id, "success", f"Citizen reopened incident from {old_status} to open")
+
+    return {"message": "Incident reopened", "incident_id": incident.id, "status": "open"}
 
 
 @complaint_router.get("/ward/{ward}")

@@ -315,6 +315,9 @@ class Incident(Base):
     # Citizen verification for resolution
     verification_code = Column(String, nullable=True)
 
+    # Resolution note — officer's comment when marking resolved
+    resolution_note = Column(Text, nullable=True)
+
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
     priority_history = relationship("PriorityHistory", backref="incident")

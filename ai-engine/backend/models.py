@@ -250,3 +250,4 @@ class NotificationResponse(BaseModel):
 
 class UpdateStatusRequest(BaseModel):
     status: str
+    resolution_note: Optional[str] = None

@@ -33,3 +33,16 @@ tsconfig.node.tsbuildinfo
 
 # Metrics cache (embeddings, etc.)
 metrics/cache/
+
+# Generated / temporary files
+test-results/
+Coimbatore_Site/
+Coimbatore_Site_2/
+Coimbatore_Site_3/
+c_1/
+c__*.pdf
+
+# Downloaded data
+*.jpeg
+*.jpg
+*.pdf

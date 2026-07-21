@@ -492,4 +492,13 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  reopenIncident: async (incidentId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/reopen`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 };

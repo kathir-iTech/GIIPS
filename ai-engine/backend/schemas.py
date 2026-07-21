@@ -103,6 +103,7 @@ class IncidentBase(BaseModel):
     priority_label: str = Field("Low", description="Priority level (Critical, High, Medium, Low)")
     summary: Optional[str] = Field(None, description="AI-generated summary of the incident")
     status: str = Field("open", description="Resolution status (open, in-progress, closed)")
+    resolution_note: Optional[str] = Field(None, description="Officer's note when marking resolved")
 
 
 class IncidentCreate(IncidentBase):

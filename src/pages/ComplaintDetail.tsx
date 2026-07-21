@@ -45,6 +45,8 @@ const ComplaintDetailPage = () => {
   const [verifyCode, setVerifyCode] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [reopenLoading, setReopenLoading] = useState(false);
+  const [reopenResult, setReopenResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -90,6 +92,22 @@ const ComplaintDetailPage = () => {
       setVerifyResult({ success: false, message: err.message || t('complaintDetail.verifyError') });
     } finally {
       setVerifyLoading(false);
+    }
+  };
+
+  const handleReopen = async () => {
+    if (!data?.incident?.id) return;
+    setReopenLoading(true);
+    setReopenResult(null);
+    try {
+      const res = await api.reopenIncident(data.incident.id);
+      setReopenResult({ success: true, message: t('complaintDetail.reopenSuccess') });
+      const refreshed = await api.getComplaintDetail(id!);
+      setData(refreshed);
+    } catch (err: any) {
+      setReopenResult({ success: false, message: err.message || t('complaintDetail.reopenError') });
+    } finally {
+      setReopenLoading(false);
     }
   };
 
@@ -200,6 +218,12 @@ const ComplaintDetailPage = () => {
                   <div className="incident-row"><span>{t('complaintDetail.fieldPriority')}</span><strong>{data.incident.priority_label}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldClusterSize')}</span><strong>{data.incident.cluster_size}</strong></div>
                   {data.incident.recommended_action && <div className="incident-row"><span>{t('complaintDetail.fieldAction')}</span><span>{data.incident.recommended_action}</span></div>}
+                  {['resolved', 'closed'].includes(data.incident.status || '') && data.incident.resolution_note && (
+                    <div className="resolution-note-section">
+                      <span className="resolution-note-label">{t('complaintDetail.resolutionNote')}</span>
+                      <p className="resolution-note-text">{data.incident.resolution_note}</p>
+                    </div>
+                  )}
                 </div>
 
                 {user?.role === 'Citizen' && data.incident.status === 'pending_verification' && (
@@ -227,6 +251,24 @@ const ComplaintDetailPage = () => {
                     {verifyResult && (
                       <p className={`verify-result ${verifyResult.success ? 'verify-success' : 'verify-error'}`}>
                         {verifyResult.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {user?.role === 'Citizen' && ['resolved', 'pending_verification', 'closed'].includes(data.incident?.status || '') && (
+                  <div className="reopen-section">
+                    <p className="reopen-prompt">{t('complaintDetail.reopenPrompt')}</p>
+                    <button
+                      className="reopen-btn"
+                      onClick={handleReopen}
+                      disabled={reopenLoading}
+                    >
+                      {reopenLoading ? <div className="spinner-sm" /> : t('complaintDetail.reopenButton')}
+                    </button>
+                    {reopenResult && (
+                      <p className={`reopen-result ${reopenResult.success ? 'reopen-success' : 'reopen-error'}`}>
+                        {reopenResult.message}
                       </p>
                     )}
                   </div>
