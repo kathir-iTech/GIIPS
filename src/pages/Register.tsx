@@ -2,8 +2,11 @@ import React, { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAuth } from '../context/AuthContext';
-import { UserPlus, Mail, Lock, User, AlertCircle, ArrowLeft } from 'lucide-react';
+import { UserPlus, Mail, Lock, User, Phone, AlertCircle, ArrowLeft } from 'lucide-react';
 import './Auth.css';
+
+const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+const PHONE_RE = /^\d{10}$/;
 
 const Register = () => {
   const [formData, setFormData] = useState({
@@ -14,25 +17,44 @@ const Register = () => {
     district: '',
     ward: '',
   });
-  const [error, setError] = useState('');
+  const [errors, setErrors] = useState<Record<string, string>>({});
   const { register, isLoading } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
 
+  const validate = (): boolean => {
+    const errs: Record<string, string> = {};
+    if (!formData.email.trim()) {
+      errs.email = t('citizenPortal.emailRequired');
+    } else if (!EMAIL_RE.test(formData.email.trim())) {
+      errs.email = t('citizenPortal.emailInvalid');
+    } else if (formData.email.endsWith('@gov.in')) {
+      errs.email = t('register.govAccountError');
+    }
+    if (!formData.password) {
+      errs.password = t('citizenPortal.passwordRequired');
+    } else if (formData.password.length < 8) {
+      errs.password = t('citizenPortal.passwordMinLength');
+    }
+    if (formData.phone.trim() && !PHONE_RE.test(formData.phone.trim())) {
+      errs.phone = t('citizenPortal.phoneInvalid');
+    }
+    setErrors(errs);
+    return Object.keys(errs).length === 0;
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    if (formData.email.endsWith('@gov.in')) {
-      setError(t('register.govAccountError'));
-      return;
-    }
+    if (!validate()) return;
     try {
       await register(formData);
       navigate('/login');
     } catch (err: any) {
-      setError(err.message);
+      setErrors({ api: err.message });
     }
   };
+
+  const clearErr = (field: string) => { if (errors[field]) setErrors(prev => { const n = { ...prev }; delete n[field]; return n; }); };
 
   return (
     <div className="auth-page">
@@ -48,8 +70,8 @@ const Register = () => {
           <p>{t('register.subtitle')}</p>
         </div>
 
-        <form onSubmit={handleSubmit} className="auth-form">
-          {error && <div className="error-message"><AlertCircle size={16} /> {error}</div>}
+        <form onSubmit={handleSubmit} className="auth-form" noValidate>
+          {errors.api && <div className="error-message"><AlertCircle size={16} /> {errors.api}</div>}
 
           <div className="form-group">
             <label htmlFor="full_name">{t('register.fullNameLabel')}</label>
@@ -60,11 +82,12 @@ const Register = () => {
                 type="text"
                 placeholder={t('register.fullNamePlaceholder')}
                 value={formData.full_name}
-                onChange={e => setFormData({ ...formData, full_name: e.target.value })}
-                required
+                onChange={e => { setFormData({ ...formData, full_name: e.target.value }); clearErr('full_name'); }}
+                className={errors.full_name ? 'input-error' : ''}
                 disabled={isLoading}
               />
             </div>
+            {errors.full_name && <p className="field-error">{errors.full_name}</p>}
           </div>
 
           <div className="form-group">
@@ -76,11 +99,12 @@ const Register = () => {
                 type="email"
                 placeholder={t('register.emailPlaceholder')}
                 value={formData.email}
-                onChange={e => setFormData({ ...formData, email: e.target.value })}
-                required
+                onChange={e => { setFormData({ ...formData, email: e.target.value }); clearErr('email'); }}
+                className={errors.email ? 'input-error' : ''}
                 disabled={isLoading}
               />
             </div>
+            {errors.email && <p className="field-error">{errors.email}</p>}
           </div>
 
           <div className="form-group">
@@ -92,11 +116,30 @@ const Register = () => {
                 type="password"
                 placeholder={t('register.passwordPlaceholder')}
                 value={formData.password}
-                onChange={e => setFormData({ ...formData, password: e.target.value })}
-                required
+                onChange={e => { setFormData({ ...formData, password: e.target.value }); clearErr('password'); }}
+                className={errors.password ? 'input-error' : ''}
                 disabled={isLoading}
               />
             </div>
+            {errors.password && <p className="field-error">{errors.password}</p>}
+          </div>
+
+          <div className="form-group">
+            <label htmlFor="phone">{t('register.phoneLabel')}</label>
+            <div className="input-wrapper">
+              <Phone size={18} className="input-icon" />
+              <input
+                id="phone"
+                type="tel"
+                placeholder="9876543210"
+                maxLength={10}
+                value={formData.phone}
+                onChange={e => { setFormData({ ...formData, phone: e.target.value.replace(/\D/g, '').slice(0, 10) }); clearErr('phone'); }}
+                className={errors.phone ? 'input-error' : ''}
+                disabled={isLoading}
+              />
+            </div>
+            {errors.phone && <p className="field-error">{errors.phone}</p>}
           </div>
 
           <button type="submit" className="auth-button" disabled={isLoading}>

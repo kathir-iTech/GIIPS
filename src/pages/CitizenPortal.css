@@ -32,7 +32,8 @@
 .processing-status .spinner { animation: spin 1s linear infinite; color: #8b5cf6; }
 .status-text { font-size: 14px; color: var(--text-secondary); }
 .photo-done { color: #16a34a; }
-.field-error { color: #dc2626; font-size: 0.8rem; margin-top: -8px; }
+.field-error { color: #f87171; font-size: 0.75rem; margin: 4px 0 0 0; line-height: 1.3; }
+.input-error { border-color: rgba(220, 38, 38, 0.5) !important; box-shadow: 0 0 12px rgba(220, 38, 38, 0.15) !important; }
 .photo-retry-actions { display: flex; gap: 12px; margin-top: 20px; justify-content: center; flex-wrap: wrap; }
 .photo-retry-actions button { display: inline-flex; align-items: center; gap: 6px; padding: 10px 20px; border-radius: var(--radius-sm); font-weight: 600; font-size: 14px; cursor: pointer; min-height: 44px; }
 .retry-btn { background: #3b82f6; color: white; border: none; }

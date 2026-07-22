@@ -313,6 +313,7 @@
     "submittingButton": "Creating Account...",
     "footerText": "Already have an account?",
     "footerLink": "Sign in",
+    "phoneLabel": "Phone (optional)",
     "govAccountError": "Government accounts cannot be created here. Contact your Executive to create your account."
   },
 
@@ -358,8 +359,15 @@
     "nextButton": "Next",
     "authRequired": "Authentication required",
     "titleRequired": "Title is required",
+    "titleMinLength": "Title must be at least 10 characters",
     "descRequired": "Description is required",
+    "descMinLength": "Description must be at least 20 characters",
     "locationRequired": "Location is required",
+    "emailRequired": "Email is required",
+    "emailInvalid": "Please enter a valid email address",
+    "passwordRequired": "Password is required",
+    "passwordMinLength": "Password must be at least 8 characters",
+    "phoneInvalid": "Please enter a valid 10-digit phone number",
     "statusSubmitting": "Submitting...",
     "statusStarting": "Starting analysis...",
     "statusProcessing": "Processing your complaint...",

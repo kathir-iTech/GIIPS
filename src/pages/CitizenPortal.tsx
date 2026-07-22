@@ -30,6 +30,7 @@ const CitizenPortal = () => {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<any>(null);
   const [submitError, setSubmitError] = useState<string | null>(null);
+  const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [processingStatus, setProcessingStatus] = useState<string | null>(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'done' | 'failed'>('idle');
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
@@ -81,10 +82,15 @@ const CitizenPortal = () => {
   };
 
   const handleSubmit = async () => {
+    const errs: Record<string, string> = {};
     if (!user) { setSubmitError(t('citizenPortal.authRequired')); setLoading(false); return; }
-    if (!formData.title.trim()) { setSubmitError(t('citizenPortal.titleRequired')); setLoading(false); return; }
-    if (!formData.description.trim()) { setSubmitError(t('citizenPortal.descRequired')); setLoading(false); return; }
-    if (!formData.location.trim()) { setSubmitError(t('citizenPortal.locationRequired')); setLoading(false); return; }
+    if (!formData.title.trim()) { errs.title = t('citizenPortal.titleRequired'); }
+    else if (formData.title.trim().length < 10) { errs.title = t('citizenPortal.titleMinLength'); }
+    if (!formData.description.trim()) { errs.description = t('citizenPortal.descRequired'); }
+    else if (formData.description.trim().length < 20) { errs.description = t('citizenPortal.descMinLength'); }
+    if (!formData.location.trim()) { errs.location = t('citizenPortal.locationRequired'); }
+    if (Object.keys(errs).length > 0) { setFieldErrors(errs); setLoading(false); return; }
+    setFieldErrors({});
     setLoading(true);
     setSubmitError(null);
     setProcessingStatus('submitting');
@@ -240,13 +246,17 @@ const CitizenPortal = () => {
                 type="text"
                 placeholder={t('citizenPortal.complaintTitlePlaceholder')}
                 value={formData.title}
-                onChange={e => setFormData({ ...formData, title: e.target.value })}
+                onChange={e => { setFormData({ ...formData, title: e.target.value }); if (fieldErrors.title) setFieldErrors(prev => ({ ...prev, title: '' })); }}
+                className={fieldErrors.title ? 'input-error' : ''}
               />
+              {fieldErrors.title && <p className="field-error">{fieldErrors.title}</p>}
               <textarea
                 placeholder={t('citizenPortal.descriptionPlaceholder')}
                 value={formData.description}
-                onChange={e => setFormData({ ...formData, description: e.target.value })}
+                onChange={e => { setFormData({ ...formData, description: e.target.value }); if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' })); }}
+                className={fieldErrors.description ? 'input-error' : ''}
               />
+              {fieldErrors.description && <p className="field-error">{fieldErrors.description}</p>}
             </div>
           )}
           {step === 3 && (
@@ -255,8 +265,10 @@ const CitizenPortal = () => {
                 type="text"
                 placeholder={t('citizenPortal.locationPlaceholder')}
                 value={formData.location}
-                onChange={e => setFormData({ ...formData, location: e.target.value })}
+                onChange={e => { setFormData({ ...formData, location: e.target.value }); if (fieldErrors.location) setFieldErrors(prev => ({ ...prev, location: '' })); }}
+                className={fieldErrors.location ? 'input-error' : ''}
               />
+              {fieldErrors.location && <p className="field-error">{fieldErrors.location}</p>}
               <label style={{ fontSize: 13, color: 'var(--text-secondary)', marginBottom: -8 }}>
                 {t('citizenPortal.searchMapLabel')}
               </label>
