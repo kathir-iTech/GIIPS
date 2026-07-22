@@ -51,22 +51,26 @@ const MyComplaints = () => {
   const hasActiveFilters = searchQuery.trim() || statusFilter !== 'all' || dateFrom || dateTo;
 
   useEffect(() => {
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-    api.getMyComplaints()
-      .then(res => {
-        if (cancelled) return;
+    let mounted = true;
+
+    const fetchComplaints = async (showLoader = false) => {
+      if (!mounted) return;
+      if (showLoader) setLoading(true);
+      try {
+        const res = await api.getMyComplaints();
+        if (!mounted) return;
         setComplaints(Array.isArray(res.complaints) ? res.complaints : []);
-      })
-      .catch(err => {
-        if (cancelled) return;
-        setError(err.message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
+      } catch (err: any) {
+        if (!mounted) return;
+        if (showLoader) setError(err.message);
+      } finally {
+        if (showLoader && mounted) setLoading(false);
+      }
+    };
+
+    fetchComplaints(true);
+    const interval = setInterval(() => fetchComplaints(false), 30000);
+    return () => { mounted = false; clearInterval(interval); };
   }, []);
 
   const filtered = complaints.filter(c => {

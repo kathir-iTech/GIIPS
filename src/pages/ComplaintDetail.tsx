@@ -49,32 +49,36 @@ const ComplaintDetailPage = () => {
   const [reopenResult, setReopenResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
-    let cancelled = false;
+    let mounted = true;
     if (!id) { setLoading(false); return; }
-    setLoading(true);
-    setError(null);
-    api.getComplaintDetail(id)
-      .then(data => {
-        if (!cancelled) {
-          setData(data);
-          if (data.image_path) {
-            if (data.image_path.startsWith('http')) {
-              setPhotoUrl(data.image_path);
-            } else {
-              api.getComplaintPhoto(id).then(photoRes => {
-                if (!cancelled && photoRes.imageUrl) setPhotoUrl(photoRes.imageUrl);
-              }).catch(() => {});
-            }
+
+    const fetchDetail = async (showLoader = false) => {
+      if (!mounted) return;
+      if (showLoader) { setLoading(true); setError(null); }
+      try {
+        const data = await api.getComplaintDetail(id);
+        if (!mounted) return;
+        setData(data);
+        if (data.image_path) {
+          if (data.image_path.startsWith('http')) {
+            setPhotoUrl(data.image_path);
+          } else {
+            api.getComplaintPhoto(id).then(photoRes => {
+              if (mounted && photoRes.imageUrl) setPhotoUrl(photoRes.imageUrl);
+            }).catch(() => {});
           }
         }
-      })
-      .catch(err => {
-        if (!cancelled) setError(err.message);
-      })
-      .finally(() => {
-        if (!cancelled) setLoading(false);
-      });
-    return () => { cancelled = true; };
+      } catch (err: any) {
+        if (!mounted) return;
+        if (showLoader) setError(err.message);
+      } finally {
+        if (showLoader && mounted) setLoading(false);
+      }
+    };
+
+    fetchDetail(true);
+    const interval = setInterval(() => fetchDetail(false), 30000);
+    return () => { mounted = false; clearInterval(interval); };
   }, [id]);
 
   const handleVerify = async () => {
