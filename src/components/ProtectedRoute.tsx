@@ -28,8 +28,12 @@ interface RoleGuardProps {
 }
 
 export const RoleGuard = ({ allowedRoles, children }: RoleGuardProps) => {
-  const { user } = useAuth();
-  
+  const { user, isLoading } = useAuth();
+
+  if (isLoading) {
+    return <div className="page-loading">Loading...</div>;
+  }
+
   if (!user) {
     return <Navigate to="/login" replace />;
   }
