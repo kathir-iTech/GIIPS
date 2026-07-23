@@ -166,6 +166,31 @@
   text-decoration: underline;
 }
 
+.auth-footer-links {
+  margin-top: 1.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-size: 0.85rem;
+  color: var(--text-secondary);
+}
+.auth-footer-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #60a5fa;
+  text-decoration: none;
+  transition: color 0.2s;
+}
+.auth-footer-link:hover {
+  text-decoration: underline;
+  color: #93bbfd;
+}
+.auth-footer-sep {
+  color: var(--border-subtle);
+}
+
 @media (max-width: 480px) {
   .auth-page { padding: 1rem; }
   .auth-card { padding: 1.5rem; }

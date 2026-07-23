@@ -321,7 +321,9 @@
     "title": "Citizen Services",
     "subtitle": "Submit and track grievances",
     "registerButton": "Register",
-    "loginButton": "Login"
+    "loginButton": "Login",
+    "forgotId": "Forgot your complaint ID? Log in to see all your complaints.",
+    "trackExisting": "Track an existing complaint"
   },
 
   "citizenPortal": {
@@ -983,7 +985,8 @@
     "fieldDepartment": "Department:",
     "assignedDepartment": "Assigned Department",
     "assignedOfficer": "Assigned Officer",
-    "timelineTitle": "Status Timeline"
+    "timelineTitle": "Status Timeline",
+    "forgotId": "Forgot your complaint ID? Log in to see all your complaints."
   },
 
   "transparency": {

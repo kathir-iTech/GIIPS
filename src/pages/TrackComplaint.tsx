@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2, Building2, User, Activity } from 'lucide-react';
+import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2, Building2, User, Activity, LogIn } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import { getDeptI18nKey } from '../data/departments';
 import './TrackComplaint.css';
@@ -99,6 +99,11 @@ const TrackComplaint = () => {
         </div>
 
         {error && <div className="track-error">{error}</div>}
+
+        <div className="track-forgot-hint">
+          <LogIn size={14} />
+          <Link to="/login">{t('track.forgotId')}</Link>
+        </div>
 
         {loading && (
           <div className="track-loading">

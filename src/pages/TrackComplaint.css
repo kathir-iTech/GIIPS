@@ -13,6 +13,9 @@
 .track-btn:hover:not(:disabled) { transform: translateY(-1px); box-shadow: 0 4px 20px rgba(59,130,246,0.3); }
 .track-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 .track-error { padding: 12px 16px; background: rgba(220,38,38,0.1); border: 1px solid rgba(220,38,38,0.2); border-radius: 12px; color: #f87171; font-size: 14px; margin-bottom: 24px; }
+.track-forgot-hint { display: flex; align-items: center; justify-content: center; gap: 8px; margin-bottom: 24px; font-size: 14px; color: var(--text-secondary); }
+.track-forgot-hint a { color: #60a5fa; text-decoration: none; }
+.track-forgot-hint a:hover { text-decoration: underline; }
 .track-loading { display: flex; flex-direction: column; align-items: center; gap: 12px; padding: 48px; color: var(--text-secondary); }
 .spin { animation: spin 0.8s linear infinite; }
 @keyframes spin { to { transform: rotate(360deg); } }
