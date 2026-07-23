@@ -47,12 +47,6 @@ function LoadingScreen() {
   );
 }
 
-const PageTransition = ({ children }: { children: React.ReactNode }) => (
-  <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} transition={{ duration: 0.3 }}>
-    {children}
-  </motion.div>
-);
-
 const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency'];
 
 function AppLayout() {
@@ -81,151 +75,159 @@ function AppLayout() {
 function AnimatedRoutes() {
   const location = useLocation();
   return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<PageTransition><Landing /></PageTransition>} />
+    <AnimatePresence mode="popLayout">
+      <motion.div
+        key={location.pathname}
+        initial={{ opacity: 0, y: 10 }}
+        animate={{ opacity: 1, y: 0 }}
+        exit={{ opacity: 0, y: -10 }}
+        transition={{ duration: 0.3 }}
+      >
+      <Routes location={location}>
+        <Route path="/" element={<Landing />} />
         
-        <Route path="/login" element={<PageTransition><Login /></PageTransition>} />
-        <Route path="/register" element={<PageTransition><Register /></PageTransition>} />
-        <Route path="/citizen-services" element={<PageTransition><CitizenServices /></PageTransition>} />
-        <Route path="/government-portal" element={<PageTransition><GovernmentPortal /></PageTransition>} />
-        <Route path="/track" element={<PageTransition><TrackComplaint /></PageTransition>} />
-        <Route path="/transparency" element={<PageTransition><Transparency /></PageTransition>} />
+        <Route path="/login" element={<Login />} />
+        <Route path="/register" element={<Register />} />
+        <Route path="/citizen-services" element={<CitizenServices />} />
+        <Route path="/government-portal" element={<GovernmentPortal />} />
+        <Route path="/track" element={<TrackComplaint />} />
+        <Route path="/transparency" element={<Transparency />} />
         
         <Route path="/citizen" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Citizen']}>
               <CitizenPortal />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/my-complaints" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Citizen']}>
               <MyComplaints />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/complaint/:id" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Citizen']}>
               <ComplaintDetail />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/profile" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Citizen']}>
               <CitizenProfile />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/officer" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Officer']}>
               <Overview />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/executive" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Executive']}>
               <ExecutiveDashboard />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/incident-feed" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner']}>
               <IncidentFeed />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/analysis" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner', 'Collector']}>
               <Analysis />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/clusters" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner', 'Collector']}>
               <Clusters />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/spatial" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Officer', 'Executive', 'Commissioner', 'Collector']}>
               <SpatialIntelligence />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         
         <Route path="/local-authority" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Councillor', 'Commissioner']}>
               <LocalAuthorityDashboard />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/oversight" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['MLA', 'Collector']}>
               <OversightDashboard />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/methodology" element={
-          <PageTransition>
+          
             <Methodology />
-          </PageTransition>
+          
         } />
         
         <Route path="/unauthorized" element={
-          <PageTransition>
+          
             <Unauthorized />
-          </PageTransition>
+          
         } />
 
         
         <Route path="/admin" element={<Navigate to="/admin/officers" replace />} />
         <Route path="/admin/officers" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Executive']}>
               <OfficerManagement />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/admin/departments" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Executive']}>
               <DepartmentManagement />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/admin/system-health" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Executive']}>
               <SystemHealth />
             </RoleGuard>
-          </PageTransition>
+          
         } />
         <Route path="/admin/audit-logs" element={
-          <PageTransition>
+          
             <RoleGuard allowedRoles={['Executive']}>
               <AuditLogs />
             </RoleGuard>
-          </PageTransition>
+          
         } />
       </Routes>
+      </motion.div>
     </AnimatePresence>
   );
 }
