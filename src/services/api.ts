@@ -552,6 +552,12 @@ export const api = {
     return response.json();
   },
 
+  getWardStats: async (ward: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/public/ward-stats/${encodeURIComponent(ward)}`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   reopenIncident: async (incidentId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/reopen`, {
       ...FETCH_DEFAULTS,

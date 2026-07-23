@@ -2460,3 +2460,43 @@ async def public_stats(db: Session = Depends(get_db)):
         complaintsByZone=by_zone,
     )
 
+
+@public_router.get("/public/ward-stats/{ward}")
+async def public_ward_stats(ward: str, db: Session = Depends(get_db)):
+    """Public aggregate stats for a single ward — no auth, no PII."""
+    ward_str = f"Ward {ward}"
+    match = db.query(
+        func.count(Complaint.id),
+        func.avg(Incident.days_open).filter(Incident.status.in_(["resolved", "closed"])),
+        func.count(Incident.id).filter(Incident.status.in_(["resolved", "closed"])),
+    ).outerjoin(Incident, Complaint.incident_id == Incident.id).filter(
+        Complaint.ward.in_([ward_str, ward]),
+    ).first()
+
+    total = match[0] or 0
+    avg_days = match[1]
+    resolved = match[2] or 0
+
+    resolved_pct = round((resolved / total) * 100, 1) if total > 0 else 0.0
+    avg_resolution = round(float(avg_days), 1) if avg_days else 0.0
+
+    category_raw = db.query(
+        Complaint.predicted_category, func.count(Complaint.id)
+    ).filter(
+        Complaint.ward.in_([ward_str, ward]),
+        Complaint.predicted_category.isnot(None),
+    ).group_by(Complaint.predicted_category).order_by(func.count(Complaint.id).desc()).all()
+
+    top_categories = [
+        {"category": cat, "count": cnt}
+        for cat, cnt in category_raw
+    ]
+
+    return {
+        "ward": ward,
+        "total_complaints": total,
+        "resolved_percentage": resolved_pct,
+        "avg_resolution_days": avg_resolution,
+        "top_categories": top_categories,
+    }
+

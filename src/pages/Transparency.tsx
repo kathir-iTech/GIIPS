@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
-import { ArrowLeft, AlertCircle, Loader2, Star, Clock, Building2, MapPin } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2, Star, Clock, Building2, MapPin, Search } from 'lucide-react';
 import './Transparency.css';
 
 interface CategoryStat {
@@ -43,12 +43,24 @@ interface SuccessStory {
   days_to_resolve: number;
 }
 
+interface WardStats {
+  ward: string;
+  total_complaints: number;
+  resolved_percentage: number;
+  avg_resolution_days: number;
+  top_categories: { category: string; count: number }[];
+}
+
 const Transparency = () => {
   const { t } = useTranslation();
   const [data, setData] = useState<StatsData | null>(null);
   const [stories, setStories] = useState<SuccessStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [wardInput, setWardInput] = useState('');
+  const [wardStats, setWardStats] = useState<WardStats | null>(null);
+  const [wardLoading, setWardLoading] = useState(false);
+  const [wardError, setWardError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -64,6 +76,22 @@ const Transparency = () => {
     });
     return () => { cancelled = true; };
   }, []);
+
+  const handleWardLookup = async () => {
+    const w = wardInput.trim();
+    if (!w || isNaN(Number(w)) || Number(w) < 1 || Number(w) > 100) return;
+    setWardLoading(true);
+    setWardError(null);
+    setWardStats(null);
+    try {
+      const stats = await api.getWardStats(w);
+      setWardStats(stats);
+    } catch (err: any) {
+      setWardError(err.message || 'Failed to load ward stats');
+    } finally {
+      setWardLoading(false);
+    }
+  };
 
   if (loading) return (
     <div className="transparency-page">
@@ -104,6 +132,61 @@ const Transparency = () => {
             <span className="kpi-value">{data?.avgResolutionDays ?? 0}</span>
             <span className="kpi-label">{t('transparency.kpiAvgDays')}</span>
           </div>
+        </div>
+
+        <div className="ward-lookup-section">
+          <h2><MapPin size={20} /> Ward Stats</h2>
+          <p>Enter a ward number (1–100) to view its aggregate complaint data.</p>
+          <div className="ward-lookup-row">
+            <input
+              type="number"
+              min={1}
+              max={100}
+              placeholder="e.g. 12"
+              value={wardInput}
+              onChange={e => { setWardInput(e.target.value); setWardStats(null); setWardError(null); }}
+              onKeyDown={e => e.key === 'Enter' && handleWardLookup()}
+              className="ward-input"
+              disabled={wardLoading}
+            />
+            <button className="ward-lookup-btn" onClick={handleWardLookup} disabled={wardLoading || !wardInput.trim()}>
+              {wardLoading ? <Loader2 size={16} className="spin" /> : <Search size={16} />} Look Up
+            </button>
+          </div>
+          {wardError && <p className="ward-error">{wardError}</p>}
+          {wardStats && (
+            <div className="ward-stats-grid">
+              <div className="ward-stat-card">
+                <span className="ward-stat-value">{wardStats.total_complaints}</span>
+                <span className="ward-stat-label">Total Complaints</span>
+              </div>
+              <div className="ward-stat-card">
+                <span className="ward-stat-value">{wardStats.resolved_percentage}%</span>
+                <span className="ward-stat-label">Resolved</span>
+              </div>
+              <div className="ward-stat-card">
+                <span className="ward-stat-value">{wardStats.avg_resolution_days}d</span>
+                <span className="ward-stat-label">Avg Resolution Time</span>
+              </div>
+              <div className="ward-stat-card">
+                <span className="ward-stat-value">{wardStats.top_categories.length}</span>
+                <span className="ward-stat-label">Categories</span>
+              </div>
+              {wardStats.top_categories.length > 0 && (
+                <div className="ward-categories-card">
+                  <span className="ward-stat-label">Top Categories</span>
+                  <div className="ward-categories-list">
+                    {wardStats.top_categories.slice(0, 5).map((c, i) => (
+                      <div key={i} className="ward-category-row">
+                        <span className="ward-cat-name">{c.category}</span>
+                        <span className="ward-cat-count">{c.count}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
         </div>
 
         <div className="chart-grid chart-grid-2">
