@@ -140,6 +140,10 @@ class TrackComplaintResponse(BaseModel):
     status: str
     dateReceived: str
     timeline: List[TimelineEvent]
+    department: Optional[str] = None
+    officer_name: Optional[str] = None
+    officer_role: Optional[str] = None
+    resolution_note: Optional[str] = None
 
 
 class ZoneStat(BaseModel):

@@ -2,7 +2,9 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2 } from 'lucide-react';
+import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2, Building2, User, Activity } from 'lucide-react';
+import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
+import { getDeptI18nKey } from '../data/departments';
 import './TrackComplaint.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -64,6 +66,13 @@ const TrackComplaint = () => {
     }
   };
 
+  const statusStages = data ? useStatusStages(
+    data.dateReceived,
+    data.status,
+    !!data.officer_name,
+    !!data.category,
+  ) : null;
+
   return (
     <div className="track-page">
       <div className="track-container">
@@ -108,11 +117,57 @@ const TrackComplaint = () => {
             </div>
 
             <div className="track-meta">
-              <div className="meta-item"><Tag size= {14} /> <span>{t('track.fieldId')}: {data.complaintId}</span></div>
+              <div className="meta-item"><Tag size={14} /> <span>{t('track.fieldId')}: {data.complaintId}</span></div>
               <div className="meta-item"><MapPin size={14} /> <span>{t('track.fieldWard')}: {data.ward}</span></div>
               {data.category && <div className="meta-item"><AlertTriangle size={14} /> <span>{t('track.fieldCategory')}: {data.category}</span></div>}
               <div className="meta-item"><Calendar size={14} /> <span>{t('track.fieldDate')}: {data.dateReceived ? new Date(data.dateReceived).toLocaleString('en-IN') : t('common.na')}</span></div>
             </div>
+
+            {statusStages && (
+              <div className="track-progress">
+                <h3><Activity size={16} /> {t('complaintDetail.statusTimelineTitle')}</h3>
+                <StatusTimeline stages={statusStages} />
+              </div>
+            )}
+
+            {data.department && (
+              <div className="track-section">
+                <h3><Building2 size={16} /> {t('track.assignedDepartment')}</h3>
+                <div className="track-info-card">
+                  <div className="track-info-row">
+                    <span>{t('track.fieldDepartment')}</span>
+                    <strong>{t(getDeptI18nKey(data.department))}</strong>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {data.officer_name && (
+              <div className="track-section">
+                <h3><User size={16} /> {t('track.assignedOfficer')}</h3>
+                <div className="track-info-card">
+                  <div className="track-info-row">
+                    <span>{t('track.fieldOfficerName')}</span>
+                    <strong>{data.officer_name}</strong>
+                  </div>
+                  {data.officer_role && (
+                    <div className="track-info-row">
+                      <span>{t('track.fieldOfficerRole')}</span>
+                      <strong>{data.officer_role}</strong>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
+            {['resolved', 'closed', 'pending_verification'].includes(data.status) && data.resolution_note && (
+              <div className="track-section">
+                <h3><CheckCircle size={16} /> {t('complaintDetail.resolutionNote')}</h3>
+                <div className="track-info-card">
+                  <p className="track-resolution-text">{data.resolution_note}</p>
+                </div>
+              </div>
+            )}
 
             <div className="track-timeline">
               <h3>{t('track.timelineTitle')}</h3>

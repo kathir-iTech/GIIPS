@@ -978,6 +978,11 @@
     "fieldWard": "Ward",
     "fieldCategory": "Category",
     "fieldDate": "Submitted",
+    "fieldOfficerName": "Officer:",
+    "fieldOfficerRole": "Role:",
+    "fieldDepartment": "Department:",
+    "assignedDepartment": "Assigned Department",
+    "assignedOfficer": "Assigned Officer",
     "timelineTitle": "Status Timeline"
   },
 

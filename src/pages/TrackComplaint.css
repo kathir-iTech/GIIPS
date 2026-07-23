@@ -29,6 +29,16 @@
 .track-meta { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 24px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-subtle); }
 .meta-item { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-secondary); }
 .meta-item svg { flex-shrink: 0; }
+.track-section { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-subtle); }
+.track-section h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; }
+.track-info-card { display: flex; flex-direction: column; gap: 10px; padding: 14px 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-subtle); }
+.track-info-row { display: flex; justify-content: space-between; gap: 12px; font-size: 14px; }
+.track-info-row span { color: var(--text-secondary); }
+.track-info-row strong { color: var(--text-primary); font-weight: 600; text-align: right; }
+.track-resolution-text { font-size: 14px; color: var(--text-primary); margin: 0; line-height: 1.5; padding: 6px 0; }
+.track-progress { margin-top: 20px; padding: 16px; background: rgba(255,255,255,0.02); border-radius: 12px; border: 1px solid var(--border-subtle); }
+.track-progress h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; }
+.track-timeline { margin-top: 20px; padding-top: 20px; border-top: 1px solid var(--border-subtle); }
 .track-timeline h3 { font-size: 15px; font-weight: 600; color: var(--text-primary); margin: 0 0 16px; }
 .timeline-item { display: flex; gap: 12px; margin-bottom: 16px; }
 .timeline-icon { width: 32px; height: 32px; border-radius: 50%; display: flex; align-items: center; justify-content: center; flex-shrink: 0; }

@@ -978,6 +978,11 @@
     "fieldWard": "வார்டு",
     "fieldCategory": "வகை",
     "fieldDate": "சமர்ப்பிக்கப்பட்டது",
+    "fieldOfficerName": "அலுவலர்:",
+    "fieldOfficerRole": "பதவி:",
+    "fieldDepartment": "துறை:",
+    "assignedDepartment": "ஒதுக்கப்பட்ட துறை",
+    "assignedOfficer": "ஒதுக்கப்பட்ட அலுவலர்",
     "timelineTitle": "நிலை காலவரிசை"
   },
 
