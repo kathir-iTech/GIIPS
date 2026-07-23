@@ -66,12 +66,12 @@ const TrackComplaint = () => {
     }
   };
 
-  const statusStages = data ? useStatusStages(
-    data.dateReceived,
-    data.status,
-    !!data.officer_name,
-    !!data.category,
-  ) : null;
+  const statusStages = useStatusStages(
+    data?.dateReceived ?? null,
+    data?.status ?? 'pending',
+    !!(data?.officer_name),
+    !!(data?.category),
+  );
 
   return (
     <div className="track-page">
