@@ -11,6 +11,8 @@
 .date-separator { color: var(--text-muted); font-size: 14px; }
 .reset-btn { display: flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: transparent; color: var(--text-secondary); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; }
 .reset-btn:hover { border-color: #ef4444; color: #ef4444; }
+.export-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.08); color: #818cf8; font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.export-btn:hover { border-color: #6366f1; background: rgba(99, 102, 241, 0.15); }
 
 .complaints-list { display: flex; flex-direction: column; gap: 16px; }
 .complaint-card { background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 20px 24px; box-shadow: var(--shadow-sm); cursor: pointer; transition: all 0.2s; position: relative; }

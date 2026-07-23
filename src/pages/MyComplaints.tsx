@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import type { CitizenComplaint } from '../types';
-import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3 } from 'lucide-react';
+import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3, Download } from 'lucide-react';
 import './MyComplaints.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -49,6 +49,38 @@ const MyComplaints = () => {
   };
 
   const hasActiveFilters = searchQuery.trim() || statusFilter !== 'all' || dateFrom || dateTo;
+
+  const exportCSV = () => {
+    const rows = filtered.map(c => {
+      const status = c.incident?.status || 'open';
+      const isResolved = ['resolved', 'closed'].includes(status);
+      let resolvedDate = '';
+      if (isResolved && c.date_received && c.incident?.days_open != null) {
+        const d = new Date(c.date_received);
+        d.setDate(d.getDate() + c.incident.days_open);
+        resolvedDate = d.toLocaleDateString('en-IN');
+      }
+      return [
+        c.id,
+        `"${(c.title || '').replace(/"/g, '""')}"`,
+        c.predicted_category || '',
+        c.ward || '',
+        status,
+        c.date_received ? new Date(c.date_received).toLocaleDateString('en-IN') : '',
+        resolvedDate,
+        `"${(c.incident?.resolution_note || '').replace(/"/g, '""')}"`,
+      ].join(',');
+    });
+    const header = 'ID,Title,Category,Ward,Status,Date Filed,Date Resolved,Resolution Note';
+    const csv = '\uFEFF' + header + '\n' + rows.join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `my-complaints-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   useEffect(() => {
     let mounted = true;
@@ -150,6 +182,11 @@ const MyComplaints = () => {
           {hasActiveFilters && (
             <button className="reset-btn" onClick={resetFilters} title={t('myComplaints.resetFilters')}>
               <X size={16} /> {t('myComplaints.resetFilters')}
+            </button>
+          )}
+          {complaints.length > 0 && (
+            <button className="export-btn" onClick={exportCSV} title={t('myComplaints.exportCSV')}>
+              <Download size={16} /> CSV
             </button>
           )}
         </div>
