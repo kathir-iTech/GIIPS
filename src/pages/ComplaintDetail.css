@@ -44,6 +44,22 @@
 .resolution-note-label { font-size: 12px; font-weight: 600; color: #16a34a; text-transform: uppercase; letter-spacing: 0.5px; }
 .resolution-note-text { font-size: 14px; color: var(--text-primary); margin: 6px 0 0 0; line-height: 1.5; padding: 8px 12px; background: rgba(22, 163, 74, 0.08); border-radius: var(--radius-sm); }
 
+.spinner-sm { width: 16px; height: 16px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.6s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.verify-section { margin-top: 16px; padding: 16px; background: rgba(147, 51, 234, 0.06); border: 1px solid rgba(147, 51, 234, 0.15); border-radius: var(--radius-md); }
+.verify-section h4 { margin: 0 0 8px 0; font-size: 14px; font-weight: 600; color: #7c3aed; display: flex; align-items: center; gap: 8px; }
+.verify-prompt { font-size: 13px; color: var(--text-secondary); margin: 0 0 12px 0; line-height: 1.5; }
+.verify-input-group { display: flex; gap: 8px; align-items: center; }
+.verify-input { flex: 1; padding: 10px 14px; font-size: 18px; font-weight: 700; letter-spacing: 8px; text-align: center; background: var(--bg-card); border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); color: var(--text-primary); outline: none; transition: border-color 0.15s; }
+.verify-input:focus { border-color: #7c3aed; }
+.verify-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; background: #7c3aed; color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; white-space: nowrap; transition: background 0.15s; }
+.verify-btn:hover:not(:disabled) { background: #6d28d9; }
+.verify-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.verify-result { font-size: 13px; margin: 8px 0 0 0; padding: 8px; border-radius: var(--radius-sm); }
+.verify-success { color: #16a34a; background: rgba(22, 163, 74, 0.1); }
+.verify-error { color: #dc2626; background: rgba(220, 38, 38, 0.1); }
+
 .reopen-section { margin-top: 16px; display: flex; flex-direction: column; gap: 8px; }
 .reopen-prompt { font-size: 13px; color: var(--text-secondary); margin: 0; }
 .reopen-btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; padding: 10px 20px; background: #dc2626; color: white; border: none; border-radius: var(--radius-sm); font-size: 14px; font-weight: 600; cursor: pointer; transition: background 0.15s; }
