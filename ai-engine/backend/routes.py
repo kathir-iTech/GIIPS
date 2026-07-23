@@ -122,6 +122,17 @@ def _get_department_officers(db: Session, department: str) -> list[User]:
     ).all()
 
 
+def _label_for_score(score: float) -> str:
+    """Map a priority score (0-100) to a label."""
+    if score >= 80:
+        return "Critical"
+    if score >= 60:
+        return "High"
+    if score >= 40:
+        return "Medium"
+    return "Low"
+
+
 def _notify_department_officers(db: Session, department: str, notification_type: str, data: Optional[dict] = None):
     """Create a notification for every active officer in a department."""
     for officer in _get_department_officers(db, department):
@@ -905,28 +916,136 @@ async def get_escalated_incidents(db_user: User = Depends(get_current_user), db:
 
 @incident_router.post("/auto-escalate")
 async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
-    """Auto-escalate incidents that have exceeded the AGING_CRITICAL_DAYS threshold.
-    Called periodically (e.g. from a scheduler or on relevant state changes).
-    Follows the same SLA threshold as the aging notification system."""
-    from constants import AGING_CRITICAL_DAYS
+    """Auto-escalate incidents that have exceeded SLA thresholds.
+    
+    Tiered logic:
+      - Ward-level (first escalation): incident.status_changed_at > 48 hours ago,
+        sets escalated=True, bumps priority by SLA_PRIORITY_BUMP points.
+      - Zonal-level (second escalation): already escalated AND
+        status_changed_at > 120 hours (5 working days) ago, further priority bump
+        and updates escalation_reason.
+    
+    Writes audit log entries and creates notifications for relevant officers.
+    Call periodically (e.g. from a scheduler or as an on-demand trigger).
+    """
+    from constants import SLA_WARD_HOURS, SLA_ZONE_HOURS, SLA_PRIORITY_BUMP
+    from coimbatore_wards import ZONE_BY_WARD
 
-    incident_id = None
+    now = datetime.utcnow()
+    ward_cutoff = now - timedelta(hours=SLA_WARD_HOURS)
+    zone_cutoff = now - timedelta(hours=SLA_ZONE_HOURS)
+
+    results = {"ward_escalated": 0, "zone_escalated": 0, "errors": []}
+
     try:
-        cut_off = datetime.utcnow() - timedelta(days=AGING_CRITICAL_DAYS)
-        aging = db.query(Incident).filter(
-            Incident.created_at <= cut_off,
-            Incident.escalated == False
+        # ── Ward-level escalations (not yet escalated, status stale > 48h) ──
+        ward_targets = db.query(Incident).filter(
+            Incident.status.in_(["open", "in-progress"]),
+            Incident.escalated == False,
+            Incident.status_changed_at.isnot(None),
+            Incident.status_changed_at <= ward_cutoff,
         ).all()
-        count = 0
-        for inc in aging:
-            inc.escalated = True
-            inc.escalated_at = datetime.utcnow()
-            inc.escalated_by = "system"
-            count += 1
-        if count:
-            db.commit()
-            return {"message": f"Auto-escalated {count} aging incidents"}
-        return {"message": "No aging incidents to escalate"}
+
+        for inc in ward_targets:
+            try:
+                inc.escalated = True
+                inc.escalated_at = now
+                inc.escalated_by = "system"
+                inc.escalation_reason = (
+                    f"Auto-escalated: no status change in {SLA_WARD_HOURS}h "
+                    f"(ward-level SLA breach)"
+                )
+                # Bump priority
+                old_score = inc.priority_score or 0.0
+                inc.priority_score = min(100.0, old_score + SLA_PRIORITY_BUMP)
+                inc.priority_label = _label_for_score(inc.priority_score)
+
+                _write_audit_log(
+                    db, None, "system", "system",
+                    "incident_auto_escalate", inc.id, "success",
+                    f"Ward-level SLA: {SLA_WARD_HOURS}h exceeded. "
+                    f"Priority bumped {old_score} -> {inc.priority_score}. "
+                    f"Escalation reason: {inc.escalation_reason}"
+                )
+
+                # Notify department officers
+                dept = get_department(inc.category or "")
+                _notify_department_officers(
+                    db, dept, "escalated",
+                    data={
+                        "incident_id": inc.id,
+                        "incident_number": inc.incident_number,
+                        "category": inc.category,
+                        "ward": inc.ward,
+                        "reason": inc.escalation_reason,
+                        "auto_escalated": True,
+                    },
+                )
+
+                results["ward_escalated"] += 1
+            except Exception as e:
+                results["errors"].append(f"incident {inc.id}: {e}")
+
+        # ── Zone-level escalations (already escalated, status stale > 5 days) ──
+        zone_targets = db.query(Incident).filter(
+            Incident.status.in_(["open", "in-progress"]),
+            Incident.escalated == True,
+            Incident.status_changed_at.isnot(None),
+            Incident.status_changed_at <= zone_cutoff,
+        ).all()
+
+        for inc in zone_targets:
+            try:
+                ward_num = int(inc.ward) if inc.ward and inc.ward.isdigit() else None
+                zone = ZONE_BY_WARD.get(ward_num, "Unknown") if ward_num else "Unknown"
+
+                old_score = inc.priority_score or 0.0
+                inc.priority_score = min(100.0, old_score + SLA_PRIORITY_BUMP)
+                inc.priority_label = _label_for_score(inc.priority_score)
+                inc.escalation_reason = (
+                    f"Zone-level escalation: no status change in {SLA_ZONE_HOURS}h "
+                    f"(zone: {zone}, ward: {inc.ward}). "
+                    f"Previous reason: {inc.escalation_reason or 'none'}"
+                )
+
+                _write_audit_log(
+                    db, None, "system", "system",
+                    "incident_auto_escalate_zone", inc.id, "success",
+                    f"Zone-level SLA ({zone}): {SLA_ZONE_HOURS}h exceeded. "
+                    f"Priority bumped {old_score} -> {inc.priority_score}."
+                )
+
+                # Notify department officers
+                dept = get_department(inc.category or "")
+                _notify_department_officers(
+                    db, dept, "escalated",
+                    data={
+                        "incident_id": inc.id,
+                        "incident_number": inc.incident_number,
+                        "category": inc.category,
+                        "ward": inc.ward,
+                        "zone": zone,
+                        "reason": inc.escalation_reason,
+                        "auto_escalated": True,
+                    },
+                )
+
+                results["zone_escalated"] += 1
+            except Exception as e:
+                results["errors"].append(f"incident {inc.id}: {e}")
+
+        db.commit()
+
+        total = results["ward_escalated"] + results["zone_escalated"]
+        if total:
+            return {
+                "message": f"Auto-escalated {total} incidents "
+                           f"({results['ward_escalated']} ward-level, "
+                           f"{results['zone_escalated']} zone-level)",
+                **results,
+            }
+        return {"message": "No incidents exceed SLA thresholds", **results}
+
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Auto-escalation failed: {e}")
@@ -1198,6 +1317,7 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     if body.status == "resolved":
         code = f"{random.randint(100000, 999999)}"
         incident.status = "pending_verification"
+        incident.status_changed_at = datetime.utcnow()
         incident.verification_code = code
         incident.resolution_note = body.resolution_note
         db.commit()
@@ -1239,6 +1359,7 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
 
     # Non-resolution status change: apply directly
     incident.status = body.status
+    incident.status_changed_at = datetime.utcnow()
     db.commit()
 
     # Notify all citizens whose complaints are linked to this incident

@@ -7,6 +7,47 @@
   margin: 0 auto;
 }
 
+.exec-toolbar {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+}
+
+.exec-toolbar .action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 8px 16px;
+  border-radius: 8px;
+  border: 1px solid var(--border-subtle);
+  background: var(--bg-card);
+  color: var(--text-primary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-family: inherit;
+}
+
+.exec-toolbar .action-btn:hover:not(:disabled) {
+  background: rgba(255,255,255,0.05);
+}
+
+.exec-toolbar .action-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.exec-toolbar .escalate-btn {
+  color: #f97316;
+  border-color: rgba(249,115,22,0.3);
+}
+
+.exec-toolbar .escalate-btn:hover:not(:disabled) {
+  background: rgba(249,115,22,0.1);
+  border-color: rgba(249,115,22,0.5);
+}
+
 .exec-dashboard .glass-card {
   background: var(--bg-card);
   backdrop-filter: blur(8px);

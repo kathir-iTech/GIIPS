@@ -116,6 +116,7 @@ const ExecutiveDashboard = () => {
   const [decisionSupport, setDecisionSupport] = useState<any>(null);
   const [systemHealth, setSystemHealth] = useState<any>(null);
   const [timelineDays, setTimelineDays] = useState<number>(30);
+  const [escalating, setEscalating] = useState(false);
 
   const [trendLabels, setTrendLabels] = useState<string[]>([]);
   const [trendComplaints, setTrendComplaints] = useState<number[]>([]);
@@ -275,11 +276,30 @@ const ExecutiveDashboard = () => {
 
   const copilotSuggestions: string[] = [];
 
+  const autoEscalate = async () => {
+    setEscalating(true);
+    try {
+      const result = await api.autoEscalateIncidents();
+      alert(result.message || 'Auto-escalation complete');
+    } catch (err: any) {
+      alert(err.message || 'Auto-escalation failed');
+    } finally {
+      setEscalating(false);
+    }
+  };
+
   return (
     <div className="exec-dashboard">
       <Header title={t('executive.header.title')} subtitle={t('executive.header.subtitle')} />
 
       {error && <div className="global-banner warning"><AlertTriangle size={16} />{error}</div>}
+
+      <div className="exec-toolbar">
+        <button className="action-btn escalate-btn" onClick={autoEscalate} disabled={escalating}>
+          {escalating ? <Loader2 size={14} className="spin" /> : <Zap size={14} />}
+          Run SLA Auto-Escalation Check
+        </button>
+      </div>
 
       {/* 1. Government Situation Summary */}
       <SectionCard title={t('executive.situation.title')} subtitle={t('executive.situation.subtitle')} icon={<Gauge size={18} />}>

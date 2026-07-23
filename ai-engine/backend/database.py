@@ -302,6 +302,7 @@ class Incident(Base):
     priority_label = Column(String, default="Low", nullable=False)
     summary = Column(Text, nullable=True)
     status = Column(String, default="open", nullable=False)
+    status_changed_at = Column(DateTime, nullable=True)
     recommended_action = Column(Text, nullable=True)
     days_open = Column(Integer, default=0, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)

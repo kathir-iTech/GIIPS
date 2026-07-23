@@ -456,6 +456,15 @@ export const api = {
     return response.json();
   },
 
+  autoEscalateIncidents: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/auto-escalate`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   updateIncidentStatus: async (incidentId: string, status: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/status`, {
       ...FETCH_DEFAULTS,

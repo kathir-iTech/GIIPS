@@ -241,6 +241,29 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Department migration skipped: %s", exc)
 
+        # Migration: add status_changed_at column to incidents table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN status_changed_at TIMESTAMP"))
+                conn.commit()
+            logger.info("[MIGRATION] Added status_changed_at column to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] status_changed_at column already exists, skipping")
+
+        # Backfill status_changed_at for existing incidents (set to created_at)
+        try:
+            from database import SessionLocal, Incident
+            with SessionLocal() as backfill_db:
+                count = backfill_db.query(Incident).filter(Incident.status_changed_at.is_(None)).update(
+                    {Incident.status_changed_at: Incident.created_at},
+                    synchronize_session=False
+                )
+                if count:
+                    backfill_db.commit()
+                    logger.info("[BACKFILL] Set status_changed_at = created_at for %d incidents", count)
+        except Exception as exc:
+            logger.warning("[BACKFILL] status_changed_at backfill skipped: %s", exc)
+
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
 
@@ -265,7 +288,38 @@ async def lifespan(app: FastAPI):
     except Exception as e:
         logger.warning("[STARTUP] Redis pool init skipped: %s", e)
 
+    # Start background SLA auto-escalation task (runs every 6 hours)
+    async def _auto_escalate_loop():
+        """Periodically check and auto-escalate stale incidents."""
+        while True:
+            try:
+                from database import SessionLocal
+                from routes import auto_escalate_aging_incidents
+                from fastapi import Request
+                # Create a minimal request stub — auto-escalate doesn't use request fields
+                db = SessionLocal()
+                try:
+                    result = await auto_escalate_aging_incidents(db)
+                    msg = result.get("message", "")
+                    if "No incidents" not in msg:
+                        logger.info("[SLA-AUTO-ESCALATE] %s", msg)
+                finally:
+                    db.close()
+            except Exception as exc:
+                logger.warning("[SLA-AUTO-ESCALATE] Cycle failed: %s", exc)
+            await asyncio.sleep(21600)  # 6 hours
+
+    task = asyncio.create_task(_auto_escalate_loop())
+    logger.info("[STARTUP] SLA auto-escalation background task started (interval: 6h)")
+
     yield
+
+    # Cleanup: cancel the background task on shutdown
+    task.cancel()
+    try:
+        await task
+    except asyncio.CancelledError:
+        pass
 
     # Cleanup
     _models.clear()
