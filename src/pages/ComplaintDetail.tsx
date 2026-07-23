@@ -115,18 +115,18 @@ const ComplaintDetailPage = () => {
     }
   };
 
+  const incidentStatus = data?.incident?.status || 'open';
+  const confidenceLabel = data?.confidence != null ? `${getConfidenceLabel(data.confidence, t)} ${t('common.confidence.label')}` : '';
+  const statusStages = useStatusStages(
+    data?.date_received ?? null,
+    incidentStatus,
+    !!(data?.assigned_officer?.name || data?.assigned_officer?.phone),
+    !!data?.predicted_category,
+  );
+
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('complaintDetail.loading')}</span></div>;
   if (error) return <div className="page-error">{t('common.error')}: {error}</div>;
   if (!data) return <div className="page-error">{t('complaintDetail.notFound')}</div>;
-
-  const incidentStatus = data.incident?.status || 'open';
-  const confidenceLabel = data.confidence != null ? `${getConfidenceLabel(data.confidence, t)} ${t('common.confidence.label')}` : '';
-  const statusStages = useStatusStages(
-    data.date_received,
-    data.incident?.status,
-    !!(data.assigned_officer?.name || data.assigned_officer?.phone),
-    !!data.predicted_category,
-  );
 
   const timeline = [
     { label: t('complaintDetail.timelineSubmitted'), date: data.date_received, icon: CheckCircle, color: '#3b82f6' },
