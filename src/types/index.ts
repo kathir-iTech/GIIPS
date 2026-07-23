@@ -115,6 +115,7 @@ export interface CitizenComplaint {
   image_url?: string | null;
   photo_duplicate_flag?: string | null;
   photo_duplicate_of?: string | null;
+  citizen_rating?: number | null;
   assigned_officer?: AssignedOfficer | null;
   incident?: {
     id: string | null;

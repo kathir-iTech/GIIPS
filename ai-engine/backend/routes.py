@@ -31,6 +31,7 @@ from models import (
     NotificationResponse,
     UpdateStatusRequest,
     IncidentUpdateRequest,
+    RateComplaintRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
 from job_queue import get_complaint_status
@@ -558,6 +559,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
         "merge_reason": complaint.merge_reason,
         "photo_duplicate_flag": complaint.photo_duplicate_flag,
         "photo_duplicate_of": complaint.photo_duplicate_of,
+        "citizen_rating": complaint.citizen_rating,
         "date_received": complaint.created_at.isoformat() if complaint.created_at else None,
         "incident": {
             "id": incident.id if incident else None,
@@ -588,6 +590,34 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
             ] if incident else [],
         } if incident else None
     }
+
+
+@complaint_router.post("/{complaint_id}/rate")
+async def rate_complaint(complaint_id: str, body: RateComplaintRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Submit a citizen satisfaction rating (1-5) for a resolved complaint.
+    Only the complaint's original citizen can rate, once per complaint."""
+    if db_user.role != "Citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can rate complaints")
+    if body.rating not in (1, 2, 3, 4, 5):
+        raise HTTPException(status_code=400, detail="Rating must be between 1 and 5")
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found or not owned by you")
+    if complaint.citizen_rating is not None:
+        raise HTTPException(status_code=400, detail="You have already rated this complaint")
+
+    incident = db.query(Incident).filter(Incident.id == complaint.incident_id).first()
+    if not incident or incident.status not in ("resolved", "closed"):
+        raise HTTPException(status_code=400, detail="Complaint must be resolved before rating")
+
+    complaint.citizen_rating = body.rating
+    db.commit()
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "complaint_rated",
+                     complaint.id, "success",
+                     f"Rating: {body.rating}/5")
+
+    return {"message": "Rating submitted", "rating": body.rating}
 
 
 # === Classification Routes ===
@@ -1816,7 +1846,43 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
     """Get department metrics."""
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "departments_view", "departments", "success")
     depts = db.query(DepartmentMetrics).all()
-    return [{"department": d.department, "open_incidents": d.open_incidents, "critical_incidents": d.critical_incidents, "assigned_officers": d.assigned_officers, "avg_resolution_time": d.avg_resolution_time, "completion_percentage": d.completion_percentage, "workload_indicator": d.workload_indicator} for d in depts]
+
+    avg_ratings = db.query(
+        Complaint.predicted_category,
+        func.avg(Complaint.citizen_rating).label("avg_rating"),
+        func.count(Complaint.id).label("rating_count"),
+    ).filter(
+        Complaint.citizen_rating.isnot(None),
+        Complaint.incident_id.isnot(None),
+    ).group_by(Complaint.predicted_category).all()
+
+    rating_by_dept = {}
+    for cat, avg, cnt in avg_ratings:
+        dept = get_department(cat or "")
+        if dept:
+            rating_by_dept[dept] = {"avg_citizen_rating": round(float(avg), 2), "rating_count": cnt}
+
+    result = []
+    for d in depts:
+        entry = {
+            "department": d.department,
+            "open_incidents": d.open_incidents,
+            "critical_incidents": d.critical_incidents,
+            "assigned_officers": d.assigned_officers,
+            "avg_resolution_time": d.avg_resolution_time,
+            "completion_percentage": d.completion_percentage,
+            "workload_indicator": d.workload_indicator,
+        }
+        rating_data = rating_by_dept.get(d.department)
+        if rating_data:
+            entry["avg_citizen_rating"] = rating_data["avg_citizen_rating"]
+            entry["rating_count"] = rating_data["rating_count"]
+        else:
+            entry["avg_citizen_rating"] = None
+            entry["rating_count"] = 0
+        result.append(entry)
+
+    return result
 
 @admin_router.get("/departments/list")
 async def get_department_list(db_user: User = Depends(get_executive_user)):

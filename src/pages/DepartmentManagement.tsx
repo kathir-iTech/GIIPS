@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp } from 'lucide-react';
+import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp, Star } from 'lucide-react';
 import { getDeptI18nKey } from '../data/departments';
 import './Admin.css';
 
@@ -13,6 +13,8 @@ interface DepartmentData {
   avg_resolution_time: number;
   completion_percentage: number;
   workload_indicator: number;
+  avg_citizen_rating?: number | null;
+  rating_count?: number;
 }
 
 const DepartmentManagement = () => {
@@ -92,6 +94,16 @@ const DepartmentManagement = () => {
                 </div>
                 <div className={`workload ${getWorkloadColor(dept.workload_indicator)}`}>
                   {t('departmentManagement.workload')}: {((dept.workload_indicator ?? 0) * 100).toFixed(0)}%
+                </div>
+                <div className="stat">
+                  <span className="value rating-value">
+                    {dept.avg_citizen_rating != null ? (
+                      <><Star size={14} className="star-filled" /> {dept.avg_citizen_rating.toFixed(1)} <span className="rating-count">({dept.rating_count})</span></>
+                    ) : (
+                      '—'
+                    )}
+                  </span>
+                  <span className="label">{t('departmentManagement.citizenRating')}</span>
                 </div>
               </div>
             </div>

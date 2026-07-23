@@ -354,6 +354,9 @@ class Complaint(Base):
     photo_duplicate_flag = Column(String, nullable=True)
     photo_duplicate_of = Column(String, nullable=True)
 
+    # Citizen satisfaction rating (1-5, set once after resolution verification)
+    citizen_rating = Column(Integer, nullable=True)
+
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")
 

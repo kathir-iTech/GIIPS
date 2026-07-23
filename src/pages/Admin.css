@@ -385,6 +385,9 @@
   .dialog { min-width: unset; width: calc(100vw - 32px); padding: 1.5rem; }
   .dept-stats { grid-template-columns: 1fr; }
 }
+.rating-value { display: inline-flex; align-items: center; gap: 4px; }
+.star-filled { color: #f59e0b; }
+.rating-count { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 @media (max-width: 480px) {
   .stats-cards { grid-template-columns: 1fr; }
 }

@@ -254,3 +254,6 @@ class UpdateStatusRequest(BaseModel):
 
 class IncidentUpdateRequest(BaseModel):
     message: str = Field(..., min_length=1, max_length=2000, description="Free-text progress update visible to citizens")
+
+class RateComplaintRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5, description="Citizen satisfaction rating (1-5)")

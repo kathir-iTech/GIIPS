@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
@@ -47,6 +47,9 @@ const ComplaintDetailPage = () => {
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
   const [reopenLoading, setReopenLoading] = useState(false);
   const [reopenResult, setReopenResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [rating, setRating] = useState(0);
+  const [ratingLoading, setRatingLoading] = useState(false);
+  const [ratingResult, setRatingResult] = useState<{ success: boolean; message: string } | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -96,6 +99,22 @@ const ComplaintDetailPage = () => {
       setVerifyResult({ success: false, message: err.message || t('complaintDetail.verifyError') });
     } finally {
       setVerifyLoading(false);
+    }
+  };
+
+  const handleRate = async () => {
+    if (!data?.id || rating < 1) return;
+    setRatingLoading(true);
+    setRatingResult(null);
+    try {
+      await api.rateComplaint(data.id, rating);
+      setRatingResult({ success: true, message: t('complaintDetail.ratingSuccess') });
+      const refreshed = await api.getComplaintDetail(id!);
+      setData(refreshed);
+    } catch (err: any) {
+      setRatingResult({ success: false, message: err.message || t('complaintDetail.ratingError') });
+    } finally {
+      setRatingLoading(false);
     }
   };
 
@@ -255,6 +274,35 @@ const ComplaintDetailPage = () => {
                     {verifyResult && (
                       <p className={`verify-result ${verifyResult.success ? 'verify-success' : 'verify-error'}`}>
                         {verifyResult.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {user?.role === 'Citizen' && ['resolved', 'closed'].includes(data.incident?.status || '') && data.citizen_rating == null && (
+                  <div className="rating-section">
+                    <h4><Star size={16} /> {t('complaintDetail.rateTitle')}</h4>
+                    <p className="rating-prompt">{t('complaintDetail.ratePrompt')}</p>
+                    <div className="stars">
+                      {[1, 2, 3, 4, 5].map(s => (
+                        <Star
+                          key={s}
+                          size={28}
+                          className={`star ${s <= rating ? 'filled' : ''}`}
+                          onClick={() => !ratingLoading && setRating(s)}
+                        />
+                      ))}
+                    </div>
+                    <button
+                      className="rate-btn"
+                      onClick={handleRate}
+                      disabled={ratingLoading || rating < 1}
+                    >
+                      {ratingLoading ? <div className="spinner-sm" /> : t('complaintDetail.rateSubmit')}
+                    </button>
+                    {ratingResult && (
+                      <p className={`rate-result ${ratingResult.success ? 'rate-success' : 'rate-error'}`}>
+                        {ratingResult.message}
                       </p>
                     )}
                   </div>

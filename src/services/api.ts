@@ -498,6 +498,17 @@ export const api = {
     return response.json();
   },
 
+  rateComplaint: async (complaintId: string, rating: number): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/rate`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   trackComplaint: async (complaintId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/track/${encodeURIComponent(complaintId)}`);
     if (!response.ok) {
