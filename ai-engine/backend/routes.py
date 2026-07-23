@@ -1686,7 +1686,7 @@ async def get_predictions_summary(db: Session = Depends(get_db)):
         recent_incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(5).all()
         escalation_risks = []
         for inc in recent_incidents:
-            esc = engine.predict_escalation(inc.id)
+            esc = engine.predict_escalation(inc)
             escalation_risks.append({
                 "incident_id": inc.id,
                 "priority_label": inc.priority_label,
@@ -1694,7 +1694,7 @@ async def get_predictions_summary(db: Session = Depends(get_db)):
                 "risk_level": esc.get("risk_level", "LOW")
             })
 
-        active_alerts = engine.generate_alerts()
+        active_alerts = engine.generate_alerts(db)
 
         return PredictionSummaryResponse(
             timeframe=forecast.get("timeframe", "week"),
