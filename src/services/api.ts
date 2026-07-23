@@ -476,6 +476,17 @@ export const api = {
     return response.json();
   },
 
+  bulkUpdateIncidents: async (payload: { incident_ids: string[], action: string, message?: string }): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/bulk-update`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   updateIncidentStatus: async (incidentId: string, status: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/status`, {
       ...FETCH_DEFAULTS,

@@ -32,6 +32,7 @@ from models import (
     UpdateStatusRequest,
     IncidentUpdateRequest,
     RateComplaintRequest,
+    BulkUpdateRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
 from job_queue import get_complaint_status
@@ -1092,6 +1093,69 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=f"Auto-escalation failed: {e}")
+
+
+@incident_router.post("/bulk-update")
+async def bulk_update_incidents(body: BulkUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Bulk-update incidents: bump priority or post a status update for each selected incident."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can perform bulk updates")
+    if body.action == "post_update" and not body.message:
+        raise HTTPException(status_code=400, detail="Message is required for post_update action")
+
+    incidents = db.query(Incident).filter(Incident.id.in_(body.incident_ids)).all()
+    if not incidents:
+        raise HTTPException(status_code=404, detail="No incidents found")
+    if len(incidents) != len(body.incident_ids):
+        found_ids = {i.id for i in incidents}
+        missing = [i for i in body.incident_ids if i not in found_ids]
+        raise HTTPException(status_code=404, detail=f"Incidents not found: {missing}")
+
+    updated_count = 0
+    now = datetime.utcnow()
+
+    if body.action == "priority_bump":
+        for inc in incidents:
+            old_score = inc.priority_score
+            new_score = min(int(old_score) + SLA_PRIORITY_BUMP, 100)
+            if new_score == old_score:
+                continue
+            inc.priority_score = new_score
+            inc.priority_label = _label_for_score(new_score)
+
+            ph = PriorityHistory(
+                incident_id=inc.id, old_score=old_score, new_score=new_score,
+                reason=f"Bulk priority bump (+{SLA_PRIORITY_BUMP})", changed_at=now
+            )
+            db.add(ph)
+
+            audit_log(db, db_user.id, db_user.name or db_user.email, inc.id,
+                      "priority_bump", f"Priority bumped {old_score} -> {new_score} (bulk update)")
+            updated_count += 1
+
+    elif body.action == "post_update":
+        for inc in incidents:
+            update = IncidentUpdate(incident_id=inc.id, message=body.message, created_by=db_user.id, created_at=now)
+            db.add(update)
+            db.flush()
+
+            for comp in inc.complaints or []:
+                notif = Notification(
+                    user_id=comp.user_id, type="status_update",
+                    channel="in_app", title="Status Update",
+                    data=json.dumps({
+                        "incident_id": inc.id, "incident_number": inc.incident_number,
+                        "message": body.message, "update_id": update.id
+                    }), created_at=now, read=False
+                )
+                db.add(notif)
+
+            audit_log(db, db_user.id, db_user.name or db_user.email, inc.id,
+                      "status_update", f"Bulk update posted: {body.message[:100]}")
+            updated_count += 1
+
+    db.commit()
+    return {"updated": updated_count, "total": len(body.incident_ids)}
 
 
 @incident_router.get("/{incident_id}")

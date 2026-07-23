@@ -35,6 +35,15 @@
 .aging-filter-btn.active { background: rgba(147, 51, 234, 0.1); border-color: #9333ea; color: #9333ea; }
 .merge-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border-radius: var(--radius-sm); background: rgba(99, 102, 241, 0.1); border: 1px solid #6366f1; font-size: 13px; font-weight: 600; color: #818cf8; cursor: pointer; white-space: nowrap; }
 .merge-btn:hover { background: rgba(99, 102, 241, 0.2); }
+
+.bulk-action-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: rgba(16, 185, 129, 0.08); color: #34d399; font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.bulk-action-btn:hover { border-color: #10b981; background: rgba(16, 185, 129, 0.15); }
+
+.modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.5); display: flex; align-items: center; justify-content: center; z-index: 1000; }
+.bulk-modal { background: var(--bg-primary); border: 1px solid var(--border-subtle); border-radius: 12px; padding: 24px; min-width: 420px; max-width: 520px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+.bulk-modal h3 { margin: 0 0 16px 0; font-size: 16px; color: var(--text-primary); }
+.bulk-textarea { width: 100%; box-sizing: border-box; padding: 10px 12px; border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font-size: 13px; font-family: inherit; resize: vertical; margin-bottom: 16px; }
+.bulk-modal-actions { display: flex; gap: 10px; justify-content: flex-end; }
 .select-col { width: 32px; text-align: center; }
 .select-col input, .select-cell input { cursor: pointer; }
 .select-cell { width: 32px; text-align: center; }

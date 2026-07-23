@@ -257,3 +257,8 @@ class IncidentUpdateRequest(BaseModel):
 
 class RateComplaintRequest(BaseModel):
     rating: int = Field(..., ge=1, le=5, description="Citizen satisfaction rating (1-5)")
+
+class BulkUpdateRequest(BaseModel):
+    incident_ids: List[str] = Field(..., min_length=1, description="List of incident IDs to update")
+    action: str = Field(..., pattern="^(priority_bump|post_update)$", description="Action: priority_bump or post_update")
+    message: Optional[str] = Field(None, max_length=2000, description="Message for post_update action")

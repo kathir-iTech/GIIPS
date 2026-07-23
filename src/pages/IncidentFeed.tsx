@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge, Send } from 'lucide-react';
+import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge, Send, ArrowUp } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
@@ -73,6 +73,51 @@ const IncidentFeed = () => {
       setSplitError(err.message || t('incidents.catch.splitFailed'));
     }
   }, [sortField]);
+
+  const [bulkAction, setBulkAction] = useState<'priority_bump' | 'post_update' | null>(null);
+  const [bulkMessage, setBulkMessage] = useState('');
+  const [bulkLoading, setBulkLoading] = useState(false);
+  const [bulkResult, setBulkResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handleBulkPriorityBump = useCallback(async () => {
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBulkLoading(true);
+    setBulkResult(null);
+    try {
+      const res = await api.bulkUpdateIncidents({ incident_ids: ids, action: 'priority_bump' });
+      setBulkResult({ success: true, message: `${res.updated} incident(s) updated` });
+      setSelectedIds(new Set());
+      const data = await api.getIncidents(sortField, 2000);
+      setAllIncidents(data || []);
+    } catch (err: any) {
+      setBulkResult({ success: false, message: err.message || 'Bulk update failed' });
+    } finally {
+      setBulkLoading(false);
+      setBulkAction(null);
+    }
+  }, [selectedIds, sortField]);
+
+  const handleBulkPostUpdate = useCallback(async () => {
+    if (!bulkMessage.trim()) return;
+    const ids = Array.from(selectedIds);
+    if (!ids.length) return;
+    setBulkLoading(true);
+    setBulkResult(null);
+    try {
+      const res = await api.bulkUpdateIncidents({ incident_ids: ids, action: 'post_update', message: bulkMessage.trim() });
+      setBulkResult({ success: true, message: `${res.updated} incident(s) updated` });
+      setBulkMessage('');
+      setSelectedIds(new Set());
+      const data = await api.getIncidents(sortField, 2000);
+      setAllIncidents(data || []);
+    } catch (err: any) {
+      setBulkResult({ success: false, message: err.message || 'Bulk update failed' });
+    } finally {
+      setBulkLoading(false);
+      setBulkAction(null);
+    }
+  }, [selectedIds, bulkMessage, sortField]);
 
   useEffect(() => {
     let cancelled = false;
@@ -198,6 +243,16 @@ const IncidentFeed = () => {
             <button className="merge-btn" onClick={handleMerge} title={t('incidents.mergeTitle')}>
               <GitMerge size={14} /> {t('incidents.merge')} {selectedIds.size}
             </button>
+          )}
+          {selectedIds.size >= 2 && (
+            <>
+              <button className="bulk-action-btn" onClick={() => setBulkAction('priority_bump')} title="Bump priority by +15 for all selected">
+                <ArrowUp size={14} /> Bump Priority
+              </button>
+              <button className="bulk-action-btn" onClick={() => setBulkAction('post_update')} title="Post a status update to all selected">
+                <Send size={14} /> Post Update
+              </button>
+            </>
           )}
         </div>
         {mergeError && <div className="feed-error"><AlertCircle size={14} /> {mergeError} <button onClick={() => setMergeError(null)}>x</button></div>}
@@ -352,6 +407,37 @@ const IncidentFeed = () => {
           </div>
         )}
       </div>
+
+      {bulkAction && (
+        <div className="modal-overlay" onClick={() => { if (!bulkLoading) { setBulkAction(null); setBulkMessage(''); setBulkResult(null); } }}>
+          <div className="bulk-modal" onClick={e => e.stopPropagation()}>
+            <h3>{bulkAction === 'priority_bump' ? 'Bump Priority' : 'Post Update'} ({selectedIds.size} incidents)</h3>
+            {bulkAction === 'post_update' && (
+              <textarea
+                className="bulk-textarea"
+                placeholder="Enter the status update message for all selected incidents..."
+                value={bulkMessage}
+                onChange={e => setBulkMessage(e.target.value)}
+                rows={3}
+                disabled={bulkLoading}
+              />
+            )}
+            <div className="bulk-modal-actions">
+              <button className="cancel-update-btn" onClick={() => { setBulkAction(null); setBulkMessage(''); setBulkResult(null); }} disabled={bulkLoading}>Cancel</button>
+              <button
+                className="send-update-btn"
+                onClick={bulkAction === 'priority_bump' ? handleBulkPriorityBump : handleBulkPostUpdate}
+                disabled={bulkLoading || (bulkAction === 'post_update' && !bulkMessage.trim())}
+              >
+                {bulkLoading ? 'Processing...' : 'Confirm'}
+              </button>
+            </div>
+            {bulkResult && (
+              <p className={`update-result ${bulkResult.success ? 'success' : 'error'}`}>{bulkResult.message}</p>
+            )}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
