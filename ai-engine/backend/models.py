@@ -251,3 +251,6 @@ class NotificationResponse(BaseModel):
 class UpdateStatusRequest(BaseModel):
     status: str
     resolution_note: Optional[str] = None
+
+class IncidentUpdateRequest(BaseModel):
+    message: str = Field(..., min_length=1, max_length=2000, description="Free-text progress update visible to citizens")

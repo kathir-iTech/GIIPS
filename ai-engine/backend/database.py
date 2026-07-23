@@ -409,6 +409,20 @@ class Notification(Base):
     is_read = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
+class IncidentUpdate(Base):
+    """Officer/Executive progress updates visible to citizens in tracking timeline."""
+    __tablename__ = "incident_updates"
+
+    id = Column(String, primary_key=True, index=True)
+    incident_id = Column(String, ForeignKey("incidents.id"), index=True, nullable=False)
+    user_id = Column(String, nullable=False)
+    user_name = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+    incident = relationship("Incident", backref="updates")
+
+
 # Seed demo users
 def seed_demo_users():
     from auth_service import hash_password

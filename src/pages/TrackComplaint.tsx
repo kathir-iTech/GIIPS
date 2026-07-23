@@ -32,6 +32,7 @@ const TIMELINE_ICONS: Record<string, typeof CheckCircle> = {
   'In Progress': Clock,
   Resolved: CheckCircle,
   'Pending Verification': AlertTriangle,
+  'Status Update': Activity,
 };
 
 const TIMELINE_COLORS: Record<string, string> = {
@@ -41,6 +42,7 @@ const TIMELINE_COLORS: Record<string, string> = {
   'In Progress': '#eab308',
   Resolved: '#16a34a',
   'Pending Verification': '#ea580c',
+  'Status Update': '#6366f1',
 };
 
 const TrackComplaint = () => {

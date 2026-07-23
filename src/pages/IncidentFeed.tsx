@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge } from 'lucide-react';
+import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge, Send } from 'lucide-react';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
@@ -26,6 +26,26 @@ const IncidentFeed = () => {
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [splitError, setSplitError] = useState<string | null>(null);
   const [agingOnly, setAgingOnly] = useState(false);
+  const [updateIncidentId, setUpdateIncidentId] = useState<string | null>(null);
+  const [updateMessage, setUpdateMessage] = useState('');
+  const [updateLoading, setUpdateLoading] = useState(false);
+  const [updateResult, setUpdateResult] = useState<{ success: boolean; message: string } | null>(null);
+
+  const handlePostUpdate = useCallback(async (incidentId: string) => {
+    if (!updateMessage.trim()) return;
+    setUpdateLoading(true);
+    setUpdateResult(null);
+    try {
+      await api.postIncidentUpdate(incidentId, updateMessage.trim());
+      setUpdateResult({ success: true, message: 'Update posted' });
+      setUpdateMessage('');
+      setTimeout(() => { setUpdateIncidentId(null); setUpdateResult(null); }, 2000);
+    } catch (err: any) {
+      setUpdateResult({ success: false, message: err.message || 'Failed to post update' });
+    } finally {
+      setUpdateLoading(false);
+    }
+  }, [updateMessage]);
 
   const handleMerge = useCallback(async () => {
     const ids = Array.from(selectedIds);
@@ -255,6 +275,34 @@ const IncidentFeed = () => {
                               ? t('incidents.clusteredWithSimilarity', { score: (incident.complaints[0].similarity_score * 100).toFixed(0) })
                               : t('incidents.clusteringDefaultReason')}
                           </p>
+                        </div>
+                        <div className="detail-block update-block">
+                          <h4>Citizen Update</h4>
+                          {updateIncidentId === incident.id ? (
+                            <div className="update-form">
+                              <textarea
+                                className="update-textarea"
+                                placeholder="e.g. Team dispatched, expect resolution by Friday..."
+                                value={updateMessage}
+                                onChange={e => setUpdateMessage(e.target.value)}
+                                rows={3}
+                                disabled={updateLoading}
+                              />
+                              <div className="update-actions">
+                                <button className="cancel-update-btn" onClick={() => { setUpdateIncidentId(null); setUpdateMessage(''); setUpdateResult(null); }} disabled={updateLoading}>Cancel</button>
+                                <button className="send-update-btn" onClick={() => handlePostUpdate(incident.id)} disabled={updateLoading || !updateMessage.trim()}>
+                                  <Send size={14} /> {updateLoading ? 'Posting...' : 'Send Update'}
+                                </button>
+                              </div>
+                              {updateResult && (
+                                <p className={`update-result ${updateResult.success ? 'success' : 'error'}`}>{updateResult.message}</p>
+                              )}
+                            </div>
+                          ) : (
+                            <button className="post-update-btn" onClick={() => setUpdateIncidentId(incident.id)}>
+                              <Send size={14} /> Post Status Update
+                            </button>
+                          )}
                         </div>
                       </div>
                       <div className="expanded-right">

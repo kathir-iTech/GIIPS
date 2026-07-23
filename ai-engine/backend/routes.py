@@ -15,7 +15,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, ZONE_BY_WARD
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, ZONE_BY_WARD
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -30,6 +30,7 @@ from models import (
     MergeIncidentsRequest,
     NotificationResponse,
     UpdateStatusRequest,
+    IncidentUpdateRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
 from job_queue import get_complaint_status
@@ -537,7 +538,10 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
     if not complaint:
         raise HTTPException(status_code=404, detail="Complaint not found")
-    incident = db.query(Incident).options(joinedload(Incident.priority_history)).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
+    incident = db.query(Incident).options(
+        joinedload(Incident.priority_history),
+        joinedload(Incident.updates),
+    ).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
     return {
         "id": complaint.id,
         "title": complaint.title,
@@ -573,6 +577,14 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
                     "reason": ph.reason,
                     "changed_at": ph.changed_at.isoformat() if ph.changed_at else None,
                 } for ph in incident.priority_history
+            ] if incident else [],
+            "updates": [
+                {
+                    "id": u.id,
+                    "user_name": u.user_name,
+                    "message": u.message,
+                    "created_at": u.created_at.isoformat() if u.created_at else None,
+                } for u in incident.updates
             ] if incident else [],
         } if incident else None
     }
@@ -1391,6 +1403,52 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
 
 
+@incident_router.post("/{incident_id}/updates")
+async def post_incident_update(incident_id: str, body: IncidentUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Post a free-text progress update visible to citizens in the tracking timeline.
+    Does not change the incident's formal status."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can post updates")
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    update = IncidentUpdate(
+        id=str(uuid.uuid4()),
+        incident_id=incident.id,
+        user_id=db_user.id,
+        user_name=db_user.full_name,
+        message=body.message.strip(),
+        created_at=datetime.utcnow(),
+    )
+    db.add(update)
+    db.flush()
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_update_posted",
+                     incident.id, "success",
+                     f"Update: {body.message[:200]}")
+
+    for c in incident.complaints:
+        if c.user_id:
+            _create_notification(
+                db, c.user_id, "incident_update",
+                complaint_id=c.id,
+                data={
+                    "incident_number": incident.incident_number,
+                    "incident_id": incident.id,
+                    "message": body.message,
+                    "officer_name": db_user.full_name,
+                },
+            )
+
+    db.commit()
+    return {
+        "message": "Update posted",
+        "update_id": update.id,
+        "created_at": update.created_at.isoformat(),
+    }
+
+
 # === Escalation & Ward-Level Routes ===
 
 
@@ -2075,6 +2133,12 @@ async def track_complaint(complaint_id: str, request: Request, _: None = Depends
     incident = db.query(Incident).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
     status = incident.status if incident else "pending"
 
+    updates = []
+    if incident:
+        updates = db.query(IncidentUpdate).filter(
+            IncidentUpdate.incident_id == incident.id
+        ).order_by(IncidentUpdate.created_at.asc()).all()
+
     timeline = [
         TimelineEvent(label="Submitted", date=complaint.created_at.isoformat() if complaint.created_at else None),
     ]
@@ -2099,6 +2163,13 @@ async def track_complaint(complaint_id: str, request: Request, _: None = Depends
         timeline.append(TimelineEvent(
             label="Resolved" if status == "resolved" else "Pending Verification",
             date=None,
+        ))
+
+    for u in updates:
+        timeline.append(TimelineEvent(
+            label="Status Update",
+            date=u.created_at.isoformat() if u.created_at else None,
+            detail=f"{u.user_name}: {u.message}",
         ))
 
     # Get officer info (name + designation only — no phone/email PII)
