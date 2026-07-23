@@ -1,10 +1,15 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
+import { useLocation, useNavigate } from 'react-router-dom';
 import { api } from '../services/api';
 import type { Incident, Complaint, PriorityHistory } from '../types';
 import Header from '../components/Header';
 import { AgingBadge } from '../components/AgingBadge';
 import { getDeptI18nKey } from '../data/departments';
+import { useAuth } from '../context/AuthContext';
+import RecentlyViewedIncidents from '../components/RecentlyViewedIncidents';
+import type { RecentlyViewedIncident } from '../hooks/useRecentlyViewedIncidents';
+import { useRecentlyViewedIncidents } from '../hooks/useRecentlyViewedIncidents';
 import {
   Brain, ShieldAlert, MapPin, Clock, GitBranch, Lightbulb, Users, Wrench,
   ChevronRight, ChevronLeft, Search, Filter, SortAsc, ArrowUpRight, AlertTriangle,
@@ -125,6 +130,10 @@ const DEFAULT_RECOMMENDATION = '';
 
 const Clusters = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const location = useLocation();
+  const { record: recordRecentlyViewed } = useRecentlyViewedIncidents();
   const [incidents, setIncidents] = useState<Incident[]>([]);
   const [selectedIncident, setSelectedIncident] = useState<Incident | null>(null);
   const [detail, setDetail] = useState<any>(null);
@@ -205,10 +214,32 @@ const Clusters = () => {
   }, []);
 
   const handleCardClick = async (incident: Incident) => {
+    if (user?.role === 'Officer') recordRecentlyViewed(incident, 'Clusters');
     setSelectedIncident(incident);
     setWorkspaceOpen(true);
     await fetchIncidentDetail(incident);
   };
+
+  const handleRecentOpen = useCallback((recent: RecentlyViewedIncident) => {
+    const incident = incidents.find(item => item.id === recent.id);
+    if (incident) {
+      void handleCardClick(incident);
+      return;
+    }
+    navigate(`/clusters?incident=${encodeURIComponent(recent.id)}`);
+  }, [incidents, navigate, recordRecentlyViewed, user?.role]);
+
+  const recentIncidentId = new URLSearchParams(location.search).get('incident');
+  const openedRecentId = useRef<string | null>(null);
+
+  useEffect(() => {
+    if (user?.role !== 'Officer' || !recentIncidentId || loading || !incidents.length || openedRecentId.current === recentIncidentId) return;
+    const incident = incidents.find(item => item.id === recentIncidentId);
+    if (!incident) return;
+    openedRecentId.current = recentIncidentId;
+    void handleCardClick(incident);
+    navigate('/clusters', { replace: true });
+  }, [handleCardClick, incidents, loading, navigate, recentIncidentId, user?.role]);
 
   const closeWorkspace = () => {
     setWorkspaceOpen(false);
@@ -382,6 +413,8 @@ const Clusters = () => {
   return (
     <div className="ice-page">
       <Header title={t('clusters.header.title')} subtitle={t('clusters.header.subtitle')} />
+
+      {user?.role === 'Officer' && <RecentlyViewedIncidents onOpen={handleRecentOpen} />}
 
       {error && (
         <div className="global-banner warning">

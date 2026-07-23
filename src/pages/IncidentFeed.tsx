@@ -9,6 +9,10 @@ import { getCoimbatoreZone, normalizeWard } from '../data/coimbatoreZones';
 import { useAuth } from '../context/AuthContext';
 import { AgingBadge } from '../components/AgingBadge';
 import OfficerIncidentMap from '../components/OfficerIncidentMap';
+import RecentlyViewedIncidents from '../components/RecentlyViewedIncidents';
+import type { RecentlyViewedIncident } from '../hooks/useRecentlyViewedIncidents';
+import { useRecentlyViewedIncidents } from '../hooks/useRecentlyViewedIncidents';
+import { useNavigate } from 'react-router-dom';
 import './IncidentFeed.css';
 
 const PAGE_SIZE = 10;
@@ -16,6 +20,8 @@ const PAGE_SIZE = 10;
 const IncidentFeed = () => {
   const { t } = useTranslation();
   const { user } = useAuth();
+  const navigate = useNavigate();
+  const { record: recordRecentlyViewed } = useRecentlyViewedIncidents();
   const [allIncidents, setAllIncidents] = useState<Incident[]>([]);
   const [complaintCoordinates, setComplaintCoordinates] = useState<any[]>([]);
   const [coordinatesLoading, setCoordinatesLoading] = useState(false);
@@ -53,6 +59,15 @@ const IncidentFeed = () => {
       setUpdateLoading(false);
     }
   }, [updateMessage]);
+
+  const handleRecentOpen = useCallback((_incident: RecentlyViewedIncident) => {
+    navigate(`/clusters?incident=${encodeURIComponent(_incident.id)}`);
+  }, [navigate]);
+
+  const handleIncidentExpand = (incident: Incident) => {
+    if (expandedId !== incident.id) recordRecentlyViewed(incident, 'IncidentFeed');
+    setExpandedId(expandedId === incident.id ? null : incident.id);
+  };
 
   const handleMerge = useCallback(async () => {
     const ids = Array.from(selectedIds);
@@ -237,6 +252,7 @@ const IncidentFeed = () => {
     <div className="incident-feed-page">
       <Header title={t('incidents.header.title')} subtitle={t('incidents.header.subtitle')} />
       <div className="page-content">
+        {user?.role === 'Officer' && <RecentlyViewedIncidents onOpen={handleRecentOpen} />}
         <div className="feed-toolbar">
           <div className="search-box">
             <Search size={18} className="search-icon" />
@@ -344,7 +360,7 @@ const IncidentFeed = () => {
                 pagedIncidents.map(incident => (
                   <tr key={incident.id} className={`incident-row priority-${incident.priority_label?.toLowerCase()} ${selectedIds.has(incident.id) ? 'selected' : ''}`}>
                     <td className="select-cell" onClick={e => e.stopPropagation()}><input type="checkbox" checked={selectedIds.has(incident.id)} onChange={() => setSelectedIds(prev => { const next = new Set(prev); if (next.has(incident.id)) next.delete(incident.id); else next.add(incident.id); return next; })} /></td>
-                    <td className="expand-cell" onClick={() => setExpandedId(expandedId === incident.id ? null : incident.id)}>{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
+                    <td className="expand-cell" onClick={() => handleIncidentExpand(incident)}>{expandedId === incident.id ? <ChevronUp size={16} /> : <ChevronDown size={16} />}</td>
                     <td className="incident-id">{incident.incident_number}</td>
                     <td><span className="category-badge">{incident.category}</span></td>
                     <td className="dept-cell">{t(getDeptI18nKey(incident.department || incident.category))}</td>
