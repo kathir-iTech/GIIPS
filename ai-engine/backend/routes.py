@@ -1938,10 +1938,10 @@ async def track_complaint(complaint_id: str, request: Request, _: None = Depends
             date=None,
         ))
 
-    # Get officer info (name + role only — no phone/email PII)
+    # Get officer info (name + designation only — no phone/email PII)
     officer_info = route_complaint(complaint.ward or "", complaint.predicted_category or "")
     officer_name = officer_info.get("name") if isinstance(officer_info, dict) else None
-    officer_role = officer_info.get("role") if isinstance(officer_info, dict) else None
+    officer_role = officer_info.get("designation") if isinstance(officer_info, dict) else None
 
     return TrackComplaintResponse(
         complaintId=complaint.id,
