@@ -193,6 +193,7 @@ class UserResponse(BaseModel):
     ward: Optional[str] = None
     district: Optional[str] = None
     department: Optional[str] = None
+    notify_status_updates: Optional[bool] = True
 
 
 class PredictionSummaryResponse(BaseModel):
@@ -266,3 +267,6 @@ class BulkUpdateRequest(BaseModel):
 class UpdateComplaintRequest(BaseModel):
     description: Optional[str] = Field(None, max_length=5000, description="Updated complaint description")
     location: Optional[str] = Field(None, max_length=500, description="Updated complaint location")
+
+class NotificationPrefsRequest(BaseModel):
+    notify_status_updates: bool = Field(..., description="Opt in/out of status update notifications")

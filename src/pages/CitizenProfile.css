@@ -27,5 +27,15 @@
 .info-card h3 { margin: 0 0 12px 0; font-size: 15px; font-weight: 600; color: var(--text-primary); }
 .info-card p { margin: 0; font-size: 14px; color: var(--text-secondary); line-height: 1.7; }
 
+.notif-toggle-row { display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-top: 4px; }
+.notif-toggle-info { display: flex; flex-direction: column; gap: 2px; }
+.notif-toggle-label { font-size: 14px; font-weight: 500; color: var(--text-primary); }
+.notif-toggle-desc { font-size: 12px; color: var(--text-muted); }
+.notif-toggle-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 18px; border: 1px solid var(--border-subtle); border-radius: 20px; background: rgba(100, 116, 139, 0.1); color: var(--text-secondary); font-size: 13px; font-family: inherit; cursor: pointer; transition: all 0.2s; white-space: nowrap; }
+.notif-toggle-btn.active { background: rgba(16, 185, 129, 0.12); border-color: #10b981; color: #34d399; }
+.notif-toggle-btn:hover { border-color: var(--border-default); }
+.notif-toggle-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+.spinner-sm { width: 14px; height: 14px; border: 2px solid var(--text-muted); border-top-color: transparent; border-radius: 50%; animation: spin 0.6s linear infinite; }
+
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .profile-header { flex-wrap: wrap; } }
 @media (max-width: 480px) { .page-content { padding: 12px; } .profile-card { padding: 16px; } .edit-actions { flex-direction: column; } .edit-btn, .save-btn, .cancel-btn { width: 100%; justify-content: center; min-height: 44px; } }

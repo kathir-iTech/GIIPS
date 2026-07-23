@@ -34,6 +34,7 @@ from models import (
     RateComplaintRequest,
     BulkUpdateRequest,
     UpdateComplaintRequest,
+    NotificationPrefsRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
 from job_queue import get_complaint_status
@@ -101,8 +102,12 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
 
 def _create_notification(db: Session, user_id: str, notification_type: str, complaint_id: Optional[str] = None, data: Optional[dict] = None):
     """Create an in-app notification for a user.
-    Uses flush (not commit) so it does not interfere with the caller's transaction."""
+    Uses flush (not commit) so it does not interfere with the caller's transaction.
+    Respects the user's notify_status_updates preference."""
     try:
+        user = db.query(User).filter(User.id == user_id).first()
+        if not user or not user.notify_status_updates:
+            return
         notif = Notification(
             id=str(uuid.uuid4()),
             user_id=user_id,
@@ -1848,7 +1853,17 @@ async def get_me(db_user: User = Depends(get_current_user)):
         ward=db_user.ward,
         district=db_user.district,
         department=db_user.department,
+        notify_status_updates=db_user.notify_status_updates,
     )
+
+
+@auth_router.patch("/profile/notifications")
+async def update_notification_prefs(body: NotificationPrefsRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update notification preferences for the current user."""
+    db_user.notify_status_updates = body.notify_status_updates
+    db.commit()
+    db.refresh(db_user)
+    return {"notify_status_updates": db_user.notify_status_updates}
 
 
 @auth_router.put("/profile", response_model=UserResponse)
@@ -1871,6 +1886,7 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
         ward=db_user.ward,
         district=db_user.district,
         department=db_user.department,
+        notify_status_updates=db_user.notify_status_updates,
     )
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])

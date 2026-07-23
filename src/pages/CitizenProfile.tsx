@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
-import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff } from 'lucide-react';
 import './CitizenProfile.css';
 
 const ROLE_KEYS: Record<string, string> = {
@@ -22,6 +22,7 @@ const CitizenProfile = () => {
   const [saving, setSaving] = useState(false);
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', district: '', ward: '' });
   const [message, setMessage] = useState<string | null>(null);
+  const [notifLoading, setNotifLoading] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -52,6 +53,19 @@ const CitizenProfile = () => {
       setMessage(err.message || t('profile.updateFailed'));
     } finally {
       setSaving(false);
+    }
+  };
+
+  const handleToggleNotifications = async () => {
+    setNotifLoading(true);
+    try {
+      const current = profile?.notify_status_updates ?? true;
+      const res = await api.updateNotificationPrefs(!current);
+      setProfile((p: any) => ({ ...p, notify_status_updates: res.notify_status_updates }));
+    } catch (err: any) {
+      setMessage(err.message || 'Failed to update notification preference');
+    } finally {
+      setNotifLoading(false);
     }
   };
 
@@ -127,6 +141,35 @@ const CitizenProfile = () => {
               <button className="cancel-btn" onClick={() => setEditing(false)} disabled={saving}><X size={18} /> {t('profile.cancel')}</button>
             </div>
           )}
+        </div>
+
+        <div className="profile-card glass-card">
+          <div className="profile-header">
+            <Bell size={20} />
+            <div className="profile-title">
+              <h2>Notifications</h2>
+              <span className="role-badge">Status Updates</span>
+            </div>
+          </div>
+          <div className="notif-toggle-row">
+            <div className="notif-toggle-info">
+              <span className="notif-toggle-label">Receive status update notifications</span>
+              <span className="notif-toggle-desc">Get notified when your complaint status changes or an officer posts an update</span>
+            </div>
+            <button
+              className={`notif-toggle-btn ${profile?.notify_status_updates !== false ? 'active' : ''}`}
+              onClick={handleToggleNotifications}
+              disabled={notifLoading}
+            >
+              {notifLoading ? (
+                <div className="spinner-sm" />
+              ) : profile?.notify_status_updates !== false ? (
+                <><Bell size={16} /> On</>
+              ) : (
+                <><BellOff size={16} /> Off</>
+              )}
+            </button>
+          </div>
         </div>
 
         <div className="info-card glass-card">

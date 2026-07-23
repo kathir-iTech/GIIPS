@@ -288,6 +288,7 @@ class User(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
     last_login = Column(DateTime, nullable=True)
     status = Column(String, default="active", nullable=False)
+    notify_status_updates = Column(Boolean, default=True, nullable=False)
 
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""

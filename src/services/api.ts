@@ -558,6 +558,17 @@ export const api = {
     return response.json();
   },
 
+  updateNotificationPrefs: async (notify_status_updates: boolean): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/profile/notifications`, {
+      ...FETCH_DEFAULTS,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ notify_status_updates }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   reopenIncident: async (incidentId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/reopen`, {
       ...FETCH_DEFAULTS,
