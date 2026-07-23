@@ -265,6 +265,24 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[BACKFILL] status_changed_at backfill skipped: %s", exc)
 
+        # Migration: add citizen_rating column to complaints table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE complaints ADD COLUMN citizen_rating INTEGER"))
+                conn.commit()
+            logger.info("[MIGRATION] Added citizen_rating column to complaints table")
+        except Exception:
+            logger.info("[MIGRATION] citizen_rating column already exists, skipping")
+
+        # Migration: add notify_status_updates column to users table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN notify_status_updates BOOLEAN DEFAULT 1"))
+                conn.commit()
+            logger.info("[MIGRATION] Added notify_status_updates column to users table")
+        except Exception:
+            logger.info("[MIGRATION] notify_status_updates column already exists, skipping")
+
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
 
