@@ -520,6 +520,17 @@ export const api = {
     return response.json();
   },
 
+  updateComplaint: async (complaintId: string, data: { description?: string; location?: string }): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}`, {
+      ...FETCH_DEFAULTS,
+      method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   trackComplaint: async (complaintId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/track/${encodeURIComponent(complaintId)}`);
     if (!response.ok) {

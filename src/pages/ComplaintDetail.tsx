@@ -6,7 +6,7 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
@@ -50,6 +50,11 @@ const ComplaintDetailPage = () => {
   const [rating, setRating] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingResult, setRatingResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [editing, setEditing] = useState(false);
+  const [editDescription, setEditDescription] = useState('');
+  const [editLocation, setEditLocation] = useState('');
+  const [editLoading, setEditLoading] = useState(false);
+  const [editError, setEditError] = useState<string | null>(null);
 
   useEffect(() => {
     let mounted = true;
@@ -134,6 +139,32 @@ const ComplaintDetailPage = () => {
     }
   };
 
+  const handleEdit = async () => {
+    if (!data) return;
+    setEditLoading(true);
+    setEditError(null);
+    try {
+      const updated = await api.updateComplaint(data.id, {
+        description: editDescription !== data.description ? editDescription : undefined,
+        location: editLocation !== data.location ? editLocation : undefined,
+      });
+      setData(prev => prev ? { ...prev, description: updated.description, location: updated.location } : prev);
+      setEditing(false);
+    } catch (err: any) {
+      setEditError(err.message || 'Failed to update');
+    } finally {
+      setEditLoading(false);
+    }
+  };
+
+  const startEditing = () => {
+    if (!data) return;
+    setEditDescription(data.description || '');
+    setEditLocation(data.location || '');
+    setEditError(null);
+    setEditing(true);
+  };
+
   const incidentStatus = data?.incident?.status || 'open';
   const confidenceLabel = data?.confidence != null ? `${getConfidenceLabel(data.confidence, t)} ${t('common.confidence.label')}` : '';
   const statusStages = useStatusStages(
@@ -142,6 +173,7 @@ const ComplaintDetailPage = () => {
     !!(data?.assigned_officer?.name || data?.assigned_officer?.phone),
     !!data?.predicted_category,
   );
+  const canEdit = user?.role === 'Citizen' && data?.date_received && (Date.now() - new Date(data.date_received).getTime()) < 15 * 60 * 1000;
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('complaintDetail.loading')}</span></div>;
   if (error) return <div className="page-error">{t('common.error')}: {error}</div>;
@@ -181,9 +213,45 @@ const ComplaintDetailPage = () => {
           <div className="main-card glass-card">
             <div className="status-header">
               <h2>{data.title || t('common.untitled')}</h2>
-              <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>{t(STATUS_KEY[incidentStatus] || 'common.status.open')}</span>
+              <div className="status-actions">
+                <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>{t(STATUS_KEY[incidentStatus] || 'common.status.open')}</span>
+                {canEdit && !editing && (
+                  <button className="edit-complaint-btn" onClick={startEditing} title="Edit complaint">
+                    <Edit3 size={14} /> Edit
+                  </button>
+                )}
+              </div>
             </div>
-            <p className="detail-description">{data.description}</p>
+            {editing ? (
+              <div className="edit-fields">
+                <label className="edit-label">Description</label>
+                <textarea
+                  className="edit-textarea"
+                  value={editDescription}
+                  onChange={e => setEditDescription(e.target.value)}
+                  rows={4}
+                  disabled={editLoading}
+                />
+                <label className="edit-label">Location</label>
+                <input
+                  className="edit-input"
+                  value={editLocation}
+                  onChange={e => setEditLocation(e.target.value)}
+                  disabled={editLoading}
+                />
+                <div className="edit-actions">
+                  <button className="cancel-edit-btn" onClick={() => setEditing(false)} disabled={editLoading}>
+                    <X size={14} /> Cancel
+                  </button>
+                  <button className="save-edit-btn" onClick={handleEdit} disabled={editLoading || !editDescription.trim()}>
+                    <Save size={14} /> {editLoading ? 'Saving...' : 'Save'}
+                  </button>
+                </div>
+                {editError && <p className="edit-error">{editError}</p>}
+              </div>
+            ) : (
+              <p className="detail-description">{data.description}</p>
+            )}
 
             {photoUrl && (
               <div className="detail-photo">
@@ -192,7 +260,7 @@ const ComplaintDetailPage = () => {
             )}
 
             <div className="detail-meta-grid">
-              <div className="meta-item"><MapPin size={16} /> <span>{data.location || t('common.na')}</span></div>
+              <div className="meta-item"><MapPin size={16} /> <span>{editing ? editLocation || '(not set)' : (data.location || t('common.na'))}</span></div>
               <div className="meta-item"><Tag size={16} /> <span>{data.ward || t('common.na')}</span></div>
               <div className="meta-item"><Calendar size={16} /> <span>{data.date_received ? new Date(data.date_received).toLocaleString('en-IN') : t('common.na')}</span></div>
               <div className="meta-item"><AlertTriangle size={16} /> <span>{data.predicted_category || t('common.uncategorized')}</span></div>

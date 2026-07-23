@@ -33,6 +33,7 @@ from models import (
     IncidentUpdateRequest,
     RateComplaintRequest,
     BulkUpdateRequest,
+    UpdateComplaintRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
 from job_queue import get_complaint_status
@@ -592,6 +593,31 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
             ] if incident else [],
         } if incident else None
     }
+
+
+@complaint_router.patch("/{complaint_id}")
+async def update_complaint(complaint_id: str, body: UpdateComplaintRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Edit complaint description/location within 15 minutes of submission."""
+    if db_user.role != "Citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can edit complaints")
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found or not owned by you")
+    if not body.description and not body.location:
+        raise HTTPException(status_code=400, detail="At least one of description or location is required")
+
+    if complaint.created_at:
+        elapsed = (datetime.utcnow() - complaint.created_at).total_seconds()
+        if elapsed > 900:
+            raise HTTPException(status_code=403, detail="Editing window expired (15 minutes since submission)")
+
+    if body.description is not None:
+        complaint.description = body.description
+    if body.location is not None:
+        complaint.location = body.location
+    db.commit()
+    db.refresh(complaint)
+    return {"id": complaint.id, "description": complaint.description, "location": complaint.location}
 
 
 @complaint_router.post("/{complaint_id}/rate")
