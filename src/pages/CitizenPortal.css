@@ -74,3 +74,5 @@
   .success-actions button { width: 100%; min-height: 44px; }
   .preview { max-height: 200px; }
 }
+
+.merge-notice { margin-top: 16px; padding: 14px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); font-size: 14px; line-height: 1.6; color: var(--text-primary); }

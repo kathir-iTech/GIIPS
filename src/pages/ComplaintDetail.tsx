@@ -195,14 +195,6 @@ const ComplaintDetailPage = () => {
   })) || [];
   const fullTimeline = [...timeline, ...priorityEntries];
 
-  const friendlyMergeReason = (reason: string): string => {
-    if (!reason) return '';
-    if (reason.includes('Automated merge') || reason.includes('merged')) {
-      return t('complaintDetail.mergeGrouped');
-    }
-    return t('complaintDetail.mergeNewCase');
-  };
-
   return (
     <div className="complaint-detail-page">
       <Header title={t('complaintDetail.headerTitle')} subtitle={`${t('complaintDetail.headerSubtitle')} ${data.id}`} />
@@ -275,12 +267,16 @@ const ComplaintDetailPage = () => {
                   <div className="metric-bar"><div className="metric-fill" style={{ width: `${Math.round((data.confidence || 0) * 100)}%` }}></div></div>
                   <span className="value">{getConfidenceLabel(data.confidence, t)}</span>
                 </div>
-                <div className="ai-metric">
-                  <span className="label">{t('common.mergedWith')}</span>
-                  <span className={`value ${data.incident ? 'duplicate-yes' : 'duplicate-no'}`}>{data.incident ? t('common.yes') : t('common.no')}</span>
-                </div>
               </div>
-              {data.merge_reason && <p className="merge-reason">{friendlyMergeReason(data.merge_reason)}</p>}
+              {data.merge_reason && data.incident && (
+                <div className="merge-banner">
+                  <span className="merge-banner-icon">📋</span>
+                  <div className="merge-banner-text">
+                    <strong>Your complaint has been grouped with {(data.incident.cluster_size ?? 1) - 1} other report{((data.incident.cluster_size ?? 1) - 1) !== 1 ? 's' : ''} of the same issue.</strong>
+                    <span className="merge-banner-status">Current status: <strong>{t(STATUS_KEY[data.incident.status || 'open'] || 'common.status.open')}</strong></span>
+                  </div>
+                </div>
+              )}
             </div>
 
             {data.photo_duplicate_flag && (

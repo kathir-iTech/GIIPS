@@ -158,6 +158,13 @@ const CitizenPortal = () => {
         <CheckCircle size={64} className="success-icon" />
         <h2>{t('citizenPortal.successTitle')}</h2>
         <p>{t('citizenPortal.successBody')}</p>
+        {result.duplicate && (
+          <div className="merge-notice">
+            📋 Your complaint has been grouped with <strong>{result.cluster_size - 1} other report{(result.cluster_size - 1) !== 1 ? 's' : ''}</strong> of the same issue.
+            <br />
+            Current status: <strong>{result.incident_status || 'open'}</strong>
+          </div>
+        )}
         <div className="summary-card">
           <p><strong>{t('citizenPortal.summaryComplaintId')}</strong> {result.complaintId}</p>
           {result.priority && <p><strong>{t('citizenPortal.summaryPriority')}</strong> {result.priority}</p>}

@@ -213,6 +213,8 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
             "confidence": dup_conf if is_duplicate else confidence,
             "duplicate": is_duplicate,
             "message": "Complaint processed successfully.",
+            "cluster_size": incident.cluster_size,
+            "incident_status": incident.status,
         }
 
         await _set_status(complaint_id, "completed", detail="ML pipeline finished", result=result)
