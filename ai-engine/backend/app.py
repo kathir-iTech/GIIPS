@@ -277,7 +277,7 @@ async def lifespan(app: FastAPI):
         # Migration: add notify_status_updates column to users table
         try:
             with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN notify_status_updates BOOLEAN DEFAULT 1"))
+                conn.execute(text("ALTER TABLE users ADD COLUMN notify_status_updates BOOLEAN DEFAULT TRUE"))
                 conn.commit()
             logger.info("[MIGRATION] Added notify_status_updates column to users table")
         except Exception:
