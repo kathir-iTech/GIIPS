@@ -2018,6 +2018,48 @@ async def debug_wards(db: Session = Depends(get_db)):
     }
 
 
+@debug_router.get("/sla-diagnostics")
+async def debug_sla_diagnostics(db: Session = Depends(get_db)):
+    """Diagnostic: check SLA escalation state in the database.
+    
+    Returns three counts to determine whether sla logic has a bug
+    or the data state explains zero escalations.
+    """
+    now = datetime.utcnow()
+    ward_cutoff = now - timedelta(hours=48)
+
+    total_incidents = db.query(func.count(Incident.id)).scalar()
+
+    escalated_true = db.query(func.count(Incident.id)).filter(
+        Incident.escalated == True
+    ).scalar()
+
+    status_changed_at_null = db.query(func.count(Incident.id)).filter(
+        Incident.status_changed_at.is_(None)
+    ).scalar()
+
+    eligible_for_ward = db.query(func.count(Incident.id)).filter(
+        Incident.status.in_(["open", "in-progress"]),
+        Incident.escalated == False,
+        Incident.status_changed_at.isnot(None),
+        Incident.status_changed_at <= ward_cutoff,
+    ).scalar()
+
+    open_in_progress_total = db.query(func.count(Incident.id)).filter(
+        Incident.status.in_(["open", "in-progress"]),
+    ).scalar()
+
+    return {
+        "total_incidents": total_incidents,
+        "escalated_true": escalated_true,
+        "status_changed_at_null": status_changed_at_null,
+        "eligible_for_ward_escalation": eligible_for_ward,
+        "open_or_in_progress_total": open_in_progress_total,
+        "ward_cutoff_utc": ward_cutoff.isoformat(),
+        "now_utc": now.isoformat(),
+    }
+
+
 # === Public Endpoints (no auth required) ===
 
 public_router = APIRouter(tags=["Public"])
