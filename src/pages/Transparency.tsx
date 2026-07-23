@@ -3,7 +3,7 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
-import { ArrowLeft, AlertCircle, Loader2 } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2, Star, Clock, Building2, MapPin } from 'lucide-react';
 import './Transparency.css';
 
 interface CategoryStat {
@@ -34,18 +34,34 @@ const ZONE_COLORS: Record<string, string> = {
 
 const COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#16a34a', '#dc2626', '#06b6d4', '#ea580c'];
 
+interface SuccessStory {
+  category: string;
+  ward: string;
+  department: string;
+  resolution_note: string | null;
+  citizen_rating: number;
+  days_to_resolve: number;
+}
+
 const Transparency = () => {
   const { t } = useTranslation();
   const [data, setData] = useState<StatsData | null>(null);
+  const [stories, setStories] = useState<SuccessStory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api.getPublicStats()
-      .then(d => { if (!cancelled) setData(d); })
-      .catch(e => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    Promise.all([
+      api.getPublicStats(),
+      api.getSuccessStories(),
+    ]).then(([stats, successStories]) => {
+      if (!cancelled) { setData(stats); setStories(successStories); }
+    }).catch(e => {
+      if (!cancelled) setError(e.message);
+    }).finally(() => {
+      if (!cancelled) setLoading(false);
+    });
     return () => { cancelled = true; };
   }, []);
 
@@ -152,6 +168,35 @@ const Transparency = () => {
             )}
           </div>
         </div>
+
+        {stories.length > 0 && (
+          <div className="success-stories-section">
+            <div className="section-header">
+              <h2><Star size={20} /> {t('transparency.successStoriesTitle')}</h2>
+              <p>{t('transparency.successStoriesSubtitle')}</p>
+            </div>
+            <div className="stories-grid">
+              {stories.map((s, i) => (
+                <div key={i} className="story-card">
+                  <div className="story-header">
+                    <span className="story-category">{s.category}</span>
+                    <span className="story-rating">
+                      {[1, 2, 3, 4, 5].map(n => (
+                        <Star key={n} size={14} className={n <= s.citizen_rating ? 'star-filled' : 'star-empty'} />
+                      ))}
+                    </span>
+                  </div>
+                  <div className="story-meta">
+                    <span><MapPin size={12} /> Ward {s.ward}</span>
+                    <span><Building2 size={12} /> {s.department}</span>
+                    <span><Clock size={12} /> Resolved in {s.days_to_resolve}d</span>
+                  </div>
+                  {s.resolution_note && <p className="story-note">"{s.resolution_note}"</p>}
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

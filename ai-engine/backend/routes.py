@@ -2258,6 +2258,41 @@ async def track_complaint(complaint_id: str, request: Request, _: None = Depends
     )
 
 
+@public_router.get("/public/success-stories")
+async def public_success_stories(db: Session = Depends(get_db)):
+    """Top-rated recently resolved complaints — anonymized, no PII.
+    Returns up to 5 incidents whose linked complaints have citizen ratings of 4 or 5.
+    """
+    rows = db.query(
+        Incident.category,
+        Incident.ward,
+        Incident.resolution_note,
+        Complaint.citizen_rating,
+        Incident.days_open,
+    ).join(Complaint, Complaint.incident_id == Incident.id).filter(
+        Incident.status.in_(["resolved", "closed"]),
+        Complaint.citizen_rating.isnot(None),
+        Complaint.citizen_rating >= 4,
+    ).order_by(Complaint.created_at.desc()).limit(5).all()
+
+    seen = set()
+    result = []
+    for cat, ward, note, rating, days in rows:
+        dept = get_department(cat or "")
+        key = (cat, ward)
+        if key not in seen:
+            seen.add(key)
+            result.append({
+                "category": cat,
+                "ward": ward,
+                "department": dept,
+                "resolution_note": note,
+                "citizen_rating": rating,
+                "days_to_resolve": days or 0,
+            })
+    return result
+
+
 @public_router.get("/public/stats", response_model=PublicStatsResponse)
 async def public_stats(db: Session = Depends(get_db)):
     """Public aggregate stats — no auth required. Only anonymized counts, no PII."""

@@ -524,6 +524,12 @@ export const api = {
     return response.json();
   },
 
+  getSuccessStories: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/public/success-stories`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   reopenIncident: async (incidentId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/reopen`, {
       ...FETCH_DEFAULTS,
