@@ -5,14 +5,21 @@ import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
 import { getDeptI18nKey } from '../data/departments';
+import { getCoimbatoreZone, normalizeWard } from '../data/coimbatoreZones';
+import { useAuth } from '../context/AuthContext';
 import { AgingBadge } from '../components/AgingBadge';
+import OfficerIncidentMap from '../components/OfficerIncidentMap';
 import './IncidentFeed.css';
 
 const PAGE_SIZE = 10;
 
 const IncidentFeed = () => {
   const { t } = useTranslation();
+  const { user } = useAuth();
   const [allIncidents, setAllIncidents] = useState<Incident[]>([]);
+  const [complaintCoordinates, setComplaintCoordinates] = useState<any[]>([]);
+  const [coordinatesLoading, setCoordinatesLoading] = useState(false);
+  const [coordinatesError, setCoordinatesError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [sortField, setSortField] = useState<SortField>('priority_score');
@@ -150,6 +157,24 @@ const IncidentFeed = () => {
     return () => { cancelled = true; clearInterval(interval); };
   }, []);
 
+  useEffect(() => {
+    if (user?.role !== 'Officer') return;
+    let cancelled = false;
+    setCoordinatesLoading(true);
+    setCoordinatesError(null);
+    api.getComplaintCoordinates()
+      .then(data => {
+        if (!cancelled) setComplaintCoordinates(Array.isArray(data) ? data : []);
+      })
+      .catch(err => {
+        if (!cancelled) setCoordinatesError(err.message || 'Failed to load incident locations');
+      })
+      .finally(() => {
+        if (!cancelled) setCoordinatesLoading(false);
+      });
+    return () => { cancelled = true; };
+  }, [user?.role]);
+
   const categories = useMemo(() => {
     const cats = new Set(allIncidents.map(i => i.category));
     return Array.from(cats).sort();
@@ -181,6 +206,13 @@ const IncidentFeed = () => {
 
   const totalPages = Math.ceil(filteredAndSorted.length / PAGE_SIZE);
   const pagedIncidents = filteredAndSorted.slice((currentPage - 1) * PAGE_SIZE, currentPage * PAGE_SIZE);
+
+  const officerWard = user?.role === 'Officer' ? normalizeWard(user.ward) : null;
+  const officerZone = getCoimbatoreZone(officerWard);
+  const officerMapIncidents = useMemo(() => {
+    if (user?.role !== 'Officer' || !officerWard) return filteredAndSorted;
+    return filteredAndSorted.filter(incident => normalizeWard(incident.ward) === officerWard);
+  }, [filteredAndSorted, officerWard, user?.role]);
 
   useEffect(() => { setCurrentPage(1); }, [priorityFilter, categoryFilter, searchQuery]);
 
@@ -257,6 +289,17 @@ const IncidentFeed = () => {
         </div>
         {mergeError && <div className="feed-error"><AlertCircle size={14} /> {mergeError} <button onClick={() => setMergeError(null)}>x</button></div>}
         {splitError && <div className="feed-error"><AlertCircle size={14} /> {splitError} <button onClick={() => setSplitError(null)}>x</button></div>}
+
+        {user?.role === 'Officer' && (
+          <OfficerIncidentMap
+            incidents={officerMapIncidents}
+            complaintCoordinates={complaintCoordinates}
+            loading={coordinatesLoading}
+            error={coordinatesError}
+            scopeLabel={officerWard ? `Ward ${officerWard}${officerZone ? ` · ${officerZone} Zone` : ''}` : 'All incidents'}
+            scopeWarning={!officerWard}
+          />
+        )}
 
         <div className="incidents-table-container">
           <table className="incidents-table">
