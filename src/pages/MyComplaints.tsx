@@ -4,7 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import type { CitizenComplaint } from '../types';
-import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check } from 'lucide-react';
+import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3 } from 'lucide-react';
 import './MyComplaints.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -153,6 +153,38 @@ const MyComplaints = () => {
             </button>
           )}
         </div>
+
+        {complaints.length > 0 && (
+          <div className="citizen-stats">
+            <div className="cs-card">
+              <FileText size={16} />
+              <span className="cs-value">{complaints.length}</span>
+              <span className="cs-label">{t('myComplaints.statTotal')}</span>
+            </div>
+            <div className="cs-card">
+              <CheckCircle size={16} />
+              <span className="cs-value">{complaints.filter(c => ['resolved', 'closed'].includes(c.incident?.status || '')).length}</span>
+              <span className="cs-label">{t('myComplaints.statResolved')}</span>
+            </div>
+            <div className="cs-card">
+              <Hourglass size={16} />
+              <span className="cs-value">{complaints.filter(c => !['resolved', 'closed'].includes(c.incident?.status || '') && c.incident?.status).length}</span>
+              <span className="cs-label">{t('myComplaints.statPending')}</span>
+            </div>
+            <div className="cs-card">
+              <BarChart3 size={16} />
+              <span className="cs-value">
+                {(() => {
+                  const resolved = complaints.filter(c => ['resolved', 'closed'].includes(c.incident?.status || '') && c.incident?.days_open != null);
+                  if (resolved.length === 0) return '—';
+                  const avg = resolved.reduce((s, c) => s + (c.incident!.days_open!), 0) / resolved.length;
+                  return avg.toFixed(1) + 'd';
+                })()}
+              </span>
+              <span className="cs-label">{t('myComplaints.statAvgResolution')}</span>
+            </div>
+          </div>
+        )}
 
         {filtered.length === 0 ? (
           <div className="empty-state">

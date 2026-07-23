@@ -502,6 +502,7 @@ async def get_my_complaints(
                 "cluster_size": incident.cluster_size if incident else None,
                 "recommended_action": incident.recommended_action if incident else None,
                 "resolution_note": incident.resolution_note if incident else None,
+                "days_open": incident.days_open if incident else None,
             } if incident else None
         })
     return {

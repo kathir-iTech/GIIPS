@@ -127,6 +127,7 @@ export interface CitizenComplaint {
     recommended_action: string | null;
     summary: string | null;
     resolution_note?: string | null;
+    days_open?: number | null;
     priority_history: Array<{
       id: string;
       old_score: number;
