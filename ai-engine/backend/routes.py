@@ -1927,6 +1927,20 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
         if dept:
             rating_by_dept[dept] = {"avg_citizen_rating": round(float(avg), 2), "rating_count": cnt}
 
+    aging_counts = db.query(
+        Incident.category,
+        func.count(Incident.id).label("cnt"),
+    ).filter(
+        Incident.days_open >= 30,
+        Incident.status.in_(["open", "in_progress", "escalated"]),
+    ).group_by(Incident.category).all()
+
+    aging_by_dept = {}
+    for cat, cnt in aging_counts:
+        dept = get_department(cat or "")
+        if dept:
+            aging_by_dept[dept] = aging_by_dept.get(dept, 0) + cnt
+
     result = []
     for d in depts:
         entry = {
@@ -1945,6 +1959,7 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
         else:
             entry["avg_citizen_rating"] = None
             entry["rating_count"] = 0
+        entry["aging_count"] = aging_by_dept.get(d.department, 0)
         result.append(entry)
 
     return result

@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp, Star } from 'lucide-react';
+import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp, Star, ChevronUp, ChevronDown } from 'lucide-react';
 import { getDeptI18nKey } from '../data/departments';
 import './Admin.css';
 
@@ -15,13 +15,18 @@ interface DepartmentData {
   workload_indicator: number;
   avg_citizen_rating?: number | null;
   rating_count?: number;
+  aging_count: number;
 }
+
+type SortKey = keyof Pick<DepartmentData, 'department' | 'open_incidents' | 'avg_resolution_time' | 'avg_citizen_rating' | 'aging_count'>;
 
 const DepartmentManagement = () => {
   const { t } = useTranslation();
   const [departments, setDepartments] = useState<DepartmentData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>('open_incidents');
+  const [sortAsc, setSortAsc] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
@@ -45,6 +50,26 @@ const DepartmentManagement = () => {
     if (value > 0.8) return 'high';
     if (value > 0.5) return 'medium';
     return 'low';
+  };
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortAsc(p => !p);
+    else { setSortKey(key); setSortAsc(key === 'department'); }
+  };
+
+  const sortedDepts = [...departments].sort((a, b) => {
+    const aVal = a[sortKey];
+    const bVal = b[sortKey];
+    if (aVal == null && bVal == null) return 0;
+    if (aVal == null) return 1;
+    if (bVal == null) return -1;
+    if (typeof aVal === 'string' && typeof bVal === 'string') return sortAsc ? aVal.localeCompare(bVal) : bVal.localeCompare(aVal);
+    return sortAsc ? (aVal as number) - (bVal as number) : (bVal as number) - (aVal as number);
+  });
+
+  const sortIcon = (key: SortKey) => {
+    if (sortKey !== key) return null;
+    return sortAsc ? <ChevronUp size={14} /> : <ChevronDown size={14} />;
   };
 
   return (
@@ -109,6 +134,44 @@ const DepartmentManagement = () => {
             </div>
           ))
         )}
+      </div>
+
+      <div className="comparison-section">
+        <h2 className="comparison-title">Department Comparison</h2>
+        <div className="comparison-table-wrapper">
+          <table className="comparison-table">
+            <thead>
+              <tr>
+                <th onClick={() => handleSort('department')} className={sortKey === 'department' ? 'active' : ''}>
+                  Department {sortIcon('department')}
+                </th>
+                <th onClick={() => handleSort('open_incidents')} className={sortKey === 'open_incidents' ? 'active' : ''}>
+                  Open Incidents {sortIcon('open_incidents')}
+                </th>
+                <th onClick={() => handleSort('avg_resolution_time')} className={sortKey === 'avg_resolution_time' ? 'active' : ''}>
+                  Avg Resolution {sortIcon('avg_resolution_time')}
+                </th>
+                <th onClick={() => handleSort('avg_citizen_rating')} className={sortKey === 'avg_citizen_rating' ? 'active' : ''}>
+                  Avg Rating {sortIcon('avg_citizen_rating')}
+                </th>
+                <th onClick={() => handleSort('aging_count')} className={sortKey === 'aging_count' ? 'active' : ''}>
+                  Aging (&gt;30d) {sortIcon('aging_count')}
+                </th>
+              </tr>
+            </thead>
+            <tbody>
+              {sortedDepts.map(dept => (
+                <tr key={dept.department}>
+                  <td className="dept-name">{t(getDeptI18nKey(dept.department))}</td>
+                  <td>{dept.open_incidents}</td>
+                  <td>{(dept.avg_resolution_time ?? 0).toFixed(1)}d</td>
+                  <td>{dept.avg_citizen_rating != null ? dept.avg_citizen_rating.toFixed(1) : '—'}</td>
+                  <td className={dept.aging_count > 0 ? 'aging-warn' : ''}>{dept.aging_count}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
     </div>
   );

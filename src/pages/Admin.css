@@ -388,6 +388,19 @@
 .rating-value { display: inline-flex; align-items: center; gap: 4px; }
 .star-filled { color: #f59e0b; }
 .rating-count { font-size: 11px; color: var(--text-muted); font-weight: 400; }
+
+.comparison-section { margin-top: 2.5rem; }
+.comparison-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 1rem 0; }
+.comparison-table-wrapper { overflow-x: auto; }
+.comparison-table { width: 100%; border-collapse: collapse; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); overflow: hidden; font-size: 13px; }
+.comparison-table th { padding: 12px 16px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 2px solid var(--border-default); cursor: pointer; user-select: none; white-space: nowrap; gap: 4px; display: inline-flex; align-items: center; }
+.comparison-table th.active { color: #818cf8; }
+.comparison-table td { padding: 10px 16px; border-bottom: 1px solid var(--border-subtle); color: var(--text-primary); }
+.comparison-table tr:last-child td { border-bottom: none; }
+.comparison-table tbody tr:hover { background: rgba(99, 102, 241, 0.04); }
+.comparison-table .dept-name { font-weight: 500; }
+.comparison-table .aging-warn { color: #f59e0b; font-weight: 600; }
+
 @media (max-width: 480px) {
   .stats-cards { grid-template-columns: 1fr; }
 }
