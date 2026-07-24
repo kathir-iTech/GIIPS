@@ -1011,7 +1011,11 @@
     "categoryChartTitle": "Complaints by Category",
     "categoryChartSubtitle": "Counts only — no individual details",
     "zoneChartTitle": "Complaints by Zone",
-    "zoneChartSubtitle": "Aggregated by zone only"
+    "zoneChartSubtitle": "Aggregated by zone only",
+    "hourChartTitle": "Peak Complaint Hours",
+    "hourChartSubtitle": "Submissions by hour of day (all-time)",
+    "dayChartTitle": "Busiest Days",
+    "dayChartSubtitle": "Submissions by day of week (all-time)"
   },
 
   "helpWidget": {

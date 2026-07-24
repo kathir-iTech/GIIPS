@@ -16,12 +16,24 @@ interface ZoneStat {
   count: number;
 }
 
+interface HourStat {
+  hour: number;
+  count: number;
+}
+
+interface DayStat {
+  day: string;
+  count: number;
+}
+
 interface StatsData {
   totalComplaintsThisMonth: number;
   resolutionRate: number;
   avgResolutionDays: number;
   complaintsByCategory: CategoryStat[];
   complaintsByZone: ZoneStat[];
+  complaintsByHour: HourStat[];
+  complaintsByDay: DayStat[];
 }
 
 const ZONE_COLORS: Record<string, string> = {
@@ -244,6 +256,73 @@ const Transparency = () => {
                   font: { color: '#94a3b8', size: 11 },
                   margin: { t: 10, b: 40, l: 10, r: 10 },
                   showlegend: false,
+                }}
+                config={{ displayModeBar: false, responsive: true }}
+                style={{ width: '100%' }}
+              />
+            )}
+          </div>
+        </div>
+
+        <div className="chart-grid chart-grid-2">
+          <div className="chart-card">
+            <div className="chart-hdr">
+              <h3>{t('transparency.hourChartTitle')}</h3>
+              <span className="chart-desc">{t('transparency.hourChartSubtitle')}</span>
+            </div>
+            {(!data?.complaintsByHour || data.complaintsByHour.length === 0) ? (
+              <p className="empty-chart">{t('transparency.noData')}</p>
+            ) : (
+              <Plot
+                data={[{
+                  x: data.complaintsByHour.map(h => h.hour),
+                  y: data.complaintsByHour.map(h => h.count),
+                  type: 'bar',
+                  marker: { color: '#3b82f6' },
+                }]}
+                layout={{
+                  autosize: true, height: 200,
+                  paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                  font: { color: '#94a3b8', size: 10 },
+                  margin: { t: 10, b: 30, l: 30, r: 10 },
+                  xaxis: {
+                    tickmode: 'array',
+                    tickvals: [0, 3, 6, 9, 12, 15, 18, 21],
+                    ticktext: ['Midnight', '3 AM', '6 AM', '9 AM', 'Noon', '3 PM', '6 PM', '9 PM'],
+                    gridcolor: 'rgba(255,255,255,0.05)', zeroline: false,
+                  },
+                  yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+                  bargap: 0.2,
+                }}
+                config={{ displayModeBar: false, responsive: true }}
+                style={{ width: '100%' }}
+              />
+            )}
+          </div>
+
+          <div className="chart-card">
+            <div className="chart-hdr">
+              <h3>{t('transparency.dayChartTitle')}</h3>
+              <span className="chart-desc">{t('transparency.dayChartSubtitle')}</span>
+            </div>
+            {(!data?.complaintsByDay || data.complaintsByDay.length === 0) ? (
+              <p className="empty-chart">{t('transparency.noData')}</p>
+            ) : (
+              <Plot
+                data={[{
+                  x: data.complaintsByDay.map(d => d.day),
+                  y: data.complaintsByDay.map(d => d.count),
+                  type: 'bar',
+                  marker: { color: '#8b5cf6' },
+                }]}
+                layout={{
+                  autosize: true, height: 200,
+                  paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                  font: { color: '#94a3b8', size: 10 },
+                  margin: { t: 10, b: 30, l: 30, r: 10 },
+                  xaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+                  yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+                  bargap: 0.3,
                 }}
                 config={{ displayModeBar: false, responsive: true }}
                 style={{ width: '100%' }}

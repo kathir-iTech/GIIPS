@@ -156,6 +156,16 @@ class CategoryStat(BaseModel):
     count: int
 
 
+class HourStat(BaseModel):
+    hour: int
+    count: int
+
+
+class DayStat(BaseModel):
+    day: str
+    count: int
+
+
 class PublicStatsResponse(BaseModel):
     """Aggregate, anonymized stats — no individual complaint details."""
     totalComplaintsThisMonth: int
@@ -163,3 +173,5 @@ class PublicStatsResponse(BaseModel):
     avgResolutionDays: float
     complaintsByCategory: List[CategoryStat]
     complaintsByZone: List[ZoneStat]
+    complaintsByHour: List[HourStat]
+    complaintsByDay: List[DayStat]

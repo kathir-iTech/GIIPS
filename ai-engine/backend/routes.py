@@ -36,7 +36,7 @@ from models import (
     UpdateComplaintRequest,
     NotificationPrefsRequest,
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
@@ -2473,12 +2473,47 @@ async def public_stats(db: Session = Depends(get_db)):
             zone_counts[zone] = zone_counts.get(zone, 0) + cnt
     by_zone = [ZoneStat(zone=zone, count=cnt) for zone, cnt in sorted(zone_counts.items())]
 
+    # Complaints by hour of day (0-23) — SQLite strftime
+    hour_raw = db.query(
+        func.strftime('%H', Complaint.created_at).label('hour'),
+        func.count(Complaint.id)
+    ).filter(
+        Complaint.created_at.isnot(None),
+    ).group_by('hour').order_by('hour').all()
+
+    hour_map: dict[int, int] = {}
+    for h_str, cnt in hour_raw:
+        try:
+            hour_map[int(h_str)] = cnt
+        except (ValueError, TypeError):
+            pass
+    by_hour = [HourStat(hour=h, count=hour_map.get(h, 0)) for h in range(24)]
+
+    # Complaints by day of week (%w = 0 Sunday .. 6 Saturday)
+    DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
+    dow_raw = db.query(
+        func.strftime('%w', Complaint.created_at).label('dow'),
+        func.count(Complaint.id)
+    ).filter(
+        Complaint.created_at.isnot(None),
+    ).group_by('dow').order_by('dow').all()
+
+    dow_map: dict[int, int] = {}
+    for d_str, cnt in dow_raw:
+        try:
+            dow_map[int(d_str)] = cnt
+        except (ValueError, TypeError):
+            pass
+    by_day = [DayStat(day=DAY_NAMES[d], count=dow_map.get(d, 0)) for d in range(7)]
+
     return PublicStatsResponse(
         totalComplaintsThisMonth=total_this_month,
         resolutionRate=resolution_rate,
         avgResolutionDays=avg_resolution,
         complaintsByCategory=by_category,
         complaintsByZone=by_zone,
+        complaintsByHour=by_hour,
+        complaintsByDay=by_day,
     )
 
 

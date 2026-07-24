@@ -1011,7 +1011,11 @@
     "categoryChartTitle": "வகை வாரியாக புகார்கள்",
     "categoryChartSubtitle": "எண்ணிக்கைகள் மட்டும் — தனிப்பட்ட விவரங்கள் இல்லை",
     "zoneChartTitle": "மண்டலம் வாரியாக புகார்கள்",
-    "zoneChartSubtitle": "மண்டல அளவில் மட்டும் திரட்டப்பட்டது"
+    "zoneChartSubtitle": "மண்டல அளவில் மட்டும் திரட்டப்பட்டது",
+    "hourChartTitle": "அதிக புகார் நேரங்கள்",
+    "hourChartSubtitle": "நேர வாரியாக சமர்ப்பிப்புகள் (அனைத்து காலம்)",
+    "dayChartTitle": "அதிக புகார் நாட்கள்",
+    "dayChartSubtitle": "வார நாள் வாரியாக சமர்ப்பிப்புகள் (அனைத்து காலம்)"
   },
 
   "helpWidget": {
