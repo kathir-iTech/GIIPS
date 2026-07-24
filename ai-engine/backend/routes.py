@@ -1165,18 +1165,20 @@ async def bulk_update_incidents(body: BulkUpdateRequest, db_user: User = Depends
 
     elif body.action == "post_update":
         for inc in incidents:
-            update = IncidentUpdate(incident_id=inc.id, message=body.message, user_id=db_user.id, user_name=db_user.full_name, created_at=now)
+            update = IncidentUpdate(id=str(uuid.uuid4()), incident_id=inc.id, message=body.message, user_id=db_user.id, user_name=db_user.full_name, created_at=now)
             db.add(update)
             db.flush()
 
             for comp in inc.complaints or []:
                 notif = Notification(
-                    user_id=comp.user_id, type="status_update",
-                    channel="in_app", title="Status Update",
+                    id=str(uuid.uuid4()),
+                    user_id=comp.user_id, complaint_id=comp.id,
+                    type="status_update",
                     data=json.dumps({
                         "incident_id": inc.id, "incident_number": inc.incident_number,
                         "message": body.message, "update_id": update.id
-                    }), created_at=now, read=False
+                    }),
+                    is_read=False,
                 )
                 db.add(notif)
 
