@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import AddressSearch from '../components/AddressSearch';
+import HelpWidget from '../components/HelpWidget';
 import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
 import './CitizenPortal.css';
 
@@ -369,6 +370,7 @@ const CitizenPortal = () => {
           <button disabled={step >= steps.length} onClick={() => setStep(s => s + 1)}>{t('citizenPortal.nextButton')} <ChevronRight /></button>
         </div>
       </div>
+      <HelpWidget />
     </div>
   );
 };

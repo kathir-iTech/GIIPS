@@ -1001,5 +1001,23 @@
     "categoryChartSubtitle": "Counts only — no individual details",
     "zoneChartTitle": "Complaints by Zone",
     "zoneChartSubtitle": "Aggregated by zone only"
+  },
+
+  "helpWidget": {
+    "title": "Help & FAQ",
+    "help": "Help",
+    "close": "Close",
+    "q1": "How do I track my complaint?",
+    "a1": "Enter your complaint ID on the Track Complaint page, or view it under My Complaints after logging in.",
+    "q2": "What does Pending Verification mean?",
+    "a2": "Your complaint has been marked resolved. You need to verify the resolution using the 6-digit code from your notifications to close it.",
+    "q3": "How do I reopen a resolved complaint?",
+    "a3": "Open the complaint detail page and click Reopen if you are not satisfied with the resolution.",
+    "q4": "How do I submit a complaint?",
+    "a4": "Log in and go to Citizen Portal. Fill in the details, location, add an optional photo, and submit. Our AI processes it automatically.",
+    "q5": "How do I rate a resolved complaint?",
+    "a5": "After verifying the resolution, you can rate it using the star rating on the complaint detail page.",
+    "q6": "What happens after I submit?",
+    "a6": "Our AI classifies, groups related complaints, and assigns a priority. You receive a tracking ID and status updates via notifications."
   }
 }

@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2, Building2, User, Activity, LogIn } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import { getDeptI18nKey } from '../data/departments';
+import HelpWidget from '../components/HelpWidget';
 import './TrackComplaint.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -196,6 +197,7 @@ const TrackComplaint = () => {
           </div>
         )}
       </div>
+      <HelpWidget />
     </div>
   );
 };

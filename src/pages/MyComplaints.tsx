@@ -3,6 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
+import HelpWidget from '../components/HelpWidget';
 import type { CitizenComplaint } from '../types';
 import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3, Download } from 'lucide-react';
 import './MyComplaints.css';
@@ -282,6 +283,7 @@ const MyComplaints = () => {
           </div>
         )}
       </div>
+      <HelpWidget />
     </div>
   );
 };

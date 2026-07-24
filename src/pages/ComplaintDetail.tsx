@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
+import HelpWidget from '../components/HelpWidget';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
 import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X } from 'lucide-react';
@@ -470,6 +471,7 @@ const ComplaintDetailPage = () => {
           </div>
         </div>
       </div>
+      <HelpWidget />
     </div>
   );
 };
