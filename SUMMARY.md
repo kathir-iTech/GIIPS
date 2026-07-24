@@ -22,8 +22,13 @@ When a citizen submits a complaint, the following executes in a single async tas
 ### 1. Classification (TF-IDF + Logistic Regression)
 A trained model (`classifier.pkl`) predicts the category from complaint text + title. The model was trained on ~30K NYC 311 records mapped to 5 Tamil Nadu categories. **Measured accuracy: 57.1%**. When confidence is low, a keyword-overlap fallback against 10 civic categories is used. Tamil text is handled by a separate keyword matcher (`tamil_fallback.py`). The method used (`ml_model`, `tamil_keyword_fallback`, or `heuristic_fallback`) is returned in every response.
 
-### 2. Duplicate Detection (Cosine Similarity on TF-IDF)
-New complaints are compared against the last 90 days of existing complaints (up to 1000) using TF-IDF vector cosine similarity. If similarity exceeds 0.8 confidence, the complaint is merged into the existing incident rather than creating a new one. A merge reason is stored, and the citizen is notified.
+### 2. Duplicate Detection (Jaccard Keyword Overlap / Sentence Embedding Cosine)
+New complaints are compared against the last 90 days of existing complaints (up to 1000) using the `DuplicateDetector` from `ai-engine/duplicate_detection/engine.py`. Two backends exist:
+
+- **ML path** (when `sentence-transformers` is available): `all-MiniLM-L6-v2` embeddings + `NearestNeighbors(metric='cosine')`. Confidence is a weighted blend of text similarity (60%), geographic proximity (30%), and category match (10%).
+- **Fallback path** (what actually runs on Render's 512 MB tier — `sentence-transformers` is commented out in `requirements.txt`): **Jaccard similarity** on word sets: `|new_words ∩ comp_words| / |new_words ∪ comp_words|`.
+
+If confidence exceeds 0.8, the complaint is merged into the existing incident. A merge reason is stored, and the citizen is notified.
 
 ### 3. Incident Grouping
 Non-duplicate complaints become new incidents. Complaints in the same `(category, ward)` bucket are clustered together (prefix-overlap fallback — no embedding model; SBERT/DBSCAN exists but is not wired in due to memory constraints on Render's free tier).
