@@ -57,8 +57,8 @@ const Sparkline: React.FC<{ data?: number[]; color?: string; trend?: 'up' | 'dow
   </svg>
 );
 
-const SectionCard: React.FC<{ title: string; subtitle?: string; icon?: React.ReactNode; children: React.ReactNode; className?: string }> = ({
-  title, subtitle, icon, children, className = ''
+const SectionCard: React.FC<{ title: string; subtitle?: string; icon?: React.ReactNode; children: React.ReactNode; className?: string; badge?: string }> = ({
+  title, subtitle, icon, children, className = '', badge
 }) => {
   const { t } = useTranslation();
   return (
@@ -67,7 +67,7 @@ const SectionCard: React.FC<{ title: string; subtitle?: string; icon?: React.Rea
         <div className="card-title-group">
           {icon && <span className="card-icon">{icon}</span>}
           <div>
-            <h3>{title}</h3>
+            <h3>{title}{badge && <span className="preview-badge">{badge}</span>}</h3>
             {subtitle && <span className="card-subtitle">{subtitle}</span>}
           </div>
         </div>
@@ -381,7 +381,7 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 2. AI Executive Brief */}
-      <SectionCard title={t('executive.brief.title')} subtitle={t('executive.brief.subtitle')} icon={<Brain size={18} />}>
+      <SectionCard title={t('executive.brief.title')} subtitle={t('executive.brief.subtitle')} icon={<Brain size={18} />} badge={t('common.preview')}>
         <div className="executive-brief">
           <div className="brief-header">
             <div className="brief-badge ai"><Sparkles size={14} /> {t('executive.brief.aiGenerated')}</div>
@@ -414,7 +414,7 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 3. AI Recommended Government Actions */}
-      <SectionCard title={t('executive.actions.title')} subtitle={t('executive.actions.subtitle')} icon={<Target size={18} />}>
+      <SectionCard title={t('executive.actions.title')} subtitle={t('executive.actions.subtitle')} icon={<Target size={18} />} badge={t('common.preview')}>
         {recommendations.length > 0 ? (
           <div className="recommendations-grid">
             {recommendations.slice(0, 6).map((rec: any, idx: number) => (
@@ -604,7 +604,7 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 8. AI Copilot */}
-      <SectionCard title={t('executive.copilot.title')} subtitle={t('executive.copilot.subtitle')} icon={<Bot size={18} />}>
+      <SectionCard title={t('executive.copilot.title')} subtitle={t('executive.copilot.subtitle')} icon={<Bot size={18} />} badge={t('common.preview')}>
         <div className="copilot-panel">
           <div className="copilot-messages">
             {copilotMessages.map((msg, idx) => (
@@ -651,7 +651,7 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* 9. Resource Allocation */}
-      <SectionCard title={t('executive.resources.title')} subtitle={t('executive.resources.subtitle')} icon={<Users size={18} />}>
+      <SectionCard title={t('executive.resources.title')} subtitle={t('executive.resources.subtitle')} icon={<Users size={18} />} badge={t('common.preview')}>
         <div className="resource-grid">
           {(decisionSupport?.resourceAllocation || decisionSupport?.resources || []).map((res: any, idx: number) => (
             <div key={idx} className="resource-card">

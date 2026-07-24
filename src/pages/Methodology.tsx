@@ -78,9 +78,9 @@ const Methodology = () => {
         <section className="architecture-section">
           <div className="architecture-header"><h2>{t('methodology.architecture.title')}</h2><span className="architecture-subtitle">{t('methodology.architecture.subtitle')}</span></div>
           <div className="architecture-diagram">
-            <div className="arch-layer source"><div className="layer-title">{t('methodology.architecture.dataSources')}</div><div className="layer-items"><span className="layer-item">{t('methodology.architecture.webPortal')}</span><span className="layer-item">{t('methodology.architecture.mobileApp')}</span><span className="layer-item">{t('methodology.architecture.callCenter')}</span></div></div>
+            <div className="arch-layer source"><div className="layer-title">{t('methodology.architecture.dataSources')}</div><div className="layer-items"><span className="layer-item">{t('methodology.architecture.webPortal')}</span></div></div>
             <div className="arch-arrow"><Layers size={18} /></div>
-            <div className="arch-layer ingestion"><div className="layer-title">{t('methodology.architecture.ingestionLayer')}</div><div className="layer-items"><span className="layer-item">{t('methodology.architecture.apiGateway')}</span><span className="layer-item">{t('methodology.architecture.messageQueue')}</span></div></div>
+            <div className="arch-layer ingestion"><div className="layer-title">{t('methodology.architecture.ingestionLayer')}</div><div className="layer-items"><span className="layer-item">{t('methodology.architecture.apiGateway')}</span></div></div>
             <div className="arch-arrow"><Layers size={18} /></div>
             <div className="arch-layer ai"><div className="layer-title"><Zap size={14} className="ai-icon" /> {t('methodology.architecture.aiEngine')}</div><div className="layer-items"><span className="layer-item">{t('methodology.architecture.classification')}</span><span className="layer-item">{t('methodology.architecture.clustering')}</span><span className="layer-item">{t('methodology.architecture.scoring')}</span></div></div>
             <div className="arch-arrow"><Layers size={18} /></div>
@@ -91,6 +91,7 @@ const Methodology = () => {
 
         <section className="metrics-guide">
           <h2>{t('methodology.metrics.title')}</h2>
+          <div className="metrics-caveat">{t('methodology.metrics.caveat')}</div>
           <div className="metrics-grid">
             <div className="metric-guide"><h4>{t('methodology.metrics.accuracy')}</h4><p>{t('methodology.metrics.accuracyDesc')}</p><span className="metric-target">{t('methodology.metrics.target')}: &gt;90%</span></div>
             <div className="metric-guide"><h4>{t('methodology.metrics.precision')}</h4><p>{t('methodology.metrics.precisionDesc')}</p><span className="metric-target">{t('methodology.metrics.target')}: &gt;88%</span></div>

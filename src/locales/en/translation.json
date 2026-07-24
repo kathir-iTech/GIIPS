@@ -147,6 +147,7 @@
       "decision": "Decision Engine",
       "knowledge": "Knowledge Engine"
     },
+    "preview": "Preview",
     "copilot": {
       "placeholder": "Ask the AI Executive Assistant...",
       "processing": "I am processing your request. Please try again.",
@@ -238,16 +239,16 @@
       "scoring": "Scoring",
       "output": "Output",
       "stage1Title": "1. Ingestion & Pre-processing",
-      "stage1Desc": "Complaints are ingested from multiple channels, normalized, and prepared for analysis. Text is cleaned, tokenized, and converted to vector embeddings using Sentence-BERT.",
+      "stage1Desc": "Complaints are submitted via the web portal and prepared for analysis. Text is cleaned and converted to TF-IDF vector representations for classification.",
       "stage1Items": "Text, Location, Timestamp, Category",
       "stage2Title": "2. Classification & Clustering",
-      "stage2Desc": "Each complaint is classified into a department category and clustered with semantically similar complaints using cosine similarity on SBERT embeddings. Duplicates and related reports are grouped together.",
-      "stage2Items": "SBERT Embeddings, Cosine Similarity, DBSCAN",
+      "stage2Desc": "Each complaint is classified into a civic category using a trained TF-IDF + Logistic Regression model, with keyword-based fallback for Tamil text. Related complaints are grouped using text similarity.",
+      "stage2Items": "TF-IDF Vectors, Logistic Regression, Text Similarity",
       "stage3Title": "3. Priority Scoring",
       "stage3Desc": "Each cluster receives a priority score based on severity keywords, complaint volume, geographic spread, and escalation patterns. Priority rules are applied to flag critical incidents.",
       "stage3Items": "Severity Analysis, Volume Weighting, Rule Engine",
       "stage4Title": "4. Decision & Output",
-      "stage4Desc": "Final incident records are created with linked complaints, priority scores, root cause analysis, and recommended actions. Results are pushed to the dashboard and notification system.",
+      "stage4Desc": "Final incident records are created with linked complaints, priority scores, and recommended actions. Results are displayed on the dashboard and trigger in-app notifications to relevant officers.",
       "stage4Items": "Incident Records, Recommendations, Notifications"
     },
     "architecture": {
@@ -255,11 +256,8 @@
       "subtitle": "End-to-end data flow and component overview",
       "dataSources": "Data Sources",
       "webPortal": "Web Portal",
-      "mobileApp": "Mobile App",
-      "callCenter": "Call Center",
       "ingestionLayer": "Ingestion Layer",
-      "apiGateway": "API Gateway",
-      "messageQueue": "Message Queue",
+      "apiGateway": "FastAPI Routes",
       "aiEngine": "AI Engine",
       "classification": "Classification",
       "clustering": "Clustering",
@@ -267,13 +265,14 @@
       "decisionLayer": "Decision Layer",
       "dashboard": "Dashboard",
       "reports": "Reports",
-      "alerts": "Alerts",
+      "alerts": "In-App Notifications",
       "noteLabel": "Note",
-      "noteBody": "This architecture is a prototype design for a hackathon submission. Components and data flows may differ in a production deployment."
+      "noteBody": "This is a hackathon prototype. The web portal is the only active data source. In-app notifications are database-stored (no email/SMS). The AI engine runs a trained scikit-learn model with keyword-based fallbacks. A message queue, API gateway, mobile app, and call center are not yet implemented."
     },
     "metrics": {
       "title": "Performance Metrics",
       "target": "Target",
+      "caveat": "Measured on synthetic training data — not yet validated on real citizen complaints",
       "accuracy": "Accuracy",
       "accuracyDesc": "Overall classification accuracy across all complaint categories.",
       "precision": "Precision",
