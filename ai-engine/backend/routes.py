@@ -804,9 +804,6 @@ async def get_trend_data(db: Session = Depends(get_db)):
 @dashboard_router.get("/analytics")
 async def get_analytics(db: Session = Depends(get_db)):
     """Get comprehensive analytics data for the Analysis page."""
-@dashboard_router.get("/analytics")
-async def get_analytics(db: Session = Depends(get_db)):
-    """Get comprehensive analytics data for the Analysis page."""
     six_months_ago = datetime.now() - timedelta(days=180)
 
     # Overview
@@ -1160,8 +1157,9 @@ async def bulk_update_incidents(body: BulkUpdateRequest, db_user: User = Depends
             )
             db.add(ph)
 
-            audit_log(db, db_user.id, db_user.name or db_user.email, inc.id,
-                      "priority_bump", f"Priority bumped {old_score} -> {new_score} (bulk update)")
+            _write_audit_log(db, db_user.id, db_user.email, db_user.role,
+                              "priority_bump", inc.id, "success",
+                              f"Priority bumped {old_score} -> {new_score} (bulk update)")
             updated_count += 1
 
     elif body.action == "post_update":
@@ -1181,8 +1179,9 @@ async def bulk_update_incidents(body: BulkUpdateRequest, db_user: User = Depends
                 )
                 db.add(notif)
 
-            audit_log(db, db_user.id, db_user.name or db_user.email, inc.id,
-                      "status_update", f"Bulk update posted: {body.message[:100]}")
+            _write_audit_log(db, db_user.id, db_user.email, db_user.role,
+                              "status_update", inc.id, "success",
+                              f"Bulk update posted: {body.message[:100]}")
             updated_count += 1
 
     db.commit()
