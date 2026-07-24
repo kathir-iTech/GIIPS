@@ -912,6 +912,39 @@ def backfill_complaint_user_ids():
         db.close()
 
 
+def backfill_officer_departments():
+    """Assign a real department to any officer whose department is null.
+    Uses name/email heuristics; falls back to CCMC Engineering Wing.
+    Idempotent — safe to call on every startup.
+    """
+    db = SessionLocal()
+    try:
+        dept_map = {
+            "Roads": "CCMC Engineering Wing",
+            "Sanitation": "CCMC Health Department",
+            "Water": "TWAD Board - Coimbatore Division",
+            "Engineering": "CCMC Engineering Wing",
+            "Health": "CCMC Health Department",
+        }
+        null_dept = db.query(User).filter(User.role == "Officer", User.department.is_(None)).all()
+        for off in null_dept:
+            assigned = False
+            for keyword, dept in dept_map.items():
+                if keyword.lower() in (off.full_name or "").lower() or keyword.lower() in (off.email or "").lower():
+                    off.department = dept
+                    assigned = True
+                    break
+            if not assigned:
+                off.department = "CCMC Engineering Wing"
+        db.commit()
+        if null_dept:
+            print(f"[BACKFILL] Assigned department to {len(null_dept)} officers")
+    except Exception:
+        db.rollback()
+    finally:
+        db.close()
+
+
 # NOTE: All runtime initialization moved to app.py lifespan to avoid
 # import-time side effects. database.py must remain side-effect free
 # so that routes.py can safely import models at module load time.

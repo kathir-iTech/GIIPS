@@ -242,6 +242,13 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Department migration skipped: %s", exc)
 
+        # Backfill officer departments — ensures _notify_department_officers works
+        try:
+            from database import backfill_officer_departments
+            backfill_officer_departments()
+        except Exception as exc:
+            logger.warning("[STARTUP] Officer department backfill skipped: %s", exc)
+
         # Migration: add status_changed_at column to incidents table
         try:
             with engine.connect() as conn:
