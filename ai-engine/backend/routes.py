@@ -1187,11 +1187,7 @@ async def bulk_update_incidents(body: BulkUpdateRequest, db_user: User = Depends
                               f"Bulk update posted: {body.message[:100]}")
             updated_count += 1
 
-    try:
-        db.commit()
-    except Exception as e:
-        db.rollback()
-        raise HTTPException(status_code=500, detail=str(e))
+    db.commit()
     return {"updated": updated_count, "total": len(body.incident_ids)}
 
 
