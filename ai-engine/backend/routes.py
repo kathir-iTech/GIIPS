@@ -2264,6 +2264,25 @@ from sqlalchemy import func
 debug_router = APIRouter(prefix="/debug", tags=["Debug"])
 
 
+@debug_router.post("/migrate")
+async def debug_migrate(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    """One-time migration: add appeal columns to incidents table.
+    Required Executive auth.
+    """
+    if db_user.role not in ("Executive", "Collector"):
+        raise HTTPException(status_code=403, detail="Executive or Collector access required")
+    try:
+        from sqlalchemy import text
+        db.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS appealed BOOLEAN NOT NULL DEFAULT FALSE"))
+        db.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS appeal_reason TEXT"))
+        db.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS appealed_at TIMESTAMP"))
+        db.commit()
+        return {"message": "Migration complete — appeal columns added to incidents table"}
+    except Exception as e:
+        db.rollback()
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @debug_router.post("/reseed")
 async def debug_reseed(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
     """Drop and re-seed complaints/incidents/users with Coimbatore CCMC data.
