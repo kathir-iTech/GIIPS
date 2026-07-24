@@ -3,7 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
-import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2 } from 'lucide-react';
+import { getCouncillorByWard } from '../data/councillors';
 import './CitizenProfile.css';
 
 const ROLE_KEYS: Record<string, string> = {
@@ -142,6 +143,42 @@ const CitizenProfile = () => {
             </div>
           )}
         </div>
+
+        {(() => {
+          const ward = profile?.ward || user?.ward || '';
+          const councillor = ward ? getCouncillorByWard(ward) : undefined;
+          return (
+            <div className="profile-card glass-card">
+              <div className="profile-header">
+                <Building2 size={20} />
+                <div className="profile-title">
+                  <h2>{t('profile.councillorSection')}</h2>
+                  <span className="role-badge">{t('profile.councillorRole')}</span>
+                </div>
+              </div>
+              {councillor ? (
+                <div className="councillor-details">
+                  <div className="councillor-field">
+                    <span className="councillor-label">{t('profile.fieldFullName')}</span>
+                    <span className="councillor-value">{councillor.name}</span>
+                  </div>
+                  <div className="councillor-field">
+                    <span className="councillor-label">{t('profile.councillorPhone')}</span>
+                    <span className="councillor-value">
+                      <a href={`tel:${councillor.phone}`} className="councillor-phone-link">{councillor.phone}</a>
+                    </span>
+                  </div>
+                  <div className="councillor-field">
+                    <span className="councillor-label">{t('profile.fieldWard')}</span>
+                    <span className="councillor-value">Ward {councillor.ward}</span>
+                  </div>
+                </div>
+              ) : (
+                <p className="councillor-empty">{t('profile.councillorNotAssigned')}</p>
+              )}
+            </div>
+          );
+        })()}
 
         <div className="profile-card glass-card">
           <div className="profile-header">

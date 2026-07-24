@@ -98,7 +98,11 @@
     "fieldDistrict": "District",
     "fieldWard": "Ward",
     "aboutTitle": "About Your Account",
-    "aboutBody": "As a {{role}}, you can submit grievances, track their status, and view AI-powered classification and duplicate detection results."
+    "aboutBody": "As a {{role}}, you can submit grievances, track their status, and view AI-powered classification and duplicate detection results.",
+    "councillorSection": "Your Ward Councillor",
+    "councillorRole": "Ward Councillor",
+    "councillorPhone": "Phone",
+    "councillorNotAssigned": "No ward assigned — update your ward in the profile fields above to see your local councillor."
   },
 
   "common": {
