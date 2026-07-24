@@ -2473,37 +2473,31 @@ async def public_stats(db: Session = Depends(get_db)):
             zone_counts[zone] = zone_counts.get(zone, 0) + cnt
     by_zone = [ZoneStat(zone=zone, count=cnt) for zone, cnt in sorted(zone_counts.items())]
 
-    # Complaints by hour of day (0-23) — SQLite strftime
+    # Complaints by hour of day (0-23) — portable EXTRACT
     hour_raw = db.query(
-        func.strftime('%H', Complaint.created_at).label('hour'),
+        extract('hour', Complaint.created_at).label('hour'),
         func.count(Complaint.id)
     ).filter(
         Complaint.created_at.isnot(None),
     ).group_by('hour').order_by('hour').all()
 
     hour_map: dict[int, int] = {}
-    for h_str, cnt in hour_raw:
-        try:
-            hour_map[int(h_str)] = cnt
-        except (ValueError, TypeError):
-            pass
+    for h, cnt in hour_raw:
+        hour_map[int(h)] = cnt
     by_hour = [HourStat(hour=h, count=hour_map.get(h, 0)) for h in range(24)]
 
-    # Complaints by day of week (%w = 0 Sunday .. 6 Saturday)
+    # Complaints by day of week (0=Sunday … 6=Saturday) — portable EXTRACT
     DAY_NAMES = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday']
     dow_raw = db.query(
-        func.strftime('%w', Complaint.created_at).label('dow'),
+        extract('dow', Complaint.created_at).label('dow'),
         func.count(Complaint.id)
     ).filter(
         Complaint.created_at.isnot(None),
     ).group_by('dow').order_by('dow').all()
 
     dow_map: dict[int, int] = {}
-    for d_str, cnt in dow_raw:
-        try:
-            dow_map[int(d_str)] = cnt
-        except (ValueError, TypeError):
-            pass
+    for d, cnt in dow_raw:
+        dow_map[int(d)] = cnt
     by_day = [DayStat(day=DAY_NAMES[d], count=dow_map.get(d, 0)) for d in range(7)]
 
     return PublicStatsResponse(
