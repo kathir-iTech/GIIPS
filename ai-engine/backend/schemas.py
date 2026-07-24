@@ -166,6 +166,11 @@ class DayStat(BaseModel):
     count: int
 
 
+class FunnelStage(BaseModel):
+    label: str
+    count: int
+
+
 class PublicStatsResponse(BaseModel):
     """Aggregate, anonymized stats — no individual complaint details."""
     totalComplaintsThisMonth: int
@@ -175,3 +180,4 @@ class PublicStatsResponse(BaseModel):
     complaintsByZone: List[ZoneStat]
     complaintsByHour: List[HourStat]
     complaintsByDay: List[DayStat]
+    complaintsByStatus: List[FunnelStage]

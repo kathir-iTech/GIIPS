@@ -22,6 +22,16 @@
 .track-back { display: inline-flex; align-items: center; gap: 6px; color: var(--text-secondary); font-size: 14px; text-decoration: none; margin-bottom: 32px; transition: color 0.2s; }
 .track-back:hover { color: var(--text-primary); }
 .success-stories-section { margin-top: 40px; }
+.funnel-section { margin-top: 32px; }
+.funnel-header { text-align: center; margin-bottom: 24px; }
+.funnel-header h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }
+.funnel-header p { font-size: 14px; color: var(--text-secondary); margin: 0; }
+.funnel-bar { max-width: 620px; margin: 0 auto; }
+.funnel-row { display: flex; align-items: center; gap: 14px; margin-bottom: 10px; }
+.funnel-label { width: 170px; font-size: 12px; color: var(--text-secondary); text-align: right; flex-shrink: 0; font-weight: 500; }
+.funnel-track { flex: 1; height: 22px; background: rgba(255,255,255,0.03); border-radius: 4px; overflow: hidden; }
+.funnel-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; min-width: 2px; }
+.funnel-count { width: 60px; font-size: 12px; color: var(--text-muted); text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; font-weight: 600; }
 .section-header { text-align: center; margin-bottom: 24px; }
 .section-header h2 { font-size: 22px; font-weight: 700; color: var(--text-primary); margin: 0 0 6px; display: flex; align-items: center; justify-content: center; gap: 8px; }
 .section-header p { font-size: 14px; color: var(--text-secondary); margin: 0; }

@@ -1015,7 +1015,9 @@
     "hourChartTitle": "Peak Complaint Hours",
     "hourChartSubtitle": "Submissions by hour of day (all-time)",
     "dayChartTitle": "Busiest Days",
-    "dayChartSubtitle": "Submissions by day of week (all-time)"
+    "dayChartSubtitle": "Submissions by day of week (all-time)",
+    "funnelTitle": "Complaint Resolution Pipeline",
+    "funnelSubtitle": "Citywide distribution of complaints at each stage"
   },
 
   "helpWidget": {

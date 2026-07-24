@@ -26,6 +26,11 @@ interface DayStat {
   count: number;
 }
 
+interface FunnelStage {
+  label: string;
+  count: number;
+}
+
 interface StatsData {
   totalComplaintsThisMonth: number;
   resolutionRate: number;
@@ -34,6 +39,7 @@ interface StatsData {
   complaintsByZone: ZoneStat[];
   complaintsByHour: HourStat[];
   complaintsByDay: DayStat[];
+  complaintsByStatus: FunnelStage[];
 }
 
 const ZONE_COLORS: Record<string, string> = {
@@ -145,6 +151,37 @@ const Transparency = () => {
             <span className="kpi-label">{t('transparency.kpiAvgDays')}</span>
           </div>
         </div>
+
+        {data?.complaintsByStatus && data.complaintsByStatus.length > 0 && (
+          <div className="funnel-section">
+            <div className="funnel-header">
+              <h2>{t('transparency.funnelTitle')}</h2>
+              <p>{t('transparency.funnelSubtitle')}</p>
+            </div>
+            <div className="funnel-bar">
+              {(() => {
+                const stages = data.complaintsByStatus;
+                const maxCount = stages[0]?.count || 1;
+                const FUNNEL_COLORS = ['#60a5fa', '#3b82f6', '#f59e0b', '#f97316', '#10b981', '#34d399', '#6ee7b7'];
+                return stages.map((s, i) => {
+                  const pct = (s.count / maxCount) * 100;
+                  return (
+                    <div key={s.label} className="funnel-row">
+                      <span className="funnel-label">{s.label}</span>
+                      <div className="funnel-track">
+                        <div
+                          className="funnel-fill"
+                          style={{ width: `${pct}%`, background: FUNNEL_COLORS[i % FUNNEL_COLORS.length] }}
+                        />
+                      </div>
+                      <span className="funnel-count">{s.count.toLocaleString()}</span>
+                    </div>
+                  );
+                });
+              })()}
+            </div>
+          </div>
+        )}
 
         <div className="ward-lookup-section">
           <h2><MapPin size={20} /> Ward Stats</h2>

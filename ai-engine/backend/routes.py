@@ -36,7 +36,7 @@ from models import (
     UpdateComplaintRequest,
     NotificationPrefsRequest,
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
@@ -2500,6 +2500,31 @@ async def public_stats(db: Session = Depends(get_db)):
         dow_map[int(d)] = cnt
     by_day = [DayStat(day=DAY_NAMES[d], count=dow_map.get(d, 0)) for d in range(7)]
 
+    # Resolution funnel: complaints by their incident's current status
+    STAGES = [
+        ("open", "Routed"),
+        ("in-progress", "In Progress"),
+        ("pending_verification", "Pending Citizen Verification"),
+        ("resolved", "Resolved"),
+        ("closed", "Closed"),
+    ]
+    status_raw = db.query(
+        Incident.status,
+        func.count(Complaint.id)
+    ).join(Complaint, Complaint.incident_id == Incident.id).group_by(Incident.status).all()
+    status_map: dict[str, int] = dict(status_raw)
+
+    # Unlinked complaints (submitted, not yet assigned to any incident)
+    unlinked = db.query(func.count(Complaint.id)).filter(
+        Complaint.incident_id.is_(None)
+    ).scalar() or 0
+    total_all = db.query(func.count(Complaint.id)).scalar() or 0
+
+    by_status = [
+        FunnelStage(label="Submitted", count=total_all),
+        *[FunnelStage(label=display, count=status_map.get(db_status, 0)) for db_status, display in STAGES],
+    ]
+
     return PublicStatsResponse(
         totalComplaintsThisMonth=total_this_month,
         resolutionRate=resolution_rate,
@@ -2508,6 +2533,7 @@ async def public_stats(db: Session = Depends(get_db)):
         complaintsByZone=by_zone,
         complaintsByHour=by_hour,
         complaintsByDay=by_day,
+        complaintsByStatus=by_status,
     )
 
 
