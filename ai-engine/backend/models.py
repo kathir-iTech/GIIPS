@@ -181,6 +181,11 @@ class OfficerCreate(BaseModel):
     district: Optional[str] = None
     department: Optional[str] = None
 
+class OfficerUpdate(BaseModel):
+    full_name: Optional[str] = None
+    district: Optional[str] = None
+    department: Optional[str] = None
+
 class UserLogin(BaseModel):
     email: str
     password: str

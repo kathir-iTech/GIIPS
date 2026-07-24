@@ -1964,7 +1964,7 @@ def get_executive_user(db_user: User = Depends(get_current_user)):
 async def get_officers(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get all officers."""
     officers = db.query(User).filter(User.role == "Officer").all()
-    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status} for o in officers]
+    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status} for o in officers]
 
 @admin_router.post("/officers")
 async def create_officer(body: OfficerCreate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -2010,6 +2010,25 @@ async def enable_officer(officer_id: str, db_user: User = Depends(get_executive_
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_enable", officer_id, "success")
     return {"message": "Officer enabled"}
+
+@admin_router.patch("/officers/{officer_id}")
+async def update_officer(officer_id: str, body: OfficerUpdate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Update officer details (department, district, full_name)."""
+    officer = db.query(User).filter(User.id == officer_id).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail="Officer not found")
+    if officer.role != "Officer":
+        raise HTTPException(status_code=400, detail="User is not an Officer")
+    if body.department is not None:
+        officer.department = body.department
+    if body.district is not None:
+        officer.district = body.district
+    if body.full_name is not None:
+        officer.full_name = body.full_name
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_update", officer_id, "success",
+                     f"department={officer.department} district={officer.district}")
+    return {"message": "Officer updated", "department": officer.department, "district": officer.district, "full_name": officer.full_name}
 
 @admin_router.get("/departments")
 async def get_departments(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -2276,8 +2295,31 @@ async def debug_migrate(db: Session = Depends(get_db), db_user: User = Depends(g
         db.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS appealed BOOLEAN NOT NULL DEFAULT FALSE"))
         db.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS appeal_reason TEXT"))
         db.execute(text("ALTER TABLE incidents ADD COLUMN IF NOT EXISTS appealed_at TIMESTAMP"))
+
+        # Backfill null departments for existing officers based on name/email heuristics
+        dept_map = {
+            "Roads": "CCMC Engineering Wing",
+            "Sanitation": "CCMC Health Department",
+            "Water": "TWAD Board - Coimbatore Division",
+            "TANGEDCO": "TANGEDCO - Coimbatore Region",
+            "Engineering": "CCMC Engineering Wing",
+            "Health": "CCMC Health Department",
+        }
+        null_dept_officers = db.query(User).filter(User.role == "Officer", User.department.is_(None)).all()
+        backfilled = 0
+        for off in null_dept_officers:
+            assigned = False
+            for keyword, dept in dept_map.items():
+                if keyword.lower() in (off.full_name or "").lower() or keyword.lower() in (off.email or "").lower():
+                    off.department = dept
+                    assigned = True
+                    backfilled += 1
+                    break
+            if not assigned:
+                off.department = "CCMC Engineering Wing"
+                backfilled += 1
         db.commit()
-        return {"message": "Migration complete — appeal columns added to incidents table"}
+        return {"message": f"Migration complete — appeal columns added, {backfilled} officers backfilled with department"}
     except Exception as e:
         db.rollback()
         raise HTTPException(status_code=500, detail=str(e))
