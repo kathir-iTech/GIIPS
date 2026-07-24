@@ -1165,7 +1165,7 @@ async def bulk_update_incidents(body: BulkUpdateRequest, db_user: User = Depends
 
     elif body.action == "post_update":
         for inc in incidents:
-            update = IncidentUpdate(incident_id=inc.id, message=body.message, created_by=db_user.id, created_at=now)
+            update = IncidentUpdate(incident_id=inc.id, message=body.message, user_id=db_user.id, user_name=db_user.full_name, created_at=now)
             db.add(update)
             db.flush()
 
