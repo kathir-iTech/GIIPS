@@ -55,23 +55,11 @@ ENV PYTHONDONTWRITEBYTECODE=1 \
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
   CMD curl -fsS http://localhost:8000/health || exit 1
 
-# Startup script: backfill officer departments then launch app
-RUN printf '#!/bin/bash\npython3 -c "
-from database import SessionLocal, User
-db = SessionLocal()
-import re
-DEPT_MAP = {\"Roads\":\"CCMC Engineering Wing\",\"Water\":\"TWAD Board - Coimbatore Division\",\"Sanitation\":\"CCMC Health Department\",\"Engineering\":\"CCMC Engineering Wing\",\"Health\":\"CCMC Health Department\"}
-null_dept = db.query(User).filter(User.role == \"Officer\", User.department.is_(None)).all()
-for off in null_dept:
-    assigned = False
-    for kw,dept in DEPT_MAP.items():
-        if kw.lower() in (off.full_name or \"\").lower() or kw.lower() in (off.email or \"\").lower():
-            off.department = dept; assigned = True; break
-    if not assigned: off.department = \"CCMC Engineering Wing\"
-db.commit(); db.close()
-print(f\"[BACKFILL] Updated {len(null_dept)} officers with department\")
-" && exec uvicorn ai-engine.backend.app:app --host 0.0.0.0 --port 8000 --log-level info --workers 1' > /app/start.sh && chmod +x /app/start.sh
-
+# Default entrypoint — uvicorn for dev / ASGI serving
+# Override to gunicorn for production:
+#   gunicorn ai-engine.backend.app:app \
+#     --worker-class uvicorn.workers.UvicornWorker \
+#     --workers 2 --bind 0.0.0.0:8000 --log-level info
 EXPOSE 8000
 
-CMD ["/bin/bash", "/app/start.sh"]
+CMD ["uvicorn", "ai-engine.backend.app:app", "--host", "0.0.0.0", "--port", "8000", "--log-level", "info", "--workers", "1"]
