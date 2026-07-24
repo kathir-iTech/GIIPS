@@ -39,7 +39,7 @@ from models import (
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit
-from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
+from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS, SLA_PRIORITY_BUMP
 from department_map import (
     get_department, get_department_slug, get_slug_for_department,
     CATEGORY_DEPT_MAP, DEPARTMENT_SLUGS, SLUG_TO_DISPLAY, get_i18n_key
@@ -1001,6 +1001,7 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
     Call periodically (e.g. from a scheduler or as an on-demand trigger).
     """
     from constants import SLA_WARD_HOURS, SLA_ZONE_HOURS, SLA_PRIORITY_BUMP
+
     from coimbatore_wards import ZONE_BY_WARD
 
     now = datetime.utcnow()
