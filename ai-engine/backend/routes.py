@@ -21,7 +21,7 @@ from models import (
     ClusterRequest, ClusterResponse, ClusterAssignment,
     PriorityRequest, PriorityResponse, PriorityFactor,
     IncidentResponse,
-    UserRegister, UserLogin, UserResponse, OfficerCreate, ProfileUpdate,
+    UserRegister, UserLogin, UserResponse, OfficerCreate, OfficerUpdate, ProfileUpdate,
     PredictionSummaryResponse,
     KnowledgeSummaryResponse,
     DecisionSupportSummaryResponse,
