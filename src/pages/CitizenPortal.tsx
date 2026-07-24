@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
+import { useNavigate, Link } from 'react-router-dom';
+import { useTranslation, Trans } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
@@ -265,6 +265,11 @@ const CitizenPortal = () => {
                 className={fieldErrors.description ? 'input-error' : ''}
               />
               {fieldErrors.description && <p className="field-error">{fieldErrors.description}</p>}
+              <div className="cat-guide-hint">
+                <Trans i18nKey="citizenPortal.categoryGuideHint">
+                  Not sure which category applies? See the <Link to="/categories">Category Guide</Link>
+                </Trans>
+              </div>
             </div>
           )}
           {step === 3 && (

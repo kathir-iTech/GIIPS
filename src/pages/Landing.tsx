@@ -126,6 +126,13 @@ const Landing = () => {
 
       <footer className="crystal-footer">
         <div className="footer-brand">{t('landing.footerBrand')}</div>
+        <div className="footer-links">
+          <Link to="/categories" className="footer-link">{t('landing.categoriesTitle')}</Link>
+          <span className="footer-sep">·</span>
+          <Link to="/transparency" className="footer-link">{t('landing.transparencyTitle')}</Link>
+          <span className="footer-sep">·</span>
+          <Link to="/methodology" className="footer-link">{t('methodology.header.title')}</Link>
+        </div>
         <div className="footer-copy">{t('landing.footerCopy')}</div>
       </footer>
     </div>

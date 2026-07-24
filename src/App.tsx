@@ -28,6 +28,7 @@ const CitizenServices = lazy(() => import('./pages/CitizenServices'));
 const GovernmentPortal = lazy(() => import('./pages/GovernmentPortal'));
 const TrackComplaint = lazy(() => import('./pages/TrackComplaint'));
 const Transparency = lazy(() => import('./pages/Transparency'));
+const CategoryGuide = lazy(() => import('./pages/CategoryGuide'));
 const OfficerManagement = lazy(() => import('./pages/OfficerManagement'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 const SystemHealth = lazy(() => import('./pages/SystemHealth'));
@@ -47,7 +48,7 @@ function LoadingScreen() {
   );
 }
 
-const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency'];
+const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency', '/categories'];
 
 function AppLayout() {
   const { user } = useAuth();
@@ -92,6 +93,7 @@ function AnimatedRoutes() {
         <Route path="/government-portal" element={<GovernmentPortal />} />
         <Route path="/track" element={<TrackComplaint />} />
         <Route path="/transparency" element={<Transparency />} />
+        <Route path="/categories" element={<CategoryGuide />} />
         
         <Route path="/citizen" element={
           

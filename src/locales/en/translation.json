@@ -191,6 +191,8 @@
     "toolsBody": "Track your complaint or view aggregate civic data — no account required.",
     "trackTitle": "Track Your Complaint",
     "trackDesc": "Enter your complaint ID to see real-time status without logging in.",
+    "categoriesTitle": "Category Guide",
+    "categoriesDesc": "Learn about complaint categories and find the right one for your issue.",
     "transparencyTitle": "Transparency Dashboard",
     "transparencyDesc": "View aggregate civic statistics — monthly totals, resolution rates, and more.",
     "footerBrand": "GIIPS — AI triage layer prototype",
@@ -389,7 +391,8 @@
     "processingSubtitle": "Processing your submission...",
     "photoFailedStatus": "Photo upload failed",
     "retryPhotoButton": "Retry Photo Upload",
-    "skipPhotoButton": "Skip Photo — Submit Without It"
+    "skipPhotoButton": "Skip Photo — Submit Without It",
+    "categoryGuideHint": "Not sure which category applies? See the <1>Category Guide</1>"
   },
 
   "complaintDetail": {
@@ -1019,5 +1022,49 @@
     "a5": "After verifying the resolution, you can rate it using the star rating on the complaint detail page.",
     "q6": "What happens after I submit?",
     "a6": "Our AI classifies, groups related complaints, and assigns a priority. You receive a tracking ID and status updates via notifications."
+  },
+
+  "categoryGuide": {
+    "title": "Complaint Category Guide",
+    "subtitle": "Choose the right category for your complaint to help us process it faster",
+    "backLink": "Back to Home",
+    "helpLabel": "Not sure which category fits your issue? Check the examples above.",
+    "categories": {
+      "roads": {
+        "name": "Roads",
+        "desc": "Issues with road surfaces, potholes, speed breakers, and footpaths",
+        "example": "Potholes, broken road surface, damaged footpath, missing road signs, speed breaker issues"
+      },
+      "waterSupply": {
+        "name": "Water Supply",
+        "desc": "Problems with drinking water availability, quality, and pipeline infrastructure",
+        "example": "No water supply, low pressure, muddy water, pipe bursts, contaminated water, tanker not coming"
+      },
+      "wasteManagement": {
+        "name": "Waste Management",
+        "desc": "Garbage collection, overflowing bins, and illegal dumping",
+        "example": "Missed garbage pickup, overflowing bins, construction debris, mixed wet/dry waste"
+      },
+      "sanitation": {
+        "name": "Sanitation",
+        "desc": "Drainage blockages, open drains, and sewage issues",
+        "example": "Clogged drains, missing manhole covers, stagnant water, sewage overflow"
+      },
+      "streetLighting": {
+        "name": "Street Lighting",
+        "desc": "Non-working street lights, damaged poles, and inadequate lighting",
+        "example": "Light not working, flickering light, broken pole, dark stretches after sunset"
+      },
+      "electricity": {
+        "name": "Electricity",
+        "desc": "Power supply, transformer problems, and voltage fluctuations",
+        "example": "Frequent power cuts, transformer failure, voltage fluctuation, broken power lines"
+      },
+      "publicHealth": {
+        "name": "Public Health",
+        "desc": "Health hazards: stagnant water, mosquito breeding, unsanitary conditions",
+        "example": "Mosquito breeding, stray dogs, open garbage near schools, unclean public toilets"
+      }
+    }
   }
 }

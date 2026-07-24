@@ -1,0 +1,126 @@
+.cat-guide-page {
+  min-height: 100vh;
+  background: var(--bg-app);
+}
+
+.cat-guide-container {
+  max-width: 900px;
+  margin: 0 auto;
+  padding: 24px 32px;
+}
+
+.cat-guide-back {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  text-decoration: none;
+  margin-bottom: 24px;
+  transition: color 0.15s;
+}
+
+.cat-guide-back:hover {
+  color: var(--text-primary);
+}
+
+.cat-guide-header {
+  margin-bottom: 32px;
+}
+
+.cat-guide-header h1 {
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--text-primary);
+  margin: 0 0 8px 0;
+}
+
+.cat-guide-header p {
+  font-size: 14px;
+  color: var(--text-secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.cat-guide-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 28px;
+}
+
+.cat-guide-card {
+  background: var(--bg-card);
+  border-radius: 10px;
+  padding: 20px;
+  border: 1px solid var(--border-subtle);
+  display: flex;
+  gap: 14px;
+  backdrop-filter: blur(12px);
+  align-items: flex-start;
+}
+
+.cat-guide-icon {
+  width: 42px;
+  height: 42px;
+  background: rgba(59,130,246,0.1);
+  color: #60a5fa;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.cat-guide-body {
+  flex: 1;
+  min-width: 0;
+}
+
+.cat-guide-body h3 {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-primary);
+  margin: 0 0 6px 0;
+}
+
+.cat-guide-desc {
+  font-size: 12px;
+  color: var(--text-secondary);
+  line-height: 1.5;
+  margin: 0 0 8px 0;
+}
+
+.cat-guide-examples {
+  font-size: 11px;
+  color: var(--text-muted);
+  line-height: 1.5;
+}
+
+.cat-guide-examples-label {
+  font-weight: 600;
+  color: var(--text-secondary);
+  margin-right: 4px;
+}
+
+.cat-guide-help {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 13px;
+  color: var(--text-secondary);
+  background: rgba(251,191,36,0.08);
+  border-left: 3px solid #d97706;
+  padding: 12px 16px;
+  border-radius: 6px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .cat-guide-grid {
+    grid-template-columns: 1fr;
+  }
+  .cat-guide-container {
+    padding: 16px 20px;
+  }
+}
