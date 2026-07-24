@@ -578,4 +578,15 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  appealIncident: async (incidentId: string, reason: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/appeal`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ reason }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 };

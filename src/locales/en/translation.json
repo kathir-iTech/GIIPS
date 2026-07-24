@@ -455,6 +455,12 @@
     "reopenButton": "Reopen Complaint",
     "reopenSuccess": "Your complaint has been reopened. The department will review it again.",
     "reopenError": "Could not reopen. Please try again later.",
+    "appealTitle": "Not satisfied? File an Appeal",
+    "appealPrompt": "If the resolution was unsatisfactory, file a formal appeal with a brief explanation. This will escalate your complaint to a higher authority.",
+    "appealPlaceholder": "Explain why the resolution was unsatisfactory (minimum 10 characters)...",
+    "appealSubmit": "Submit Appeal",
+    "appealSuccess": "Appeal filed successfully. Your complaint has been reopened and escalated to the next tier.",
+    "appealError": "Could not file appeal. Please try again later.",
     "photoDuplicate": {
       "title": "Photo Review Flag",
       "possibleDuplicateSubmission": "This photo looks very similar to another photo you uploaded. It has been flagged for officer review and the priority has been lowered.",

@@ -36,7 +36,7 @@ from models import (
     UpdateComplaintRequest,
     NotificationPrefsRequest,
 )
-from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
+from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status
 from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS
@@ -1700,6 +1700,69 @@ async def reopen_incident(incident_id: str, db_user: User = Depends(get_current_
                      incident.id, "success", f"Citizen reopened incident from {old_status} to open")
 
     return {"message": "Incident reopened", "incident_id": incident.id, "status": "open"}
+
+
+@incident_router.post("/{incident_id}/appeal")
+async def appeal_incident(incident_id: str, body: AppealRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Citizen appeal — formal escalation with reason when resolution is unsatisfactory.
+    Sets appealed flag, bumps priority, notifies department officers, and writes audit log.
+    Distinct from reopen (which is a simple retry with no escalation)."""
+    if db_user.role != "Citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can appeal")
+
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    if incident.status not in ("resolved", "closed", "pending_verification"):
+        raise HTTPException(status_code=400, detail="Only resolved or closed incidents can be appealed")
+
+    complaint = db.query(Complaint).filter(
+        Complaint.incident_id == incident_id,
+        Complaint.user_id == db_user.id
+    ).first()
+    if not complaint:
+        raise HTTPException(status_code=403, detail="You are not authorized to appeal this incident")
+
+    old_status = incident.status
+    incident.status = "open"
+    incident.appealed = True
+    incident.appeal_reason = body.reason
+    incident.appealed_at = datetime.utcnow()
+    incident.verification_code = None
+
+    # Bump priority — increase by 25% or at least 5 points
+    old_score = incident.priority_score
+    incident.priority_score = max(old_score + 5, old_score * 1.25)
+    if incident.priority_score > 100:
+        incident.priority_score = 100.0
+
+    # Re-label priority
+    incident.priority_label = "Critical" if incident.priority_score >= 75 else "High" if incident.priority_score >= 50 else "Medium" if incident.priority_score >= 25 else "Low"
+
+    db.commit()
+
+    # Notify the citizen
+    _create_notification(
+        db, db_user.id, "status_change",
+        complaint_id=complaint.id,
+        data={"old_status": old_status, "new_status": "open", "incident_number": incident.incident_number,
+              "message": "Your appeal has been filed. Your complaint has been reopened and escalated."},
+    )
+
+    # Notify department officers
+    dept = get_department(incident.category or "")
+    _notify_department_officers(
+        db, dept, "appeal_filed",
+        data={"incident_number": incident.incident_number, "incident_id": incident.id,
+              "appeal_reason": body.reason, "priority": incident.priority_label},
+    )
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_appeal",
+                     incident.id, "success",
+                     f"Citizen appealed incident from {old_status}. Reason: {body.reason[:200]}")
+
+    return {"message": "Appeal filed successfully. Your complaint has been reopened and escalated.", "incident_id": incident.id, "status": "open", "appealed": True}
 
 
 @complaint_router.get("/ward/{ward}")

@@ -320,6 +320,11 @@ class Incident(Base):
     # Resolution note — officer's comment when marking resolved
     resolution_note = Column(Text, nullable=True)
 
+    # Citizen appeal fields
+    appealed = Column(Boolean, default=False, nullable=False)
+    appeal_reason = Column(Text, nullable=True)
+    appealed_at = Column(DateTime, nullable=True)
+
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
     priority_history = relationship("PriorityHistory", backref="incident")

@@ -15,6 +15,9 @@ from datetime import datetime
 class EscalateRequest(BaseModel):
     reason: str = Field(..., min_length=1, max_length=1000, description="Reason for escalation")
 
+class AppealRequest(BaseModel):
+    reason: str = Field(..., min_length=10, max_length=2000, description="Reason for the appeal — explain why the resolution was unsatisfactory")
+
 class VerifyResolutionRequest(BaseModel):
     code: str = Field(..., min_length=6, max_length=6, description="6-digit verification code from notification")
 

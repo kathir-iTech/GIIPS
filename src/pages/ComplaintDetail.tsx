@@ -48,6 +48,9 @@ const ComplaintDetailPage = () => {
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
   const [reopenLoading, setReopenLoading] = useState(false);
   const [reopenResult, setReopenResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [appealReason, setAppealReason] = useState('');
+  const [appealLoading, setAppealLoading] = useState(false);
+  const [appealResult, setAppealResult] = useState<{ success: boolean; message: string } | null>(null);
   const [rating, setRating] = useState(0);
   const [ratingLoading, setRatingLoading] = useState(false);
   const [ratingResult, setRatingResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -137,6 +140,23 @@ const ComplaintDetailPage = () => {
       setReopenResult({ success: false, message: err.message || t('complaintDetail.reopenError') });
     } finally {
       setReopenLoading(false);
+    }
+  };
+
+  const handleAppeal = async () => {
+    if (!data?.incident?.id) return;
+    setAppealLoading(true);
+    setAppealResult(null);
+    try {
+      const res = await api.appealIncident(data.incident.id, appealReason);
+      setAppealResult({ success: true, message: t('complaintDetail.appealSuccess') });
+      setAppealReason('');
+      const refreshed = await api.getComplaintDetail(id!);
+      setData(refreshed);
+    } catch (err: any) {
+      setAppealResult({ success: false, message: err.message || t('complaintDetail.appealError') });
+    } finally {
+      setAppealLoading(false);
     }
   };
 
@@ -386,6 +406,33 @@ const ComplaintDetailPage = () => {
                     {reopenResult && (
                       <p className={`reopen-result ${reopenResult.success ? 'reopen-success' : 'reopen-error'}`}>
                         {reopenResult.message}
+                      </p>
+                    )}
+                  </div>
+                )}
+
+                {user?.role === 'Citizen' && ['resolved', 'closed', 'pending_verification'].includes(data.incident?.status || '') && (
+                  <div className="appeal-section">
+                    <h4><AlertTriangle size={16} /> {t('complaintDetail.appealTitle')}</h4>
+                    <p className="appeal-prompt">{t('complaintDetail.appealPrompt')}</p>
+                    <textarea
+                      className="appeal-input"
+                      placeholder={t('complaintDetail.appealPlaceholder')}
+                      value={appealReason}
+                      onChange={e => setAppealReason(e.target.value)}
+                      rows={3}
+                      disabled={appealLoading}
+                    />
+                    <button
+                      className="appeal-btn"
+                      onClick={handleAppeal}
+                      disabled={appealLoading || appealReason.trim().length < 10}
+                    >
+                      {appealLoading ? <div className="spinner-sm" /> : t('complaintDetail.appealSubmit')}
+                    </button>
+                    {appealResult && (
+                      <p className={`appeal-result ${appealResult.success ? 'appeal-success' : 'appeal-error'}`}>
+                        {appealResult.message}
                       </p>
                     )}
                   </div>
