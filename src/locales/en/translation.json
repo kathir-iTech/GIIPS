@@ -396,7 +396,9 @@
     "photoFailedStatus": "Photo upload failed",
     "retryPhotoButton": "Retry Photo Upload",
     "skipPhotoButton": "Skip Photo — Submit Without It",
-    "categoryGuideHint": "Not sure which category applies? See the <1>Category Guide</1>"
+    "categoryGuideHint": "Not sure which category applies? See the <1>Category Guide</1>",
+    "nearMeTitle": "Recently resolved in Ward {{ward}}",
+    "nearMeNote": "Resolved in {{days}} days"
   },
 
   "complaintDetail": {

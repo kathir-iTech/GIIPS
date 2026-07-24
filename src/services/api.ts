@@ -546,8 +546,9 @@ export const api = {
     return response.json();
   },
 
-  getSuccessStories: async (): Promise<any> => {
-    const response = await fetch(`${BASE_URL}/public/success-stories`);
+  getSuccessStories: async (ward?: string): Promise<any> => {
+    const params = ward ? `?ward=${encodeURIComponent(ward)}` : '';
+    const response = await fetch(`${BASE_URL}/public/success-stories${params}`);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },

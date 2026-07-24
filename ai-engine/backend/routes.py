@@ -2381,11 +2381,12 @@ async def track_complaint(complaint_id: str, request: Request, _: None = Depends
 
 
 @public_router.get("/public/success-stories")
-async def public_success_stories(db: Session = Depends(get_db)):
+async def public_success_stories(ward: Optional[str] = None, db: Session = Depends(get_db)):
     """Top-rated recently resolved complaints — anonymized, no PII.
     Returns up to 5 incidents whose linked complaints have citizen ratings of 4 or 5.
+    If `ward` is provided, only incidents in that ward are returned.
     """
-    rows = db.query(
+    q = db.query(
         Incident.category,
         Incident.ward,
         Incident.resolution_note,
@@ -2395,7 +2396,11 @@ async def public_success_stories(db: Session = Depends(get_db)):
         Incident.status.in_(["resolved", "closed"]),
         Complaint.citizen_rating.isnot(None),
         Complaint.citizen_rating >= 4,
-    ).order_by(Complaint.created_at.desc()).limit(5).all()
+    )
+    if ward:
+        ward_str = f"Ward {ward}"
+        q = q.filter(Incident.ward.in_([ward_str, ward]))
+    rows = q.order_by(Complaint.created_at.desc()).limit(5).all()
 
     seen = set()
     result = []

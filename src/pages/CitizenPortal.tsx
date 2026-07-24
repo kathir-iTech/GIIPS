@@ -34,6 +34,8 @@ const CitizenPortal = () => {
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
   const [processingStatus, setProcessingStatus] = useState<string | null>(null);
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'done' | 'failed'>('idle');
+  const [nearMeStories, setNearMeStories] = useState<any[] | null>(null);
+  const [nearMeLoading, setNearMeLoading] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const complaintIdRef = useRef<string | null>(null);
@@ -53,6 +55,16 @@ const CitizenPortal = () => {
   useEffect(() => {
     return () => stopPolling();
   }, [stopPolling]);
+
+  const ward = user?.ward || '';
+  useEffect(() => {
+    if (!ward) return;
+    setNearMeLoading(true);
+    api.getSuccessStories(ward)
+      .then(setNearMeStories)
+      .catch(() => setNearMeStories([]))
+      .finally(() => setNearMeLoading(false));
+  }, [ward]);
 
   const uploadPhoto = async (complaintId: string) => {
     if (!selectedFile || isUploadingRef.current) return;
@@ -223,6 +235,22 @@ const CitizenPortal = () => {
   return (
     <div className="portal-container">
       <Header title={t('citizenPortal.headerTitle')} subtitle={t('citizenPortal.headerSubtitle')} />
+      {ward && nearMeStories && nearMeStories.length > 0 && (
+        <div className="nearme-section">
+          <div className="nearme-header">
+            <CheckCircle size={16} />
+            <span>{t('citizenPortal.nearMeTitle', { ward })}</span>
+          </div>
+          <div className="nearme-list">
+            {nearMeStories.slice(0, 3).map((s, i) => (
+              <div key={i} className="nearme-item">
+                <span className="nearme-category">{s.category}</span>
+                <span className="nearme-note">{s.resolution_note || s.days_to_resolve + ' days'}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      )}
       <div className="wizard glass-card">
         <div className="progress-bar-container">
           <div className="progress-fill" style={{ width: `${(step / steps.length) * 100}%` }}></div>

@@ -78,3 +78,10 @@
 .merge-notice { margin-top: 16px; padding: 14px 16px; background: rgba(245, 158, 11, 0.1); border: 1px solid rgba(245, 158, 11, 0.2); border-radius: var(--radius-sm); font-size: 14px; line-height: 1.6; color: var(--text-primary); }
 .cat-guide-hint { margin-top: 4px; font-size: 12px; color: var(--text-muted); display: flex; align-items: center; gap: 6px; }
 .cat-guide-hint a { color: #60a5fa; text-decoration: underline; text-underline-offset: 2px; }
+
+.nearme-section { width: 100%; max-width: 600px; margin-bottom: 16px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.15); border-radius: var(--radius-md); padding: 16px 20px; }
+.nearme-header { display: flex; align-items: center; gap: 8px; font-size: 13px; font-weight: 600; color: #34d399; margin-bottom: 10px; }
+.nearme-list { display: flex; flex-direction: column; gap: 6px; }
+.nearme-item { display: flex; align-items: center; gap: 10px; font-size: 13px; padding: 6px 10px; background: rgba(16,185,129,0.04); border-radius: var(--radius-sm); }
+.nearme-category { font-weight: 600; color: var(--text-primary); white-space: nowrap; flex-shrink: 0; }
+.nearme-note { color: var(--text-muted); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
