@@ -197,6 +197,8 @@
     "trackDesc": "Enter your complaint ID to see real-time status without logging in.",
     "categoriesTitle": "Category Guide",
     "categoriesDesc": "Learn about complaint categories and find the right one for your issue.",
+    "chartBadge": "Citywide Complaint Map",
+    "chartTitle": "Complaints by Category",
     "transparencyTitle": "Transparency Dashboard",
     "transparencyDesc": "View aggregate civic statistics — monthly totals, resolution rates, and more.",
     "footerBrand": "GIIPS — AI triage layer prototype",

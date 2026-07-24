@@ -1,11 +1,13 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Trans } from 'react-i18next';
-import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X } from 'lucide-react';
+import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X, Hash } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
+import { api } from '../services/api';
 import './Landing.css';
 
+const CATEGORY_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#16a34a', '#dc2626', '#06b6d4', '#ea580c'];
 const BANNER_DISMISSED_KEY = 'giips_onboarding_dismissed';
 
 const Landing = () => {
@@ -14,6 +16,13 @@ const Landing = () => {
   const [bannerDismissed, setBannerDismissed] = React.useState(
     () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
   );
+  const [catStats, setCatStats] = useState<{ category: string; count: number }[] | null>(null);
+
+  useEffect(() => {
+    api.getPublicStats()
+      .then(d => setCatStats(d.complaintsByCategory || []))
+      .catch(() => {});
+  }, []);
 
   const dismissBanner = () => {
     setBannerDismissed(true);
@@ -99,6 +108,33 @@ const Landing = () => {
           <span className="gateway-cta">{t('landing.govCardCta')} <ArrowRight size={16} /></span>
         </Link>
       </section>
+
+      {catStats && catStats.length > 0 && (
+        <section className="crystal-section mini-chart-section">
+          <div className="section-badge"><BarChart3 size={14} /> {t('landing.chartBadge')}</div>
+          <h2>{t('landing.chartTitle')}</h2>
+          <div className="mini-chart">
+            <div className="mini-chart-bars">
+              {catStats.map((c, i) => {
+                const maxCount = catStats[0].count;
+                const pct = (c.count / maxCount) * 100;
+                return (
+                  <div key={c.category} className="mini-chart-row">
+                    <span className="mini-chart-label">{c.category}</span>
+                    <div className="mini-chart-track">
+                      <div
+                        className="mini-chart-fill"
+                        style={{ width: `${pct}%`, background: CATEGORY_COLORS[i % CATEGORY_COLORS.length] }}
+                      />
+                    </div>
+                    <span className="mini-chart-count">{c.count.toLocaleString()}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        </section>
+      )}
 
       <section className="crystal-section public-tools-section">
         <div className="section-badge"><Search size={14} /> {t('landing.toolsBadge')}</div>
