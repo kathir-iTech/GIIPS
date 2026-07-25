@@ -20,7 +20,7 @@ The system targets **Coimbatore City Municipal Corporation (CCMC)** — 100 ward
 When a citizen submits a complaint, the following executes in a single async task (no external worker):
 
 ### 1. Classification (TF-IDF + Logistic Regression)
-A trained model (`classifier.pkl`) predicts the category from complaint text + title. The model was trained on ~30K NYC 311 records mapped to 5 Tamil Nadu categories. **Measured accuracy: 57.1%**. When confidence is low, a keyword-overlap fallback against 10 civic categories is used. Tamil text is handled by a separate keyword matcher (`tamil_fallback.py`). The method used (`ml_model`, `tamil_keyword_fallback`, or `heuristic_fallback`) is returned in every response.
+A trained model (`classifier.pkl`) predicts the category from complaint text + title. The model was trained on an expanded synthetic dataset of ~700 Coimbatore-style complaints across 7 categories (100 per class) with `min_df=1`. **Measured accuracy: 79.56%** (up from 57.1% with the old 32-sample dataset). When confidence is low or the ML model errors, a keyword-overlap fallback uses the same 7 canonical categories. Tamil text is handled by a separate keyword matcher (`tamil_fallback.py`). The method used (`ml_model`, `tamil_keyword_fallback`, or `heuristic_fallback`) is returned in every response.
 
 ### 2. Duplicate Detection (Jaccard Keyword Overlap / Sentence Embedding Cosine)
 New complaints are compared against the last 90 days of existing complaints (up to 1000) using the `DuplicateDetector` from `ai-engine/duplicate_detection/engine.py`. Two backends exist:
@@ -63,11 +63,11 @@ The following operate against actual CCMC ward geography and department structur
 ### ML Model Quality
 | Issue | Status |
 |-------|--------|
-| Classification accuracy 57.1% | **Phase 1 baseline.** Trained on NYC 311 data mapped to TN categories. No real TN complaint dataset exists publicly. |
+| Classification accuracy 79.56% (was 57.1%) | **Phase 2 improvement.** Expanded synthetic dataset (~700 Coimbatore-style complaints, 7 categories, `min_df=1`). New model covers all 7 categories with minimum per-class recall of 65%. |
 | No Tamil NLP model deployed | Keyword fallback only. IndicBERT/LaBSE reverted during Phase 1.5 for 512MB RAM limit. |
 | No embedding-based clustering | SBERT + DBSCAN code exists but is not wired in (memory). Current clustering uses text-prefix overlap. |
 
-**Planned (Phase 3):** Fine-tune a lightweight IndicBERT on a curated TN complaint corpus. Replace NYC 311 source data when a real dataset becomes available. Deploy sentence-transformers if the hosting tier allows.
+**Planned (Phase 3):** Fine-tune a lightweight IndicBERT on a curated TN complaint corpus. Replace synthetic training data with real TN complaint dataset when available. Deploy sentence-transformers if the hosting tier allows.
 
 ### Infrastructure
 | Issue | Status |
@@ -108,7 +108,7 @@ The following operate against actual CCMC ward geography and department structur
 | Database tables | 7 |
 | User roles | 7 (Citizen, Officer, Executive, Commissioner, Councillor, MLA, Collector) |
 | Frontend routes | 24 |
-| ML classification categories | 5 model-based + 10 heuristic-fallback |
+| ML classification categories | 7 model-based + 2 heuristic-fallback (Pollution, Traffic — legacy, unmapped) |
 | Duplicate detection threshold | 0.8 cosine similarity |
 | Aging notification thresholds | 4 days (warning), 8 days (critical) |
 | Notification types | 11 |

@@ -94,13 +94,11 @@ class ClassificationService:
         keywords = {
             'Roads': ['pothole', 'road', 'street', 'pavement', 'speed breaker'],
             'Water Supply': ['water', 'pipe', 'leak', 'tap', 'supply'],
-            'Garbage': ['garbage', 'waste', 'trash', 'bin', 'dump', 'litter'],
-            'Drainage': ['sewage', 'drain', 'blockage', 'overflow', 'stagnant'],
-            'Streetlights': ['light', 'lamp', 'bulb', 'flickering', 'dark'],
+            'Waste Management': ['garbage', 'waste', 'trash', 'bin', 'dump', 'litter'],
+            'Sanitation': ['sewage', 'drain', 'blockage', 'overflow', 'stagnant'],
+            'Street Lighting': ['light', 'lamp', 'bulb', 'flickering', 'dark'],
             'Electricity': ['power', 'voltage', 'transformer', 'electric', 'cut'],
             'Public Health': ['health', 'mosquito', 'dengue', 'fogging', 'disease'],
-            'Pollution': ['pollution', 'smoke', 'dust', 'air', 'toxic'],
-            'Traffic': ['traffic', 'signal', 'congestion', 'accident', 'jam'],
         }
         predicted, confidence = 'Roads', 0.5
         supporting_factors = []

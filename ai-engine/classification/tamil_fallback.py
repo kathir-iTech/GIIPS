@@ -12,9 +12,9 @@ from typing import Dict, List, Tuple, Optional
 
 TAMIL_KEYWORDS: Dict[str, List[str]] = {
     # ═══════════════════════════════════════════════════════════════════════
-    # Road Infrastructure  —  சாலை உள்கட்டமைப்பு
+    # Roads  —  சாலை உள்கட்டமைப்பு (maps to CATEGORY_DEPT_MAP key "Roads")
     # ═══════════════════════════════════════════════════════════════════════
-    'Road Infrastructure': [
+    'Roads': [
         # Core terms (preserved from v1)
         'சாலை', 'குழி', 'பள்ளம்', 'நடைபாதை',
         'சாலை சீரமைப்பு', 'சாலை பழுது', 'தார் சாலை',
