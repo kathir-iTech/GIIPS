@@ -303,13 +303,93 @@ class SpatialService:
             })
 
         return results
-    async def get_forecast(self, days: int) -> List[Dict[str, Any]]:
-        return [{"date": (datetime.now() + timedelta(days=i)).strftime("%Y-%m-%d"), "forecast": 10 + i} for i in range(days)]
+    async def get_forecast(self, db, days: int) -> List[Dict[str, Any]]:
+        from prediction.engine import PredictiveEngine
+        engine = PredictiveEngine()
+        now = datetime.utcnow()
+        four_weeks_ago = now - timedelta(weeks=4)
+        rows = db.query(
+            Complaint.ward, Complaint.created_at
+        ).filter(
+            Complaint.created_at >= four_weeks_ago,
+            Complaint.ward.isnot(None)
+        ).all()
+        from collections import defaultdict
+        ward_weekly: Dict[str, List[int]] = defaultdict(lambda: [0, 0, 0, 0])
+        for r in rows:
+            week_index = min(3, (now - r.created_at).days // 7)
+            ward_weekly[r.ward][week_index] += 1
+        results = []
+        for ward, history in ward_weekly.items():
+            history = history[::-1]
+            forecast_result = engine.forecast_complaints('week', history=history)
+            predicted_volume = forecast_result.get('predicted_volume', 0)
+            confidence = forecast_result.get('confidence', 0)
+            recent_avg = sum(history[-2:]) / max(len(history[-2:]), 1)
+            trend = 'worsening' if predicted_volume > recent_avg else 'stable'
+            results.append({
+                "district": ward,
+                "ward": ward,
+                "forecast": round(predicted_volume, 1),
+                "confidence": round(confidence, 4),
+                "trend": trend,
+                "expected_to_worsen": trend == 'worsening',
+                "historical": [round(h, 1) for h in history],
+                "predicted": [round(predicted_volume, 1)]
+            })
+        results.sort(key=lambda r: r['confidence'], reverse=True)
+        return results
     async def get_risk_analysis(self, db) -> List[Dict[str, Any]]:
         wards = await self.get_heatmap(db)
-        return [{"ward": w["ward"], "riskScore": 75} for w in wards]
-    async def simulate_resources(self, additional_teams: int) -> Dict[str, Any]:
-        return {"projectedImpact": f"Resolution speed increased by {additional_teams * 20}%", "estimatedReduction": 5 * additional_teams}
+        max_count = max((w["count"] for w in wards), default=1)
+        from priority.priority import PriorityEngine
+        priority = PriorityEngine()
+        results = []
+        for w in wards:
+            density_score = min(100, (w["count"] / max_count) * 100) if max_count > 0 else 0
+            ward_result = priority.compute(
+                incident_id=f"ward-{w['ward']}",
+                cluster_size=w["count"],
+                first_complaint_date=datetime.utcnow().isoformat(),
+                last_complaint_date=datetime.utcnow().isoformat(),
+                category="General",
+                location_hints=[w["ward"].lower()],
+            )
+            severity_bonus = ward_result.priority_score * 0.3
+            riskScore = round(min(100, density_score + severity_bonus), 1)
+            healthScore = round(max(0, 100 - riskScore), 1)
+            results.append({
+                "ward": w["ward"],
+                "district": w["ward"],
+                "riskScore": riskScore,
+                "risk_score": riskScore,
+                "healthScore": healthScore,
+                "health_score": healthScore,
+                "complaint_count": w["count"]
+            })
+        return results
+    async def simulate_resources(self, db, additional_teams: int) -> Dict[str, Any]:
+        unresolved = db.query(Complaint).filter(Complaint.status != 'resolved').count()
+        total = db.query(Complaint).count()
+        if total == 0:
+            return {
+                "projectedImpact": "No complaint data available for simulation.",
+                "estimatedReduction": 0,
+                "currentBacklog": 0,
+                "teamsAdded": additional_teams
+            }
+        resolution_rate = (total - unresolved) / max(total, 1)
+        avg_throughput_per_team = resolution_rate * 10
+        added_capacity = additional_teams * avg_throughput_per_team
+        new_backlog = max(0, unresolved - added_capacity)
+        reduction_pct = round(((unresolved - new_backlog) / unresolved) * 100, 1) if unresolved > 0 else 0
+        return {
+            "projectedImpact": f"Adding {additional_teams} team(s) could reduce backlog by ~{reduction_pct}% ({added_capacity:.0f} additional complaints resolved).",
+            "estimatedReduction": round(added_capacity),
+            "currentBacklog": unresolved,
+            "teamsAdded": additional_teams,
+            "newProjectedBacklog": round(new_backlog)
+        }
 
 class ComplaintService:
     def __init__(self):

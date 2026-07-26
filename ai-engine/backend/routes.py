@@ -217,16 +217,16 @@ async def get_hotspots(db: Session = Depends(get_db)):
     return await SpatialService().get_hotspots(db)
 
 @spatial_router.get("/forecast")
-async def get_forecast(days: int = 7):
-    return await SpatialService().get_forecast(days)
+async def get_forecast(days: int = 7, db: Session = Depends(get_db)):
+    return await SpatialService().get_forecast(db, days)
 
 @spatial_router.get("/risk")
 async def get_risk(db: Session = Depends(get_db)):
     return await SpatialService().get_risk_analysis(db)
 
 @spatial_router.post("/simulate")
-async def simulate(additional_teams: int):
-    return await SpatialService().simulate_resources(additional_teams)
+async def simulate(additional_teams: int, db: Session = Depends(get_db)):
+    return await SpatialService().simulate_resources(db, additional_teams)
 
 executive_router = APIRouter(prefix="/executive", tags=["Executive"])
 
