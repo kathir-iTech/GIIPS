@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
@@ -83,28 +84,32 @@ const MyComplaints = () => {
     URL.revokeObjectURL(url);
   };
 
+  const fetchComplaints = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const res = await api.getMyComplaints();
+      setComplaints(Array.isArray(res.complaints) ? res.complaints : []);
+    } catch (err: any) {
+      if (showLoader) setError(err.message);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
-
-    const fetchComplaints = async (showLoader = false) => {
+    const fetchWithMount = async (showLoader: boolean) => {
       if (!mounted) return;
-      if (showLoader) setLoading(true);
-      try {
-        const res = await api.getMyComplaints();
-        if (!mounted) return;
-        setComplaints(Array.isArray(res.complaints) ? res.complaints : []);
-      } catch (err: any) {
-        if (!mounted) return;
-        if (showLoader) setError(err.message);
-      } finally {
-        if (showLoader && mounted) setLoading(false);
-      }
+      await fetchComplaints(showLoader);
     };
-
-    fetchComplaints(true);
-    const interval = setInterval(() => fetchComplaints(false), 30000);
+    fetchWithMount(true);
+    const interval = setInterval(() => fetchWithMount(false), 30000);
     return () => { mounted = false; clearInterval(interval); };
-  }, []);
+  }, [fetchComplaints]);
+
+  useDashboardSocket({
+    onEvent: () => { fetchComplaints(false); },
+  });
 
   const filtered = complaints.filter(c => {
     const matchesSearch = !searchQuery.trim() ||

@@ -8,7 +8,7 @@ import uuid
 import time
 import random
 import logging
-from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response
+from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, extract, text
 from typing import List, Dict, Any, Optional
@@ -54,12 +54,13 @@ from services import (
     DecisionService,
     SpatialService
 )
-from auth_service import hash_password, verify_password, create_access_token, verify_token, set_auth_cookie, clear_auth_cookie
+from auth_service import hash_password, verify_password, create_access_token, create_ws_token, verify_token, set_auth_cookie, clear_auth_cookie
 from prediction.engine import PredictiveEngine
 from knowledge.engine import GovernanceKnowledgeEngine
 from decision.support import DecisionSupportEngine
 from copilot.engine import CopilotEngine
 from storage import S3Storage, validate_file
+from ws_manager import manager
 
 logger = logging.getLogger(__name__)
 
@@ -286,6 +287,12 @@ async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_com
 
     import asyncio
     asyncio.create_task(process_complaint_pipeline(complaint_id, db_user.id))
+
+    await manager.broadcast("complaint:new", {
+        "complaint_id": complaint_id,
+        "ward": complaint.ward,
+        "category": None,
+    })
 
     _write_audit_log(
         db,
@@ -1491,6 +1498,11 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
             }
         )
 
+        await manager.broadcast("incident:update", {
+            "incident_id": incident.id,
+            "old_status": old_status,
+            "new_status": "pending_verification",
+        })
         return {
             "message": "Citizen verification required. A confirmation code has been sent to the complainant.",
             "incident_id": incident.id,
@@ -1528,6 +1540,11 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     )
     _check_aging_notifications(db, department)
 
+    await manager.broadcast("incident:update", {
+        "incident_id": incident.id,
+        "old_status": old_status,
+        "new_status": body.status,
+    })
     return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
 
 
@@ -1616,6 +1633,10 @@ async def escalate_incident(incident_id: str, body: EscalateRequest, db_user: Us
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_escalate",
                      incident.id, "success", f"Reason: {body.reason}")
 
+    await manager.broadcast("incident:update", {
+        "incident_id": incident.id,
+        "escalated": True,
+    })
     return {"message": "Incident escalated", "incident_id": incident.id, "reason": body.reason}
 
 
@@ -1664,6 +1685,11 @@ async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: 
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "verify_resolution",
                      incident.id, "success", "Citizen confirmed resolution")
 
+    await manager.broadcast("incident:update", {
+        "incident_id": incident.id,
+        "old_status": old_status,
+        "new_status": "resolved",
+    })
     return {"message": "Resolution confirmed. Thank you!", "incident_id": incident.id, "status": "resolved"}
 
 
@@ -1701,6 +1727,11 @@ async def reopen_incident(incident_id: str, db_user: User = Depends(get_current_
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_reopen",
                      incident.id, "success", f"Citizen reopened incident from {old_status} to open")
 
+    await manager.broadcast("incident:update", {
+        "incident_id": incident.id,
+        "old_status": old_status,
+        "new_status": "open",
+    })
     return {"message": "Incident reopened", "incident_id": incident.id, "status": "open"}
 
 
@@ -1745,6 +1776,11 @@ async def appeal_incident(incident_id: str, body: AppealRequest, db_user: User =
     db.commit()
 
     # Notify the citizen
+    await manager.broadcast("incident:appealed", {
+        "incident_id": incident.id,
+        "old_status": old_status,
+        "new_status": "open",
+    })
     _create_notification(
         db, db_user.id, "status_change",
         complaint_id=complaint.id,
@@ -1953,6 +1989,50 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
         department=db_user.department,
         notify_status_updates=db_user.notify_status_updates,
     )
+
+# === WebSocket endpoint for real-time dashboard updates ===
+
+ws_router = APIRouter(tags=["WebSocket"])
+
+
+@ws_router.websocket("/ws/dashboard")
+async def dashboard_ws(websocket: WebSocket, token: str = Query(...)):
+    """Real-time dashboard updates via WebSocket.
+
+    Accepts a short-lived JWT (10 min expiry, scope='websocket') obtained
+    from GET /auth/ws-token.  On any complaint submission or incident
+    status change the server broadcasts a typed event so connected
+    clients update instantly instead of waiting for the 30s poll cycle.
+    """
+    payload = verify_token(token)
+    if not payload or payload.get("scope") != "websocket":
+        await websocket.close(code=4001)
+        return
+    await manager.connect(websocket)
+    try:
+        while True:
+            data = await websocket.receive_text()
+            if data == "ping":
+                await websocket.send_text('"pong"')
+    except WebSocketDisconnect:
+        pass
+    finally:
+        await manager.disconnect(websocket)
+
+
+# === Short-lived token for WebSocket auth ===
+
+@auth_router.get("/ws-token")
+async def get_ws_token(db_user: User = Depends(get_current_user)):
+    """Issue a short-lived JWT (10 min) for WebSocket authentication.
+
+    The returned token is consumed as ?token=... in the WebSocket
+    connection URL.  A separate expiry from the main session cookie
+    limits exposure if the token appears in server access logs.
+    """
+    ws_token = create_ws_token({"sub": db_user.email, "role": db_user.role})
+    return {"token": ws_token, "expires_in_minutes": 10}
+
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 

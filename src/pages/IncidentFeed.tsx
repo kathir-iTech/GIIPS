@@ -1,4 +1,5 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import { useTranslation } from 'react-i18next';
 import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge, Send, ArrowUp } from 'lucide-react';
 import { api } from '../services/api';
@@ -141,36 +142,40 @@ const IncidentFeed = () => {
     }
   }, [selectedIds, bulkMessage, sortField]);
 
+  const fetchIncidents = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const data = await api.getIncidents(sortField, 2000);
+      setAllIncidents(data || []);
+      setError(null);
+    } catch (e) {
+      if (showLoader) {
+        setError(t('incidents.loadError'));
+      }
+      console.error('Failed to fetch incidents:', e);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, [sortField, t]);
+
   useEffect(() => {
     let cancelled = false;
-
-    const fetchIncidents = async (showLoader = false) => {
+    const fetchWithCancel = async (showLoader: boolean) => {
       if (cancelled) return;
-      try {
-        const data = await api.getIncidents(sortField, 2000);
-        if (!cancelled) {
-          setAllIncidents(data || []);
-          setError(null);
-        }
-      } catch (e) {
-        if (!cancelled) {
-          if (showLoader) {
-            setError(t('incidents.loadError'));
-          }
-          console.error('Failed to fetch incidents:', e);
-        }
-      } finally {
-        if (showLoader && !cancelled) setLoading(false);
-      }
+      await fetchIncidents(showLoader);
     };
 
     setMergeError(null);
     setSplitError(null);
 
-    fetchIncidents(true);
-    const interval = setInterval(() => fetchIncidents(false), 30000);
+    fetchWithCancel(true);
+    const interval = setInterval(() => fetchWithCancel(false), 30000);
     return () => { cancelled = true; clearInterval(interval); };
-  }, []);
+  }, [fetchIncidents]);
+
+  useDashboardSocket({
+    onEvent: () => { fetchIncidents(false); },
+  });
 
   useEffect(() => {
     if (user?.role !== 'Officer') return;

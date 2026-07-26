@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
@@ -60,38 +61,43 @@ const ComplaintDetailPage = () => {
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
 
+  const fetchDetail = useCallback(async (showLoader = false) => {
+    if (!id) return;
+    if (showLoader) { setLoading(true); setError(null); }
+    try {
+      const data = await api.getComplaintDetail(id);
+      setData(data);
+      if (data.image_path) {
+        if (data.image_path.startsWith('http')) {
+          setPhotoUrl(data.image_path);
+        } else {
+          api.getComplaintPhoto(id).then(photoRes => {
+            if (photoRes.imageUrl) setPhotoUrl(photoRes.imageUrl);
+          }).catch(() => {});
+        }
+      }
+    } catch (err: any) {
+      if (showLoader) setError(err.message);
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, [id]);
+
   useEffect(() => {
     let mounted = true;
     if (!id) { setLoading(false); return; }
-
-    const fetchDetail = async (showLoader = false) => {
+    const fetchWithMount = async (showLoader: boolean) => {
       if (!mounted) return;
-      if (showLoader) { setLoading(true); setError(null); }
-      try {
-        const data = await api.getComplaintDetail(id);
-        if (!mounted) return;
-        setData(data);
-        if (data.image_path) {
-          if (data.image_path.startsWith('http')) {
-            setPhotoUrl(data.image_path);
-          } else {
-            api.getComplaintPhoto(id).then(photoRes => {
-              if (mounted && photoRes.imageUrl) setPhotoUrl(photoRes.imageUrl);
-            }).catch(() => {});
-          }
-        }
-      } catch (err: any) {
-        if (!mounted) return;
-        if (showLoader) setError(err.message);
-      } finally {
-        if (showLoader && mounted) setLoading(false);
-      }
+      await fetchDetail(showLoader);
     };
-
-    fetchDetail(true);
-    const interval = setInterval(() => fetchDetail(false), 30000);
+    fetchWithMount(true);
+    const interval = setInterval(() => fetchWithMount(false), 30000);
     return () => { mounted = false; clearInterval(interval); };
-  }, [id]);
+  }, [id, fetchDetail]);
+
+  useDashboardSocket({
+    onEvent: () => { fetchDetail(false); },
+  });
 
   const handleVerify = async () => {
     if (!data?.incident?.id) return;

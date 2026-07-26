@@ -1,4 +1,5 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
@@ -26,31 +27,35 @@ const Overview = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchDashboard = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const res = await api.getDashboardData();
+      setData(res as BackendDashboardData);
+    } catch (err: any) {
+      if (showLoader) {
+        console.error('Failed to fetch dashboard data:', err);
+        setError(err.message || 'Failed to load dashboard data');
+      }
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, []);
+
   useEffect(() => {
     let mounted = true;
-
-    const fetchDashboard = async (showLoader = false) => {
+    const fetchWithMount = async (showLoader: boolean) => {
       if (!mounted) return;
-      if (showLoader) setLoading(true);
-      try {
-        const res = await api.getDashboardData();
-        if (!mounted) return;
-        setData(res as BackendDashboardData);
-      } catch (err: any) {
-        if (!mounted) return;
-        if (showLoader) {
-          console.error('Failed to fetch dashboard data:', err);
-          setError(err.message || 'Failed to load dashboard data');
-        }
-      } finally {
-        if (showLoader && mounted) setLoading(false);
-      }
+      await fetchDashboard(showLoader);
     };
-
-    fetchDashboard(true);
-    const interval = setInterval(() => fetchDashboard(false), 30000);
+    fetchWithMount(true);
+    const interval = setInterval(() => fetchWithMount(false), 30000);
     return () => { mounted = false; clearInterval(interval); };
-  }, []);
+  }, [fetchDashboard]);
+
+  useDashboardSocket({
+    onEvent: () => { fetchDashboard(false); },
+  });
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>Loading dashboard...</span></div>;
   if (!data) return <div className="page-error">Error: {error || 'Failed to load dashboard data'}</div>;

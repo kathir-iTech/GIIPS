@@ -589,4 +589,16 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  getWsToken: async (): Promise<string> => {
+    const response = await fetch(`${BASE_URL}/auth/ws-token`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    const data = await response.json();
+    return data.token;
+  },
+
+  getWsUrl: (token: string): string => {
+    const wsBase = BASE_URL.replace(/^http/, 'ws');
+    return `${wsBase}/ws/dashboard?token=${encodeURIComponent(token)}`;
+  },
 };

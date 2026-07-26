@@ -1,7 +1,8 @@
-import React, { useEffect, useState, useRef, useMemo } from 'react';
+import React, { useEffect, useState, useRef, useMemo, useCallback } from 'react';
 import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
+import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
 import { AgingBadge } from '../components/AgingBadge';
@@ -124,66 +125,70 @@ const ExecutiveDashboard = () => {
   const [copilotMessages, setCopilotMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [copilotInput, setCopilotInput] = useState('');
   const [copilotLoading, setCopilotLoading] = useState(false);
+  const fetchAll = useCallback(async (showLoader = false) => {
+    if (showLoader) setLoading(true);
+    try {
+      const results = await Promise.allSettled([
+        api.getExecutiveSummary(),
+        api.getWardHealth(),
+        api.getDeptWorkload(),
+        api.getIncidents(undefined, 2000),
+        api.getPredictionsSummary(),
+        api.getKnowledgeSummary(),
+        api.getDecisionSupportSummary(),
+        api.getSystemHealth().catch(() => ({})),
+        fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/trend`).then(r => r.json()).catch(() => ({ labels: [], complaints: [], incidents: [] })),
+      ]);
+      const feedErrors: string[] = [];
+      const checkFeed = (r: any, name: string) => {
+        if (r.status === 'rejected') {
+          feedErrors.push(`${name} (${r.reason?.message || 'unknown error'})`);
+          return null;
+        }
+        return r.value;
+      };
+      setExecSummary(checkFeed(results[0], 'execSummary'));
+      setWardHealth(checkFeed(results[1], 'wardHealth') || []);
+      setDeptWorkload(checkFeed(results[2], 'deptWorkload') || []);
+      setIncidents(checkFeed(results[3], 'incidents') || []);
+      setPredictions(checkFeed(results[4], 'predictions'));
+      setKnowledge(checkFeed(results[5], 'knowledge'));
+      setDecisionSupport(checkFeed(results[6], 'decisionSupport'));
+      setSystemHealth(checkFeed(results[7], 'systemHealth'));
+      const trendRaw = checkFeed(results[8], 'trend');
+      if (trendRaw && trendRaw.labels) {
+        setTrendLabels(trendRaw.labels || []);
+        setTrendComplaints(trendRaw.complaints || []);
+      }
+      if (feedErrors.length > 0) {
+        const msg = t('executive.feedErrors.someOffline') + feedErrors.join('; ');
+        console.error(msg);
+        if (showLoader) setError(msg);
+      }
+    } catch (err) {
+      if (showLoader) {
+        console.error('Failed to fetch executive dashboard data:', err);
+        setError(t('executive.global.feedOffline'));
+      }
+    } finally {
+      if (showLoader) setLoading(false);
+    }
+  }, [t]);
+
   useEffect(() => {
     let mounted = true;
-
-    const fetchAll = async (showLoader = false) => {
+    const fetchWithMount = async (showLoader: boolean) => {
       if (!mounted) return;
-      if (showLoader) setLoading(true);
-      try {
-        const results = await Promise.allSettled([
-          api.getExecutiveSummary(),
-          api.getWardHealth(),
-          api.getDeptWorkload(),
-          api.getIncidents(undefined, 2000),
-          api.getPredictionsSummary(),
-          api.getKnowledgeSummary(),
-          api.getDecisionSupportSummary(),
-          api.getSystemHealth().catch(() => ({})),
-          fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/trend`).then(r => r.json()).catch(() => ({ labels: [], complaints: [], incidents: [] })),
-        ]);
-        if (!mounted) return;
-        const feedErrors: string[] = [];
-        const checkFeed = (r: any, name: string) => {
-          if (r.status === 'rejected') {
-            feedErrors.push(`${name} (${r.reason?.message || 'unknown error'})`);
-            return null;
-          }
-          return r.value;
-        };
-        setExecSummary(checkFeed(results[0], 'execSummary'));
-        setWardHealth(checkFeed(results[1], 'wardHealth') || []);
-        setDeptWorkload(checkFeed(results[2], 'deptWorkload') || []);
-        setIncidents(checkFeed(results[3], 'incidents') || []);
-        setPredictions(checkFeed(results[4], 'predictions'));
-        setKnowledge(checkFeed(results[5], 'knowledge'));
-        setDecisionSupport(checkFeed(results[6], 'decisionSupport'));
-        setSystemHealth(checkFeed(results[7], 'systemHealth'));
-        const trendRaw = checkFeed(results[8], 'trend');
-        if (trendRaw && trendRaw.labels) {
-          setTrendLabels(trendRaw.labels || []);
-          setTrendComplaints(trendRaw.complaints || []);
-        }
-        if (feedErrors.length > 0) {
-          const msg = t('executive.feedErrors.someOffline') + feedErrors.join('; ');
-          console.error(msg);
-          if (showLoader) setError(msg);
-        }
-      } catch (err) {
-        if (!mounted) return;
-        if (showLoader) {
-          console.error('Failed to fetch executive dashboard data:', err);
-          setError(t('executive.global.feedOffline'));
-        }
-      } finally {
-        if (showLoader && mounted) setLoading(false);
-      }
+      await fetchAll(showLoader);
     };
-
-    fetchAll(true);
-    const interval = setInterval(() => fetchAll(false), 30000);
+    fetchWithMount(true);
+    const interval = setInterval(() => fetchWithMount(false), 30000);
     return () => { mounted = false; clearInterval(interval); };
-  }, []);
+  }, [fetchAll]);
+
+  useDashboardSocket({
+    onEvent: () => { fetchAll(false); },
+  });
 
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
