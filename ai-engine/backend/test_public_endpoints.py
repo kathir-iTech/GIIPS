@@ -1,4 +1,10 @@
 import os, sys, uuid, datetime
+
+if __name__ != "__main__":
+    # This file is a standalone script, not a pytest test module.
+    # The guard prevents module-level DB drops during pytest collection.
+    raise ImportError("This file is a standalone script. Run directly, not via pytest.")
+
 os.environ["GIIPS_JWT_SECRET"] = "test-secret"
 os.environ["REDIS_URL"] = ""
 os.environ["S3_ENDPOINT_URL"] = ""
