@@ -369,8 +369,8 @@ class SpatialService:
             })
         return results
     async def simulate_resources(self, db, additional_teams: int) -> Dict[str, Any]:
-        unresolved = db.query(Complaint).filter(Complaint.status != 'resolved').count()
-        total = db.query(Complaint).count()
+        unresolved = db.query(Incident).filter(Incident.status != 'resolved').count()
+        total = db.query(Incident).count()
         if total == 0:
             return {
                 "projectedImpact": "No complaint data available for simulation.",
