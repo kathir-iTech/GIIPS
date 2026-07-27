@@ -108,6 +108,28 @@ class PriorityEngine:
         'commercial': 0.65,
     }
 
+    # MONSOON SEASON WEIGHTING (Oct–Dec)
+    MONSOON_MONTHS = [10, 11, 12]
+    MONSOON_BOOST = 0.05
+    MONSOON_TRIGGER_CATEGORIES = {
+        'Water Supply', 'Water Supply Issues', 'Potholes - Water logged',
+        'Water Contamination', 'Drainage Blockage', 'Overflowing Sewer',
+        'Sanitation', 'Garbage Accumulation', 'Mosquito Breeding',
+        'Public Health', 'Street Cleaning', 'Unsanitary Conditions',
+        'Road Infrastructure', 'Potholes', 'Road Damage', 'Damaged Road',
+    }
+
+    # LANDMARK PROXIMITY BOOST
+    COIMBATORE_LANDMARKS = {
+        "Coimbatore Medical College Hospital": (11.0005, 76.9632),
+        "Gandhipuram Bus Stand": (11.0072, 76.9635),
+        "Coimbatore Railway Station": (10.9995, 76.9645),
+        "TIDEL Park Coimbatore": (11.0179, 76.9405),
+        "PSG College of Technology": (10.9750, 76.9650),
+    }
+    PROXIMITY_RADIUS_METERS = 300
+    LANDMARK_BOOST_POINTS = 8.0
+
     def __init__(
         self,
         cluster_size_weight: float = 0.30,
@@ -138,6 +160,15 @@ class PriorityEngine:
         total = sum(self.weights.values())
         self.weights = {k: v / total for k, v in self.weights.items()}
 
+    @staticmethod
+    def _haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+        R = 6371e3
+        phi1, phi2 = np.radians(lat1), np.radians(lat2)
+        dphi = np.radians(lat2 - lat1)
+        dlambda = np.radians(lon2 - lon1)
+        a = np.sin(dphi / 2)**2 + np.cos(phi1) * np.cos(phi2) * np.sin(dlambda / 2)**2
+        return float(R * 2 * np.arctan2(np.sqrt(a), np.sqrt(1 - a)))
+
     def compute(
         self,
         incident_id: str,
@@ -146,23 +177,10 @@ class PriorityEngine:
         last_complaint_date: str,
         category: str,
         location_hints: List[str],
+        incident_latitude: Optional[float] = None,
+        incident_longitude: Optional[float] = None,
         max_cluster_size: int = 100
     ) -> PriorityResult:
-        """
-        Compute the priority score for an incident.
-
-        Args:
-            incident_id: Unique identifier for the incident
-            cluster_size: Number of complaints in the cluster
-            first_complaint_date: Date of first complaint (ISO format)
-            last_complaint_date: Date of most recent complaint (ISO format)
-            category: Category of the incident
-            location_hints: List of location keywords from complaints
-            max_cluster_size: Maximum expected cluster size (for normalization)
-
-        Returns:
-            PriorityResult with score, label, and explanations
-        """
         factors = []
 
         # Factor 1: Cluster Size
@@ -177,13 +195,20 @@ class PriorityEngine:
         )
         factors.append(age_factor)
 
-        # Factor 3: Category Severity
+        # Factor 3: Category Severity (with seasonal monsoon boost)
         category_factor = self._compute_category_factor(category)
         factors.append(category_factor)
 
-        # Factor 4: Location Importance
+        # Factor 4: Location Importance (keyword-based)
         location_factor = self._compute_location_factor(location_hints)
         factors.append(location_factor)
+
+        # Factor 5: Landmark Proximity Boost (if coordinates available)
+        landmark_factor = self._check_landmark_proximity(
+            incident_latitude, incident_longitude
+        )
+        if landmark_factor is not None:
+            factors.append(landmark_factor)
 
         # Compute weighted score
         total_score = sum(f.contribution for f in factors)
@@ -278,16 +303,23 @@ class PriorityEngine:
         )
 
     def _compute_category_factor(self, category: str) -> PriorityFactor:
-        """Compute the category severity contribution to priority."""
-        # Lookup category weight
         weight = self.CATEGORY_WEIGHTS.get(category, 0.5)
-        raw = weight * 100
 
-        contribution = weight * self.weights['category'] * 100
+        monsoon_active = (
+            datetime.now().month in self.MONSOON_MONTHS
+            and category in self.MONSOON_TRIGGER_CATEGORIES
+        )
+        effective_weight = weight + (self.MONSOON_BOOST if monsoon_active else 0.0)
+        effective_weight = min(effective_weight, 1.0)
 
-        if weight >= 0.80:
+        raw = effective_weight * 100
+        contribution = effective_weight * self.weights['category'] * 100
+
+        if monsoon_active:
+            desc = f"Critical category ({category}) — Monsoon season boost +{self.MONSOON_BOOST}"
+        elif effective_weight >= 0.80:
             desc = f"Critical category ({category})"
-        elif weight >= 0.60:
+        elif effective_weight >= 0.60:
             desc = f"Important category ({category})"
         else:
             desc = f"Standard category ({category})"
@@ -295,7 +327,7 @@ class PriorityEngine:
         return PriorityFactor(
             name='category',
             raw_value=raw,
-            normalized_value=weight,
+            normalized_value=effective_weight,
             weight=self.weights['category'],
             contribution=contribution,
             description=desc
@@ -334,6 +366,31 @@ class PriorityEngine:
             contribution=contribution,
             description=desc
         )
+
+    def _check_landmark_proximity(
+        self,
+        lat: Optional[float],
+        lng: Optional[float]
+    ) -> Optional[PriorityFactor]:
+        if lat is None or lng is None:
+            return None
+        closest_name = None
+        closest_dist = float('inf')
+        for name, (lm_lat, lm_lng) in self.COIMBATORE_LANDMARKS.items():
+            d = self._haversine_distance(lat, lng, lm_lat, lm_lng)
+            if d < closest_dist:
+                closest_dist = d
+                closest_name = name
+        if closest_dist <= self.PROXIMITY_RADIUS_METERS:
+            return PriorityFactor(
+                name='landmark_proximity',
+                raw_value=round(closest_dist, 0),
+                normalized_value=1.0,
+                weight=1.0,
+                contribution=self.LANDMARK_BOOST_POINTS,
+                description=f"Within {closest_dist:.0f}m of {closest_name} (+{self.LANDMARK_BOOST_POINTS} pts)"
+            )
+        return None
 
     def _get_priority_label(self, score: float) -> str:
         """Convert numeric score to priority label."""
@@ -380,6 +437,9 @@ class PriorityEngine:
                 if f.normalized_value >= 0.75:
                     explanations.append("Located in high-impact public area")
 
+            elif f.name == 'landmark_proximity':
+                explanations.append(f.description)
+
         return ". ".join(explanations) + "."
 
     def batch_compute(
@@ -413,6 +473,8 @@ class PriorityEngine:
                 last_complaint_date=incident.get('last_complaint_date', datetime.now().isoformat()),
                 category=incident.get('category', 'General'),
                 location_hints=incident.get('location_hints', []),
+                incident_latitude=incident.get('latitude'),
+                incident_longitude=incident.get('longitude'),
                 max_cluster_size=max_cluster_size
             )
             results.append(result)

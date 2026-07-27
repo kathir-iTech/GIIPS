@@ -152,6 +152,8 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                 last_complaint_date=datetime.utcnow().isoformat(),
                 category=category,
                 location_hints=[data.get("location", "")],
+                incident_latitude=data.get("lat"),
+                incident_longitude=data.get("lon"),
             )
         )
 

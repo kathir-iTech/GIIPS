@@ -165,7 +165,9 @@ class PriorityService:
             first_complaint_date=request.first_complaint_date,
             last_complaint_date=request.last_complaint_date,
             category=request.category,
-            location_hints=request.location_hints
+            location_hints=request.location_hints,
+            incident_latitude=request.incident_latitude,
+            incident_longitude=request.incident_longitude,
         )
         return PriorityResponse(incident_id=result.incident_id, priority_score=result.priority_score, priority_label=result.priority_label, factors=[], explanation=result.explanation)
 
@@ -269,6 +271,8 @@ class SpatialService:
                 last_complaint_date=last_date,
                 category=modal_category,
                 location_hints=[ward.lower()],
+                incident_latitude=None,
+                incident_longitude=None,
             )
 
             if ward_result.priority_score >= 75:
@@ -354,6 +358,8 @@ class SpatialService:
                 last_complaint_date=datetime.utcnow().isoformat(),
                 category="General",
                 location_hints=[w["ward"].lower()],
+                incident_latitude=None,
+                incident_longitude=None,
             )
             severity_bonus = ward_result.priority_score * 0.3
             riskScore = round(min(100, density_score + severity_bonus), 1)
@@ -461,7 +467,16 @@ class ComplaintService:
             db.add(incident)
             merge_reason = "New incident created."
 
-        priority_res = await self.priority.calculate(PriorityRequest(incident_id=incident.id, cluster_size=incident.cluster_size, first_complaint_date=datetime.utcnow().isoformat(), last_complaint_date=datetime.utcnow().isoformat(), category=category, location_hints=[complaint_data.get('location', '')]))
+        priority_res = await self.priority.calculate(PriorityRequest(
+            incident_id=incident.id,
+            cluster_size=incident.cluster_size,
+            first_complaint_date=datetime.utcnow().isoformat(),
+            last_complaint_date=datetime.utcnow().isoformat(),
+            category=category,
+            location_hints=[complaint_data.get('location', '')],
+            incident_latitude=complaint_data.get('latitude'),
+            incident_longitude=complaint_data.get('longitude'),
+        ))
         if incident.priority_score != priority_res.priority_score:
             db.add(PriorityHistory(id=str(uuid.uuid4()), incident_id=incident.id, old_score=incident.priority_score, new_score=priority_res.priority_score, reason="Automatic update"))
         incident.priority_score, incident.priority_label = priority_res.priority_score, priority_res.priority_label

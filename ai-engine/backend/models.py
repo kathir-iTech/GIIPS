@@ -63,6 +63,8 @@ class PriorityRequest(BaseModel):
     last_complaint_date: str
     category: str
     location_hints: List[str] = []
+    incident_latitude: Optional[float] = None
+    incident_longitude: Optional[float] = None
 
 
 class PriorityFactor(BaseModel):
