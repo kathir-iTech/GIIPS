@@ -5,6 +5,7 @@ import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import AddressSearch from '../components/AddressSearch';
+import VoiceInput from '../components/VoiceInput';
 import HelpWidget from '../components/HelpWidget';
 import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
 import './CitizenPortal.css';
@@ -286,12 +287,18 @@ const CitizenPortal = () => {
                 className={fieldErrors.title ? 'input-error' : ''}
               />
               {fieldErrors.title && <p className="field-error">{fieldErrors.title}</p>}
-              <textarea
-                placeholder={t('citizenPortal.descriptionPlaceholder')}
-                value={formData.description}
-                onChange={e => { setFormData({ ...formData, description: e.target.value }); if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' })); }}
-                className={fieldErrors.description ? 'input-error' : ''}
-              />
+              <div className="voice-textarea-wrapper">
+                <textarea
+                  placeholder={t('citizenPortal.descriptionPlaceholder')}
+                  value={formData.description}
+                  onChange={e => { setFormData({ ...formData, description: e.target.value }); if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' })); }}
+                  className={fieldErrors.description ? 'input-error' : ''}
+                />
+                <VoiceInput
+                  onTranscript={(text) => setFormData(prev => ({ ...prev, description: text }))}
+                  disabled={loading}
+                />
+              </div>
               {fieldErrors.description && <p className="field-error">{fieldErrors.description}</p>}
               <div className="cat-guide-hint">
                 <Trans i18nKey="citizenPortal.categoryGuideHint">
