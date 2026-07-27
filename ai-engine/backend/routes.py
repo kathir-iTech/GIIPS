@@ -2782,3 +2782,48 @@ async def public_ward_stats(ward: str, db: Session = Depends(get_db)):
         "top_categories": top_categories,
     }
 
+
+@public_router.get("/public/nearby-complaints")
+async def public_nearby_complaints(
+    ward: str,
+    category: str,
+    exclude: str = "",
+    db: Session = Depends(get_db),
+):
+    """Anonymized nearby complaints in the same ward+category. No PII."""
+    rows = (
+        db.query(
+            Complaint.id,
+            Complaint.ward,
+            Complaint.predicted_category,
+            Complaint.priority,
+            Complaint.created_at,
+            Incident.status,
+            Incident.days_open,
+        )
+        .outerjoin(Incident, Complaint.incident_id == Incident.id)
+        .filter(
+            Complaint.ward == ward,
+            Complaint.predicted_category == category,
+        )
+    )
+    if exclude:
+        rows = rows.filter(Complaint.id != exclude)
+    rows = rows.order_by(
+        Incident.days_open.desc().nullslast(),
+        Complaint.created_at.desc(),
+    ).limit(5).all()
+
+    return [
+        {
+            "complaint_id": r.id,
+            "ward": r.ward,
+            "category": r.predicted_category,
+            "priority": r.priority,
+            "status": r.status or "open",
+            "days_open": r.days_open or 0,
+            "date_received": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in rows
+    ]
+

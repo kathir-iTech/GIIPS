@@ -309,6 +309,13 @@ export const api = {
     return response.json();
   },
 
+  getNearbyComplaints: async (ward: string, category: string, excludeId: string): Promise<any[]> => {
+    const params = new URLSearchParams({ ward, category, exclude: excludeId });
+    const response = await fetch(`${BASE_URL}/public/nearby-complaints?${params}`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   get: async (endpoint: string): Promise<Response> => {
     const response = await fetch(`${BASE_URL}${endpoint}`, FETCH_DEFAULTS);
     if (!response.ok) {

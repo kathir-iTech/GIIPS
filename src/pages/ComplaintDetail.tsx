@@ -60,6 +60,8 @@ const ComplaintDetailPage = () => {
   const [editLocation, setEditLocation] = useState('');
   const [editLoading, setEditLoading] = useState(false);
   const [editError, setEditError] = useState<string | null>(null);
+  const [nearbyComplaints, setNearbyComplaints] = useState<any[]>([]);
+  const [nearbyLoading, setNearbyLoading] = useState(false);
 
   const fetchDetail = useCallback(async (showLoader = false) => {
     if (!id) return;
@@ -67,6 +69,10 @@ const ComplaintDetailPage = () => {
     try {
       const data = await api.getComplaintDetail(id);
       setData(data);
+      if (data.ward && data.predicted_category && data.predicted_category !== 'Uncategorized') {
+        setNearbyLoading(true);
+        api.getNearbyComplaints(data.ward, data.predicted_category, id).then(setNearbyComplaints).catch(() => {}).finally(() => setNearbyLoading(false));
+      }
       if (data.image_path) {
         if (data.image_path.startsWith('http')) {
           setPhotoUrl(data.image_path);
@@ -285,6 +291,27 @@ const ComplaintDetailPage = () => {
               <div className="meta-item"><AlertTriangle size={16} /> <span>{data.predicted_category || t('common.uncategorized')}</span></div>
               {data.department && <div className="meta-item"><Building2 size={16} /> <span>{t(getDeptI18nKey(data.department))}</span></div>}
             </div>
+
+            {nearbyComplaints.length > 0 && (
+              <div className="nearby-section">
+                <h3><MapPin size={16} /> {t('complaintDetail.nearbyTitle')}</h3>
+                <div className="nearby-list">
+                  {nearbyComplaints.slice(0, 5).map((nc: any) => (
+                    <div key={nc.complaint_id} className="nearby-item">
+                      <div className="nearby-item-main">
+                        <span className="nearby-status">{nc.status}</span>
+                        <span className="nearby-priority">{nc.priority || '—'}</span>
+                      </div>
+                      <div className="nearby-item-meta">
+                        <span>{nc.days_open > 0 ? `${nc.days_open}d open` : 'Just reported'}</span>
+                        <span>{nc.ward}</span>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            {nearbyLoading && <div className="nearby-loading">{t('common.loading')}</div>}
 
             <div className="ai-section">
               <h3><ThumbsUp size={18} /> {t('complaintDetail.sectionCategory')}</h3>
