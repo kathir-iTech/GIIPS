@@ -50,6 +50,8 @@ export interface Complaint {
   merge_reason?: string;
   photo_duplicate_flag?: string | null;
   photo_duplicate_of?: string | null;
+  complexity_label: string | null;
+  complaint_language: string | null;
 }
 
 export interface ClassificationMetrics {
@@ -117,6 +119,8 @@ export interface CitizenComplaint {
   photo_duplicate_of?: string | null;
   citizen_rating?: number | null;
   assigned_officer?: AssignedOfficer | null;
+  tags?: string[];
+  complaint_language?: string | null;
   incident?: {
     id: string | null;
     incident_number: string | null;
@@ -128,6 +132,14 @@ export interface CitizenComplaint {
     summary: string | null;
     resolution_note?: string | null;
     days_open?: number | null;
+    original_category?: string | null;
+    complaints?: Array<{
+      id: string;
+      complaint_number: string;
+      date_received: string;
+      ward?: string;
+      status?: string;
+    }>;
     priority_history: Array<{
       id: string;
       old_score: number;

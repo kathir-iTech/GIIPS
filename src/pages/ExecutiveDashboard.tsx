@@ -408,15 +408,15 @@ const ExecutiveDashboard = () => {
       <div className="exec-toolbar">
         <button className="action-btn escalate-btn" onClick={autoEscalate} disabled={escalating}>
           {escalating ? <Loader2 size={14} className="spin" /> : <Zap size={14} />}
-          Run SLA Auto-Escalation Check
+          {t('executive.runAutoEscalation')}
         </button>
         <button className="action-btn" onClick={exportCSV}>
-          <Download size={14} /> Export CSV
+          <Download size={14} /> {t('executive.exportCsv')}
         </button>
         <button className="action-btn" onClick={generateDigest}>
           <FileText size={14} /> Daily Digest
         </button>
-        {activeUsers > 0 && <span className="active-users-badge"><Activity size={14} /> {activeUsers} online now</span>}
+        {activeUsers > 0 && <span className="active-users-badge"><Activity size={14} /> {t('executive.activeUsers', { count: activeUsers })}</span>}
       </div>
 
       {/* 1. Government Situation Summary */}
@@ -491,7 +491,7 @@ const ExecutiveDashboard = () => {
           <div className="kpi-item">
             <div className="kpi-icon-wrapper aging"><Clock size={18} /></div>
             <div className="kpi-info">
-              <span className="kpi-label">Aging &gt;30d</span>
+              <span className="kpi-label">{t('executive.agingLabel')}</span>
               <span className="kpi-value" style={agingCount > 0 ? { color: '#9333ea' } : undefined}>{agingCount}</span>
             </div>
           </div>
@@ -499,16 +499,16 @@ const ExecutiveDashboard = () => {
       </SectionCard>
 
       {/* KPI Targets */}
-      <SectionCard title="KPI Targets" icon={<Target size={18} />}>
-        {kpiTargets.length === 0 && <p>No targets set.</p>}
-        {kpiTargets.map(t => (
-          <div key={t.id} className="kpi-target-row">
-            <span className="kpi-target-name">{t.metric_name}</span>
+      <SectionCard title={t('executive.kpiTargets.title')} icon={<Target size={18} />}>
+        {kpiTargets.length === 0 && <p>{t('executive.kpiTargets.empty')}</p>}
+        {kpiTargets.map(kt => (
+          <div key={kt.id} className="kpi-target-row">
+            <span className="kpi-target-name">{kt.metric_name}</span>
             <span className="kpi-target-values">
-              <span>Target: {t.target_value}</span>
-              {t.current_value != null && (
-                <span className={`kpi-current ${t.current_value >= t.target_value ? 'kpi-met' : 'kpi-not-met'}`}>
-                  Current: {t.current_value}
+              <span>{t('executive.kpiTargets.target', { value: kt.target_value })}</span>
+              {kt.current_value != null && (
+                <span className={`kpi-current ${kt.current_value >= kt.target_value ? 'kpi-met' : 'kpi-not-met'}`}>
+                  {t('executive.kpiTargets.current', { value: kt.current_value })}
                 </span>
               )}
             </span>
@@ -551,7 +551,7 @@ const ExecutiveDashboard = () => {
 
       {/* Anomaly Alerts */}
       {anomalies.length > 0 && (
-        <SectionCard title="Anomaly Alerts" icon={<AlertTriangle size={18} />} badge={`${anomalies.length} active`}>
+        <SectionCard title={t('executive.anomalies.title')} icon={<AlertTriangle size={18} />} badge={t('executive.anomalies.active', { count: anomalies.length })}>
           <div className="anomaly-list">
             {anomalies.map((a, i) => (
               <div key={i} className={`anomaly-card anomaly-${a.severity}`}>
@@ -782,19 +782,19 @@ const ExecutiveDashboard = () => {
 
       {/* Zone Age Distribution */}
       {zoneAgeDist.length > 0 && (
-        <SectionCard title="Zone Age Distribution" icon={<BarChart3 size={18} />}>
+        <SectionCard title={t('executive.zoneAge.title')} icon={<BarChart3 size={18} />}>
           <Plot data={[{
             x: zoneAgeDist.map((z: any) => z.zone),
-            y: zoneAgeDist.map((z: any) => z['0-7d']), name: '0-7d', type: 'bar'
+            y: zoneAgeDist.map((z: any) => z['0-7d']), name: t('executive.zoneAge.bucket0to7'), type: 'bar'
           }, {
             x: zoneAgeDist.map((z: any) => z.zone),
-            y: zoneAgeDist.map((z: any) => z['7-30d']), name: '7-30d', type: 'bar'
+            y: zoneAgeDist.map((z: any) => z['7-30d']), name: t('executive.zoneAge.bucket7to30'), type: 'bar'
           }, {
             x: zoneAgeDist.map((z: any) => z.zone),
-            y: zoneAgeDist.map((z: any) => z['30-90d']), name: '30-90d', type: 'bar'
+            y: zoneAgeDist.map((z: any) => z['30-90d']), name: t('executive.zoneAge.bucket30to90'), type: 'bar'
           }, {
             x: zoneAgeDist.map((z: any) => z.zone),
-            y: zoneAgeDist.map((z: any) => z['90d+']), name: '90d+', type: 'bar'
+            y: zoneAgeDist.map((z: any) => z['90d+']), name: t('executive.zoneAge.bucket90plus'), type: 'bar'
           }]} layout={{barmode: 'stack', title: '', width: null, height: 300, autosize: true, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: {color: 'var(--text-primary)'}, legend: {orientation: 'h', y: -0.2}}} config={{displayModeBar: false, responsive: true}} />
         </SectionCard>
       )}
@@ -929,11 +929,11 @@ const ExecutiveDashboard = () => {
       {digestOpen && (
           <div className="digest-modal" onClick={() => setDigestOpen(false)}>
             <div className="digest-modal-content" onClick={e => e.stopPropagation()}>
-              <h3>Daily Digest</h3>
+              <h3>{t('executive.digest.title')}</h3>
               <pre>{digestContent}</pre>
               <div className="digest-actions">
-                <button className="copy-btn" onClick={() => { navigator.clipboard.writeText(digestContent); }}>Copy to Clipboard</button>
-                <button className="close-btn" onClick={() => setDigestOpen(false)}>Close</button>
+                <button className="copy-btn" onClick={() => { navigator.clipboard.writeText(digestContent); }}>{t('executive.digest.copy')}</button>
+                <button className="close-btn" onClick={() => setDigestOpen(false)}>{t('executive.digest.close')}</button>
               </div>
             </div>
           </div>

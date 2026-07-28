@@ -190,8 +190,8 @@ const Transparency = () => {
         {satisfactionData.length > 0 && (
           <div className="chart-card" style={{ marginTop: '1.5rem' }}>
             <div className="chart-hdr">
-              <h3>Citizen Satisfaction Trend</h3>
-              <span className="chart-desc">Average citizen rating per week over the last 8 weeks</span>
+              <h3>{t('transparency.satisfactionTrendTitle')}</h3>
+              <span className="chart-desc">{t('transparency.satisfactionTrendDesc')}</span>
             </div>
             <Plot
               data={[{x: satisfactionData.map(d=>d.week), y: satisfactionData.map(d=>d.avg_rating), type:'scatter', mode:'lines+markers', marker:{color:'#16a34a'}}]}
@@ -203,14 +203,14 @@ const Transparency = () => {
         )}
 
         <div className="ward-lookup-section">
-          <h2><MapPin size={20} /> Ward Stats</h2>
-          <p>Enter a ward number (1–100) to view its aggregate complaint data.</p>
+          <h2><MapPin size={20} /> {t('transparency.wordLookupTitle')}</h2>
+          <p>{t('transparency.wordLookupDesc')}</p>
           <div className="ward-lookup-row">
             <input
               type="number"
               min={1}
               max={100}
-              placeholder="e.g. 12"
+              placeholder={t('transparency.wordLookupPlaceholder')}
               value={wardInput}
               onChange={e => { setWardInput(e.target.value); setWardStats(null); setWardError(null); }}
               onKeyDown={e => e.key === 'Enter' && handleWardLookup()}
@@ -218,7 +218,7 @@ const Transparency = () => {
               disabled={wardLoading}
             />
             <button className="ward-lookup-btn" onClick={handleWardLookup} disabled={wardLoading || !wardInput.trim()}>
-              {wardLoading ? <Loader2 size={16} className="spin" /> : <Search size={16} />} Look Up
+              {wardLoading ? <Loader2 size={16} className="spin" /> : <Search size={16} />} {t('transparency.wordLookupButton')}
             </button>
           </div>
           {wardError && <p className="ward-error">{wardError}</p>}
@@ -226,23 +226,23 @@ const Transparency = () => {
             <div className="ward-stats-grid">
               <div className="ward-stat-card">
                 <span className="ward-stat-value">{wardStats.total_complaints}</span>
-                <span className="ward-stat-label">Total Complaints</span>
+                <span className="ward-stat-label">{t('transparency.wardTotalComplaints')}</span>
               </div>
               <div className="ward-stat-card">
                 <span className="ward-stat-value">{wardStats.resolved_percentage}%</span>
-                <span className="ward-stat-label">Resolved</span>
+                <span className="ward-stat-label">{t('transparency.wardResolved')}</span>
               </div>
               <div className="ward-stat-card">
                 <span className="ward-stat-value">{wardStats.avg_resolution_days}d</span>
-                <span className="ward-stat-label">Avg Resolution Time</span>
+                <span className="ward-stat-label">{t('transparency.wardAvgResolution')}</span>
               </div>
               <div className="ward-stat-card">
                 <span className="ward-stat-value">{wardStats.top_categories.length}</span>
-                <span className="ward-stat-label">Categories</span>
+                <span className="ward-stat-label">{t('transparency.wardCategories')}</span>
               </div>
               {wardStats.top_categories.length > 0 && (
                 <div className="ward-categories-card">
-                  <span className="ward-stat-label">Top Categories</span>
+                  <span className="ward-stat-label">{t('transparency.wardTopCategories')}</span>
                   <div className="ward-categories-list">
                     {wardStats.top_categories.slice(0, 5).map((c, i) => (
                       <div key={i} className="ward-category-row">
@@ -391,7 +391,7 @@ const Transparency = () => {
           const maxCount = Math.max(...wordCloud.map((w: any) => w.count));
           return (
             <div className="word-cloud-section">
-              <h3>Common Complaint Keywords</h3>
+              <h3>{t('transparency.wordCloudTitle')}</h3>
               <div className="word-cloud">
                 {wordCloud.map((w: any) => (
                   <span key={w.word} className="word-cloud-tag" style={{ fontSize: `${Math.max(0.7, Math.min(2.5, w.count / maxCount * 2.5))}rem`, opacity: `${0.5 + (w.count / maxCount) * 0.5}` }}>
@@ -406,8 +406,8 @@ const Transparency = () => {
         {stories.length > 0 && (
           <div className="success-stories-section">
             <div className="section-header">
-              <h2><Star size={20} /> {t('transparency.successStoriesTitle')}</h2>
-              <p>{t('transparency.successStoriesSubtitle')}</p>
+              <h2><Star size={20} /> {t('transparency.storiesTitle')}</h2>
+              <p>{t('transparency.storiesSubtitle')}</p>
             </div>
             <div className="stories-grid">
               {stories.map((s, i) => (
@@ -421,9 +421,9 @@ const Transparency = () => {
                     </span>
                   </div>
                   <div className="story-meta">
-                    <span><MapPin size={12} /> Ward {s.ward}</span>
+                    <span><MapPin size={12} /> {t('transparency.storiesWard', { ward: s.ward })}</span>
                     <span><Building2 size={12} /> {s.department}</span>
-                    <span><Clock size={12} /> Resolved in {s.days_to_resolve}d</span>
+                    <span><Clock size={12} /> {t('transparency.storiesResolvedIn', { days: s.days_to_resolve })}</span>
                   </div>
                   {s.resolution_note && <p className="story-note">"{s.resolution_note}"</p>}
                 </div>

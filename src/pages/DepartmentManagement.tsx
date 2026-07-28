@@ -192,25 +192,25 @@ const DepartmentManagement = () => {
       </div>
 
       <div className="comparison-section">
-        <h2 className="comparison-title">Department Comparison</h2>
+        <h2 className="comparison-title">{t('departmentManagement.comparisonTitle')}</h2>
         <div className="comparison-table-wrapper">
           <table className="comparison-table">
             <thead>
               <tr>
                 <th onClick={() => handleSort('department')} className={sortKey === 'department' ? 'active' : ''}>
-                  Department {sortIcon('department')}
+                  {t('departmentManagement.columnDepartment')} {sortIcon('department')}
                 </th>
                 <th onClick={() => handleSort('open_incidents')} className={sortKey === 'open_incidents' ? 'active' : ''}>
-                  Open Incidents {sortIcon('open_incidents')}
+                  {t('departmentManagement.columnOpenIncidents')} {sortIcon('open_incidents')}
                 </th>
                 <th onClick={() => handleSort('avg_resolution_time')} className={sortKey === 'avg_resolution_time' ? 'active' : ''}>
-                  Avg Resolution {sortIcon('avg_resolution_time')}
+                  {t('departmentManagement.columnAvgResolution')} {sortIcon('avg_resolution_time')}
                 </th>
                 <th onClick={() => handleSort('avg_citizen_rating')} className={sortKey === 'avg_citizen_rating' ? 'active' : ''}>
-                  Avg Rating {sortIcon('avg_citizen_rating')}
+                  {t('departmentManagement.columnAvgRating')} {sortIcon('avg_citizen_rating')}
                 </th>
                 <th onClick={() => handleSort('aging_count')} className={sortKey === 'aging_count' ? 'active' : ''}>
-                  Aging (&gt;30d) {sortIcon('aging_count')}
+                  {t('departmentManagement.columnAging')} {sortIcon('aging_count')}
                 </th>
               </tr>
             </thead>
@@ -234,24 +234,24 @@ const DepartmentManagement = () => {
       </div>
 
       <div className="comparison-section">
-        <h2 className="comparison-title">Officer Response Time Leaderboard</h2>
+        <h2 className="comparison-title">{t('departmentManagement.officerLeaderboard')}</h2>
         {perfLoading ? (
-          <div className="loading">Loading...</div>
+          <div className="loading">{t('departmentManagement.loading')}</div>
         ) : officerPerf.length === 0 ? (
-          <div className="empty">No resolved incidents with officer assignments yet.</div>
+          <div className="empty">{t('departmentManagement.emptyPerf')}</div>
         ) : (
           <div className="comparison-table-wrapper">
             <table className="comparison-table">
               <thead>
                 <tr>
-                  <th>Rank</th>
-                  <th>Officer Name</th>
-                  <th>Department</th>
-                  <th>Skills</th>
-                  <th>Avg Days to Resolve</th>
-                  <th>Total Resolved</th>
-                  <th>Escalation Rate</th>
-                  <th>Avg Quality</th>
+                  <th>{t('departmentManagement.columnRank')}</th>
+                  <th>{t('departmentManagement.columnOfficerName')}</th>
+                  <th>{t('departmentManagement.columnDept')}</th>
+                  <th>{t('departmentManagement.columnSkills')}</th>
+                  <th>{t('departmentManagement.columnAvgDays')}</th>
+                  <th>{t('departmentManagement.columnTotalResolved')}</th>
+                  <th>{t('departmentManagement.columnEscalationRate')}</th>
+                  <th>{t('departmentManagement.columnAvgQuality')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -277,7 +277,7 @@ const DepartmentManagement = () => {
 
       {histogram.length > 0 && (
         <div className="histogram-section">
-          <h2 className="comparison-title">Resolution Time Distribution</h2>
+          <h2 className="comparison-title">{t('departmentManagement.histogramTitle')}</h2>
           <Plot
             data={[{x: histogram.map(h=>h.range), y: histogram.map(h=>h.count), type:'bar', marker:{color:'#3b82f6'}}]}
             layout={{title:'', width: null, height: 250, autosize:true, paper_bgcolor:'transparent', plot_bgcolor:'transparent', font:{color:'var(--text-primary)'}, margin:{t:10,b:30,l:40,r:10}}}
@@ -288,13 +288,13 @@ const DepartmentManagement = () => {
       )}
 
       <div className="comparison-section">
-        <h2 className="comparison-title">Department SLA Report</h2>
-        {slaLoading ? <div className="loading">Loading...</div> : (
+        <h2 className="comparison-title">{t('departmentManagement.slaReport')}</h2>
+        {slaLoading ? <div className="loading">{t('departmentManagement.loading')}</div> : (
           <div className="comparison-table-wrapper">
             <table className="comparison-table">
               <thead>
                 <tr>
-                  <th>Department</th><th>Open</th><th>Within SLA</th><th>Breached SLA</th><th>Avg Breach (days)</th>
+                  <th>{t('departmentManagement.slaColumnDept')}</th><th>{t('departmentManagement.slaColumnOpen')}</th><th>{t('departmentManagement.slaColumnWithin')}</th><th>{t('departmentManagement.slaColumnBreached')}</th><th>{t('departmentManagement.slaColumnAvgBreach')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -314,24 +314,24 @@ const DepartmentManagement = () => {
       </div>
 
       <div className="heatmap-section">
-        <h2 className="comparison-title">Complaint Arrival Heatmap</h2>
+        <h2 className="comparison-title">{t('departmentManagement.heatmapTitle')}</h2>
         <div className="heatmap-controls">
           <select value={selectedDept} onChange={e => setSelectedDept(e.target.value)}>
-            <option value="">All Departments</option>
+            <option value="">{t('departmentManagement.heatmapAllDepts')}</option>
             {heatmapDepts.map(d => <option key={d} value={d}>{t(getDeptI18nKey(d))}</option>)}
           </select>
         </div>
         {heatmap && (
           <div className="heatmap-grid" style={{display:'grid', gridTemplateColumns: '80px repeat(24, 1fr)', gap: '2px', overflowX: 'auto'}}>
             <div></div>
-            {heatmap.hours.map((h: number) => <div key={h} className="heatmap-header" style={{fontSize:'0.65rem',textAlign:'center'}}>{h}h</div>)}
+            {heatmap.hours.map((h: number) => <div key={h} className="heatmap-header" style={{fontSize:'0.65rem',textAlign:'center'}}>{h}{t('common.time.hourSuffix')}</div>)}
             {heatmap.data.map((row: number[], di: number) => (
               <React.Fragment key={di}>
                 <div className="heatmap-day" style={{fontSize:'0.75rem',display:'flex',alignItems:'center'}}>{heatmap.days[di]}</div>
                 {row.map((v: number, hi: number) => {
                   const max = Math.max(...heatmap.data.flat(), 1);
                   const opacity = 0.1 + (v / max) * 0.9;
-                  return <div key={hi} className="heatmap-cell" style={{background:`rgba(59,130,246,${opacity})`, height:'24px', borderRadius:'2px', position:'relative'}} title={`${heatmap.days[di]} ${hi}:00 — ${v} complaints`} />;
+                  return <div key={hi} className="heatmap-cell" style={{background:`rgba(59,130,246,${opacity})`, height:'24px', borderRadius:'2px', position:'relative'}} title={t('departmentManagement.heatmapCellTitle', { day: heatmap.days[di], hour: hi, count: v })} />;
                 })}
               </React.Fragment>
             ))}

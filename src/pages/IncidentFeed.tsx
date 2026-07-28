@@ -61,15 +61,15 @@ const IncidentFeed = () => {
     setUpdateResult(null);
     try {
       await api.postIncidentUpdate(incidentId, updateMessage.trim());
-      setUpdateResult({ success: true, message: 'Update posted' });
+      setUpdateResult({ success: true, message: t('incidents.updatePosted') });
       setUpdateMessage('');
       setTimeout(() => { setUpdateIncidentId(null); setUpdateResult(null); }, 2000);
     } catch (err: any) {
-      setUpdateResult({ success: false, message: err.message || 'Failed to post update' });
+      setUpdateResult({ success: false, message: err.message || t('incidents.updateFailed') });
     } finally {
       setUpdateLoading(false);
     }
-  }, [updateMessage]);
+  }, [updateMessage, t]);
 
   const handleRecentOpen = useCallback((_incident: RecentlyViewedIncident) => {
     navigate(`/clusters?incident=${encodeURIComponent(_incident.id)}`);
@@ -126,17 +126,17 @@ const IncidentFeed = () => {
     setBulkResult(null);
     try {
       const res = await api.bulkUpdateIncidents({ incident_ids: ids, action: 'priority_bump' });
-      setBulkResult({ success: true, message: `${res.updated} incident(s) updated` });
+      setBulkResult({ success: true, message: t('incidents.bulkUpdated', { count: res.updated }) });
       setSelectedIds(new Set());
       const data = await api.getIncidents(sortField, 2000);
       setAllIncidents(data || []);
     } catch (err: any) {
-      setBulkResult({ success: false, message: err.message || 'Bulk update failed' });
+      setBulkResult({ success: false, message: err.message || t('incidents.bulkUpdateFailed') });
     } finally {
       setBulkLoading(false);
       setBulkAction(null);
     }
-  }, [selectedIds, sortField]);
+  }, [selectedIds, sortField, t]);
 
   const handleBulkPostUpdate = useCallback(async () => {
     if (!bulkMessage.trim()) return;
@@ -146,7 +146,7 @@ const IncidentFeed = () => {
     setBulkResult(null);
     try {
       const res = await api.bulkUpdateIncidents({ incident_ids: ids, action: 'post_update', message: bulkMessage.trim() });
-      setBulkResult({ success: true, message: `${res.updated} incident(s) updated` });
+      setBulkResult({ success: true, message: t('incidents.bulkUpdated', { count: res.updated }) });
       setBulkMessage('');
       setSelectedIds(new Set());
       const data = await api.getIncidents(sortField, 2000);
@@ -209,11 +209,11 @@ const IncidentFeed = () => {
     const zone = getCoimbatoreZone(incident.ward);
     const deadline = created + (zone ? 120 : 48) * 60 * 60 * 1000;
     const remaining = deadline - Date.now();
-    if (remaining <= 0) return { text: 'EXPIRED', cls: 'sla-expired' };
+    if (remaining <= 0) return { text: t('incidents.expired'), cls: 'sla-expired' };
     const hours = Math.floor(remaining / 3600000);
     const mins = Math.floor((remaining % 3600000) / 60000);
     const cls = hours > 24 ? 'sla-green' : hours > 12 ? 'sla-amber' : 'sla-red';
-    return { text: `${hours}h ${mins}m`, cls };
+    return { text: `${hours}${t('incidents.slaHours')} ${mins}${t('incidents.slaMins')}`, cls };
   };
 
   useDashboardSocket({
@@ -230,7 +230,7 @@ const IncidentFeed = () => {
         if (!cancelled) setComplaintCoordinates(Array.isArray(data) ? data : []);
       })
       .catch(err => {
-        if (!cancelled) setCoordinatesError(err.message || 'Failed to load incident locations');
+        if (!cancelled) setCoordinatesError(err.message || t('incidents.incidentLoadError'));
       })
       .finally(() => {
         if (!cancelled) setCoordinatesLoading(false);
@@ -301,7 +301,7 @@ const IncidentFeed = () => {
       <Header title={t('incidents.header.title')} subtitle={t('incidents.header.subtitle')} />
       <div className="page-content">
         <button className="map-toggle-btn" onClick={() => setShowMap(!showMap)}>
-          <MapPin size={16} /> {showMap ? 'Hide Map' : 'Show Map'}
+          <MapPin size={16} /> {showMap ? t('incidents.hideMap') : t('incidents.showMap')}
         </button>
         {showMap && (
           <div className="incident-feed-map">
@@ -311,7 +311,7 @@ const IncidentFeed = () => {
                 const hasOfficer = inc.status !== 'open';
                 return (
                   <Marker key={inc.id} position={[11.0168 + Math.random()*0.05, 76.9558 + Math.random()*0.05]} icon={L.divIcon({ className: hasOfficer ? 'marker-assigned' : 'marker-unassigned', html: `<div style="background:${hasOfficer?'#16a34a':'#ef4444'};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3)"/>` })}>
-                    <Popup>{inc.incident_number} — {inc.category}<br/>{inc.days_open} days open</Popup>
+                    <Popup>{inc.incident_number} — {inc.category}<br/>{inc.days_open} {t('incidents.daysOpenPopup')}</Popup>
                   </Marker>
                 );
               })}
@@ -349,9 +349,9 @@ const IncidentFeed = () => {
           <button
             className={`aging-filter-btn ${agingOnly ? 'active' : ''}`}
             onClick={() => { setAgingOnly(v => !v); setCurrentPage(1); }}
-            title="Show only incidents aged 30+ days"
+            title={t('incidents.agingFilterTitle')}
           >
-            <Clock size={14} /> 30+d
+            <Clock size={14} /> {t('incidents.agingFilterLabel')}
           </button>
           {selectedIds.size >= 2 && (
             <button className="merge-btn" onClick={handleMerge} title={t('incidents.mergeTitle')}>
@@ -360,11 +360,11 @@ const IncidentFeed = () => {
           )}
           {selectedIds.size >= 2 && (
             <>
-              <button className="bulk-action-btn" onClick={() => setBulkAction('priority_bump')} title="Bump priority by +15 for all selected">
-                <ArrowUp size={14} /> Bump Priority
+              <button className="bulk-action-btn" onClick={() => setBulkAction('priority_bump')} title={t('incidents.bulkPriorityTitle')}>
+                <ArrowUp size={14} /> {t('incidents.bumpPriority')}
               </button>
-              <button className="bulk-action-btn" onClick={() => setBulkAction('post_update')} title="Post a status update to all selected">
-                <Send size={14} /> Post Update
+              <button className="bulk-action-btn" onClick={() => setBulkAction('post_update')} title={t('incidents.bulkUpdateTitle')}>
+                <Send size={14} /> {t('incidents.postUpdate')}
               </button>
             </>
           )}
@@ -374,9 +374,9 @@ const IncidentFeed = () => {
 
         {searchResults !== null && (
           <div className="search-results-dropdown">
-            <div className="search-results-header">Search results ({searchResults.length})</div>
+            <div className="search-results-header">{t('incidents.searchResultsHeader', { count: searchResults.length })}</div>
             {searchResults.length === 0 ? (
-              <div className="search-results-empty">No complaints found</div>
+              <div className="search-results-empty">{t('incidents.noSearchResults')}</div>
             ) : (
               searchResults.slice(0, 10).map((r: any) => (
                 <div key={r.id} className="search-result-item" onClick={() => navigate(`/complaint/${r.id}`)}>
@@ -395,7 +395,7 @@ const IncidentFeed = () => {
             complaintCoordinates={complaintCoordinates}
             loading={coordinatesLoading}
             error={coordinatesError}
-            scopeLabel={officerWard ? `Ward ${officerWard}${officerZone ? ` · ${officerZone} Zone` : ''}` : 'All incidents'}
+            scopeLabel={officerWard ? `${t('incidents.wardPrefix', { ward: officerWard })}${officerZone ? ` · ${officerZone} ${t('incidents.zoneLabel')}` : ''}` : t('incidents.allIncidents')}
             scopeWarning={!officerWard}
           />
         )}
@@ -426,7 +426,7 @@ const IncidentFeed = () => {
                   {t('incidents.colScore')} {sortField === 'priority_score' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th>{t('incidents.colPriority')}</th>
-                <th>SLA</th>
+                <th>{t('incidents.sla')}</th>
                 <th className="action-col">{t('incidents.colRecommendedAction')}</th>
               </tr>
             </thead>
@@ -476,21 +476,21 @@ const IncidentFeed = () => {
                           </p>
                         </div>
                         <div className="detail-block update-block">
-                          <h4>Citizen Update</h4>
+                          <h4>{t('incidents.citizenUpdate')}</h4>
                           {updateIncidentId === incident.id ? (
                             <div className="update-form">
                               <textarea
                                 className="update-textarea"
-                                placeholder="e.g. Team dispatched, expect resolution by Friday..."
+                                placeholder={t('incidents.updatePlaceholder')}
                                 value={updateMessage}
                                 onChange={e => setUpdateMessage(e.target.value)}
                                 rows={3}
                                 disabled={updateLoading}
                               />
                               <div className="update-actions">
-                                <button className="cancel-update-btn" onClick={() => { setUpdateIncidentId(null); setUpdateMessage(''); setUpdateResult(null); }} disabled={updateLoading}>Cancel</button>
+                                <button className="cancel-update-btn" onClick={() => { setUpdateIncidentId(null); setUpdateMessage(''); setUpdateResult(null); }} disabled={updateLoading}>{t('incidents.cancel')}</button>
                                 <button className="send-update-btn" onClick={() => handlePostUpdate(incident.id)} disabled={updateLoading || !updateMessage.trim()}>
-                                  <Send size={14} /> {updateLoading ? 'Posting...' : 'Send Update'}
+                                  <Send size={14} /> {updateLoading ? t('incidents.posting') : t('incidents.postUpdate')}
                                 </button>
                               </div>
                               {updateResult && (
@@ -499,7 +499,7 @@ const IncidentFeed = () => {
                             </div>
                           ) : (
                             <button className="post-update-btn" onClick={() => setUpdateIncidentId(incident.id)}>
-                              <Send size={14} /> Post Status Update
+                              <Send size={14} /> {t('incidents.postStatusUpdate')}
                             </button>
                           )}
                         </div>
@@ -536,9 +536,9 @@ const IncidentFeed = () => {
                       </div>
                       {(user?.role === 'Officer' || user?.role === 'Executive') && (
                         <div className="private-notes-section">
-                          <h4>Private Notes</h4>
+                          <h4>{t('incidents.privateNotes')}</h4>
                           <textarea
-                            placeholder="Add internal notes..."
+                            placeholder={t('incidents.notesPlaceholder')}
                             value={noteText[incident.id] || (incident as any).private_note || ''}
                             onChange={e => setNoteText(prev => ({ ...prev, [incident.id]: e.target.value }))}
                           />
@@ -553,13 +553,13 @@ const IncidentFeed = () => {
                             }}
                             disabled={noteSaving[incident.id]}
                           >
-                            {noteSaving[incident.id] ? 'Saving...' : 'Save Note'}
+                            {noteSaving[incident.id] ? t('incidents.savingNote') : t('incidents.saveNote')}
                           </button>
                         </div>
                       )}
                       {(user?.role === 'Officer' || user?.role === 'Executive') && (
                         <div className="comment-thread">
-                          <h4><MessageSquare size={14} /> Comments ({comments[incident.id]?.length || 0})</h4>
+                          <h4><MessageSquare size={14} /> {t('incidents.commentsSection', { count: comments[incident.id]?.length || 0 })}</h4>
                           <div className="comment-list">
                             {(comments[incident.id] || []).map((c: any) => (
                               <div key={c.id} className={`comment-item comment-role-${c.role.toLowerCase()}`}>
@@ -572,7 +572,7 @@ const IncidentFeed = () => {
                             ))}
                           </div>
                           <div className="comment-input-area">
-                            <input className="comment-input" placeholder="Add a comment..." value={commentInput[incident.id] || ''}
+                            <input className="comment-input" placeholder={t('incidents.commentPlaceholder')} value={commentInput[incident.id] || ''}
                               onChange={e => setCommentInput(prev => ({...prev, [incident.id]: e.target.value}))}
                               onKeyDown={e => {
                                 if (e.key === 'Enter' && (commentInput[incident.id] || '').trim()) {
@@ -619,11 +619,11 @@ const IncidentFeed = () => {
       {bulkAction && (
         <div className="modal-overlay" onClick={() => { if (!bulkLoading) { setBulkAction(null); setBulkMessage(''); setBulkResult(null); } }}>
           <div className="bulk-modal" onClick={e => e.stopPropagation()}>
-            <h3>{bulkAction === 'priority_bump' ? 'Bump Priority' : 'Post Update'} ({selectedIds.size} incidents)</h3>
+            <h3>{t('incidents.bulkModalTitle', { action: bulkAction === 'priority_bump' ? t('incidents.bumpPriority') : t('incidents.postUpdate'), count: selectedIds.size })}</h3>
             {bulkAction === 'post_update' && (
               <textarea
                 className="bulk-textarea"
-                placeholder="Enter the status update message for all selected incidents..."
+                placeholder={t('incidents.bulkUpdatePlaceholder')}
                 value={bulkMessage}
                 onChange={e => setBulkMessage(e.target.value)}
                 rows={3}
@@ -631,13 +631,13 @@ const IncidentFeed = () => {
               />
             )}
             <div className="bulk-modal-actions">
-              <button className="cancel-update-btn" onClick={() => { setBulkAction(null); setBulkMessage(''); setBulkResult(null); }} disabled={bulkLoading}>Cancel</button>
+              <button className="cancel-update-btn" onClick={() => { setBulkAction(null); setBulkMessage(''); setBulkResult(null); }} disabled={bulkLoading}>{t('incidents.cancel')}</button>
               <button
                 className="send-update-btn"
                 onClick={bulkAction === 'priority_bump' ? handleBulkPriorityBump : handleBulkPostUpdate}
                 disabled={bulkLoading || (bulkAction === 'post_update' && !bulkMessage.trim())}
               >
-                {bulkLoading ? 'Processing...' : 'Confirm'}
+                {bulkLoading ? t('incidents.processing') : t('incidents.confirm')}
               </button>
             </div>
             {bulkResult && (

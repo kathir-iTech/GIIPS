@@ -161,6 +161,7 @@
     },
     "time": {
       "days": "நா",
+      "hourSuffix": "ம",
       "reports": "அறிக்கைகள்",
       "improvement": "முன்னேற்றம்",
       "confidence": "நம்பிக்கை",
@@ -483,7 +484,14 @@
     "withdrawConfirm": "இந்த புகாரை திரும்பப் பெற விரும்புகிறீர்களா?",
     "withdrawing": "திரும்பப் பெறுகிறது...",
     "tags": "குறிச்சொற்கள்",
-    "editTags": "குறிச்சொற்களைத் திருத்து"
+    "editTags": "குறிச்சொற்களைத் திருத்து",
+    "priorityChartTitle": "முன்னுரிமை மதிப்பெண் வரலாறு",
+    "correctedBadge": "திருத்தப்பட்டது",
+    "correctCategory": "வகையைத் திருத்து",
+    "correctCategorySave": "சேமி",
+    "correctCategoryCancel": "ரத்து செய்",
+    "duplicateChain": "{{count}} மற்ற அறிக்கை இந்த பிரச்சினையின்",
+    "duplicateChainPlural": "{{count}} மற்ற அறிக்கைகள் இந்த பிரச்சினையின்"
   },
 
   "myComplaints": {
@@ -498,7 +506,26 @@
     "emptyBody": "நீங்கள் இதுவரை எந்த புகாரையும் சமர்ப்பிக்கவில்லை, அல்லது உங்கள் வடிப்பான்களுடன் பொருந்தவில்லை.",
     "confidenceLabel": "பொருந்தும் நம்பிக்கை:",
     "standalone": "தனி புகார்",
-    "assignedTo": "நியமிக்கப்பட்டவர்: {{name}}"
+    "assignedTo": "நியமிக்கப்பட்டவர்: {{name}}",
+    "exportCSV": "CSV",
+    "activeReporter": "செயலில் உள்ள புகாரளிப்பவர்",
+    "usually": "பொதுவாக {{period}}",
+    "morning": "காலை",
+    "afternoon": "மதியம்",
+    "evening": "மாலை",
+    "night": "இரவு",
+    "impactScore": "தாக்கம்: {{score}}% ({{label}})",
+    "impactHigh": "அதிக",
+    "impactMedium": "நடுத்தர",
+    "impactLow": "குறைந்த",
+    "searchResultsHeader": "தேடல் முடிவுகள் ({{count}})",
+    "noSearchResults": "புகார்கள் எதுவும் கிடைக்கவில்லை",
+    "statTotal": "மொத்தம்",
+    "statResolved": "தீர்க்கப்பட்டது",
+    "statPending": "நிலுவையில்",
+    "statAvgResolution": "சராசரி நாட்கள்",
+    "daysUnit": "d",
+    "csvHeaders": "ID,Title,வகை,வார்டு,நிலை,தாக்கல் தேதி,தீர்க்கப்பட்ட தேதி,தீர்மான குறிப்பு"
   },
 
   "incidents": {
@@ -539,9 +566,42 @@
     "next": "அடுத்த",
     "sla": "SLA",
     "expired": "காலாவதியானது",
+    "showMap": "வரைபடத்தைக் காட்டு",
+    "hideMap": "வரைபடத்தை மறை",
+    "daysOpenPopup": "நாட்கள் திறந்தது",
+    "citizenUpdate": "குடிமகன் புதுப்பிப்பு",
+    "updatePlaceholder": "எ.கா. குழு அனுப்பப்பட்டது, வெள்ளிக்கிழமைக்குள் தீர்வு எதிர்பார்க்கப்படுகிறது...",
+    "postUpdate": "புதுப்பிப்பை அனுப்பு",
+    "posting": "அனுப்புகிறது...",
+    "postStatusUpdate": "நிலை புதுப்பிப்பை இடுகையிடு",
     "privateNotes": "தனிப்பட்ட குறிப்புகள்",
+    "notesPlaceholder": "உள் குறிப்புகளைச் சேர்க்கவும்...",
     "saveNote": "குறிப்பைச் சேமி",
-    "saving": "சேமிக்கிறது...",
+    "savingNote": "சேமிக்கிறது...",
+    "commentsSection": "கருத்துகள் ({{count}})",
+    "commentPlaceholder": "கருத்தைச் சேர்க்கவும்...",
+    "searchResultsHeader": "தேடல் முடிவுகள் ({{count}})",
+    "noSearchResults": "புகார்கள் எதுவும் கிடைக்கவில்லை",
+    "bumpPriority": "முன்னுரிமையை உயர்த்து",
+    "agingFilterTitle": "30+ நாட்கள் பழமையான சம்பவங்களை மட்டும் காட்டு",
+    "agingFilterLabel": "30+நா",
+    "bulkPriorityTitle": "தேர்ந்தெடுக்கப்பட்ட அனைத்திற்கும் முன்னுரிமையை +15 உயர்த்து",
+    "bulkUpdateTitle": "தேர்ந்தெடுக்கப்பட்ட அனைத்திற்கும் நிலை புதுப்பிப்பை இடுகையிடு",
+    "cancel": "ரத்து செய்",
+    "confirm": "உறுதிப்படுத்து",
+    "processing": "செயலாக்குகிறது...",
+    "updatePosted": "புதுப்பிப்பு இடுகையிடப்பட்டது",
+    "updateFailed": "புதுப்பிப்பை இடுகையிட முடியவில்லை",
+    "bulkModalTitle": "{{action}} ({{count}} சம்பவங்கள்)",
+    "bulkUpdatePlaceholder": "தேர்ந்தெடுக்கப்பட்ட அனைத்து சம்பவங்களுக்கும் நிலை புதுப்பிப்பு செய்தியை உள்ளிடவும்...",
+    "bulkUpdated": "{{count}} சம்பவ(ங்கள்) புதுப்பிக்கப்பட்டது",
+    "bulkUpdateFailed": "மொத்த புதுப்பிப்பு தோல்வியடைந்தது",
+    "zoneLabel": "மண்டலம்",
+    "allIncidents": "அனைத்து சம்பவங்கள்",
+    "incidentLoadError": "சம்பவ இருப்பிடங்களை ஏற்ற முடியவில்லை",
+    "slaHours": "h",
+    "slaMins": "m",
+    "wardPrefix": "வார்டு {{ward}}",
     "catch": {
       "mergeFailed": "சம்பவங்களை இணைக்க முடியவில்லை",
       "splitFailed": "புகாரை பிரிக்க முடியவில்லை"
@@ -746,7 +806,8 @@
     },
     "anomalies": {
       "title": "முரண்பாடு எச்சரிக்கைகள்",
-      "complaintsToday": "இன்று {{count}} புகார்கள் vs சராசரி {{mean}}"
+      "complaintsToday": "இன்று {{count}} புகார்கள் vs சராசரி {{mean}}",
+      "active": "{{count}} செயலில்"
     },
     "digest": {
       "button": "தினசரி சுருக்கம்",
@@ -754,6 +815,25 @@
       "copy": "கிளிப்போர்டுக்கு நகலெடு",
       "close": "மூடு"
     },
+    "kpiTargets": {
+      "title": "KPI இலக்குகள்",
+      "empty": "இலக்குகள் எதுவும் அமைக்கப்படவில்லை.",
+      "target": "இலக்கு: {{value}}",
+      "current": "தற்போதைய: {{value}}",
+      "met": "அடைந்தது",
+      "notMet": "அடையவில்லை"
+    },
+    "zoneAge": {
+      "title": "மண்டல வயது விநியோகம்",
+      "bucket0to7": "0-7நா",
+      "bucket7to30": "7-30நா",
+      "bucket30to90": "30-90நா",
+      "bucket90plus": "90நா+"
+    },
+    "activeUsers": "{{count}} இப்போது இணைப்பில் உள்ளனர்",
+    "runAutoEscalation": "SLA தானியக்க அதிகரிப்பு சரிபார்ப்பை இயக்கு",
+    "exportCsv": "CSV ஏற்றுமதி",
+    "agingLabel": "முதுமை >30நா",
     "footer": {
       "title": "GIIPS நிர்வாக முடிவு நுண்ணறிவு v2.1",
       "dataRefreshed": "தரவு புதுப்பிக்கப்பட்டது"
@@ -813,7 +893,33 @@
     "slaReport": "துறை SLA அறிக்கை",
     "withinSla": "SLA-க்குள்",
     "breachedSla": "SLA மீறப்பட்டது",
-    "avgBreach": "சராசரி மீறல் (நாட்கள்)"
+    "avgBreach": "சராசரி மீறல் (நாட்கள்)",
+    "citizenRating": "சராசரி மதிப்பீடு",
+    "comparisonTitle": "துறை ஒப்பீடு",
+    "columnDepartment": "துறை",
+    "columnOpenIncidents": "திறந்த சம்பவங்கள்",
+    "columnAvgResolution": "சராசரி தீர்வு",
+    "columnAvgRating": "சராசரி மதிப்பீடு",
+    "columnAging": "முதுமை (>30நா)",
+    "officerLeaderboard": "அலுவலர் பதில் நேர தரவரிசை",
+    "columnRank": "தரவரிசை",
+    "columnOfficerName": "அலுவலர் பெயர்",
+    "columnDept": "துறை",
+    "columnSkills": "திறன்கள்",
+    "columnAvgDays": "சராசரி நாட்கள்",
+    "columnTotalResolved": "மொத்தம் தீர்க்கப்பட்டது",
+    "columnEscalationRate": "அதிகரிப்பு விகிதம்",
+    "columnAvgQuality": "சராசரி தரம்",
+    "histogramTitle": "தீர்வு நேர விநியோகம்",
+    "heatmapTitle": "புகார் வருகை வெப்ப வரைபடம்",
+    "heatmapAllDepts": "அனைத்து துறைகள்",
+    "heatmapCellTitle": "{{day}} {{hour}}:00 — {{count}} புகார்கள்",
+    "emptyPerf": "இதுவரை அலுவலர் நியமனத்துடன் தீர்க்கப்பட்ட சம்பவங்கள் எதுவும் இல்லை.",
+    "slaColumnDept": "துறை",
+    "slaColumnOpen": "திறந்த",
+    "slaColumnWithin": "SLA-க்குள்",
+    "slaColumnBreached": "SLA மீறப்பட்டது",
+    "slaColumnAvgBreach": "சராசரி மீறல் (நாட்கள்)"
   },
 
   "systemHealth": {
@@ -899,7 +1005,22 @@
   "citizenProfile": {
     "availability": "கிடைக்கும் தன்மை",
     "available": "கிடைக்கும்",
-    "onLeave": "விடுப்பில்"
+    "onLeave": "விடுப்பில்",
+    "impactScore": "தாக்க மதிப்பெண்",
+    "impactScoreValue": "{{score}}% ({{label}})",
+    "impactHigh": "அதிக",
+    "impactMedium": "நடுத்தர",
+    "impactLow": "குறைந்த",
+    "notificationsSection": "அறிவிப்புகள்",
+    "notifBadge": "நிலை புதுப்பிப்புகள்",
+    "notifToggleLabel": "நிலை புதுப்பிப்பு அறிவிப்புகளைப் பெறுக",
+    "notifToggleDesc": "உங்கள் புகாரின் நிலை மாறும்போது அல்லது அலுவலர் புதுப்பிப்பு இடுகையிடும்போது அறிவிப்பைப் பெறுங்கள்",
+    "notifOn": "இயக்கு",
+    "notifOff": "முடக்கு",
+    "skillsSection": "திறன்கள்",
+    "addSkillPlaceholder": "திறனைச் சேர்க்கவும்...",
+    "notifUpdateError": "அறிவிப்பு விருப்பத்தைப் புதுப்பிக்க முடியவில்லை",
+    "wardPrefix": "வார்டு {{ward}}"
   },
 
   "analysis": {
@@ -1018,6 +1139,7 @@
       "resourceSimulation": "வள உருவகப்படுத்துதல்",
       "incidentsInDistrict": "மாவட்டத்தில் சம்பவங்கள்"
     },
+    "clustersToggle": "தொகுப்புகள்",
     "footer": {
       "brand": "GIIPS இடஞ்சார் நுண்ணறிவு",
       "systemOperational": "அமைப்பு இயங்குகிறது",
@@ -1036,7 +1158,18 @@
     "aiRecHighRisk": "அதிக இடர் மதிப்பெண் கண்டறியப்பட்டது — உடனடி கவனம் தேவை.",
     "aiRecDeployTeams": "{{count}} முக்கியமான சம்பவங்களை கையாள {{teams}} கூடுதல் குழுக்களை நியமிக்கவும்.",
     "aiRecHealthReview": "குறைந்த ஆரோக்கிய மதிப்பெண் — வள ஒதுக்கீட்டை மதிப்பாய்வு செய்யவும்.",
-    "aiRecMonitor": "அனைத்து அளவீடுகளும் இயல்பு நிலையில் — தொடர்ந்து கண்காணிக்கவும்."
+    "aiRecMonitor": "அனைத்து அளவீடுகளும் இயல்பு நிலையில் — தொடர்ந்து கண்காணிக்கவும்.",
+    "pinFallback": "புகார்",
+    "districtComplaints": "புகார்கள்:",
+    "districtCritical": "முக்கியமான:",
+    "hotspotTitle": "ஹாட்ஸ்பாட் #{{number}}",
+    "hotspotIntensity": "தீவிரம்:",
+    "hotspotNA": "இல்லை",
+    "hotspotCategory": "வகை:",
+    "hotspotWard": "வார்டு:",
+    "geoClusterIncidents": "சம்பவங்கள்",
+    "geoClusterCategory": "வகை:",
+    "daysOpenUnit": "d திறந்த"
   },
 
   "track": {
@@ -1080,7 +1213,23 @@
     "dayChartTitle": "அதிக புகார் நாட்கள்",
     "dayChartSubtitle": "வார நாள் வாரியாக சமர்ப்பிப்புகள் (அனைத்து காலம்)",
     "funnelTitle": "புகார் தீர்வு குழாய்",
-    "funnelSubtitle": "ஒவ்வொரு கட்டத்திலும் உள்ள புகார்களின் நகர வாரியான விநியோகம்"
+    "funnelSubtitle": "ஒவ்வொரு கட்டத்திலும் உள்ள புகார்களின் நகர வாரியான விநியோகம்",
+    "satisfactionTrendTitle": "குடிமக்கள் திருப்தி போக்கு",
+    "satisfactionTrendDesc": "கடந்த 8 வாரங்களில் வாராந்திர சராசரி குடிமக்கள் மதிப்பீடு",
+    "wordCloudTitle": "பொதுவான புகார் முக்கிய வார்த்தைகள்",
+    "wordLookupTitle": "வார்டு புள்ளிவிவரங்கள்",
+    "wordLookupDesc": "அதன் திரட்டப்பட்ட புகார் தரவைக் காண வார்டு எண்ணை உள்ளிடவும் (1–100).",
+    "wordLookupPlaceholder": "எ.கா. 12",
+    "wordLookupButton": "தேடு",
+    "wardTotalComplaints": "மொத்த புகார்கள்",
+    "wardResolved": "தீர்க்கப்பட்டது",
+    "wardAvgResolution": "சராசரி தீர்வு நேரம்",
+    "wardCategories": "வகைகள்",
+    "wardTopCategories": "முதல் வகைகள்",
+    "storiesTitle": "வெற்றிக் கதைகள்",
+    "storiesSubtitle": "அதிக குடிமக்கள் திருப்தியுடன் தீர்க்கப்பட்ட புகார்கள்",
+    "storiesWard": "வார்டு {{ward}}",
+    "storiesResolvedIn": "{{days}} நாட்களில் தீர்க்கப்பட்டது"
   },
 
   "helpWidget": {
@@ -1099,6 +1248,27 @@
     "a5": "தீர்வை சரிபார்த்த பின், புகார் விவர பக்கத்தில் நட்சத்திர மதிப்பீடு மூலம் மதிப்பெண் வழங்கலாம்.",
     "q6": "சமர்ப்பித்த பின் என்ன நடக்கும்?",
     "a6": "எங்கள் AI வகைப்படுத்துகிறது, தொடர்புடைய புகார்களை தொகுக்கிறது, முன்னுரிமை வழங்குகிறது. கண்காணிப்பு எண் மற்றும் அறிவிப்புகள் மூலம் நிலை புதுப்பிப்புகளைப் பெறுவீர்கள்."
+  },
+
+  "apiDocs": {
+    "backToHome": "முகப்புக்குத் திரும்பு",
+    "title": "GIIPS பொது API ஆவணங்கள்",
+    "subtitle": "பொது டாஷ்போர்டுகள், கண்காணிப்பு மற்றும் வெளிப்படைத்தன்மைக்கான திறந்த முனைகள் — அங்கீகாரம் தேவையில்லை.",
+    "colMethod": "முறை",
+    "colEndpoint": "முனை",
+    "colAuth": "அங்கீகாரம்",
+    "colParams": "அளவுருக்கள்",
+    "colDescription": "விளக்கம்",
+    "colExample": "எடுத்துக்காட்டு பதில்",
+    "noAuth": "இல்லை",
+    "emDash": "—",
+    "descStats": "பொது டாஷ்போர்டுக்கான திரட்டப்பட்ட புகார் புள்ளிவிவரங்கள்.",
+    "descTrack": "ஒரு புகாரை அதன் ஐடி மூலம் கண்காணிக்கவும். நிலை, காலவரிசை, தீர்வு ஆகியவற்றை வழங்குகிறது.",
+    "descNearby": "வார்டு மற்றும் வகை மூலம் அருகிலுள்ள புகார்களைக் கண்டறியவும்.",
+    "descStories": "நேர்மறை குடிமக்கள் மதிப்பீடுகளுடன் தீர்க்கப்பட்ட புகார்கள்.",
+    "descWordCloud": "புகார் விளக்கங்களில் முதல் 30 அடிக்கடி வரும் வார்த்தைகள்.",
+    "descSatisfaction": "கடந்த 8 வாரங்களில் வாராந்திர சராசரி குடிமக்கள் மதிப்பீடு.",
+    "descWardStats": "ஒரு குறிப்பிட்ட வார்டுக்கான புகார் புள்ளிவிவரங்கள்."
   },
 
   "categoryGuide": {

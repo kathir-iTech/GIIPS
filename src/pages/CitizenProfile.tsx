@@ -57,7 +57,7 @@ const CitizenProfile = () => {
       score += Math.min(verified * 5, 20);
       score = Math.min(Math.round(score), 100);
       setImpactScore(score);
-      setImpactLabel(score >= 70 ? 'High' : score >= 40 ? 'Medium' : 'Low');
+      setImpactLabel(score >= 70 ? t('citizenProfile.impactHigh') : score >= 40 ? t('citizenProfile.impactMedium') : t('citizenProfile.impactLow'));
     }).catch(() => {});
   }, []);
 
@@ -83,7 +83,7 @@ const CitizenProfile = () => {
       const res = await api.updateNotificationPrefs(!current);
       setProfile((p: any) => ({ ...p, notify_status_updates: res.notify_status_updates }));
     } catch (err: any) {
-      setMessage(err.message || 'Failed to update notification preference');
+      setMessage(err.message || t('citizenProfile.notifUpdateError'));
     } finally {
       setNotifLoading(false);
     }
@@ -154,8 +154,8 @@ const CitizenProfile = () => {
               )}
             </div>
             <div className="field">
-              <label><BarChart3 size={16} /> Impact Score</label>
-              <span>{impactScore}% ({impactLabel})</span>
+              <label><BarChart3 size={16} /> {t('citizenProfile.impactScore')}</label>
+              <span>{t('citizenProfile.impactScoreValue', { score: impactScore, label: impactLabel })}</span>
             </div>
           </div>
 
@@ -193,7 +193,7 @@ const CitizenProfile = () => {
                   </div>
                   <div className="councillor-field">
                     <span className="councillor-label">{t('profile.fieldWard')}</span>
-                    <span className="councillor-value">Ward {councillor.ward}</span>
+                    <span className="councillor-value">{t('citizenProfile.wardPrefix', { ward: councillor.ward })}</span>
                   </div>
                 </div>
               ) : (
@@ -207,14 +207,14 @@ const CitizenProfile = () => {
           <div className="profile-header">
             <Bell size={20} />
             <div className="profile-title">
-              <h2>Notifications</h2>
-              <span className="role-badge">Status Updates</span>
+              <h2>{t('citizenProfile.notificationsSection')}</h2>
+              <span className="role-badge">{t('citizenProfile.notifBadge')}</span>
             </div>
           </div>
           <div className="notif-toggle-row">
             <div className="notif-toggle-info">
-              <span className="notif-toggle-label">Receive status update notifications</span>
-              <span className="notif-toggle-desc">Get notified when your complaint status changes or an officer posts an update</span>
+              <span className="notif-toggle-label">{t('citizenProfile.notifToggleLabel')}</span>
+              <span className="notif-toggle-desc">{t('citizenProfile.notifToggleDesc')}</span>
             </div>
             <button
               className={`notif-toggle-btn ${profile?.notify_status_updates !== false ? 'active' : ''}`}
@@ -224,9 +224,9 @@ const CitizenProfile = () => {
               {notifLoading ? (
                 <div className="spinner-sm" />
               ) : profile?.notify_status_updates !== false ? (
-                <><Bell size={16} /> On</>
+                <><Bell size={16} /> {t('citizenProfile.notifOn')}</>
               ) : (
-                <><BellOff size={16} /> Off</>
+                <><BellOff size={16} /> {t('citizenProfile.notifOff')}</>
               )}
             </button>
           </div>
@@ -236,17 +236,17 @@ const CitizenProfile = () => {
           <div className="profile-card glass-card">
             <div className="profile-header">
               <div className="profile-title">
-                <h2>Availability</h2>
+                <h2>{t('citizenProfile.availability')}</h2>
               </div>
             </div>
             <div className="avail-toggle-row">
               <button className={`avail-btn ${userAvailability === 'available' ? 'active-avail' : ''}`}
                 onClick={() => api.updateAvailability('available').then(() => setUserAvailability('available'))}>
-                Available
+                {t('citizenProfile.available')}
               </button>
               <button className={`avail-btn ${userAvailability === 'on_leave' ? 'active-leave' : ''}`}
                 onClick={() => api.updateAvailability('on_leave').then(() => setUserAvailability('on_leave'))}>
-                On Leave
+                {t('citizenProfile.onLeave')}
               </button>
             </div>
           </div>
@@ -255,7 +255,7 @@ const CitizenProfile = () => {
           <div className="profile-card glass-card">
             <div className="profile-header">
               <div className="profile-title">
-                <h2>Skills</h2>
+                <h2>{t('citizenProfile.skillsSection')}</h2>
               </div>
             </div>
             <div className="skills-section">
@@ -265,7 +265,7 @@ const CitizenProfile = () => {
                 ))}
               </div>
               <div className="skill-input-row">
-                <input value={skillInput} onChange={e => setSkillInput(e.target.value)} placeholder="Add skill..." className="skill-input"
+                <input value={skillInput} onChange={e => setSkillInput(e.target.value)} placeholder={t('citizenProfile.addSkillPlaceholder')} className="skill-input"
                   onKeyDown={e => { if (e.key === 'Enter' && skillInput.trim() && !skills.includes(skillInput.trim())) { const newSkills = [...skills, skillInput.trim()]; setSkills(newSkills); setSkillInput(''); api.updateSkills(newSkills); }}}
                 />
               </div>

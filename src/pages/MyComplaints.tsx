@@ -76,7 +76,7 @@ const MyComplaints = () => {
         `"${(c.incident?.resolution_note || '').replace(/"/g, '""')}"`,
       ].join(',');
     });
-    const header = 'ID,Title,Category,Ward,Status,Date Filed,Date Resolved,Resolution Note';
+    const header = t('myComplaints.csvHeaders');
     const csv = '\uFEFF' + header + '\n' + rows.join('\n');
     const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
@@ -134,7 +134,7 @@ const MyComplaints = () => {
         if (consecutive >= 3) break;
       } else consecutive = 1;
     }
-    setStreakBadge(consecutive >= 3 ? 'Active Reporter' : null);
+    setStreakBadge(consecutive >= 3 ? t('myComplaints.activeReporter') : null);
 
     const hourCounts = [0, 0, 0, 0];
     complaints.forEach(c => {
@@ -190,7 +190,7 @@ const MyComplaints = () => {
         {(streakBadge || peakPeriod) && (
           <div className="insight-badges">
             {streakBadge && <span className="streak-badge"><Activity size={14} /> {streakBadge}</span>}
-            {peakPeriod && <span className="peak-period-badge"><Clock size={14} /> Usually {peakPeriod}</span>}
+            {peakPeriod && <span className="peak-period-badge"><Clock size={14} /> {t('myComplaints.usually', { period: t('myComplaints.' + peakPeriod) })}</span>}
             {(() => {
               const total = complaints.length;
               const resolved = complaints.filter(c => c.incident?.status === 'closed' || c.incident?.status === 'resolved').length;
@@ -199,8 +199,8 @@ const MyComplaints = () => {
               let score = total > 0 ? (resolved / total) * 100 : 0;
               score += Math.min(verified * 5, 20);
               score = Math.min(Math.round(score), 100);
-              const impactLabel = score >= 70 ? 'High' : score >= 40 ? 'Medium' : 'Low';
-              return <span className="impact-score-badge"><BarChart3 size={14} /> Impact: {score}% ({impactLabel})</span>;
+              const impactLevel = score >= 70 ? 'myComplaints.impactHigh' : score >= 40 ? 'myComplaints.impactMedium' : 'myComplaints.impactLow';
+              return <span className="impact-score-badge"><BarChart3 size={14} /> {t('myComplaints.impactScore', { score, label: t(impactLevel) })}</span>;
             })()}
           </div>
         )}
@@ -247,16 +247,16 @@ const MyComplaints = () => {
           )}
           {complaints.length > 0 && (
             <button className="export-btn" onClick={exportCSV} title={t('myComplaints.exportCSV')}>
-              <Download size={16} /> CSV
+              <Download size={16} /> {t('myComplaints.exportCSV')}
             </button>
           )}
         </div>
 
         {searchResults !== null && (
           <div className="search-results-dropdown">
-            <div className="search-results-header">Search results ({searchResults.length})</div>
+            <div className="search-results-header">{t('myComplaints.searchResultsHeader', { count: searchResults.length })}</div>
             {searchResults.length === 0 ? (
-              <div className="search-results-empty">No complaints found</div>
+              <div className="search-results-empty">{t('myComplaints.noSearchResults')}</div>
             ) : (
               searchResults.slice(0, 10).map((r: any) => (
                 <div key={r.id} className="search-result-item" onClick={() => navigate(`/complaint/${r.id}`)}>
@@ -293,7 +293,7 @@ const MyComplaints = () => {
                   const resolved = complaints.filter(c => ['resolved', 'closed'].includes(c.incident?.status || '') && c.incident?.days_open != null);
                   if (resolved.length === 0) return '—';
                   const avg = resolved.reduce((s, c) => s + (c.incident!.days_open!), 0) / resolved.length;
-                  return avg.toFixed(1) + 'd';
+                  return avg.toFixed(1) + t('myComplaints.daysUnit');
                 })()}
               </span>
               <span className="cs-label">{t('myComplaints.statAvgResolution')}</span>

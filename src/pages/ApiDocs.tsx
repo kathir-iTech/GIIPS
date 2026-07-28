@@ -1,15 +1,16 @@
 import { Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import { ArrowLeft, BookOpen } from 'lucide-react';
 import './ApiDocs.css';
 
 const ENDPOINTS = [
-  { method: 'GET', path: '/public/stats', auth: 'No', desc: 'Aggregate complaint statistics for the public dashboard.' },
-  { method: 'GET', path: '/public/track/{id}', auth: 'No', desc: 'Track a single complaint by its ID. Returns status, timeline, resolution.' },
-  { method: 'GET', path: '/public/nearby-complaints', auth: 'No', params: 'ward, category, exclude', desc: 'Find nearby complaints by ward and category.' },
-  { method: 'GET', path: '/public/success-stories', auth: 'No', params: '?ward=', desc: 'Resolved complaints with positive citizen ratings.' },
-  { method: 'GET', path: '/public/word-cloud', auth: 'No', desc: 'Top 30 most frequent words in complaint descriptions.' },
-  { method: 'GET', path: '/public/satisfaction-trend', auth: 'No', desc: 'Weekly average citizen rating over the last 8 weeks.' },
-  { method: 'GET', path: '/public/ward-stats/{ward}', auth: 'No', desc: 'Complaint statistics for a specific ward.' },
+  { method: 'GET', path: '/public/stats', auth: 'No', descKey: 'apiDocs.descStats' },
+  { method: 'GET', path: '/public/track/{id}', auth: 'No', descKey: 'apiDocs.descTrack' },
+  { method: 'GET', path: '/public/nearby-complaints', auth: 'No', params: 'ward, category, exclude', descKey: 'apiDocs.descNearby' },
+  { method: 'GET', path: '/public/success-stories', auth: 'No', params: '?ward=', descKey: 'apiDocs.descStories' },
+  { method: 'GET', path: '/public/word-cloud', auth: 'No', descKey: 'apiDocs.descWordCloud' },
+  { method: 'GET', path: '/public/satisfaction-trend', auth: 'No', descKey: 'apiDocs.descSatisfaction' },
+  { method: 'GET', path: '/public/ward-stats/{ward}', auth: 'No', descKey: 'apiDocs.descWardStats' },
 ];
 
 const exampleResponses: Record<string, string> = {
@@ -23,23 +24,24 @@ const exampleResponses: Record<string, string> = {
 };
 
 const ApiDocs = () => {
+  const { t } = useTranslation();
   return (
     <div className="api-docs-page">
       <div className="api-docs-header">
-        <Link to="/" className="api-back-link"><ArrowLeft size={16} /> Back to Home</Link>
-        <h1><BookOpen size={24} /> GIIPS Public API Documentation</h1>
-        <p className="api-subtitle">Open endpoints for public dashboards, tracking, and transparency — no authentication required.</p>
+        <Link to="/" className="api-back-link"><ArrowLeft size={16} /> {t('apiDocs.backToHome')}</Link>
+        <h1><BookOpen size={24} /> {t('apiDocs.title')}</h1>
+        <p className="api-subtitle">{t('apiDocs.subtitle')}</p>
       </div>
       <div className="api-docs-content">
         <table className="api-endpoints-table">
           <thead>
             <tr>
-              <th>Method</th>
-              <th>Endpoint</th>
-              <th>Auth</th>
-              <th>Parameters</th>
-              <th>Description</th>
-              <th>Example Response</th>
+              <th>{t('apiDocs.colMethod')}</th>
+              <th>{t('apiDocs.colEndpoint')}</th>
+              <th>{t('apiDocs.colAuth')}</th>
+              <th>{t('apiDocs.colParams')}</th>
+              <th>{t('apiDocs.colDescription')}</th>
+              <th>{t('apiDocs.colExample')}</th>
             </tr>
           </thead>
           <tbody>
@@ -47,9 +49,9 @@ const ApiDocs = () => {
               <tr key={i}>
                 <td><span className={`method-badge method-${ep.method.toLowerCase()}`}>{ep.method}</span></td>
                 <td><code className="endpoint-path">{ep.path}</code></td>
-                <td><span className={`auth-badge ${ep.auth === 'No' ? 'auth-no' : 'auth-yes'}`}>{ep.auth}</span></td>
-                <td>{(ep as any).params || '—'}</td>
-                <td>{ep.desc}</td>
+                <td><span className={`auth-badge ${ep.auth === 'No' ? 'auth-no' : 'auth-yes'}`}>{ep.auth === 'No' ? t('apiDocs.noAuth') : ep.auth}</span></td>
+                <td>{(ep as any).params || t('apiDocs.emDash')}</td>
+                <td>{t(ep.descKey)}</td>
                 <td><pre className="example-response"><code>{exampleResponses[ep.path]}</code></pre></td>
               </tr>
             ))}

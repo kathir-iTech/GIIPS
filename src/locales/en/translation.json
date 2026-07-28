@@ -161,6 +161,7 @@
     },
     "time": {
       "days": "d",
+      "hourSuffix": "h",
       "reports": "reports",
       "improvement": "improvement",
       "confidence": "confidence",
@@ -483,7 +484,14 @@
     "withdrawConfirm": "Are you sure you want to withdraw this complaint?",
     "withdrawing": "Withdrawing...",
     "tags": "Tags",
-    "editTags": "Edit Tags"
+    "editTags": "Edit Tags",
+    "priorityChartTitle": "Priority Score History",
+    "correctedBadge": "Corrected",
+    "correctCategory": "Correct Category",
+    "correctCategorySave": "Save",
+    "correctCategoryCancel": "Cancel",
+    "duplicateChain": "{{count}} other report of this issue",
+    "duplicateChainPlural": "{{count}} other reports of this issue"
   },
 
   "myComplaints": {
@@ -498,7 +506,26 @@
     "emptyBody": "You have not submitted any complaints yet, or none match your filters.",
     "confidenceLabel": "Match confidence:",
     "standalone": "Standalone complaint",
-    "assignedTo": "Assigned to: {{name}}"
+    "assignedTo": "Assigned to: {{name}}",
+    "exportCSV": "CSV",
+    "activeReporter": "Active Reporter",
+    "usually": "Usually {{period}}",
+    "morning": "morning",
+    "afternoon": "afternoon",
+    "evening": "evening",
+    "night": "night",
+    "impactScore": "Impact: {{score}}% ({{label}})",
+    "impactHigh": "High",
+    "impactMedium": "Medium",
+    "impactLow": "Low",
+    "searchResultsHeader": "Search results ({{count}})",
+    "noSearchResults": "No complaints found",
+    "statTotal": "Total",
+    "statResolved": "Resolved",
+    "statPending": "Pending",
+    "statAvgResolution": "Avg Days",
+    "daysUnit": "d",
+    "csvHeaders": "ID,Title,Category,Ward,Status,Date Filed,Date Resolved,Resolution Note"
   },
 
   "incidents": {
@@ -539,9 +566,42 @@
     "next": "Next",
     "sla": "SLA",
     "expired": "EXPIRED",
+    "showMap": "Show Map",
+    "hideMap": "Hide Map",
+    "daysOpenPopup": "days open",
+    "citizenUpdate": "Citizen Update",
+    "updatePlaceholder": "e.g. Team dispatched, expect resolution by Friday...",
+    "postUpdate": "Send Update",
+    "posting": "Posting...",
+    "postStatusUpdate": "Post Status Update",
     "privateNotes": "Private Notes",
+    "notesPlaceholder": "Add internal notes...",
     "saveNote": "Save Note",
-    "saving": "Saving...",
+    "savingNote": "Saving...",
+    "commentsSection": "Comments ({{count}})",
+    "commentPlaceholder": "Add a comment...",
+    "searchResultsHeader": "Search results ({{count}})",
+    "noSearchResults": "No complaints found",
+    "bumpPriority": "Bump Priority",
+    "agingFilterTitle": "Show only incidents aged 30+ days",
+    "agingFilterLabel": "30+d",
+    "bulkPriorityTitle": "Bump priority by +15 for all selected",
+    "bulkUpdateTitle": "Post a status update to all selected",
+    "cancel": "Cancel",
+    "confirm": "Confirm",
+    "processing": "Processing...",
+    "updatePosted": "Update posted",
+    "updateFailed": "Failed to post update",
+    "bulkModalTitle": "{{action}} ({{count}} incidents)",
+    "bulkUpdatePlaceholder": "Enter the status update message for all selected incidents...",
+    "bulkUpdated": "{{count}} incident(s) updated",
+    "bulkUpdateFailed": "Bulk update failed",
+    "zoneLabel": "Zone",
+    "allIncidents": "All incidents",
+    "incidentLoadError": "Failed to load incident locations",
+    "slaHours": "h",
+    "slaMins": "m",
+    "wardPrefix": "Ward {{ward}}",
     "catch": {
       "mergeFailed": "Failed to merge incidents",
       "splitFailed": "Failed to split complaint"
@@ -746,7 +806,8 @@
     },
     "anomalies": {
       "title": "Anomaly Alerts",
-      "complaintsToday": "{{count}} complaints today vs avg {{mean}}"
+      "complaintsToday": "{{count}} complaints today vs avg {{mean}}",
+      "active": "{{count}} active"
     },
     "digest": {
       "button": "Daily Digest",
@@ -754,6 +815,25 @@
       "copy": "Copy to Clipboard",
       "close": "Close"
     },
+    "kpiTargets": {
+      "title": "KPI Targets",
+      "empty": "No targets set.",
+      "target": "Target: {{value}}",
+      "current": "Current: {{value}}",
+      "met": "Met",
+      "notMet": "Not Met"
+    },
+    "zoneAge": {
+      "title": "Zone Age Distribution",
+      "bucket0to7": "0-7d",
+      "bucket7to30": "7-30d",
+      "bucket30to90": "30-90d",
+      "bucket90plus": "90d+"
+    },
+    "activeUsers": "{{count}} online now",
+    "runAutoEscalation": "Run SLA Auto-Escalation Check",
+    "exportCsv": "Export CSV",
+    "agingLabel": "Aging >30d",
     "footer": {
       "title": "GIIPS Executive Decision Intelligence v2.1",
       "dataRefreshed": "Data refreshed"
@@ -813,7 +893,33 @@
     "slaReport": "Department SLA Report",
     "withinSla": "Within SLA",
     "breachedSla": "Breached SLA",
-    "avgBreach": "Avg Breach (days)"
+    "avgBreach": "Avg Breach (days)",
+    "citizenRating": "Avg Rating",
+    "comparisonTitle": "Department Comparison",
+    "columnDepartment": "Department",
+    "columnOpenIncidents": "Open Incidents",
+    "columnAvgResolution": "Avg Resolution",
+    "columnAvgRating": "Avg Rating",
+    "columnAging": "Aging (>30d)",
+    "officerLeaderboard": "Officer Response Time Leaderboard",
+    "columnRank": "Rank",
+    "columnOfficerName": "Officer Name",
+    "columnDept": "Department",
+    "columnSkills": "Skills",
+    "columnAvgDays": "Avg Days to Resolve",
+    "columnTotalResolved": "Total Resolved",
+    "columnEscalationRate": "Escalation Rate",
+    "columnAvgQuality": "Avg Quality",
+    "histogramTitle": "Resolution Time Distribution",
+    "heatmapTitle": "Complaint Arrival Heatmap",
+    "heatmapAllDepts": "All Departments",
+    "heatmapCellTitle": "{{day}} {{hour}}:00 — {{count}} complaints",
+    "emptyPerf": "No resolved incidents with officer assignments yet.",
+    "slaColumnDept": "Department",
+    "slaColumnOpen": "Open",
+    "slaColumnWithin": "Within SLA",
+    "slaColumnBreached": "Breached SLA",
+    "slaColumnAvgBreach": "Avg Breach (days)"
   },
 
   "systemHealth": {
@@ -899,7 +1005,22 @@
   "citizenProfile": {
     "availability": "Availability",
     "available": "Available",
-    "onLeave": "On Leave"
+    "onLeave": "On Leave",
+    "impactScore": "Impact Score",
+    "impactScoreValue": "{{score}}% ({{label}})",
+    "impactHigh": "High",
+    "impactMedium": "Medium",
+    "impactLow": "Low",
+    "notificationsSection": "Notifications",
+    "notifBadge": "Status Updates",
+    "notifToggleLabel": "Receive status update notifications",
+    "notifToggleDesc": "Get notified when your complaint status changes or an officer posts an update",
+    "notifOn": "On",
+    "notifOff": "Off",
+    "skillsSection": "Skills",
+    "addSkillPlaceholder": "Add skill...",
+    "notifUpdateError": "Failed to update notification preference",
+    "wardPrefix": "Ward {{ward}}"
   },
 
   "analysis": {
@@ -940,7 +1061,7 @@
   "spatialIntelligence": {
     "header": {
       "title": "Spatial Intelligence Command Center",
-      "subtitle": "AI-Powered Governance GIS — Coimbatore City Overview"
+      "subtitle": "AI-Powered Governance GIS — Tamil Nadu State Overview"
     },
     "loading": {
       "feeds": "Loading data feeds...",
@@ -1018,6 +1139,7 @@
       "resourceSimulation": "Resource Simulation",
       "incidentsInDistrict": "Incidents in District"
     },
+    "clustersToggle": "Clusters",
     "footer": {
       "brand": "GIIPS Spatial Intelligence",
       "systemOperational": "System Operational",
@@ -1036,7 +1158,18 @@
     "aiRecHighRisk": "High risk score detected — immediate attention required.",
     "aiRecDeployTeams": "Deploy {{teams}} additional teams to handle {{count}} critical incidents.",
     "aiRecHealthReview": "Low health score — review resource allocation.",
-    "aiRecMonitor": "All metrics normal — continue monitoring."
+    "aiRecMonitor": "All metrics normal — continue monitoring.",
+    "pinFallback": "Complaint",
+    "districtComplaints": "Complaints:",
+    "districtCritical": "Critical:",
+    "hotspotTitle": "Hotspot #{{number}}",
+    "hotspotIntensity": "Intensity:",
+    "hotspotNA": "N/A",
+    "hotspotCategory": "Category:",
+    "hotspotWard": "Ward:",
+    "geoClusterIncidents": "incidents",
+    "geoClusterCategory": "Category:",
+    "daysOpenUnit": "d open"
   },
 
   "track": {
@@ -1080,7 +1213,23 @@
     "dayChartTitle": "Busiest Days",
     "dayChartSubtitle": "Submissions by day of week (all-time)",
     "funnelTitle": "Complaint Resolution Pipeline",
-    "funnelSubtitle": "Citywide distribution of complaints at each stage"
+    "funnelSubtitle": "Citywide distribution of complaints at each stage",
+    "satisfactionTrendTitle": "Citizen Satisfaction Trend",
+    "satisfactionTrendDesc": "Average citizen rating per week over the last 8 weeks",
+    "wordCloudTitle": "Common Complaint Keywords",
+    "wordLookupTitle": "Ward Stats",
+    "wordLookupDesc": "Enter a ward number (1–100) to view its aggregate complaint data.",
+    "wordLookupPlaceholder": "e.g. 12",
+    "wordLookupButton": "Look Up",
+    "wardTotalComplaints": "Total Complaints",
+    "wardResolved": "Resolved",
+    "wardAvgResolution": "Avg Resolution Time",
+    "wardCategories": "Categories",
+    "wardTopCategories": "Top Categories",
+    "storiesTitle": "Success Stories",
+    "storiesSubtitle": "Resolved complaints with high citizen satisfaction",
+    "storiesWard": "Ward {{ward}}",
+    "storiesResolvedIn": "Resolved in {{days}}d"
   },
 
   "helpWidget": {
@@ -1099,6 +1248,27 @@
     "a5": "After verifying the resolution, you can rate it using the star rating on the complaint detail page.",
     "q6": "What happens after I submit?",
     "a6": "Our AI classifies, groups related complaints, and assigns a priority. You receive a tracking ID and status updates via notifications."
+  },
+
+  "apiDocs": {
+    "backToHome": "Back to Home",
+    "title": "GIIPS Public API Documentation",
+    "subtitle": "Open endpoints for public dashboards, tracking, and transparency — no authentication required.",
+    "colMethod": "Method",
+    "colEndpoint": "Endpoint",
+    "colAuth": "Auth",
+    "colParams": "Parameters",
+    "colDescription": "Description",
+    "colExample": "Example Response",
+    "noAuth": "No",
+    "emDash": "—",
+    "descStats": "Aggregate complaint statistics for the public dashboard.",
+    "descTrack": "Track a single complaint by its ID. Returns status, timeline, resolution.",
+    "descNearby": "Find nearby complaints by ward and category.",
+    "descStories": "Resolved complaints with positive citizen ratings.",
+    "descWordCloud": "Top 30 most frequent words in complaint descriptions.",
+    "descSatisfaction": "Weekly average citizen rating over the last 8 weeks.",
+    "descWardStats": "Complaint statistics for a specific ward."
   },
 
   "categoryGuide": {

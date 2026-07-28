@@ -407,28 +407,28 @@ const ComplaintDetailPage = () => {
                 <h3><LinkIcon size={18} /> {t('complaintDetail.sectionIncident')}</h3>
                 <div className="incident-card">
                   <div className="incident-row"><span>{t('complaintDetail.fieldIncidentId')}</span><strong>{data.incident.incident_number}</strong></div>
-                  <div className="incident-row"><span>{t('complaintDetail.fieldCategory')}</span><strong>{data.incident.category}{data.incident.original_category && <span className="cat-corrected-badge">Corrected</span>}</strong></div>
+                  <div className="incident-row"><span>{t('complaintDetail.fieldCategory')}</span><strong>{data.incident.category}{data.incident.original_category && <span className="cat-corrected-badge">{t('complaintDetail.correctedBadge')}</span>}</strong></div>
                   {(user?.role === 'Officer' || user?.role === 'Executive') && (
                     <div className="category-correct-row">
                       {catEditMode ? (
-                        <select value={catEditValue} onChange={e => setCatEditValue(e.target.value)} className="category-select">
-                          {Object.keys({Roads:'', 'Water Supply':'', 'Waste Management':'', Sanitation:'', 'Street Lighting':'', Electricity:'', 'Public Health':''}).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                          <select value={catEditValue} onChange={e => setCatEditValue(e.target.value)} className="category-select">
+                            {Object.keys({Roads:'', 'Water Supply':'', 'Waste Management':'', Sanitation:'', 'Street Lighting':'', Electricity:'', 'Public Health':''}).map(cat => <option key={cat} value={cat}>{cat}</option>)}
                         </select>
                       ) : null}
                       <button className="cat-correct-btn" onClick={() => {
                         if (!catEditMode) {
                           setCatEditMode(true);
-                          setCatEditValue(data.incident.category);
+                          setCatEditValue(data.incident?.category || '');
                         } else {
-                          api.patch('/incidents/' + data.incident.id + '/category', { category: catEditValue }).then(() => {
+                          api.patch('/incidents/' + data.incident?.id + '/category', { category: catEditValue }).then(() => {
                             setCatEditMode(false);
                             return api.getComplaintDetail(id!);
                           }).then(setData).catch(() => {});
                         }
                       }}>
-                        <Edit3 size={12} /> {catEditMode ? 'Save' : 'Correct Category'}
+                        <Edit3 size={12} /> {catEditMode ? t('complaintDetail.correctCategorySave') : t('complaintDetail.correctCategory')}
                       </button>
-                      {catEditMode && <button className="cat-correct-cancel" onClick={() => setCatEditMode(false)}><X size={12} /> Cancel</button>}
+                      {catEditMode && <button className="cat-correct-cancel" onClick={() => setCatEditMode(false)}><X size={12} /> {t('complaintDetail.correctCategoryCancel')}</button>}
                     </div>
                   )}
                   <div className="incident-row"><span>{t('complaintDetail.fieldDepartment')}</span><strong>{t(getDeptI18nKey(data.department || data.incident.category || ''))}</strong></div>
@@ -468,15 +468,15 @@ const ComplaintDetailPage = () => {
                   </div>
                 )}
 
-                {data.incident?.complaints?.length > 1 && (
+                {data.incident?.complaints && data.incident.complaints.length > 1 && (
                   <div className="duplicate-chain">
                     <button className="duplicate-chain-toggle" onClick={() => setShowChain(!showChain)}>
-                      <LinkIcon size={14} /> {data.incident.complaints.length - 1} other report{data.incident.complaints.length - 1 !== 1 ? 's' : ''} of this issue
+                      <LinkIcon size={14} /> {(data.incident.complaints.length) - 1 === 1 ? t('complaintDetail.duplicateChain', { count: data.incident.complaints.length - 1 }) : t('complaintDetail.duplicateChainPlural', { count: data.incident.complaints.length - 1 })}
                       <ChevronDown size={14} className={`chain-chevron ${showChain ? 'open' : ''}`} />
                     </button>
                     {showChain && (
                       <div className="duplicate-chain-list">
-                        {data.incident.complaints.filter((c: any) => c.id !== data.id).map((c: any) => (
+                        {data.incident.complaints?.filter((c: any) => c.id !== data.id).map((c: any) => (
                           <div key={c.id} className="chain-item">
                             <span className="chain-id">{c.complaint_number || c.id}</span>
                             <span className="chain-ward">{c.ward || '—'}</span>
@@ -729,7 +729,7 @@ const ComplaintDetailPage = () => {
 
             {data.incident?.priority_history && data.incident.priority_history.length > 1 && (
               <div className="priority-chart-section">
-                <h3>Priority Score History</h3>
+                <h3>{t('complaintDetail.priorityChartTitle')}</h3>
                 <svg className="priority-chart-svg" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
                   {(() => {
                     const entries = data.incident!.priority_history;

@@ -56,6 +56,7 @@ const COIMBATORE_BOUNDS: [[number, number], [number, number]] = [
 ];
 
 const ComplaintClusterLayer = ({ pins, visible }: { pins: any[]; visible: boolean }) => {
+  const { t } = useTranslation();
   const map = useMap();
   const mcgRef = useRef<L.MarkerClusterGroup | null>(null);
 
@@ -94,7 +95,7 @@ const ComplaintClusterLayer = ({ pins, visible }: { pins: any[]; visible: boolea
         });
         const html = `
           <div style="max-width:220px;font-size:12px;line-height:1.4;color:#f8fafc;">
-            <strong>${pin.title || 'Complaint'}</strong><br/>
+            <strong>${pin.title || t('spatialIntelligence.pinFallback')}</strong><br/>
             <span style="color:#94a3b8;">${pin.address || ''}</span>
             ${pin.priority ? `<br/><span style="color:${getPriorityColor(pin.priority)}">${pin.priority}</span>` : ''}
           </div>`;
@@ -461,8 +462,8 @@ const SpatialIntelligence = () => {
         <div className="header-brand">
           <div className="header-logo"><ShieldAlert size={22} /></div>
           <div>
-            <h1>Spatial Intelligence Command Center</h1>
-            <p>AI-Powered Governance GIS — Tamil Nadu State Overview</p>
+            <h1>{t('spatialIntelligence.header.title')}</h1>
+            <p>{t('spatialIntelligence.header.subtitle')}</p>
           </div>
         </div>
         <div className="header-kpis">
@@ -521,7 +522,7 @@ const SpatialIntelligence = () => {
                 </label>
               ))}
               <button className={`layer-toggle ${showGeoClusters ? 'active' : ''}`} onClick={() => setShowGeoClusters(!showGeoClusters)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: showGeoClusters ? 'rgba(59, 130, 246, 0.12)' : 'rgba(30, 41, 59, 0.4)', border: showGeoClusters ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(148, 163, 184, 0.08)', color: showGeoClusters ? '#3b82f6' : '#cbd5e1', fontSize: 12, fontFamily: 'inherit' }}>
-                <Radio size={14} /> Clusters
+                <Radio size={14} /> {t('spatialIntelligence.clustersToggle')}
               </button>
             </div>
           </div>
@@ -662,8 +663,8 @@ const SpatialIntelligence = () => {
                     layer.bindTooltip(
                       `<div style="padding:8px;background:#0f172a;border:1px solid rgba(148,163,184,0.2);border-radius:8px;color:#f8fafc;font-size:12px;min-width:140px;">
                         <strong style="font-size:13px;">${districtName}</strong><br/>
-                        <span style="color:#94a3b8;">Complaints:</span> <strong>${districtData[districtName].count || 0}</strong><br/>
-                        <span style="color:#94a3b8;">Critical:</span> <strong style="color:#ef4444;">${districtData[districtName].criticalCount || 0}</strong>
+                        <span style="color:#94a3b8;">${t('spatialIntelligence.districtComplaints')}</span> <strong>${districtData[districtName].count || 0}</strong><br/>
+                        <span style="color:#94a3b8;">${t('spatialIntelligence.districtCritical')}</span> <strong style="color:#ef4444;">${districtData[districtName].criticalCount || 0}</strong>
                       </div>`,
                       { sticky: true, className: 'district-tooltip' }
                     );
@@ -718,10 +719,10 @@ const SpatialIntelligence = () => {
                 >
                   <Popup>
                     <div className="incident-popup">
-                      <h4>Hotspot #{idx + 1}</h4>
-                      <p><strong>Intensity:</strong> {hotspot.count || hotspot.intensity || 'N/A'}</p>
-                      {hotspot.category && <p><strong>Category:</strong> {hotspot.category}</p>}
-                      {hotspot.ward && <p><strong>Ward:</strong> {hotspot.ward}</p>}
+                      <h4>{t('spatialIntelligence.hotspotTitle', { number: idx + 1 })}</h4>
+                      <p><strong>{t('spatialIntelligence.hotspotIntensity')}</strong> {hotspot.count || hotspot.intensity || t('spatialIntelligence.hotspotNA')}</p>
+                      {hotspot.category && <p><strong>{t('spatialIntelligence.hotspotCategory')}</strong> {hotspot.category}</p>}
+                      {hotspot.ward && <p><strong>{t('spatialIntelligence.hotspotWard')}</strong> {hotspot.ward}</p>}
                     </div>
                   </Popup>
                 </CircleMarker>
@@ -758,8 +759,8 @@ const SpatialIntelligence = () => {
             {showGeoClusters && geoClusters.map((c: any, i: number) => (
               <Circle key={i} center={c.center as [number, number]} radius={300} pathOptions={{color: getPriorityColor(c.category), fillOpacity: 0.15, weight: 2}}>
                 <Popup>
-                  <strong>{c.count} incidents</strong><br/>
-                  Category: {c.category}<br/>
+                  <strong>{c.count} {t('spatialIntelligence.geoClusterIncidents')}</strong><br/>
+                  {t('spatialIntelligence.geoClusterCategory')} {c.category}<br/>
                   {c.incidents.slice(0, 3).map((inc: any) => `${inc.id || inc.incident_number || ''}`).join(', ')}
                 </Popup>
               </Circle>
@@ -844,7 +845,7 @@ const SpatialIntelligence = () => {
                         </span>
                       </div>
                       <p className="incident-summary">{inc.summary || inc.category}</p>
-                      <span className="incident-meta"><Clock size={10} /> {inc.days_open || 0}d open</span>
+                      <span className="incident-meta"><Clock size={10} /> {inc.days_open || 0}{t('spatialIntelligence.daysOpenUnit')}</span>
                     </div>
                   ))}
                   {(selectedDistrictData.incidents || []).length === 0 && (
