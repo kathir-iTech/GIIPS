@@ -119,6 +119,16 @@
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .detail-meta-grid { grid-template-columns: 1fr; } .status-header { flex-direction: column; } }
 @media (max-width: 480px) { .page-content { padding: 12px; } .main-card { padding: 16px; } .side-card { padding: 16px; } .ai-metric { flex-wrap: wrap; } .ai-metric .label, .ai-metric .value { width: auto; } .status-header h2 { font-size: 18px; } .meta-item { font-size: 13px; padding: 10px; } .back-btn { width: 100%; justify-content: center; min-height: 44px; } }
 
+.lightbox-overlay { position: fixed; inset: 0; z-index: 9999; background: rgba(0,0,0,0.85); display: flex; align-items: center; justify-content: center; padding: 24px; cursor: pointer; }
+.lightbox-content { position: relative; max-width: 90vw; max-height: 90vh; cursor: default; display: flex; flex-direction: column; align-items: flex-end; gap: 8px; }
+.lightbox-image { max-width: 100%; max-height: 85vh; border-radius: var(--radius-md); box-shadow: 0 8px 40px rgba(0,0,0,0.5); object-fit: contain; }
+.lightbox-close-btn { position: absolute; top: -40px; right: 0; background: rgba(255,255,255,0.1); border: none; color: white; width: 36px; height: 36px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; transition: background 0.15s; }
+.lightbox-close-btn:hover { background: rgba(255,255,255,0.2); }
+.lightbox-download-btn { display: inline-flex; align-items: center; gap: 6px; padding: 8px 16px; background: rgba(255,255,255,0.1); border-radius: var(--radius-sm); color: white; font-size: 13px; text-decoration: none; transition: background 0.15s; }
+.lightbox-download-btn:hover { background: rgba(255,255,255,0.2); }
+.detail-photo { cursor: pointer; }
+.detail-photo:hover .photo-img { filter: brightness(0.85); }
+
 .nearby-section { margin-bottom: 28px; }
 .nearby-section h3 { font-size: 14px; font-weight: 600; color: var(--text-primary); margin: 0 0 12px 0; display: flex; align-items: center; gap: 8px; }
 .nearby-list { display: flex; flex-direction: column; gap: 8px; }

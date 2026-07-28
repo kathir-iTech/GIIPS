@@ -99,3 +99,15 @@
 .voice-pulse { position: absolute; right: -4px; top: -4px; width: 40px; height: 40px; border-radius: 50%; background: rgba(239,68,68,0.15); pointer-events: none; animation: voice-ripple 1s ease-out infinite; }
 @keyframes voice-ripple { 0% { transform: scale(1); opacity: 0.6; } 100% { transform: scale(1.8); opacity: 0; } }
 @keyframes voice-pulse { 0%, 100% { box-shadow: 0 0 0 0 rgba(239,68,68,0.4); } 50% { box-shadow: 0 0 0 6px rgba(239,68,68,0); } }
+
+.dup-checking { display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--text-muted); }
+.duplicate-warning { display: flex; align-items: flex-start; gap: 10px; background: rgba(245,158,11,0.08); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-md); padding: 14px 16px; text-align: left; color: #f59e0b; }
+.duplicate-warning div { flex: 1; }
+.duplicate-warning strong { display: block; margin-bottom: 4px; }
+.duplicate-warning p { margin: 0 0 4px; font-size: 13px; color: var(--text-secondary); }
+.duplicate-warning ul { margin: 6px 0; padding-left: 18px; font-size: 13px; color: var(--text-primary); }
+.duplicate-warning li { margin-bottom: 4px; }
+.dup-note { font-size: 12px !important; color: var(--text-muted) !important; font-style: italic; }
+
+.receipt { position: relative; }
+@media print { body * { visibility: hidden; } #complaint-receipt, #complaint-receipt * { visibility: visible; } #complaint-receipt { position: absolute; left: 0; top: 0; width: 100%; } .print-receipt-btn, .success-actions button:not(.print-receipt-btn) { display: none !important; } }

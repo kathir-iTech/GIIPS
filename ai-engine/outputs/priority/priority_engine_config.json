@@ -1,0 +1,39 @@
+{
+  "weights": {
+    "cluster_size": 0.3,
+    "age": 0.25,
+    "category": 0.25,
+    "location": 0.2
+  },
+  "max_age_days": 30,
+  "category_weights": {
+    "Water Supply": 0.9,
+    "Road Infrastructure": 0.85,
+    "Sanitation": 0.8,
+    "Street Lighting": 0.6,
+    "Waste Management": 0.65,
+    "Public Works": 0.55,
+    "Noise nuisance": 0.4,
+    "Illegal Parking": 0.35,
+    "Blocked Driveway": 0.45,
+    "Damaged Tree": 0.3,
+    "Street Sign Missing": 0.25,
+    "General Construction": 0.5
+  },
+  "location_weights": {
+    "near school": 1.0,
+    "school zone": 1.0,
+    "near hospital": 0.95,
+    "hospital": 0.95,
+    "market": 0.85,
+    "bus stop": 0.8,
+    "transit": 0.8,
+    "metro": 0.8,
+    "intersection": 0.75,
+    "main road": 0.7,
+    "highway": 0.7,
+    "residential": 0.6,
+    "park": 0.55,
+    "commercial": 0.65
+  }
+}

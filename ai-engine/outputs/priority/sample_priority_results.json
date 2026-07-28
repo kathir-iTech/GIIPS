@@ -1,0 +1,125 @@
+[
+  {
+    "incident_id": "INC-001",
+    "priority_score": 100,
+    "priority_label": "Critical",
+    "factors": [
+      {
+        "name": "cluster_size",
+        "raw_value": 15,
+        "normalized_value": 0.616,
+        "weight": 0.3,
+        "contribution": 18.47,
+        "description": "Large cluster (high public attention)"
+      },
+      {
+        "name": "age",
+        "raw_value": 938,
+        "normalized_value": 1.0,
+        "weight": 0.25,
+        "contribution": 25.0,
+        "description": "Long-standing issue (938 days)"
+      },
+      {
+        "name": "category",
+        "raw_value": 90.0,
+        "normalized_value": 0.9,
+        "weight": 0.25,
+        "contribution": 22.5,
+        "description": "Critical category (Water Supply)"
+      },
+      {
+        "name": "location",
+        "raw_value": 95.0,
+        "normalized_value": 0.95,
+        "weight": 0.2,
+        "contribution": 19.0,
+        "description": "High-importance location (near hospital)"
+      }
+    ],
+    "explanation": "High visibility: 15 complaints received. Issue pending for 938 days. Critical issue type requiring urgent attention. Located in high-impact public area.",
+    "timestamp": "2026-07-27T09:19:21.806297"
+  },
+  {
+    "incident_id": "INC-002",
+    "priority_score": 100,
+    "priority_label": "Critical",
+    "factors": [
+      {
+        "name": "cluster_size",
+        "raw_value": 5,
+        "normalized_value": 0.324,
+        "weight": 0.3,
+        "contribution": 9.73,
+        "description": "Medium cluster (moderate public attention)"
+      },
+      {
+        "name": "age",
+        "raw_value": 929,
+        "normalized_value": 1.0,
+        "weight": 0.25,
+        "contribution": 25.0,
+        "description": "Long-standing issue (929 days)"
+      },
+      {
+        "name": "category",
+        "raw_value": 60.0,
+        "normalized_value": 0.6,
+        "weight": 0.25,
+        "contribution": 15.0,
+        "description": "Important category (Street Lighting)"
+      },
+      {
+        "name": "location",
+        "raw_value": 60.0,
+        "normalized_value": 0.6,
+        "weight": 0.2,
+        "contribution": 12.0,
+        "description": "Standard location"
+      }
+    ],
+    "explanation": "Based on 5 reported complaints. Issue pending for 929 days. Important infrastructure/service issue.",
+    "timestamp": "2026-07-27T09:19:21.806413"
+  },
+  {
+    "incident_id": "INC-003",
+    "priority_score": 100,
+    "priority_label": "Critical",
+    "factors": [
+      {
+        "name": "cluster_size",
+        "raw_value": 25,
+        "normalized_value": 0.872,
+        "weight": 0.3,
+        "contribution": 26.17,
+        "description": "Large cluster (high public attention)"
+      },
+      {
+        "name": "age",
+        "raw_value": 955,
+        "normalized_value": 1.0,
+        "weight": 0.25,
+        "contribution": 25.0,
+        "description": "Long-standing issue (955 days)"
+      },
+      {
+        "name": "category",
+        "raw_value": 85.0,
+        "normalized_value": 0.85,
+        "weight": 0.25,
+        "contribution": 21.25,
+        "description": "Critical category (Road Infrastructure)"
+      },
+      {
+        "name": "location",
+        "raw_value": 100.0,
+        "normalized_value": 1.0,
+        "weight": 0.2,
+        "contribution": 20.0,
+        "description": "High-importance location (near school)"
+      }
+    ],
+    "explanation": "High visibility: 25 complaints received. Issue pending for 955 days. Critical issue type requiring urgent attention. Located in high-impact public area.",
+    "timestamp": "2026-07-27T09:19:21.806473"
+  }
+]

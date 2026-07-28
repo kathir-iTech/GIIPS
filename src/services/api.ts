@@ -211,6 +211,12 @@ export const api = {
     return response.json();
   },
 
+  getOfficerPerformance: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/admin/officer-performance`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   login: async (email: string, password: string): Promise<any> => {
     const response = await fetchWithTimeout(`${BASE_URL}/auth/login`, {
       ...FETCH_DEFAULTS,

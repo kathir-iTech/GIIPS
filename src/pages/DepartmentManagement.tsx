@@ -18,6 +18,13 @@ interface DepartmentData {
   aging_count: number;
 }
 
+interface OfficerPerf {
+  officer_name: string;
+  department: string;
+  avg_days_to_resolve: number;
+  total_resolved: number;
+}
+
 type SortKey = keyof Pick<DepartmentData, 'department' | 'open_incidents' | 'avg_resolution_time' | 'avg_citizen_rating' | 'aging_count'>;
 
 const DepartmentManagement = () => {
@@ -27,10 +34,25 @@ const DepartmentManagement = () => {
   const [error, setError] = useState<string | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>('open_incidents');
   const [sortAsc, setSortAsc] = useState(false);
+  const [officerPerf, setOfficerPerf] = useState<OfficerPerf[]>([]);
+  const [perfLoading, setPerfLoading] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
+    fetchOfficerPerformance();
   }, []);
+
+  const fetchOfficerPerformance = async () => {
+    setPerfLoading(true);
+    try {
+      const data = await api.getOfficerPerformance();
+      setOfficerPerf(data);
+    } catch {
+      // non-critical
+    } finally {
+      setPerfLoading(false);
+    }
+  };
 
   const fetchDepartments = async () => {
     setLoading(true);
@@ -172,6 +194,42 @@ const DepartmentManagement = () => {
             </tbody>
           </table>
         </div>
+      </div>
+
+      <div className="comparison-section">
+        <h2 className="comparison-title">Officer Response Time Leaderboard</h2>
+        {perfLoading ? (
+          <div className="loading">Loading...</div>
+        ) : officerPerf.length === 0 ? (
+          <div className="empty">No resolved incidents with officer assignments yet.</div>
+        ) : (
+          <div className="comparison-table-wrapper">
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>Rank</th>
+                  <th>Officer Name</th>
+                  <th>Department</th>
+                  <th>Avg Days to Resolve</th>
+                  <th>Total Resolved</th>
+                </tr>
+              </thead>
+              <tbody>
+                {officerPerf.map((o, i) => (
+                  <tr key={o.officer_name}>
+                    <td className="rank-cell">{i + 1}</td>
+                    <td className="dept-name">{o.officer_name}</td>
+                    <td>{t(getDeptI18nKey(o.department))}</td>
+                    <td className={o.avg_days_to_resolve <= 7 ? 'perf-good' : o.avg_days_to_resolve <= 14 ? 'perf-ok' : 'perf-slow'}>
+                      {o.avg_days_to_resolve.toFixed(1)}d
+                    </td>
+                    <td>{o.total_resolved}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

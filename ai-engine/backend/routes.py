@@ -2170,6 +2170,59 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
 
     return result
 
+@admin_router.get("/officer-performance")
+async def get_officer_performance(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Rank officers by avg resolution time (fastest first)."""
+    from collections import defaultdict
+    from officer_routing import route_complaint
+
+    rows = (
+        db.query(
+            Complaint.ward,
+            Complaint.predicted_category,
+            Incident.days_open,
+            Incident.status,
+        )
+        .join(Incident, Complaint.incident_id == Incident.id)
+        .filter(
+            Incident.status.in_(["resolved", "closed"]),
+            Incident.days_open.isnot(None),
+            Complaint.predicted_category.isnot(None),
+        )
+        .all()
+    )
+
+    officer_stats: dict[str, dict] = {}
+    for ward, category, days_open, status in rows:
+        officer = route_complaint(ward or "", category or "")
+        name = officer.get("name")
+        if not name:
+            continue
+        dept = get_department(category or "")
+        if name not in officer_stats:
+            officer_stats[name] = {
+                "officer_name": name,
+                "department": dept,
+                "total_days": 0,
+                "resolved_count": 0,
+            }
+        officer_stats[name]["total_days"] += (days_open or 0)
+        officer_stats[name]["resolved_count"] += 1
+
+    result = []
+    for name, stats in officer_stats.items():
+        count = stats["resolved_count"]
+        result.append({
+            "officer_name": stats["officer_name"],
+            "department": stats["department"],
+            "avg_days_to_resolve": round(stats["total_days"] / count, 1) if count > 0 else 0,
+            "total_resolved": count,
+        })
+
+    result.sort(key=lambda r: (r["avg_days_to_resolve"] if r["total_resolved"] > 0 else float("inf"), -r["total_resolved"]))
+    return result
+
+
 @admin_router.get("/departments/list")
 async def get_department_list(db_user: User = Depends(get_executive_user)):
     """Get the authoritative list of all departments with slugs and i18n keys."""

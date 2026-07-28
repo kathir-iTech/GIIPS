@@ -8,7 +8,7 @@ import Header from '../components/Header';
 import HelpWidget from '../components/HelpWidget';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
@@ -62,6 +62,7 @@ const ComplaintDetailPage = () => {
   const [editError, setEditError] = useState<string | null>(null);
   const [nearbyComplaints, setNearbyComplaints] = useState<any[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
+  const [lightboxOpen, setLightboxOpen] = useState(false);
 
   const fetchDetail = useCallback(async (showLoader = false) => {
     if (!id) return;
@@ -279,8 +280,17 @@ const ComplaintDetailPage = () => {
             )}
 
             {photoUrl && (
-              <div className="detail-photo">
+              <div className="detail-photo" onClick={() => setLightboxOpen(true)}>
                 <img src={photoUrl} alt={t('complaintDetail.imageAlt')} className="photo-img" />
+              </div>
+            )}
+            {lightboxOpen && photoUrl && (
+              <div className="lightbox-overlay" onClick={() => setLightboxOpen(false)}>
+                <div className="lightbox-content" onClick={e => e.stopPropagation()}>
+                  <button className="lightbox-close-btn" onClick={() => setLightboxOpen(false)}><X size={20} /></button>
+                  <a className="lightbox-download-btn" href={photoUrl} download target="_blank" rel="noopener noreferrer"><Download size={16} /> Download</a>
+                  <img src={photoUrl} alt={t('complaintDetail.imageAlt')} className="lightbox-image" />
+                </div>
               </div>
             )}
 

@@ -125,6 +125,60 @@ const ExecutiveDashboard = () => {
   const [copilotMessages, setCopilotMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [copilotInput, setCopilotInput] = useState('');
   const [copilotLoading, setCopilotLoading] = useState(false);
+
+  const exportCSV = useCallback(() => {
+    const rows: string[][] = [];
+    const pushSection = (title: string, headers: string[], data: string[][]) => {
+      rows.push([title], headers, ...data, []);
+    };
+
+    pushSection('Executive Summary — KPI', ['Metric', 'Value'], [
+      ['Today Complaints', String(execSummary?.today_complaints ?? '')],
+      ['Critical Incidents', String(execSummary?.critical_incidents ?? '')],
+      ['Districts at Risk', String(execSummary?.districts_at_risk ?? '')],
+      ['Depts Under Stress', String(execSummary?.depts_under_stress ?? '')],
+      ['Avg Resolution (days)', String(execSummary?.avg_resolution_days?.toFixed(1) ?? '')],
+      ['Aging >30d', String(execSummary?.aging_30d ?? '')],
+    ]);
+
+    if (wardHealth.length > 0) {
+      pushSection('Ward Health', ['Ward', 'Score', 'Open Incidents', 'Critical', 'Improving', 'Trend'],
+        wardHealth.map((w: any) => [w.ward ?? '', String(w.health_score ?? ''), String(w.open_incidents ?? ''), String(w.critical_incidents ?? ''), String(w.improving_flag ?? ''), String(w.trend ?? '')]));
+    }
+
+    if (deptWorkload.length > 0) {
+      pushSection('Department Performance', ['Department', 'Open Incidents', 'Critical %', 'Avg Resolution (d)', 'Efficiency', 'Safety', 'Completion %'],
+        deptWorkload.map((d: any) => [d.department ?? '', String(d.open_incidents ?? ''), String((d.critical_percentage ?? 0).toFixed(1)), String((d.avg_resolution_time ?? 0).toFixed(1)), String((d.efficiency ?? 0).toFixed(2)), String((d.safety ?? 0).toFixed(2)), String((d.completion_percentage ?? 0).toFixed(1))]));
+    }
+
+    if (incidents.length > 0) {
+      pushSection('Incidents', ['ID', 'Priority', 'Ward', 'Department', 'Category', 'Summary', 'Status', 'Created', 'Days Open'],
+        incidents.slice(0, 100).map((i: any) => [i.incident_number ?? i.id ?? '', i.priority ?? '', i.ward ?? '', i.department ?? '', i.category ?? '', (i.summary ?? '').slice(0, 80), i.status ?? '', i.created_at ?? '', String(i.days_open ?? '')]));
+    }
+
+    const recs = decisionSupport?.recommendations ?? predictions?.recommendations ?? [];
+    if (recs.length > 0) {
+      pushSection('AI Recommendations', ['Title', 'Priority', 'Department', 'Impact', 'Confidence'],
+        recs.map((r: any) => [r.title ?? '', r.priority ?? '', r.department ?? '', String(r.expected_impact ?? ''), String(r.confidence ?? '')]));
+    }
+
+    const risks = predictions?.risks ?? [];
+    if (risks.length > 0) {
+      pushSection('Emerging Risks', ['Category', 'Severity', 'Reason', 'Confidence'],
+        risks.map((r: any) => [r.category ?? '', r.severity ?? '', r.reason ?? '', String(r.confidence ?? '')]));
+    }
+
+    const csvContent = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csvContent], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `executive-report-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  }, [execSummary, wardHealth, deptWorkload, incidents, decisionSupport, predictions]);
   const fetchAll = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
@@ -303,6 +357,9 @@ const ExecutiveDashboard = () => {
         <button className="action-btn escalate-btn" onClick={autoEscalate} disabled={escalating}>
           {escalating ? <Loader2 size={14} className="spin" /> : <Zap size={14} />}
           Run SLA Auto-Escalation Check
+        </button>
+        <button className="action-btn" onClick={exportCSV}>
+          <Download size={14} /> Export CSV
         </button>
       </div>
 

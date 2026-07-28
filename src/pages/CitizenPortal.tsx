@@ -10,6 +10,102 @@ import HelpWidget from '../components/HelpWidget';
 import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
 import './CitizenPortal.css';
 
+interface DupCheckStepProps {
+  formData: any;
+  submitError: string | null;
+  loading: boolean;
+  handleSubmit: () => void;
+  duplicateWarnings: any[];
+  setDuplicateWarnings: (w: any[]) => void;
+  dupCheckDone: boolean;
+  setDupCheckDone: (d: boolean) => void;
+  dupChecking: boolean;
+  setDupChecking: (d: boolean) => void;
+  t: (key: string) => string;
+}
+
+const DuplicateCheckStep: React.FC<DupCheckStepProps> = ({
+  formData, submitError, loading, handleSubmit,
+  duplicateWarnings, setDuplicateWarnings,
+  dupCheckDone, setDupCheckDone,
+  dupChecking, setDupChecking, t,
+}) => {
+  useEffect(() => {
+    if (dupCheckDone || dupChecking) return;
+    const check = async () => {
+      setDupChecking(true);
+      try {
+        const classifyRes = await fetch('http://localhost:8000/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: `${formData.title} ${formData.description}` }),
+        });
+        if (!classifyRes.ok) { setDupCheckDone(true); return; }
+        const { predicted_category } = await classifyRes.json();
+        if (!predicted_category) { setDupCheckDone(true); return; }
+
+        const nearbyRes = await fetch(`http://localhost:8000/public/nearby-complaints?category=${encodeURIComponent(predicted_category)}&lat=${formData.latitude}&lon=${formData.longitude}`);
+        if (!nearbyRes.ok) { setDupCheckDone(true); return; }
+        const nearby: any[] = await nearbyRes.json();
+
+        if (nearby.length > 0) {
+          setDuplicateWarnings(nearby.slice(0, 5));
+        }
+      } catch {
+        // non-blocking
+      } finally {
+        setDupCheckDone(true);
+        setDupChecking(false);
+      }
+    };
+    check();
+  }, [dupCheckDone, dupChecking, formData]);
+
+  return (
+    <div className="form-step ai-step">
+      <Sparkles className="ai-icon" />
+      <h3>{t('citizenPortal.confirmTitle')}</h3>
+      <p>{t('citizenPortal.confirmBody')}</p>
+
+      {dupChecking && (
+        <div className="dup-checking">
+          <Loader2 className="spinner" size={16} /> Checking for similar complaints…
+        </div>
+      )}
+
+      {duplicateWarnings.length > 0 && (
+        <div className="duplicate-warning">
+          <AlertCircle size={18} />
+          <div>
+            <strong>Possible duplicate issue detected</strong>
+            <p>The following similar complaint{duplicateWarnings.length > 1 ? 's were' : ' was'} found nearby:</p>
+            <ul>
+              {duplicateWarnings.map((d, i) => (
+                <li key={i}>
+                  <strong>{d.title || d.category}</strong>
+                  {d.distance_km != null && <span> — {d.distance_km.toFixed(2)} km away</span>}
+                  {d.status && <span> [{d.status}]</span>}
+                </li>
+              ))}
+            </ul>
+            <p className="dup-note">You can still submit your complaint if this is a different issue.</p>
+          </div>
+        </div>
+      )}
+
+      {submitError && (
+        <div className="error-banner">
+          <AlertCircle size={16} />
+          <span>{submitError}</span>
+        </div>
+      )}
+      <button className="auth-button" onClick={handleSubmit} disabled={loading}>
+        {loading ? t('citizenPortal.processingButton') : t('citizenPortal.confirmButton')}
+      </button>
+    </div>
+  );
+};
+
 const CitizenPortal = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -37,6 +133,9 @@ const CitizenPortal = () => {
   const [photoUploadStatus, setPhotoUploadStatus] = useState<'idle' | 'uploading' | 'done' | 'failed'>('idle');
   const [nearMeStories, setNearMeStories] = useState<any[] | null>(null);
   const [nearMeLoading, setNearMeLoading] = useState(false);
+  const [duplicateWarnings, setDuplicateWarnings] = useState<any[]>([]);
+  const [dupCheckDone, setDupCheckDone] = useState(false);
+  const [dupChecking, setDupChecking] = useState(false);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const complaintIdRef = useRef<string | null>(null);
@@ -168,7 +267,7 @@ const CitizenPortal = () => {
 
   if (result && !isProcessing) return (
     <div className="portal-container success">
-      <div className="glass-card success-card">
+      <div className="glass-card success-card receipt" id="complaint-receipt">
         <CheckCircle size={64} className="success-icon" />
         <h2>{t('citizenPortal.successTitle')}</h2>
         <p>{t('citizenPortal.successBody')}</p>
@@ -181,13 +280,18 @@ const CitizenPortal = () => {
         )}
         <div className="summary-card">
           <p><strong>{t('citizenPortal.summaryComplaintId')}</strong> {result.complaintId}</p>
-          {result.priority && <p><strong>{t('citizenPortal.summaryPriority')}</strong> {result.priority}</p>}
+          <p><strong>Date/Time</strong> {new Date().toLocaleString('en-IN')}</p>
           {result.predictedCategory && <p><strong>{t('citizenPortal.summaryCategory')}</strong> {result.predictedCategory}</p>}
+          <p><strong>Ward</strong> {formData.ward || '—'}</p>
+          <p><strong>Description</strong> {formData.description?.slice(0, 200)}{formData.description?.length > 200 ? '…' : ''}</p>
+          {result.priority && <p><strong>{t('citizenPortal.summaryPriority')}</strong> {result.priority}</p>}
+          {result.department && <p><strong>Department</strong> {result.department}</p>}
           {result.incidentId && <p><strong>{t('citizenPortal.summaryIncidentId')}</strong> {result.incidentId}</p>}
         </div>
         <div className="success-actions">
           <button onClick={() => navigate('/my-complaints')}>{t('citizenPortal.viewComplaintsButton')}</button>
           <button className="secondary" onClick={() => navigate('/citizen')}>{t('citizenPortal.submitAnotherButton')}</button>
+          <button className="secondary print-receipt-btn" onClick={() => window.print()}>🖨 Print Receipt</button>
         </div>
       </div>
     </div>
@@ -387,22 +491,19 @@ const CitizenPortal = () => {
               </div>
             </div>
           )}
-          {step === 6 && (
-            <div className="form-step ai-step">
-              <Sparkles className="ai-icon" />
-              <h3>{t('citizenPortal.confirmTitle')}</h3>
-              <p>{t('citizenPortal.confirmBody')}</p>
-              {submitError && (
-                <div className="error-banner">
-                  <AlertCircle size={16} />
-                  <span>{submitError}</span>
-                </div>
-              )}
-              <button className="auth-button" onClick={handleSubmit} disabled={loading}>
-                {loading ? t('citizenPortal.processingButton') : t('citizenPortal.confirmButton')}
-              </button>
-            </div>
-          )}
+          {step === 6 && <DuplicateCheckStep
+            formData={formData}
+            submitError={submitError}
+            loading={loading}
+            handleSubmit={handleSubmit}
+            duplicateWarnings={duplicateWarnings}
+            setDuplicateWarnings={setDuplicateWarnings}
+            dupCheckDone={dupCheckDone}
+            setDupCheckDone={setDupCheckDone}
+            dupChecking={dupChecking}
+            setDupChecking={setDupChecking}
+            t={t}
+          />}
         </div>
 
         <div className="wizard-controls">
