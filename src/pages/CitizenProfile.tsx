@@ -1,9 +1,9 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
-import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2, BarChart3 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2, BarChart3, Activity } from 'lucide-react';
 import { getCouncillorByWard } from '../data/councillors';
 import './CitizenProfile.css';
 
@@ -29,6 +29,7 @@ const CitizenProfile = () => {
   const [skillInput, setSkillInput] = useState('');
   const [impactScore, setImpactScore] = useState(0);
   const [impactLabel, setImpactLabel] = useState('Low');
+  const [complaints, setComplaints] = useState<any[]>([]);
 
   useEffect(() => {
     setLoading(true);
@@ -49,10 +50,11 @@ const CitizenProfile = () => {
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
     api.getMyComplaints().then(res => {
-      const complaints = Array.isArray(res.complaints) ? res.complaints : [];
-      const total = complaints.length;
-      const resolved = complaints.filter((c: any) => c.incident?.status === 'closed' || c.incident?.status === 'resolved').length;
-      const verified = complaints.filter((c: any) => c.citizen_rating != null).length;
+      const items = Array.isArray(res.complaints) ? res.complaints : [];
+      setComplaints(items);
+      const total = items.length;
+      const resolved = items.filter((c: any) => c.incident?.status === 'closed' || c.incident?.status === 'resolved').length;
+      const verified = items.filter((c: any) => c.citizen_rating != null).length;
       let score = total > 0 ? (resolved / total) * 100 : 0;
       score += Math.min(verified * 5, 20);
       score = Math.min(Math.round(score), 100);
@@ -231,6 +233,61 @@ const CitizenProfile = () => {
             </button>
           </div>
         </div>
+
+        {complaints.length > 0 && (() => {
+          const catCounts: Record<string, number> = {};
+          const wardCounts: Record<string, number> = {};
+          let totalDaysSaved = 0;
+          for (const c of complaints) {
+            const cat = c.predicted_category || 'Uncategorized';
+            catCounts[cat] = (catCounts[cat] || 0) + 1;
+            const w = c.ward || 'Unknown';
+            wardCounts[w] = (wardCounts[w] || 0) + 1;
+            if (c.incident?.days_open != null && ['closed', 'resolved'].includes(c.incident.status || '')) {
+              totalDaysSaved += c.incident.days_open;
+            }
+          }
+          const maxCatCount = Math.max(...Object.values(catCounts), 1);
+          const mostActiveWard = Object.entries(wardCounts).sort((a, b) => b[1] - a[1])[0];
+          const CAT_COLORS = ['#3b82f6', '#8b5cf6', '#f59e0b', '#16a34a', '#dc2626', '#06b6d4', '#ea580c'];
+          const catEntries = Object.entries(catCounts).sort((a, b) => b[1] - a[1]);
+          return (
+            <div className="profile-card glass-card">
+              <div className="profile-header">
+                <Activity size={20} />
+                <div className="profile-title">
+                  <h2>{t('citizenAnalytics.title')}</h2>
+                </div>
+              </div>
+              <div className="analytics-section">
+                <div className="analytics-bars">
+                  <h4>{t('citizenAnalytics.complaintCountByCategory')}</h4>
+                  {catEntries.map(([cat, count], i) => (
+                    <div key={cat} className="analytics-bar-row">
+                      <span className="analytics-bar-label">{cat}</span>
+                      <div className="analytics-bar-track">
+                        <div className="analytics-bar-fill" style={{ width: `${(count / maxCatCount) * 100}%`, background: CAT_COLORS[i % CAT_COLORS.length] }} />
+                      </div>
+                      <span className="analytics-bar-count">{count}</span>
+                    </div>
+                  ))}
+                </div>
+                <div className="analytics-meta">
+                  {mostActiveWard && (
+                    <div className="analytics-meta-item">
+                      <span className="analytics-meta-label">{t('citizenAnalytics.mostActiveWard')}</span>
+                      <span className="analytics-meta-value">{mostActiveWard[0]} ({mostActiveWard[1]})</span>
+                    </div>
+                  )}
+                  <div className="analytics-meta-item">
+                    <span className="analytics-meta-label">{t('citizenAnalytics.totalDaysSaved')}</span>
+                    <span className="analytics-meta-value">{totalDaysSaved}{t('citizenAnalytics.daysUnit')}</span>
+                  </div>
+                </div>
+              </div>
+            </div>
+          );
+        })()}
 
         {user?.role === 'Officer' && (
           <div className="profile-card glass-card">

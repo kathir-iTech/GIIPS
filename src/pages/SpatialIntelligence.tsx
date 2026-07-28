@@ -125,6 +125,7 @@ const SpatialIntelligence = () => {
   const [incidents, setIncidents] = useState<any[]>([]);
   const [complaintPins, setComplaintPins] = useState<any[]>([]);
   const [deptWorkload, setDeptWorkload] = useState<any[]>([]);
+  const [geofences, setGeofences] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -272,6 +273,7 @@ const SpatialIntelligence = () => {
       api.getForecast(timelineDays),
       api.getIncidents(undefined, 2000),
       api.getComplaintCoordinates(),
+      api.getGeofences(),
     ]).then((results: any) => {
       if (cancelled) return;
       const errors: string[] = [];
@@ -286,6 +288,7 @@ const SpatialIntelligence = () => {
       if (results[4].status === 'fulfilled') setIncidents(Array.isArray(results[4].value) ? results[4].value : []);
       else errors.push('incidents');
       if (results[5].status === 'fulfilled') setComplaintPins(Array.isArray(results[5].value) ? results[5].value : []);
+      if (results[6].status === 'fulfilled') setGeofences(Array.isArray(results[6].value) ? results[6].value : []);
       if (errors.length > 0) setError(t('spatialIntelligence.feedsOffline', { feeds: errors.join(', ') }));
     }).finally(() => {
       if (!cancelled) setLoading(false);
@@ -672,6 +675,26 @@ const SpatialIntelligence = () => {
                 }}
               />
             )}
+
+            {geofences.length > 0 && geofences.map((gf: any) => (
+              <Circle
+                key={gf.id}
+                center={[gf.lat, gf.lng]}
+                radius={gf.radius_meters}
+                pathOptions={{
+                  color: '#22c55e',
+                  fillColor: '#22c55e',
+                  fillOpacity: 0.08,
+                  weight: 2,
+                  dashArray: '5, 5',
+                }}
+              >
+                <Tooltip direction="top" className="geofence-tooltip">
+                  <strong>{gf.label}</strong><br />
+                  <span style={{ color: '#94a3b8', fontSize: 11 }}>{gf.radius_meters}m radius</span>
+                </Tooltip>
+              </Circle>
+            ))}
 
             {layers.risk && riskData.length > 0 && (
               <GeoJSON

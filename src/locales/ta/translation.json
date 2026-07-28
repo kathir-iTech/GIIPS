@@ -130,6 +130,7 @@
     "mergedWith": "இதே போன்ற புகார்களுடன் இணைக்கப்பட்டது",
     "groupedWithSimilar": "இதே போன்ற புகார்களுடன் தொகுக்கப்பட்டது",
     "error": "பிழை",
+    "loading": "ஏற்றுகிறது...",
     "priority": {
       "critical": "முக்கியமான",
       "high": "அதிக",
@@ -204,8 +205,12 @@
     "chartTitle": "வகை வாரியாக புகார்கள்",
     "transparencyTitle": "வெளிப்படைத்தன்மை டாஷ்போர்டு",
     "transparencyDesc": "திரட்டப்பட்ட குடிமை புள்ளிவிவரங்களைக் காண்க — மாதாந்திர மொத்தங்கள், தீர்வு விகிதங்கள் மற்றும் பல.",
+    "resolvedGalleryTitle": "தீர்வு காட்சியகம்",
+    "resolvedGalleryDesc": "நிரூபணப் புகைப்படங்கள் மற்றும் குடிமகன் மதிப்பீடுகளுடன் தீர்க்கப்பட்ட புகார்களைக் காண்க.",
     "footerBrand": "GIIPS — AI வகைப்படுத்தல் முன்மாதிரி",
-    "footerCopy": "எந்த அரசு நிறுவனத்துடனும் இணைக்கப்படவில்லை அல்லது அங்கீகரிக்கப்படவில்லை."
+    "footerCopy": "எந்த அரசு நிறுவனத்துடனும் இணைக்கப்படவில்லை அல்லது அங்கீகரிக்கப்படவில்லை.",
+    "counterBadge": "நேரலை",
+    "counterLabel": "இந்த மாதம் கையாளப்பட்ட புகார்கள்"
   },
 
   "methodology": {
@@ -409,6 +414,14 @@
     "addTag": "குறிச்சொல்லைச் சேர்..."
   },
 
+  "overview": {
+    "todayTasks": "இன்றைய பணிகள்",
+    "openToday": "இன்று திறக்கப்பட்டது",
+    "resolvedToday": "இன்று தீர்க்கப்பட்டது",
+    "newToday": "புதிய சமர்ப்பிப்புகள்",
+    "tasksLoading": "பணிகள் ஏற்றப்படுகின்றன..."
+  },
+
   "complaintDetail": {
     "stageReceived": "பெறப்பட்டது",
     "stageVerified": "சரிபார்க்கப்பட்டது",
@@ -491,7 +504,24 @@
     "correctCategorySave": "சேமி",
     "correctCategoryCancel": "ரத்து செய்",
     "duplicateChain": "{{count}} மற்ற அறிக்கை இந்த பிரச்சினையின்",
-    "duplicateChainPlural": "{{count}} மற்ற அறிக்கைகள் இந்த பிரச்சினையின்"
+    "duplicateChainPlural": "{{count}} மற்ற அறிக்கைகள் இந்த பிரச்சினையின்",
+    "priorityHistoryTitle": "முன்னுரிமை வரலாறு",
+    "priorityHistoryEmpty": "முன்னுரிமை மாற்றங்கள் எதுவும் பதிவு செய்யப்படவில்லை",
+    "forwardTitle": "சம்பவத்தை மாற்றவும்",
+    "forwardButton": "மாற்றுக",
+    "forwardSelectDept": "துறையைத் தேர்ந்தெடுக்கவும்",
+    "forwardSubmit": "மாற்றுக",
+    "forwardSuccess": "சம்பவம் வெற்றிகரமாக மாற்றப்பட்டது",
+    "forwardError": "சம்பவத்தை மாற்ற முடியவில்லை",
+    "forwardHistory": "மாற்றல் வரலாறு",
+    "forwardFrom": "இருந்து: {{dept}}",
+    "forwardTo": "க்கு: {{dept}}",
+    "ratingSuccess": "மதிப்பீடு சமர்ப்பிக்கப்பட்டது. நன்றி!",
+    "ratingError": "மதிப்பீட்டை சமர்ப்பிக்க முடியவில்லை. மீண்டும் முயற்சிக்கவும்.",
+    "nearbyTitle": "அருகில் உள்ள ஒத்த புகார்கள்",
+    "rateTitle": "இந்த தீர்வை மதிப்பிடவும்",
+    "ratePrompt": "இந்த புகாரின் தீர்வில் நீங்கள் எவ்வளவு திருப்தி அடைந்தீர்கள்?",
+    "rateSubmit": "மதிப்பீட்டை சமர்ப்பிக்கவும்"
   },
 
   "myComplaints": {
@@ -830,6 +860,14 @@
       "bucket30to90": "30-90நா",
       "bucket90plus": "90நா+"
     },
+    "zoneFilter": {
+      "label": "மண்டலம்:",
+      "clear": "வடிப்பானை அழி"
+    },
+    "copySummary": {
+      "button": "சுருக்கத்தை நகலெடு",
+      "copied": "நகலெடுக்கப்பட்டது!"
+    },
     "activeUsers": "{{count}} இப்போது இணைப்பில் உள்ளனர்",
     "runAutoEscalation": "SLA தானியக்க அதிகரிப்பு சரிபார்ப்பை இயக்கு",
     "exportCsv": "CSV ஏற்றுமதி",
@@ -872,7 +910,12 @@
     "fieldDepartment": "துறை",
     "fieldPassword": "கடவுச்சொல்",
     "cancel": "ரத்து செய்",
-    "create": "உருவாக்கு"
+    "create": "உருவாக்கு",
+    "colLastActive": "கடைசி நடவடிக்கை",
+    "today": "இன்று",
+    "yesterday": "நேற்று",
+    "daysAgo": "{{count}} நாட்களுக்கு முன்பு",
+    "never": "ஒருபோதும் இல்லை"
   },
 
   "departmentManagement": {
@@ -1045,7 +1088,14 @@
     "activeIncidents": "செயலில் உள்ள சம்பவங்கள்",
     "wardHotspotsTitle": "வார்டு ஹாட்ஸ்பாட்கள்",
     "wardHotspotsSubtitle": "புகார்கள் எண்ணிக்கையில் முதல் 10 வார்டுகள்",
-    "noData": "இதுவரை தரவு எதுவும் இல்லை"
+    "noData": "இதுவரை தரவு எதுவும் இல்லை",
+    "complaintQualityTitle": "புகார் உரை நீளம் மற்றும் தீர்வு",
+    "complaintQualitySubtitle": "புகார் விளக்கங்களின் நீள விநியோகம் மற்றும் சராசரி தீர்வு நாட்கள்",
+    "lengthBucket": "நீளம்",
+    "complaintCount": "எண்ணிக்கை",
+    "avgResolutionDays": "சராசரி தீர்வு நாட்கள்",
+    "categoryTrendTitle": "வகை போக்கு",
+    "categoryTrendSubtitle": "வகை வாரியாக மாதாந்திர புகார்கள்"
   },
 
   "la": {
@@ -1230,6 +1280,42 @@
     "storiesSubtitle": "அதிக குடிமக்கள் திருப்தியுடன் தீர்க்கப்பட்ட புகார்கள்",
     "storiesWard": "வார்டு {{ward}}",
     "storiesResolvedIn": "{{days}} நாட்களில் தீர்க்கப்பட்டது"
+  },
+
+  "sla": {
+    "onTrack": "சரியான பாதையில்",
+    "delayed": "தாமதம்",
+    "overdue": "காலாவதியானது"
+  },
+
+  "citizenAnalytics": {
+    "title": "எனது பகுப்பாய்வு",
+    "complaintCountByCategory": "வகை வாரியாக புகார்கள்",
+    "mostActiveWard": "மிகவும் செயலில் உள்ள வார்டு",
+    "totalDaysSaved": "மொத்த சேமிக்கப்பட்ட நாட்கள்",
+    "daysUnit": "நா"
+  },
+
+  "transparency": {
+    "councillorsTitle": "வார்டு கவுன்சிலர்கள்",
+    "councillorsSubtitle": "அனைத்து 100 வார்டு கவுன்சிலர்களின் தொடர்பு தகவல்",
+    "councillorSearchPlaceholder": "வார்டு எண் அல்லது பெயர் மூலம் தேடவும்...",
+    "councillorWard": "வார்டு",
+    "councillorName": "பெயர்",
+    "councillorPhone": "தொலைபேசி",
+    "councillorNoResults": "உங்கள் தேடலுடன் பொருந்தும் கவுன்சிலர்கள் இல்லை."
+  },
+
+  "resolvedGallery": {
+    "title": "தீர்வு காட்சியகம்",
+    "subtitle": "நிரூபணப் புகைப்படங்கள் மற்றும் உயர் குடிமகன் திருப்தியுடன் சமீபத்தில் தீர்க்கப்பட்ட புகார்கள்",
+    "backButton": "முகப்புக்குத் திரும்பு",
+    "loading": "தீர்க்கப்பட்ட சம்பவங்கள் ஏற்றப்படுகின்றன...",
+    "empty": "இதுவரை புகைப்படங்களுடன் தீர்க்கப்பட்ட சம்பவங்கள் எதுவும் இல்லை.",
+    "ward": "வார்டு {{ward}}",
+    "resolvedIn": "{{days}} நாட்களில் தீர்க்கப்பட்டது",
+    "lightboxPrev": "முந்தைய",
+    "lightboxNext": "அடுத்தது"
   },
 
   "helpWidget": {

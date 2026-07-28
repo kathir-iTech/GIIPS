@@ -72,6 +72,13 @@
 .gateway-card:nth-child(2) .gateway-cta { background: linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03)); color: #e2e8f0; border: 1px solid rgba(255,255,255,0.12); backdrop-filter: blur(4px); }
 .gateway-card:nth-child(2):hover .gateway-cta { background: linear-gradient(135deg, #8b5cf6, #7c3aed); border-color: transparent; box-shadow: 0 4px 20px rgba(139,92,246,0.25); }
 
+/* ── Counter Section ── */
+.counter-section { padding-top: 28px; padding-bottom: 20px; }
+.counter-badge { display: inline-flex; align-items: center; gap: 6px; padding: 4px 14px; background: rgba(34,197,94,0.15); border: 1px solid rgba(34,197,94,0.3); border-radius: 20px; font-size: 11px; color: #4ade80; margin-bottom: 12px; letter-spacing: 1px; text-transform: uppercase; font-weight: 700; }
+.counter-value { margin-bottom: 8px; }
+.counter-number { font-size: 56px; font-weight: 800; background: linear-gradient(135deg, #4ade80, #22d3ee); -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; letter-spacing: -2px; line-height: 1; transition: opacity 0.3s; }
+.counter-label { font-size: 15px !important; color: #94a3b8 !important; font-weight: 500; }
+
 /* ── Public Tools Section ── */
 .public-tools-section { padding-bottom: 20px; }
 .public-tool-links { display: flex; flex-direction: column; gap: 12px; max-width: 500px; margin: 24px auto 0; }

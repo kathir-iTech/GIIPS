@@ -130,6 +130,7 @@
     "mergedWith": "Merged with similar complaints",
     "groupedWithSimilar": "Grouped with similar complaints",
     "error": "Error",
+    "loading": "Loading...",
     "priority": {
       "critical": "Critical",
       "high": "High",
@@ -204,8 +205,12 @@
     "chartTitle": "Complaints by Category",
     "transparencyTitle": "Transparency Dashboard",
     "transparencyDesc": "View aggregate civic statistics — monthly totals, resolution rates, and more.",
+    "resolvedGalleryTitle": "Resolution Gallery",
+    "resolvedGalleryDesc": "See resolved complaints with proof photos and citizen ratings.",
     "footerBrand": "GIIPS — AI triage layer prototype",
-    "footerCopy": "Not affiliated with or endorsed by any government entity."
+    "footerCopy": "Not affiliated with or endorsed by any government entity.",
+    "counterBadge": "Live",
+    "counterLabel": "complaints handled this month"
   },
 
   "methodology": {
@@ -409,6 +414,14 @@
     "addTag": "Add tag..."
   },
 
+  "overview": {
+    "todayTasks": "Today's Tasks",
+    "openToday": "Open Today",
+    "resolvedToday": "Resolved Today",
+    "newToday": "New Submissions",
+    "tasksLoading": "Loading tasks..."
+  },
+
   "complaintDetail": {
     "stageReceived": "Received",
     "stageVerified": "Verified",
@@ -491,7 +504,24 @@
     "correctCategorySave": "Save",
     "correctCategoryCancel": "Cancel",
     "duplicateChain": "{{count}} other report of this issue",
-    "duplicateChainPlural": "{{count}} other reports of this issue"
+    "duplicateChainPlural": "{{count}} other reports of this issue",
+    "priorityHistoryTitle": "Priority History",
+    "priorityHistoryEmpty": "No priority changes recorded",
+    "forwardTitle": "Forward Incident",
+    "forwardButton": "Forward",
+    "forwardSelectDept": "Select Department",
+    "forwardSubmit": "Forward",
+    "forwardSuccess": "Incident forwarded successfully",
+    "forwardError": "Failed to forward incident",
+    "forwardHistory": "Forwarding History",
+    "forwardFrom": "From: {{dept}}",
+    "forwardTo": "To: {{dept}}",
+    "ratingSuccess": "Rating submitted. Thank you!",
+    "ratingError": "Failed to submit rating. Please try again.",
+    "nearbyTitle": "Nearby Similar Complaints",
+    "rateTitle": "Rate this Resolution",
+    "ratePrompt": "How satisfied are you with the resolution of this complaint?",
+    "rateSubmit": "Submit Rating"
   },
 
   "myComplaints": {
@@ -830,6 +860,14 @@
       "bucket30to90": "30-90d",
       "bucket90plus": "90d+"
     },
+    "zoneFilter": {
+      "label": "Zone:",
+      "clear": "Clear filter"
+    },
+    "copySummary": {
+      "button": "Copy Summary",
+      "copied": "Copied!"
+    },
     "activeUsers": "{{count}} online now",
     "runAutoEscalation": "Run SLA Auto-Escalation Check",
     "exportCsv": "Export CSV",
@@ -872,7 +910,12 @@
     "fieldDepartment": "Department",
     "fieldPassword": "Password",
     "cancel": "Cancel",
-    "create": "Create"
+    "create": "Create",
+    "colLastActive": "Last Active",
+    "today": "Today",
+    "yesterday": "Yesterday",
+    "daysAgo": "{{count}} days ago",
+    "never": "Never"
   },
 
   "departmentManagement": {
@@ -1045,7 +1088,14 @@
     "activeIncidents": "Active Incidents",
     "wardHotspotsTitle": "Ward Hotspots",
     "wardHotspotsSubtitle": "Top 10 wards by complaint count",
-    "noData": "No data available yet"
+    "noData": "No data available yet",
+    "complaintQualityTitle": "Complaint Text Length & Resolution",
+    "complaintQualitySubtitle": "Distribution of complaint description lengths and average resolution days",
+    "lengthBucket": "Length",
+    "complaintCount": "Count",
+    "avgResolutionDays": "Avg Resolution Days",
+    "categoryTrendTitle": "Category Trend",
+    "categoryTrendSubtitle": "Monthly complaint count by category"
   },
 
   "la": {
@@ -1230,6 +1280,42 @@
     "storiesSubtitle": "Resolved complaints with high citizen satisfaction",
     "storiesWard": "Ward {{ward}}",
     "storiesResolvedIn": "Resolved in {{days}}d"
+  },
+
+  "sla": {
+    "onTrack": "On track",
+    "delayed": "Delayed",
+    "overdue": "Overdue"
+  },
+
+  "citizenAnalytics": {
+    "title": "My Analytics",
+    "complaintCountByCategory": "Complaints by Category",
+    "mostActiveWard": "Most Active Ward",
+    "totalDaysSaved": "Total Days Saved",
+    "daysUnit": "d"
+  },
+
+  "transparency": {
+    "councillorsTitle": "Ward Councillors",
+    "councillorsSubtitle": "Contact information for all 100 ward councillors",
+    "councillorSearchPlaceholder": "Search by ward number or name...",
+    "councillorWard": "Ward",
+    "councillorName": "Name",
+    "councillorPhone": "Phone",
+    "councillorNoResults": "No councillors match your search."
+  },
+
+  "resolvedGallery": {
+    "title": "Resolution Gallery",
+    "subtitle": "Recently resolved complaints with proof photos and high citizen satisfaction",
+    "backButton": "Back to Home",
+    "loading": "Loading resolved incidents...",
+    "empty": "No resolved incidents with photos available yet.",
+    "ward": "Ward {{ward}}",
+    "resolvedIn": "Resolved in {{days}}d",
+    "lightboxPrev": "Previous",
+    "lightboxNext": "Next"
   },
 
   "helpWidget": {

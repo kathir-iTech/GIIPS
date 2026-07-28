@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Trans } from 'react-i18next';
-import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X, Hash } from 'lucide-react';
+import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X, Hash, Image } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import './Landing.css';
@@ -17,11 +17,24 @@ const Landing = () => {
     () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
   );
   const [catStats, setCatStats] = useState<{ category: string; count: number }[] | null>(null);
+  const [complaintsHandled, setComplaintsHandled] = useState<number>(0);
+  const counterRef = useRef<HTMLSpanElement>(null);
+  const prevCountRef = useRef<number>(0);
 
   useEffect(() => {
-    api.getPublicStats()
-      .then(d => setCatStats(d.complaintsByCategory || []))
-      .catch(() => {});
+    const fetchStats = () => {
+      api.getPublicStats()
+        .then(d => {
+          setCatStats(d.complaintsByCategory || []);
+          const newCount = d.totalComplaintsThisMonth || 0;
+          prevCountRef.current = complaintsHandled;
+          setComplaintsHandled(newCount);
+        })
+        .catch(() => {});
+    };
+    fetchStats();
+    const interval = setInterval(fetchStats, 60000);
+    return () => clearInterval(interval);
   }, []);
 
   const dismissBanner = () => {
@@ -62,6 +75,16 @@ const Landing = () => {
           <p>{t('landing.onboardingBanner')}</p>
           <button className="banner-close" onClick={dismissBanner} title={t('landing.dismissTitle')}><X size={16} /></button>
         </div>
+      )}
+
+      {complaintsHandled > 0 && (
+        <section className="crystal-section counter-section">
+          <div className="counter-badge">{t('landing.counterBadge')}</div>
+          <div className="counter-value">
+            <span className="counter-number" ref={counterRef}>{complaintsHandled.toLocaleString()}</span>
+          </div>
+          <p className="counter-label">{t('landing.counterLabel')}</p>
+        </section>
       )}
 
       {/* ── Problem ── */}
@@ -154,6 +177,14 @@ const Landing = () => {
             <div>
               <strong>{t('landing.transparencyTitle')}</strong>
               <span>{t('landing.transparencyDesc')}</span>
+            </div>
+            <ArrowRight size={16} className="tool-arrow" />
+          </Link>
+          <Link to="/resolved-gallery" className="tool-link">
+            <Image size={20} />
+            <div>
+              <strong>{t('landing.resolvedGalleryTitle')}</strong>
+              <span>{t('landing.resolvedGalleryDesc')}</span>
             </div>
             <ArrowRight size={16} className="tool-arrow" />
           </Link>

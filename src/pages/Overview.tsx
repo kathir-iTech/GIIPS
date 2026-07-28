@@ -4,8 +4,10 @@ import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
-import { AlertTriangle, Clock, Activity, Target } from 'lucide-react';
+import { AlertTriangle, Clock, Activity, Target, ListChecks } from 'lucide-react';
 import { AgingBadge } from '../components/AgingBadge';
+import { useAuth } from '../context/AuthContext';
+import { useTranslation } from 'react-i18next';
 import './Overview.css';
 
 interface BackendDashboardData {
@@ -23,15 +25,22 @@ interface BackendDashboardData {
 }
 
 const Overview = () => {
+  const { t } = useTranslation();
+  const { user } = useAuth();
   const [data, setData] = useState<BackendDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [todayTasks, setTodayTasks] = useState<{ open_today: number; resolved_today: number; new_today: number } | null>(null);
 
   const fetchDashboard = useCallback(async (showLoader = false) => {
     if (showLoader) setLoading(true);
     try {
-      const res = await api.getDashboardData();
+      const [res, tasks] = await Promise.all([
+        api.getDashboardData(),
+        user?.role === 'Officer' ? api.getTodayTasks().catch(() => null) : Promise.resolve(null),
+      ]);
       setData(res as BackendDashboardData);
+      if (tasks) setTodayTasks(tasks);
     } catch (err: any) {
       if (showLoader) {
         console.error('Failed to fetch dashboard data:', err);
@@ -40,7 +49,7 @@ const Overview = () => {
     } finally {
       if (showLoader) setLoading(false);
     }
-  }, []);
+  }, [user]);
 
   useEffect(() => {
     let mounted = true;
@@ -109,6 +118,29 @@ const Overview = () => {
           <KPICard title="Medium" value={data.mediumPriorityIncidents} subtitle="Scheduled response" icon={Activity} />
           <KPICard title="Low" value={data.lowPriorityIncidents} subtitle="Routine handling" icon={Target} variant="success" />
         </section>
+
+        {user?.role === 'Officer' && (
+          <section className="today-tasks-card">
+            <div className="today-tasks-header">
+              <ListChecks size={20} />
+              <h3>{t('overview.todayTasks')}</h3>
+            </div>
+            <div className="today-tasks-grid">
+              <div className="task-stat">
+                <span className="task-value">{todayTasks?.open_today ?? '—'}</span>
+                <span className="task-label">{t('overview.openToday')}</span>
+              </div>
+              <div className="task-stat">
+                <span className="task-value resolved">{todayTasks?.resolved_today ?? '—'}</span>
+                <span className="task-label">{t('overview.resolvedToday')}</span>
+              </div>
+              <div className="task-stat">
+                <span className="task-value new">{todayTasks?.new_today ?? '—'}</span>
+                <span className="task-label">{t('overview.newToday')}</span>
+              </div>
+            </div>
+          </section>
+        )}
 
         <section className="charts-grid">
           <div className="chart-card">

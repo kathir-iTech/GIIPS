@@ -7,6 +7,7 @@ import Header from '../components/Header';
 import KPICard from '../components/KPICard';
 import { AgingBadge } from '../components/AgingBadge';
 import { getDeptI18nKey, getDeptIconKeyword } from '../data/departments';
+import { getCoimbatoreZone } from '../data/coimbatoreZones';
 import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
@@ -124,6 +125,7 @@ const ExecutiveDashboard = () => {
   const [activeUsers, setActiveUsers] = useState(0);
   const [digestOpen, setDigestOpen] = useState(false);
   const [digestContent, setDigestContent] = useState('');
+  const [copySummaryFeedback, setCopySummaryFeedback] = useState(false);
 
   const [trendLabels, setTrendLabels] = useState<string[]>([]);
   const [trendComplaints, setTrendComplaints] = useState<number[]>([]);
@@ -132,6 +134,8 @@ const ExecutiveDashboard = () => {
   const [copilotMessages, setCopilotMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [copilotInput, setCopilotInput] = useState('');
   const [copilotLoading, setCopilotLoading] = useState(false);
+
+  const [selectedZone, setSelectedZone] = useState<string | null>(null);
 
   const exportCSV = useCallback(() => {
     const rows: string[][] = [];
@@ -300,6 +304,23 @@ const ExecutiveDashboard = () => {
   const topDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 5), [wardHealth]);
   const criticalDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 5), [wardHealth]);
 
+  const zones = useMemo(() => {
+    const zoneSet = new Set<string>();
+    (wardHealth || []).forEach((w: any) => {
+      const zone = getCoimbatoreZone(w.ward ?? w.district ?? w.name);
+      if (zone) zoneSet.add(zone);
+    });
+    return Array.from(zoneSet).sort();
+  }, [wardHealth]);
+
+  const filteredWardHealth = useMemo(() => {
+    if (!selectedZone) return wardHealth;
+    return (wardHealth || []).filter((w: any) => {
+      const zone = getCoimbatoreZone(w.ward ?? w.district ?? w.name);
+      return zone === selectedZone;
+    });
+  }, [wardHealth, selectedZone]);
+
   const totalComplaints = execSummary?.totalComplaints ?? execSummary?.todayComplaints ?? 0;
   const criticalCount = execSummary?.criticalIncidentCount ?? execSummary?.criticalIncidents ?? 0;
   const resolutionTime = execSummary?.avgResolutionTime ?? execSummary?.avg_days_open ?? 2.4;
@@ -399,6 +420,53 @@ const ExecutiveDashboard = () => {
     setDigestOpen(true);
   };
 
+  const copySummary = () => {
+    const today = new Date().toLocaleDateString('en-IN', { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+    const totalComplaints = execSummary?.today_complaints ?? execSummary?.totalComplaints ?? 0;
+    const totalIncidents = incidents.length;
+    const resolvedCount = incidents.filter((i: any) => i.status === 'resolved' || i.status === 'closed').length;
+    const resolutionRate = totalIncidents > 0 ? Math.round((resolvedCount / totalIncidents) * 100) : 0;
+    const avgResDays = execSummary?.avg_resolution_days ?? execSummary?.avgResolutionTime ?? 0;
+    const slaBreaches = execSummary?.sla_breaches ?? '—';
+    const avgRating = execSummary?.avg_citizen_rating ?? '—';
+
+    const topWards = [...(wardHealth || [])]
+      .sort((a: any, b: any) => (b.open_incidents ?? b.openIncidents ?? 0) - (a.open_incidents ?? a.openIncidents ?? 0))
+      .slice(0, 3)
+      .map((w: any) => `Ward ${w.ward} (${w.open_incidents ?? w.openIncidents ?? 0})`);
+
+    const topCats: string[] = [];
+    if (deptWorkload?.length) {
+      const sorted = [...deptWorkload].sort((a: any, b: any) => (b.open_incidents ?? 0) - (a.open_incidents ?? 0));
+      sorted.slice(0, 3).forEach((d: any) => {
+        const name = d.department || d.name || '';
+        topCats.push(`${name.charAt(0).toUpperCase() + name.slice(1)} (${d.open_incidents ?? 0})`);
+      });
+    }
+
+    const summary = [
+      `GIIPS Executive Dashboard Summary`,
+      `Date: ${today}`,
+      ``,
+      `Overview:`,
+      `- Total Complaints: ${totalComplaints}`,
+      `- Total Incidents: ${totalIncidents}`,
+      `- Resolution Rate: ${resolutionRate}%`,
+      `- Avg Resolution Time: ${avgResDays} days`,
+      ``,
+      `Top 3 Wards by Volume: ${topWards.join(', ') || '—'}`,
+      `Top 3 Categories: ${topCats.join(', ') || '—'}`,
+      ``,
+      `SLA Breaches: ${slaBreaches}`,
+      `Avg Citizen Rating: ${avgRating} / 5`,
+    ].join('\n');
+
+    navigator.clipboard.writeText(summary).then(() => {
+      setCopySummaryFeedback(true);
+      setTimeout(() => setCopySummaryFeedback(false), 2000);
+    }).catch(() => {});
+  };
+
   return (
     <div className="exec-dashboard">
       <Header title={t('executive.header.title')} subtitle={t('executive.header.subtitle')} />
@@ -414,8 +482,12 @@ const ExecutiveDashboard = () => {
           <Download size={14} /> {t('executive.exportCsv')}
         </button>
         <button className="action-btn" onClick={generateDigest}>
-          <FileText size={14} /> Daily Digest
+          <FileText size={14} /> {t('executive.digest.button')}
         </button>
+        <button className="action-btn" onClick={copySummary}>
+          <FileText size={14} /> {t('executive.copySummary.button')}
+        </button>
+        {copySummaryFeedback && <span className="copy-toast">{t('executive.copySummary.copied')}</span>}
         {activeUsers > 0 && <span className="active-users-badge"><Activity size={14} /> {t('executive.activeUsers', { count: activeUsers })}</span>}
       </div>
 
@@ -608,10 +680,29 @@ const ExecutiveDashboard = () => {
 
       {/* 4. District Intelligence */}
       <SectionCard title={t('executive.district.title')} subtitle={t('executive.district.subtitle')} icon={<Compass size={18} />}>
+        {zones.length > 0 && (
+          <div className="zone-filter-bar">
+            <span className="zone-filter-label">{t('executive.zoneFilter.label')}</span>
+            {zones.map(zone => (
+              <button
+                key={zone}
+                className={`zone-filter-btn ${selectedZone === zone ? 'active' : ''}`}
+                onClick={() => setSelectedZone(selectedZone === zone ? null : zone)}
+              >
+                {zone}
+              </button>
+            ))}
+            {selectedZone && (
+              <button className="zone-filter-clear" onClick={() => setSelectedZone(null)}>
+                {t('executive.zoneFilter.clear')}
+              </button>
+            )}
+          </div>
+        )}
         <div className="district-grid">
           <div className="district-panel">
             <h4><TrendingUp size={14} /> {t('executive.district.topPerforming')}</h4>
-            {topDistricts.map((d: any, i: number) => (
+            {(selectedZone ? filteredWardHealth : wardHealth ? [...wardHealth].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 5) : []).map((d: any, i: number) => (
               <div key={i} className="district-row top">
                 <span className="district-rank">#{i + 1}</span>
                 <span className="district-name">{d.ward || d.district || d.name || `Ward ${i + 1}`}</span>
@@ -633,7 +724,7 @@ const ExecutiveDashboard = () => {
           </div>
           <div className="district-panel critical-panel">
             <h4><AlertTriangle size={14} /> {t('executive.district.mostCritical')}</h4>
-            {criticalDistricts.map((d: any, i: number) => (
+            {(selectedZone ? [...filteredWardHealth].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 5) : criticalDistricts).map((d: any, i: number) => (
               <div key={i} className="district-row critical">
                 <span className="district-rank">#{i + 1}</span>
                 <span className="district-name">{d.ward || d.district || d.name || `Ward ${i + 1}`}</span>
@@ -655,7 +746,7 @@ const ExecutiveDashboard = () => {
           </div>
           <div className="district-panel">
             <h4><Zap size={14} /> {t('executive.district.fastestImproving')}</h4>
-            {topDistricts.slice().reverse().slice(0, 3).map((d: any, i: number) => (
+            {(selectedZone ? [...filteredWardHealth].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 3) : topDistricts.slice().reverse().slice(0, 3)).map((d: any, i: number) => (
               <div key={i} className="district-row improving">
                 <span className="district-rank">#{i + 1}</span>
                 <span className="district-name">{d.ward || d.district || d.name || `Ward ${i + 3}`}</span>
@@ -665,7 +756,7 @@ const ExecutiveDashboard = () => {
           </div>
           <div className="district-panel warning-panel">
             <h4><Flame size={14} /> {t('executive.district.highestGrowth')}</h4>
-            {criticalDistricts.slice(0, 3).map((d: any, i: number) => (
+            {(selectedZone ? [...filteredWardHealth].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 3) : criticalDistricts.slice(0, 3)).map((d: any, i: number) => (
               <div key={i} className="district-row growth">
                 <span className="district-rank">#{i + 1}</span>
                 <span className="district-name">{d.ward || d.district || d.name || `Ward ${i + 5}`}</span>

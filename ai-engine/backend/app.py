@@ -258,6 +258,15 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] status_changed_at column already exists, skipping")
 
+        # Migration: add last_login column to users table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
+                conn.commit()
+            logger.info("[MIGRATION] Added last_login column to users table")
+        except Exception:
+            logger.info("[MIGRATION] last_login column already exists, skipping")
+
         # Backfill status_changed_at for existing incidents (set to created_at)
         try:
             from database import SessionLocal, Incident
@@ -337,6 +346,24 @@ async def lifespan(app: FastAPI):
                     conn.commit()
             except Exception:
                 pass
+
+        # Migration: create geofences table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS geofences (id VARCHAR PRIMARY KEY, lat FLOAT NOT NULL, lng FLOAT NOT NULL, radius_meters FLOAT NOT NULL, label VARCHAR NOT NULL, created_by VARCHAR NOT NULL, created_at TIMESTAMP)"))
+                conn.commit()
+            logger.info("[MIGRATION] Created geofences table")
+        except Exception as e:
+            logger.info("[MIGRATION] geofences table already exists, skipping: %s", e)
+
+        # Migration: add batched column to notifications table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE notifications ADD COLUMN batched BOOLEAN DEFAULT FALSE"))
+                conn.commit()
+            logger.info("[MIGRATION] Added batched column to notifications table")
+        except Exception:
+            logger.info("[MIGRATION] batched column already exists, skipping")
 
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)

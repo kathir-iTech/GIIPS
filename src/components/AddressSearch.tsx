@@ -10,11 +10,18 @@ interface NominatimResult {
   lon: string;
   display_name: string;
   place_id: number;
+  address?: {
+    suburb?: string;
+    quarter?: string;
+    neighbourhood?: string;
+    city_district?: string;
+    [key: string]: string | undefined;
+  };
 }
 
 interface AddressSearchProps {
   value: string;
-  onChange: (data: { address: string; lat: number; lon: number }) => void;
+  onChange: (data: { address: string; lat: number; lon: number; ward?: string }) => void;
   placeholder?: string;
 }
 
@@ -94,6 +101,26 @@ const AddressSearch: React.FC<AddressSearchProps> = ({ value, onChange, placehol
     return () => document.removeEventListener('mousedown', handleClickOutside);
   }, []);
 
+  const extractWard = (result: NominatimResult): string | undefined => {
+    const addr = result.address;
+    const candidates = [addr?.suburb, addr?.city_district, addr?.quarter, addr?.neighbourhood, result.display_name].filter(Boolean) as string[];
+    for (const text of candidates) {
+      const wardMatch = text.match(/(?:Ward|வார்டு)\s*(?:No\.|Number|#|)?\s*(\d{1,3})/i);
+      if (wardMatch) {
+        const num = parseInt(wardMatch[1], 10);
+        if (num >= 1 && num <= 100) return String(num);
+      }
+    }
+    for (const text of candidates) {
+      const numMatch = text.match(/\b(\d{1,2})\b/);
+      if (numMatch) {
+        const num = parseInt(numMatch[1], 10);
+        if (num >= 1 && num <= 100) return String(num);
+      }
+    }
+    return undefined;
+  };
+
   const handleSelect = useCallback((result: NominatimResult) => {
     setQuery(result.display_name);
     setSelected(true);
@@ -102,6 +129,7 @@ const AddressSearch: React.FC<AddressSearchProps> = ({ value, onChange, placehol
       address: result.display_name,
       lat: parseFloat(result.lat),
       lon: parseFloat(result.lon),
+      ward: extractWard(result),
     });
   }, [onChange]);
 

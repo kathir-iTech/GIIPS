@@ -5,8 +5,9 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import HelpWidget from '../components/HelpWidget';
+import { getSLAStatus, getSLAStatusLabel } from '../utils/sla';
 import type { CitizenComplaint } from '../types';
-import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3, Download, Activity } from 'lucide-react';
+import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3, Download, Activity, Camera } from 'lucide-react';
 import './MyComplaints.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -45,6 +46,7 @@ const MyComplaints = () => {
   const [dateTo, setDateTo] = useState('');
   const [streakBadge, setStreakBadge] = useState<string | null>(null);
   const [peakPeriod, setPeakPeriod] = useState<string | null>(null);
+  const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -91,7 +93,17 @@ const MyComplaints = () => {
     if (showLoader) setLoading(true);
     try {
       const res = await api.getMyComplaints();
-      setComplaints(Array.isArray(res.complaints) ? res.complaints : []);
+      const complaintsData = Array.isArray(res.complaints) ? res.complaints : [];
+      setComplaints(complaintsData);
+      const urls: Record<string, string> = {};
+      await Promise.all(complaintsData.filter((c: any) => c.image_path && !c.image_path.startsWith('http')).map(async (c: any) => {
+        try {
+          const photoRes = await api.getComplaintPhoto(c.id);
+          if (photoRes.imageUrl) urls[c.id] = photoRes.imageUrl;
+        } catch {}
+      }));
+      complaintsData.filter((c: any) => c.image_path?.startsWith('http')).forEach((c: any) => { urls[c.id] = c.image_path; });
+      setPhotoUrls(urls);
     } catch (err: any) {
       if (showLoader) setError(err.message);
     } finally {
@@ -313,6 +325,13 @@ const MyComplaints = () => {
               const incidentStatus = c.incident?.status || 'open';
               return (
                   <div key={c.id} className="complaint-card" onClick={() => navigate(`/complaint/${c.id}`)}>
+                    <div className="complaint-photo-thumb">
+                      {photoUrls[c.id] ? (
+                        <img src={photoUrls[c.id]} alt="" className="complaint-thumb-img" />
+                      ) : (
+                        <Camera size={18} className="complaint-thumb-placeholder" />
+                      )}
+                    </div>
                     <div className="card-header">
                       <div className="card-title">
                         <Tag size={16} />
@@ -321,6 +340,11 @@ const MyComplaints = () => {
                       <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>
                         {t(STATUS_KEY[incidentStatus] || 'common.status.open')}
                       </span>
+                      {c.incident?.days_open != null && (
+                        <span className={`sla-badge sla-${getSLAStatus(c.incident.days_open, c.ward)}`}>
+                          {getSLAStatusLabel(getSLAStatus(c.incident.days_open, c.ward), t)}
+                        </span>
+                      )}
                     </div>
                     <p className="card-desc">{c.description}</p>
                     <div className="sc-steps">

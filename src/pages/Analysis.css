@@ -25,6 +25,14 @@
   .kpi-hero { grid-template-columns: repeat(2, 1fr); }
   .chart-grid-2 { grid-template-columns: 1fr; }
 }
+.quality-bars { display: flex; flex-direction: column; gap: 12px; }
+.quality-bar-row { display: flex; align-items: center; gap: 12px; }
+.quality-bar-label { width: 60px; font-size: 13px; font-weight: 500; color: var(--text-secondary); flex-shrink: 0; }
+.quality-bar-track { flex: 1; height: 24px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+.quality-bar-fill { height: 100%; background: linear-gradient(90deg, #3b82f6, #8b5cf6); border-radius: 4px; transition: width 0.4s ease; min-width: 4px; }
+.quality-bar-count { width: 50px; font-size: 13px; font-weight: 600; color: var(--text-primary); text-align: right; flex-shrink: 0; }
+.quality-bar-days { width: 40px; font-size: 12px; color: var(--text-muted); text-align: right; flex-shrink: 0; }
+
 @media (max-width: 640px) {
   .page-content { padding: 16px 16px; }
   .kpi-hero { grid-template-columns: 1fr 1fr; gap: 12px; }

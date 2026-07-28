@@ -17,7 +17,7 @@ from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, ZONE_BY_WARD
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ZONE_BY_WARD
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -113,11 +113,47 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
 def _create_notification(db: Session, user_id: str, notification_type: str, complaint_id: Optional[str] = None, data: Optional[dict] = None):
     """Create an in-app notification for a user.
     Uses flush (not commit) so it does not interfere with the caller's transaction.
-    Respects the user's notify_status_updates preference."""
+    Respects the user's notify_status_updates preference.
+    
+    Smart batching: if 2+ unread notifications exist for the same citizen within
+    the last 5 minutes, merges into the most recent one instead of creating new."""
     try:
         user = db.query(User).filter(User.id == user_id).first()
         if not user or not user.notify_status_updates:
             return
+
+        # Smart batching check — only for non-officer notifications (citizen-facing)
+        five_min_ago = datetime.utcnow() - timedelta(minutes=5)
+        recent_unread = db.query(Notification).filter(
+            Notification.user_id == user_id,
+            Notification.is_read == False,
+            Notification.created_at >= five_min_ago,
+        ).order_by(Notification.created_at.desc()).limit(5).all()
+
+        if len(recent_unread) >= 2:
+            # Merge into the most recent unread notification
+            target = recent_unread[0]
+            existing_data = {}
+            if target.data:
+                try:
+                    existing_data = json.loads(target.data)
+                except (json.JSONDecodeError, TypeError):
+                    existing_data = {}
+            if not isinstance(existing_data, dict):
+                existing_data = {}
+            batch_list = existing_data.get("batched_updates", [])
+            new_entry = {
+                "type": notification_type,
+                "complaint_id": complaint_id,
+                "data": data,
+            }
+            batch_list.append(new_entry)
+            existing_data["batched_updates"] = batch_list
+            existing_data["batch_count"] = len(batch_list) + 1
+            target.data = json.dumps(existing_data)
+            target.batched = True
+            return
+
         notif = Notification(
             id=str(uuid.uuid4()),
             user_id=user_id,
@@ -337,6 +373,55 @@ async def get_anomalies(db: Session = Depends(get_db)):
                 "severity": severity,
             })
     return anomalies
+
+
+class GeofenceCreate(BaseModel):
+    lat: float
+    lng: float
+    radius_meters: float
+    label: str
+
+
+@executive_router.post("/geofence")
+def create_geofence(body: GeofenceCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != 'Executive':
+        raise HTTPException(status_code=403, detail="Executive only")
+    gf = Geofence(
+        id=str(uuid.uuid4()),
+        lat=body.lat,
+        lng=body.lng,
+        radius_meters=body.radius_meters,
+        label=body.label,
+        created_by=current_user.id,
+    )
+    db.add(gf)
+    db.commit()
+    db.refresh(gf)
+    return {
+        "id": gf.id,
+        "lat": gf.lat,
+        "lng": gf.lng,
+        "radius_meters": gf.radius_meters,
+        "label": gf.label,
+        "created_at": gf.created_at.isoformat() if gf.created_at else None,
+    }
+
+
+@executive_router.get("/geofences")
+def list_geofences(db: Session = Depends(get_db)):
+    fences = db.query(Geofence).order_by(Geofence.created_at.desc()).all()
+    return [
+        {
+            "id": f.id,
+            "lat": f.lat,
+            "lng": f.lng,
+            "radius_meters": f.radius_meters,
+            "label": f.label,
+            "created_by": f.created_by,
+            "created_at": f.created_at.isoformat() if f.created_at else None,
+        }
+        for f in fences
+    ]
 
 
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
@@ -834,6 +919,9 @@ async def classify_batch(requests: List[ClassifyRequest]):
 class CommentCreate(BaseModel):
     message: str
 
+class ForwardRequest(BaseModel):
+    new_department: str
+
 class KpiTargetCreate(BaseModel):
     metric_name: str
     target_value: float
@@ -963,10 +1051,79 @@ async def get_trend_data(db: Session = Depends(get_db)):
          .group_by("year", "month").all()
     }
 
+    # Category trend: GROUP BY month + category
+    cat_rows = db.query(
+        extract("year", Complaint.created_at).label("year"),
+        extract("month", Complaint.created_at).label("month"),
+        Complaint.predicted_category,
+        func.count(Complaint.id),
+    ).filter(
+        Complaint.created_at >= six_months_ago,
+        Complaint.predicted_category.isnot(None),
+    ).group_by("year", "month", Complaint.predicted_category).all()
+
+    category_trend = []
+    for yr, mo, cat, cnt in cat_rows:
+        month_label = f"{yr}-{mo:02d}"
+        category_trend.append({
+            "month": month_label,
+            "category": cat,
+            "count": cnt,
+        })
+
     return {
         "labels": [m[2] for m in months],
         "complaints": [comp_by_month.get((y, m), 0) for y, m, _ in months],
         "incidents": [inc_by_month.get((y, m), 0) for y, m, _ in months],
+        "categoryTrend": category_trend,
+    }
+
+
+@dashboard_router.get("/today-tasks")
+async def get_today_tasks(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Get today's task counts for the officer's department."""
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Only officers can access today's tasks")
+    department = db_user.department
+    if not department:
+        raise HTTPException(status_code=400, detail="Officer has no department assigned")
+
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+    today_end = today_start + timedelta(days=1)
+
+    dept_slug = get_slug_for_department(department)
+    dept_categories = [cat for cat, slug in CATEGORY_DEPT_MAP.items() if slug == dept_slug]
+
+    open_today = 0
+    resolved_today = 0
+    new_today = 0
+
+    if dept_categories:
+        open_today = db.query(func.count(Incident.id)).filter(
+            Incident.category.in_(dept_categories),
+            Incident.status.in_(["open", "in-progress"]),
+            Incident.created_at >= today_start,
+            Incident.created_at < today_end,
+        ).scalar() or 0
+
+        resolved_today = db.query(func.count(Incident.id)).filter(
+            Incident.category.in_(dept_categories),
+            Incident.status.in_(["resolved", "closed"]),
+            Incident.status_changed_at >= today_start,
+            Incident.status_changed_at < today_end,
+        ).scalar() or 0
+
+        new_today = db.query(func.count(Complaint.id)).filter(
+            Complaint.predicted_category.in_(dept_categories),
+            Complaint.created_at >= today_start,
+            Complaint.created_at < today_end,
+            Complaint.incident_id.isnot(None),
+        ).scalar() or 0
+
+    return {
+        "open_today": open_today,
+        "resolved_today": resolved_today,
+        "new_today": new_today,
     }
 
 
@@ -1747,6 +1904,59 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
 
 
+@incident_router.patch("/{incident_id}/forward")
+async def forward_incident(incident_id: str, body: ForwardRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Forward an incident to a different department."""
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Only officers can forward incidents")
+
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+
+    old_dept = get_department(incident.category)
+    new_dept = body.new_department
+
+    if old_dept == new_dept:
+        raise HTTPException(status_code=400, detail="Incident is already assigned to this department")
+
+    new_dept_slug = get_slug_for_department(new_dept)
+    old_categories = [cat for cat, slug in CATEGORY_DEPT_MAP.items() if slug == new_dept_slug]
+    if not old_categories:
+        raise HTTPException(status_code=400, detail="No categories found for the target department")
+
+    new_category = old_categories[0]
+    old_category = incident.category
+    incident.category = new_category
+
+    db.commit()
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_forward",
+                     incident.id, "success",
+                     f"Forwarded from {old_dept} ({old_category}) to {new_dept} ({new_category})")
+
+    _notify_department_officers(
+        db, new_dept, "incident_forwarded",
+        data={
+            "incident_id": incident.id,
+            "incident_number": incident.incident_number,
+            "category": new_category,
+            "old_department": old_dept,
+            "new_department": new_dept,
+            "forwarded_by": db_user.full_name,
+        }
+    )
+
+    return {
+        "id": incident.id,
+        "incident_number": incident.incident_number,
+        "old_department": old_dept,
+        "new_department": new_dept,
+        "old_category": old_category,
+        "new_category": new_category,
+    }
+
+
 @incident_router.patch("/{incident_id}/category")
 def correct_incident_category(incident_id: str, body: CategoryCorrectRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
     if current_user.role not in ('Officer', 'Executive'):
@@ -2234,6 +2444,8 @@ async def login(user: UserLogin, request: Request, response: Response, _: None =
     if not db_user or not verify_password(user.password, db_user.password_hash):
         _write_audit_log(db, None, user.email, None, "login", "auth", "failure", "Invalid credentials")
         raise HTTPException(status_code=401, detail="Invalid credentials")
+    db_user.last_login = datetime.utcnow()
+    db.commit()
     token = create_access_token({"sub": db_user.email, "role": db_user.role})
     set_auth_cookie(response, token)
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "login", "auth", "success")
@@ -2359,7 +2571,7 @@ def get_executive_user(db_user: User = Depends(get_current_user)):
 async def get_officers(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get all officers."""
     officers = db.query(User).filter(User.role == "Officer").all()
-    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status} for o in officers]
+    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status, "last_login": o.last_login.isoformat() if o.last_login else None} for o in officers]
 
 @admin_router.post("/officers")
 async def create_officer(body: OfficerCreate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -2497,6 +2709,45 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
         result.append(entry)
 
     return result
+
+@admin_router.get("/complaint-quality")
+async def get_complaint_quality(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get complaint description length distribution and avg resolution days per bucket."""
+    rows = db.query(
+        Complaint.description,
+        Incident.days_open,
+    ).outerjoin(Incident, Complaint.incident_id == Incident.id).filter(
+        Complaint.description.isnot(None),
+    ).all()
+
+    buckets = {"<50": {"count": 0, "total_days": 0}, "50-150": {"count": 0, "total_days": 0},
+               "150-300": {"count": 0, "total_days": 0}, "300+": {"count": 0, "total_days": 0}}
+
+    for desc, days_open in rows:
+        length = len(desc)
+        if length < 50:
+            key = "<50"
+        elif length <= 150:
+            key = "50-150"
+        elif length <= 300:
+            key = "150-300"
+        else:
+            key = "300+"
+        buckets[key]["count"] += 1
+        if days_open is not None:
+            buckets[key]["total_days"] += days_open
+
+    distribution = []
+    for bucket, data in buckets.items():
+        avg_days = round(data["total_days"] / data["count"], 1) if data["count"] > 0 else 0
+        distribution.append({
+            "bucket": bucket,
+            "count": data["count"],
+            "avg_resolution_days": avg_days,
+        })
+
+    return {"distribution": distribution}
+
 
 @admin_router.get("/officer-performance")
 async def get_officer_performance(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -3370,4 +3621,51 @@ async def public_nearby_complaints(
         }
         for r in rows
     ]
+
+
+@public_router.get("/public/resolved-gallery")
+async def public_resolved_gallery(db: Session = Depends(get_db)):
+    """Public gallery of resolved incidents with high ratings and proof photos."""
+    rows = db.query(
+        Incident.id,
+        Incident.category,
+        Incident.ward,
+        Incident.resolution_note,
+        Incident.days_open,
+        Incident.resolution_photo_path,
+        Complaint.citizen_rating,
+    ).join(Complaint, Complaint.incident_id == Incident.id).filter(
+        Incident.status.in_(["closed", "resolved"]),
+        Complaint.citizen_rating.isnot(None),
+        Complaint.citizen_rating >= 4,
+        Incident.resolution_photo_path.isnot(None),
+    ).order_by(Complaint.created_at.desc()).limit(20).all()
+
+    result = []
+    seen_ids = set()
+    for iid, cat, ward, note, days, photo_path, rating in rows:
+        if iid in seen_ids:
+            continue
+        seen_ids.add(iid)
+        presigned_url = None
+        if photo_path and os.path.exists(photo_path):
+            try:
+                from storage import S3Storage
+                s3 = S3Storage()
+                if s3.available:
+                    presigned_url = s3.get_presigned_url(photo_path)
+            except Exception:
+                presigned_url = f"/incidents/{iid}/resolution-photo"
+        else:
+            presigned_url = f"/incidents/{iid}/resolution-photo" if photo_path else None
+        result.append({
+            "id": iid,
+            "category": cat,
+            "ward": ward,
+            "resolution_note": (note[:200] + "...") if note and len(note) > 200 else note,
+            "days_open": days or 0,
+            "rating": rating,
+            "resolution_photo_url": presigned_url,
+        })
+    return result
 

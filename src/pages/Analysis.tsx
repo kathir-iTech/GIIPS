@@ -35,6 +35,13 @@ interface AnalyticsData {
   volumeTrend: { labels: string[]; complaints: number[]; incidents: number[] };
   resolutionTrend: { labels: string[]; avgDays: (number | null)[] };
   wardHotspots: WardItem[];
+  categoryTrend?: { month: string; category: string; count: number }[];
+}
+
+interface QualityItem {
+  bucket: string;
+  count: number;
+  avg_resolution_days: number;
 }
 
 const Analysis = () => {
@@ -42,13 +49,17 @@ const Analysis = () => {
   const [data, setData] = useState<AnalyticsData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [qualityData, setQualityData] = useState<QualityItem[] | null>(null);
 
   useEffect(() => {
     let cancelled = false;
-    api.getAnalytics()
-      .then(d => { if (!cancelled) setData(d); })
-      .catch(e => { if (!cancelled) setError(e.message); })
-      .finally(() => { if (!cancelled) setLoading(false); });
+    Promise.all([
+      api.getAnalytics(),
+      api.getComplaintQuality().catch(() => null),
+    ]).then(([d, q]) => {
+      if (!cancelled) { setData(d); if (q) setQualityData(q.distribution); }
+    }).catch(e => { if (!cancelled) setError(e.message); })
+    .finally(() => { if (!cancelled) setLoading(false); });
     return () => { cancelled = true; };
   }, []);
 
@@ -237,6 +248,75 @@ const Analysis = () => {
             )}
           </div>
         </div>
+
+        {data.categoryTrend && data.categoryTrend.length > 0 && (() => {
+          const categories = [...new Set(data.categoryTrend.map(d => d.category))];
+          const months = [...new Set(data.categoryTrend.map(d => d.month))].sort();
+          const color = (i: number) => `hsl(${(i * 45) % 360}, 60%, 55%)`;
+          const traces = categories.map((cat, i) => ({
+            x: months,
+            y: months.map(m => {
+              const found = data.categoryTrend!.find(d => d.month === m && d.category === cat);
+              return found ? found.count : 0;
+            }),
+            type: 'scatter',
+            mode: 'lines+markers',
+            name: cat,
+            line: { color: color(i), width: 2 },
+            marker: { size: 4 },
+          }));
+          return (
+            <div className="chart-grid">
+              <div className="chart-card chart-full">
+                <div className="chart-hdr">
+                  <h3>{t('analysis.categoryTrendTitle')}</h3>
+                  <span className="chart-desc">{t('analysis.categoryTrendSubtitle')}</span>
+                </div>
+                <Plot
+                  data={traces}
+                  layout={{
+                    autosize: true, height: 280,
+                    paper_bgcolor: 'rgba(0,0,0,0)', plot_bgcolor: 'rgba(0,0,0,0)',
+                    font: { color: '#94a3b8', size: 11 },
+                    margin: { t: 10, b: 40, l: 50, r: 10 },
+                    legend: { orientation: 'h', y: 1.1, x: 0, font: { size: 10 } },
+                    xaxis: { gridcolor: 'rgba(255,255,255,0.05)' },
+                    yaxis: { gridcolor: 'rgba(255,255,255,0.05)', zeroline: false },
+                  }}
+                  config={{ displayModeBar: false, responsive: true }}
+                  style={{ width: '100%' }}
+                />
+              </div>
+            </div>
+          );
+        })()}
+
+        {qualityData && qualityData.length > 0 && (
+          <div className="chart-grid">
+            <div className="chart-card chart-full">
+              <div className="chart-hdr">
+                <h3>{t('analysis.complaintQualityTitle')}</h3>
+                <span className="chart-desc">{t('analysis.complaintQualitySubtitle')}</span>
+              </div>
+              <div className="quality-bars">
+                {qualityData.map((item, i) => {
+                  const maxCount = Math.max(...qualityData.map(q => q.count));
+                  const pct = maxCount > 0 ? (item.count / maxCount) * 100 : 0;
+                  return (
+                    <div key={i} className="quality-bar-row">
+                      <span className="quality-bar-label">{item.bucket}</span>
+                      <div className="quality-bar-track">
+                        <div className="quality-bar-fill" style={{ width: `${pct}%` }} />
+                      </div>
+                      <span className="quality-bar-count">{item.count}</span>
+                      <span className="quality-bar-days">{item.avg_resolution_days}d</span>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          </div>
+        )}
 
       </div>
     </div>

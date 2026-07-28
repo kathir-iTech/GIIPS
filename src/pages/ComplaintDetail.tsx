@@ -7,8 +7,9 @@ import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
 import HelpWidget from '../components/HelpWidget';
 import { getDeptI18nKey } from '../data/departments';
+import { getSLAStatus, getSLAStatusLabel } from '../utils/sla';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown, TrendingUp, TrendingDown, Send } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
@@ -71,6 +72,10 @@ const ComplaintDetailPage = () => {
   const [catEditMode, setCatEditMode] = useState(false);
   const [catEditValue, setCatEditValue] = useState('');
   const [showChain, setShowChain] = useState(false);
+  const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [forwardDept, setForwardDept] = useState('');
+  const [forwardLoading, setForwardLoading] = useState(false);
+  const [forwardResult, setForwardResult] = useState<{ success: boolean; message: string } | null>(null);
 
   const fetchDetail = useCallback(async (showLoader = false) => {
     if (!id) return;
@@ -181,6 +186,23 @@ const ComplaintDetailPage = () => {
     }
   };
 
+  const handleForward = async () => {
+    if (!data?.incident?.id || !forwardDept) return;
+    setForwardLoading(true);
+    setForwardResult(null);
+    try {
+      await api.forwardIncident(data.incident.id, forwardDept);
+      setForwardResult({ success: true, message: t('complaintDetail.forwardSuccess') });
+      const refreshed = await api.getComplaintDetail(id!);
+      setData(refreshed);
+      setTimeout(() => setForwardModalOpen(false), 1500);
+    } catch (err: any) {
+      setForwardResult({ success: false, message: err.message || t('complaintDetail.forwardError') });
+    } finally {
+      setForwardLoading(false);
+    }
+  };
+
   const handleEdit = async () => {
     if (!data) return;
     setEditLoading(true);
@@ -260,6 +282,11 @@ const ComplaintDetailPage = () => {
               <h2>{data.title || t('common.untitled')}</h2>
               <div className="status-actions">
                 <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>{t(STATUS_KEY[incidentStatus] || 'common.status.open')}</span>
+                {data.incident?.days_open != null && (
+                  <span className={`sla-badge sla-${getSLAStatus(data.incident.days_open, data.ward)}`}>
+                    {getSLAStatusLabel(getSLAStatus(data.incident.days_open, data.ward), t)}
+                  </span>
+                )}
                 {canEdit && !editing && (
                   <button className="edit-complaint-btn" onClick={startEditing} title="Edit complaint">
                     <Edit3 size={14} /> Edit
@@ -444,6 +471,14 @@ const ComplaintDetailPage = () => {
                   )}
                 </div>
 
+                {user?.role === 'Officer' && (
+                  <div className="forward-section">
+                    <button className="forward-btn" onClick={() => { setForwardModalOpen(true); setForwardDept(''); setForwardResult(null); }}>
+                      <Send size={14} /> {t('complaintDetail.forwardButton')}
+                    </button>
+                  </div>
+                )}
+
                 {(user?.role === 'Officer' || user?.role === 'Executive') && (
                   <div className="tag-editor-section">
                     <h4>Tags</h4>
@@ -463,6 +498,26 @@ const ComplaintDetailPage = () => {
                             }
                           }}
                         />
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {forwardModalOpen && (
+                  <div className="forward-modal-overlay" onClick={() => setForwardModalOpen(false)}>
+                    <div className="forward-modal" onClick={e => e.stopPropagation()}>
+                      <h4>{t('complaintDetail.forwardTitle')}</h4>
+                      <select value={forwardDept} onChange={e => setForwardDept(e.target.value)} className="forward-select">
+                        <option value="">{t('complaintDetail.forwardSelectDept')}</option>
+                        {['CCMC Engineering Wing','CCMC Health Department','CCMC Town Planning Department','CCMC Parks and Recreation','TWAD Board - Coimbatore Division','TANGEDCO - Coimbatore Region','Tamil Nadu Pollution Control Board - Coimbatore','Coimbatore City Traffic Police','Tamil Nadu Fire and Rescue Services - Coimbatore','Coimbatore District Administration'].filter(d => d !== data?.department).map(d => (
+                          <option key={d} value={d}>{d}</option>
+                        ))}
+                      </select>
+                      <button className="forward-submit-btn" onClick={handleForward} disabled={forwardLoading || !forwardDept}>
+                        {forwardLoading ? <div className="spinner-sm" /> : t('complaintDetail.forwardSubmit')}
+                      </button>
+                      {forwardResult && (
+                        <p className={`forward-result ${forwardResult.success ? 'forward-success' : 'forward-error'}`}>{forwardResult.message}</p>
                       )}
                     </div>
                   </div>
@@ -767,6 +822,31 @@ const ComplaintDetailPage = () => {
                 </svg>
               </div>
             )}
+
+            <div className="priority-history-section">
+              <h3 style={{ marginTop: 20 }}>{t('complaintDetail.priorityHistoryTitle')}</h3>
+              {data.incident?.priority_history && data.incident.priority_history.length > 0 ? (
+                <div className="priority-history-timeline">
+                  {[...(data.incident.priority_history || [])].reverse().map((h: any, idx: number) => {
+                    const increased = h.new_score > h.old_score;
+                    return (
+                      <div key={h.id || idx} className="priority-history-item">
+                        <div className="priority-history-icon">
+                          {increased ? <TrendingUp size={14} /> : <TrendingDown size={14} />}
+                        </div>
+                        <div className="priority-history-content">
+                          <strong>{h.old_score} → {h.new_score}</strong>
+                          <span className="priority-history-reason">{h.reason}</span>
+                          <span className="priority-history-date">{h.changed_at ? new Date(h.changed_at).toLocaleString('en-IN') : ''}</span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              ) : (
+                <p className="priority-history-empty">{t('complaintDetail.priorityHistoryEmpty')}</p>
+              )}
+            </div>
           </div>
         </div>
       </div>

@@ -72,6 +72,22 @@
 .word-cloud-tag { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--accent-subtle); color: var(--text-primary); line-height: 1.3; cursor: default; transition: transform 0.15s; }
 .word-cloud-tag:hover { transform: scale(1.1); }
 
+.councillors-section { background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); padding: 24px; margin-top: 24px; }
+.councillors-section h2 { margin: 0 0 6px 0; font-size: 16px; font-weight: 600; color: var(--text-primary); display: flex; align-items: center; gap: 8px; }
+.councillors-section > p { margin: 0 0 16px 0; font-size: 13px; color: var(--text-muted); }
+.councillor-search-row { position: relative; max-width: 360px; margin-bottom: 16px; }
+.councillor-search-input { width: 100%; box-sizing: border-box; padding: 10px 14px 10px 36px; border: 1px solid var(--border-default); border-radius: var(--radius-sm); background: var(--bg-input); color: var(--text-primary); font-size: 14px; font-family: inherit; }
+.councillor-search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: var(--text-muted); pointer-events: none; }
+.councillor-table-wrapper { overflow-x: auto; }
+.councillor-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.councillor-table th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 11px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 2px solid var(--border-default); }
+.councillor-table td { padding: 8px 14px; border-bottom: 1px solid var(--border-subtle); color: var(--text-primary); }
+.councillor-table tbody tr:hover { background: rgba(99, 102, 241, 0.04); }
+.councillor-ward-cell { font-weight: 700; color: var(--text-muted); width: 60px; }
+.councillor-phone-link { color: #60a5fa; text-decoration: none; font-weight: 500; }
+.councillor-phone-link:hover { text-decoration: underline; }
+.councillor-empty { font-size: 13px; color: var(--text-muted); padding: 12px 0; margin: 0; }
+
 @media (max-width: 768px) {
   .kpi-hero { grid-template-columns: 1fr; }
   .chart-grid-2 { grid-template-columns: 1fr; }

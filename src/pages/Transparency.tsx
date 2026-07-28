@@ -3,7 +3,8 @@ import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
 import { api } from '../services/api';
-import { ArrowLeft, AlertCircle, Loader2, Star, Clock, Building2, MapPin, Search } from 'lucide-react';
+import { ArrowLeft, AlertCircle, Loader2, Star, Clock, Building2, MapPin, Search, Phone } from 'lucide-react';
+import { COUNCILLORS } from '../data/councillors';
 import './Transparency.css';
 
 interface CategoryStat {
@@ -81,6 +82,7 @@ const Transparency = () => {
   const [wardError, setWardError] = useState<string | null>(null);
   const [satisfactionData, setSatisfactionData] = useState<any[]>([]);
   const [wordCloud, setWordCloud] = useState<any[]>([]);
+  const [councillorSearch, setCouncillorSearch] = useState('');
 
   useEffect(() => {
     let cancelled = false;
@@ -431,6 +433,51 @@ const Transparency = () => {
             </div>
           </div>
         )}
+
+        <div className="councillors-section">
+          <h2><Phone size={20} /> {t('transparency.councillorsTitle')}</h2>
+          <p>{t('transparency.councillorsSubtitle')}</p>
+          <div className="councillor-search-row">
+            <input
+              type="text"
+              placeholder={t('transparency.councillorSearchPlaceholder')}
+              value={councillorSearch}
+              onChange={e => setCouncillorSearch(e.target.value)}
+              className="councillor-search-input"
+            />
+            <Search size={16} className="councillor-search-icon" />
+          </div>
+          {(() => {
+            const query = councillorSearch.toLowerCase().trim();
+            const filtered = query
+              ? COUNCILLORS.filter(c => c.name.toLowerCase().includes(query) || String(c.ward).includes(query))
+              : COUNCILLORS;
+            return filtered.length === 0 ? (
+              <p className="councillor-empty">{t('transparency.councillorNoResults')}</p>
+            ) : (
+              <div className="councillor-table-wrapper">
+                <table className="councillor-table">
+                  <thead>
+                    <tr>
+                      <th>{t('transparency.councillorWard')}</th>
+                      <th>{t('transparency.councillorName')}</th>
+                      <th>{t('transparency.councillorPhone')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {filtered.map(c => (
+                      <tr key={c.ward}>
+                        <td className="councillor-ward-cell">{c.ward}</td>
+                        <td>{c.name}</td>
+                        <td><a href={`tel:${c.phone}`} className="councillor-phone-link">{c.phone}</a></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+            );
+          })()}
+        </div>
       </div>
     </div>
   );

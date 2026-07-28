@@ -372,6 +372,28 @@ export const api = {
     return response;
   },
 
+  getTodayTasks: async (): Promise<{ open_today: number; resolved_today: number; new_today: number }> => {
+    const response = await fetch(`${BASE_URL}/dashboard/today-tasks`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  forwardIncident: async (incidentId: string, newDepartment: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/forward`, {
+      ...FETCH_DEFAULTS, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_department: newDepartment }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  getComplaintQuality: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/admin/complaint-quality`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   getAnalytics: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/dashboard/analytics`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
@@ -438,7 +460,25 @@ export const api = {
     return response.json();
   },
 
-  getNotifications: async (): Promise<any[]> => {
+  getResolvedGallery: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/public/resolved-gallery`);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  getGeofences: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/executive/geofences`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  getTrendData: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/dashboard/trend`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  getNotifications: async (): Promise<any> => {
     const response = await fetch(`${BASE_URL}/notifications`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();

@@ -12,6 +12,7 @@ if a future scale-up needs a dedicated worker process).
 
 import json
 import logging
+import math
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -19,7 +20,7 @@ from typing import Optional
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from database import SessionLocal, Complaint, Incident, PriorityHistory
+from database import SessionLocal, Complaint, Incident, PriorityHistory, Geofence
 from job_queue import get_pool
 from models import ClassifyRequest, PriorityRequest
 from services import ClassificationService, DuplicateDetector, PriorityService as PriorityScorer
@@ -202,6 +203,30 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                 }
             )
             _check_aging_notifications(db, department)
+
+        # Geofence check: if complaint falls within any executive-defined geofence, notify
+        comp_lat = getattr(complaint, "latitude", None)
+        comp_lng = getattr(complaint, "longitude", None)
+        if comp_lat is not None and comp_lng is not None:
+            geofences = db.query(Geofence).all()
+            for gf in geofences:
+                dlat = math.radians(comp_lat - gf.lat)
+                dlng = math.radians(comp_lng - gf.lng)
+                a = math.sin(dlat / 2) ** 2 + math.cos(math.radians(gf.lat)) * math.cos(math.radians(comp_lat)) * math.sin(dlng / 2) ** 2
+                c = 2 * math.atan2(math.sqrt(a), math.sqrt(1 - a))
+                distance_m = 6371000 * c
+                if distance_m <= gf.radius_meters:
+                    _create_notification(
+                        db, gf.created_by, "geofence_alert",
+                        complaint_id=complaint.id,
+                        data={
+                            "geofence_label": gf.label,
+                            "complaint_id": complaint.id,
+                            "title": complaint.title,
+                            "category": category,
+                            "distance_m": round(distance_m, 1),
+                        },
+                    )
 
         db.commit()
         db.refresh(complaint)

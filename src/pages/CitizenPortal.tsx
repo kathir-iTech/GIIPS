@@ -10,6 +10,8 @@ import HelpWidget from '../components/HelpWidget';
 import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
 import './CitizenPortal.css';
 
+const DRAFT_KEY = 'giips_complaint_wizard_draft';
+
 interface DupCheckStepProps {
   formData: any;
   submitError: string | null;
@@ -199,6 +201,22 @@ const CitizenPortal = () => {
       .finally(() => setNearMeLoading(false));
   }, [ward]);
 
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem(DRAFT_KEY);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        setFormData(prev => ({ ...prev, ...parsed }));
+      }
+    } catch {}
+  }, []);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem(DRAFT_KEY, JSON.stringify(formData));
+    } catch {}
+  }, [formData]);
+
   const uploadPhoto = async (complaintId: string) => {
     if (!selectedFile || isUploadingRef.current) return;
     isUploadingRef.current = true;
@@ -302,7 +320,9 @@ const CitizenPortal = () => {
 
   const steps = [t('citizenPortal.stepDetails'), t('citizenPortal.stepComplaint'), t('citizenPortal.stepLocation'), t('citizenPortal.stepPhoto'), t('citizenPortal.stepReview'), t('citizenPortal.stepSubmit')];
 
-  if (result && !isProcessing) return (
+  if (result && !isProcessing) {
+    try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    return (
     <div className="portal-container success">
       <div className="glass-card success-card receipt" id="complaint-receipt">
         <CheckCircle size={64} className="success-icon" />
@@ -333,6 +353,7 @@ const CitizenPortal = () => {
       </div>
     </div>
   );
+  }
 
   if (isProcessing) return (
     <div className="portal-container success">
@@ -475,7 +496,7 @@ const CitizenPortal = () => {
                   address: data.address,
                   latitude: data.lat,
                   longitude: data.lon,
-                  ward: prev.ward || '',
+                  ward: data.ward || prev.ward || '',
                 }))}
                 placeholder={t('citizenPortal.addressSearchPlaceholder')}
               />

@@ -53,5 +53,17 @@
 .skill-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); font-size: 14px; color: var(--text-primary); font-family: inherit; }
 .skill-input:focus { outline: none; border-color: #3b82f6; }
 
+.analytics-section { margin-top: 0.5rem; }
+.analytics-bars h4 { margin: 0 0 0.75rem 0; font-size: 0.8rem; font-weight: 600; color: var(--text-secondary); text-transform: uppercase; letter-spacing: 0.5px; }
+.analytics-bar-row { display: flex; align-items: center; gap: 0.5rem; margin-bottom: 0.375rem; }
+.analytics-bar-label { width: 100px; font-size: 0.75rem; color: var(--text-secondary); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; flex-shrink: 0; }
+.analytics-bar-track { flex: 1; height: 12px; background: rgba(255,255,255,0.06); border-radius: 99px; overflow: hidden; }
+.analytics-bar-fill { height: 100%; border-radius: 99px; transition: width 0.6s ease; min-width: 2px; }
+.analytics-bar-count { width: 24px; font-size: 0.75rem; color: var(--text-muted); font-weight: 600; text-align: right; }
+.analytics-meta { display: flex; gap: 1.5rem; margin-top: 1rem; flex-wrap: wrap; }
+.analytics-meta-item { display: flex; flex-direction: column; gap: 0.125rem; }
+.analytics-meta-label { font-size: 0.7rem; color: var(--text-muted); text-transform: uppercase; letter-spacing: 0.5px; font-weight: 600; }
+.analytics-meta-value { font-size: 1.1rem; font-weight: 700; color: var(--text-primary); }
+
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .profile-header { flex-wrap: wrap; } }
 @media (max-width: 480px) { .page-content { padding: 12px; } .profile-card { padding: 16px; } .edit-actions { flex-direction: column; } .edit-btn, .save-btn, .cancel-btn { width: 100%; justify-content: center; min-height: 44px; } }

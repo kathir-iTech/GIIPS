@@ -12,6 +12,7 @@ interface Officer {
   district: string;
   created_at: string;
   status: string;
+  last_login?: string | null;
 }
 
 const OfficerManagement = () => {
@@ -130,16 +131,17 @@ const OfficerManagement = () => {
               <th>{t('officerManagement.colDistrict')}</th>
               <th>{t('officerManagement.colStatus')}</th>
               <th>{t('officerManagement.colCreated')}</th>
+              <th>{t('officerManagement.colLastActive')}</th>
               <th>{t('officerManagement.colActions')}</th>
             </tr>
           </thead>
           <tbody>
             {loading ? (
-              <tr><td colSpan={7} className="loading">{t('officerManagement.loading')}</td></tr>
+              <tr><td colSpan={8} className="loading">{t('officerManagement.loading')}</td></tr>
             ) : error ? (
-              <tr><td colSpan={7} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchOfficers}>{t('officerManagement.retry')}</button></td></tr>
+              <tr><td colSpan={8} className="error-state"><p>{error}</p><button className="retry-btn" onClick={fetchOfficers}>{t('officerManagement.retry')}</button></td></tr>
             ) : filteredOfficers.length === 0 ? (
-              <tr><td colSpan={7} className="empty">{t('officerManagement.empty')}</td></tr>
+              <tr><td colSpan={8} className="empty">{t('officerManagement.empty')}</td></tr>
             ) : (
               filteredOfficers.map(officer => (
                 <tr key={officer.id}>
@@ -149,6 +151,16 @@ const OfficerManagement = () => {
                   <td>{officer.district}</td>
                   <td><span className={`status ${officer.status}`}>{officer.status}</span></td>
                   <td>{officer.created_at?.split('T')[0]}</td>
+                  <td className="last-active-cell">{
+                    officer.last_login ? (() => {
+                      const diff = Date.now() - new Date(officer.last_login).getTime();
+                      const days = Math.floor(diff / 86400000);
+                      if (days === 0) return t('officerManagement.today');
+                      if (days === 1) return t('officerManagement.yesterday');
+                      if (days < 30) return t('officerManagement.daysAgo', { count: days });
+                      return new Date(officer.last_login).toLocaleDateString('en-IN');
+                    })() : t('officerManagement.never')
+                  }</td>
                   <td>
                     <div className="actions">
                       {officer.status === 'active' ? 

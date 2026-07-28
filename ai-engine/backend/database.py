@@ -439,6 +439,7 @@ class Notification(Base):
     type = Column(String, nullable=False)
     data = Column(Text, nullable=True)
     is_read = Column(Boolean, default=False, nullable=False)
+    batched = Column(Boolean, default=False, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
 class IncidentUpdate(Base):
@@ -472,6 +473,19 @@ class KpiTarget(Base):
     current_value = Column(Float, nullable=True)
     set_by = Column(String, nullable=False)
     set_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+
+class Geofence(Base):
+    """ORM model representing an executive-defined circular geofence."""
+    __tablename__ = "geofences"
+
+    id = Column(String, primary_key=True, index=True)
+    lat = Column(Float, nullable=False)
+    lng = Column(Float, nullable=False)
+    radius_meters = Column(Float, nullable=False)
+    label = Column(String, nullable=False)
+    created_by = Column(String, ForeignKey("users.id"), nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
 
 # Seed demo users
@@ -953,6 +967,19 @@ def backfill_complaint_user_ids():
     finally:
         db.close()
 
+
+def add_last_login_column():
+    """Add last_login column to users table if it does not exist (idempotent migration)."""
+    db = SessionLocal()
+    try:
+        db.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
+        db.commit()
+        print("[MIGRATION] Added last_login column to users table")
+    except Exception:
+        db.rollback()
+        print("[MIGRATION] last_login column already exists")
+    finally:
+        db.close()
 
 def backfill_officer_departments():
     """Assign a real department to any officer whose department is null.

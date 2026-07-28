@@ -3,6 +3,8 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp, Star, ChevronUp, ChevronDown } from 'lucide-react';
 import { getDeptI18nKey } from '../data/departments';
+import { getDepartmentHead } from '../data/officerDirectory';
+import { Phone, User as UserIcon } from 'lucide-react';
 import Plot from 'react-plotly.js';
 import './Admin.css';
 
@@ -186,6 +188,22 @@ const DepartmentManagement = () => {
                   <span className="label">{t('departmentManagement.citizenRating')}</span>
                 </div>
               </div>
+              {(() => {
+                const head = getDepartmentHead(dept.department);
+                if (!head) return null;
+                return (
+                  <div className="dept-contact-card">
+                    <div className="dept-contact-row">
+                      <UserIcon size={13} />
+                      <span>{head.name}</span>
+                    </div>
+                    <div className="dept-contact-row">
+                      <Phone size={13} />
+                      <a href={`tel:${head.phone}`} className="dept-contact-phone">{head.phone}</a>
+                    </div>
+                  </div>
+                );
+              })()}
             </div>
           ))
         )}
