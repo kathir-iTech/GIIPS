@@ -67,5 +67,28 @@
 .update-result { font-size: 12px; padding: 4px 0; }
 .update-result.success { color: #16a34a; }
 .update-result.error { color: #dc2626; }
+.private-notes-section { margin-top: 12px; border-top: 1px solid var(--border-subtle); padding-top: 12px; }
+.private-notes-section h4 { font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-secondary); margin: 0 0 8px 0; }
+.private-notes-section textarea { width: 100%; box-sizing: border-box; padding: 8px 10px; border-radius: var(--radius-sm); border: 1px solid var(--border-subtle); background: rgba(255,255,255,0.03); font-size: 13px; font-family: inherit; color: var(--text-primary); resize: vertical; margin-bottom: 8px; }
+.save-note-btn { display: inline-flex; align-items: center; justify-content: center; gap: 4px; padding: 5px 12px; border-radius: var(--radius-sm); background: #6366f1; border: none; font-size: 12px; font-weight: 600; color: #fff; cursor: pointer; }
+.save-note-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+.complexity-badge { font-size: 10px; padding: 1px 6px; border-radius: 99px; font-weight: 600; margin-left: 4px; }
+.complexity-simple { background: rgba(22,163,74,0.1); color: #16a34a; }
+.complexity-moderate { background: rgba(217,119,6,0.1); color: #d97706; }
+.complexity-complex { background: rgba(220,38,38,0.1); color: #dc2626; }
+
+.lang-badge { font-size: 10px; padding: 1px 6px; border-radius: 99px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 4px; vertical-align: middle; }
+.lang-english { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.lang-tamil { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+.lang-tanglish { background: rgba(245,158,11,0.1); color: #f59e0b; }
+
+.sla-cell { font-size: 12px; font-weight: 600; white-space: nowrap; }
+.sla-green { color: #16a34a; }
+.sla-amber { color: #d97706; }
+.sla-red { color: #dc2626; }
+.sla-expired { color: #991b1b; animation: sla-pulse 2s ease-in-out infinite; }
+@keyframes sla-pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.5; } }
+
 @media (max-width: 1024px) { .expanded-content { grid-template-columns: 1fr; } .feed-toolbar { flex-wrap: wrap; } }
 @media (max-width: 768px) { .page-content { padding: 16px; } }

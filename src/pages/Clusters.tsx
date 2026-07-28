@@ -145,6 +145,10 @@ const Clusters = () => {
   const [loading, setLoading] = useState(true);
   const [detailLoading, setDetailLoading] = useState(false);
   const [intelLoading, setIntelLoading] = useState(false);
+  const [mergeTarget, setMergeTarget] = useState('');
+  const [mergeLoading, setMergeLoading] = useState(false);
+  const [mergeResult, setMergeResult] = useState<string | null>(null);
+  const [mergeError, setMergeError] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
   const [workspaceOpen, setWorkspaceOpen] = useState(false);
   const [overriddenIds, setOverriddenIds] = useState<Set<string>>(new Set());
@@ -362,6 +366,22 @@ const Clusters = () => {
     || (priorityRules && priorityRules.length > 0
       ? t('clusters.priorityFromRules', { count: priorityRules.length, score: selectedPriorityScore })
       : t('clusters.priorityDerived', { score: selectedPriorityScore, clusterSize: selectedClusterSize, daysOpen: selectedDaysOpen }));
+
+  const handleMerge = async () => {
+    if (!mergeTarget.trim() || !selectedIncident) return;
+    setMergeLoading(true);
+    setMergeResult(null);
+    setMergeError(null);
+    try {
+      const res = await api.post(`/incidents/${selectedIncident.id}/merge`, { target_incident_id: mergeTarget });
+      setMergeResult('Merged successfully');
+      setMergeTarget('');
+    } catch (err: any) {
+      setMergeError(err.message || 'Merge failed');
+    } finally {
+      setMergeLoading(false);
+    }
+  };
 
   const renderInvestigationCard = (inc: Incident) => {
     const color = getPriorityColor(inc.priority_label);
@@ -820,6 +840,17 @@ const Clusters = () => {
                       </div>
                     )}
                   </SectionCard>
+
+                  {/* Merge Section */}
+                  <div className="merge-section">
+                    <h4>Merge Into Another Incident</h4>
+                    <div className="merge-input-row">
+                      <input type="text" placeholder="Enter target incident ID..." value={mergeTarget} onChange={e => setMergeTarget(e.target.value)} />
+                      <button onClick={handleMerge} disabled={mergeLoading || !mergeTarget}>Merge</button>
+                    </div>
+                    {mergeResult && <div className="merge-result success">{mergeResult}</div>}
+                    {mergeError && <div className="merge-result error">{mergeError}</div>}
+                  </div>
                 </div>
               </div>
             )}

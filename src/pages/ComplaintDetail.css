@@ -138,3 +138,30 @@
 .nearby-priority { font-size: 12px; color: var(--text-muted); }
 .nearby-item-meta { display: flex; align-items: center; gap: 12px; font-size: 12px; color: var(--text-muted); }
 .nearby-loading { font-size: 13px; color: var(--text-muted); margin-bottom: 16px; }
+
+.escalation-path { margin: 16px 0; padding: 16px; background: var(--card-bg); border: 1px solid var(--border-subtle); border-radius: var(--radius-md); }
+.escalation-path svg { width: 100%; max-width: 600px; height: auto; display: block; margin: 0 auto; }
+
+.match-meter-section { margin: 8px 0; }
+.match-meter { background: var(--border-subtle); border-radius: 99px; height: 8px; overflow: hidden; }
+.match-meter-fill { height: 100%; border-radius: 99px; background: linear-gradient(90deg, #f59e0b, #16a34a); transition: width 0.5s; }
+.match-text { font-size: 13px; color: var(--text-secondary); margin: 4px 0; }
+.match-text a { color: #60a5fa; text-decoration: underline; }
+.match-reason { font-size: 12px; color: var(--text-muted); font-style: italic; }
+
+.withdraw-section { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--border-subtle); }
+.withdraw-btn { background: rgba(220,38,38,0.1); color: #dc2626; border: 1px solid rgba(220,38,38,0.3); padding: 8px 16px; border-radius: var(--radius-sm); cursor: pointer; font-weight: 600; font-size: 13px; }
+.withdraw-btn:hover { background: rgba(220,38,38,0.2); }
+.withdraw-confirm { display: flex; flex-direction: column; gap: 8px; }
+.withdraw-confirm p { margin: 0; font-size: 13px; color: var(--text-secondary); }
+.cancel-btn { background: none; border: 1px solid var(--border-subtle); padding: 6px 14px; border-radius: var(--radius-sm); cursor: pointer; font-size: 13px; color: var(--text-secondary); }
+
+.detail-tags { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0; }
+
+.tag-editor-section { margin-top: 16px; padding: 12px; background: rgba(99,102,241,0.04); border: 1px solid rgba(99,102,241,0.15); border-radius: var(--radius-md); }
+.tag-editor-section h4 { margin: 0 0 8px; font-size: 13px; color: var(--text-secondary); }
+
+.lang-badge { font-size: 10px; padding: 1px 6px; border-radius: 99px; font-weight: 600; text-transform: uppercase; letter-spacing: 0.5px; margin-left: 4px; vertical-align: middle; }
+.lang-english { background: rgba(59,130,246,0.1); color: #3b82f6; }
+.lang-tamil { background: rgba(139,92,246,0.1); color: #8b5cf6; }
+.lang-tanglish { background: rgba(245,158,11,0.1); color: #f59e0b; }

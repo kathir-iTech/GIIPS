@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Search, Filter, Clock, User, Shield, FileText } from 'lucide-react';
+import { Search, Filter, Clock, User, Shield, FileText, Download } from 'lucide-react';
 import './Admin.css';
 
 interface AuditLog {
@@ -51,6 +51,18 @@ const AuditLogs = () => {
     return matchesSearch && matchesRole && matchesStatus;
   });
 
+  const exportAuditCsv = () => {
+    const headers = ['Timestamp', 'User', 'Role', 'Action', 'Target', 'Status'];
+    const rows = filteredLogs.map(l => [
+      l.timestamp, l.user || '', l.role || '', l.action, l.target || '', l.status
+    ]);
+    const csv = [headers, ...rows].map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\n');
+    const blob = new Blob(['\ufeff' + csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a'); a.href = url; a.download = `audit-log-export-${new Date().toISOString().slice(0, 10)}.csv`;
+    document.body.appendChild(a); a.click(); document.body.removeChild(a); URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="admin-page">
       <div className="admin-header">
@@ -81,6 +93,9 @@ const AuditLogs = () => {
             <option value="failed">{t('auditLogs.failed')}</option>
           </select>
         </div>
+        <button className="export-csv-btn" onClick={exportAuditCsv}>
+          <Download size={14} /> Export CSV
+        </button>
       </div>
 
       <div className="table-container">

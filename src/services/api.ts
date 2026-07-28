@@ -211,6 +211,22 @@ export const api = {
     return response.json();
   },
 
+  getWardTrend: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/executive/ward-trend`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+  getAnomalies: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/executive/anomalies`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+  getDepartmentSlaReport: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/admin/department-sla-report`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   getOfficerPerformance: async (): Promise<any[]> => {
     const response = await fetch(`${BASE_URL}/admin/officer-performance`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
@@ -510,6 +526,15 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+  updateIncidentNote: async (incidentId: string, note: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/incidents/${incidentId}/note`, {
+      ...FETCH_DEFAULTS, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ note }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 
   verifyResolution: async (incidentId: string, code: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/verify-resolution`, {
@@ -539,6 +564,13 @@ export const api = {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(data),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+  withdrawComplaint: async (complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/withdraw`, {
+      ...FETCH_DEFAULTS, method: 'POST',
     });
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
@@ -578,6 +610,26 @@ export const api = {
       method: 'PATCH',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ notify_status_updates }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  updateComplaintTags: async (complaintId: string, tags: string[]): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/tags`, {
+      ...FETCH_DEFAULTS, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ tags }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  updateAvailability: async (availability: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/profile/availability`, {
+      ...FETCH_DEFAULTS, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ availability }),
     });
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();

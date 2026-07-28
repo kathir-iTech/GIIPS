@@ -405,6 +405,9 @@
 .comparison-table .perf-ok { color: #f59e0b; font-weight: 600; }
 .comparison-table .perf-slow { color: #dc2626; font-weight: 600; }
 
+.sla-green-text { color: #16a34a; font-weight: 600; }
+.sla-red-text { color: #dc2626; font-weight: 600; }
+
 @media (max-width: 480px) {
   .stats-cards { grid-template-columns: 1fr; }
 }

@@ -289,6 +289,7 @@ class User(Base):
     last_login = Column(DateTime, nullable=True)
     status = Column(String, default="active", nullable=False)
     notify_status_updates = Column(Boolean, default=True, nullable=False)
+    availability = Column(String, default="available", nullable=False)
 
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""
@@ -319,6 +320,13 @@ class Incident(Base):
 
     # Resolution note — officer's comment when marking resolved
     resolution_note = Column(Text, nullable=True)
+
+    # Resolution photo
+    resolution_photo_path = Column(String, nullable=True)
+
+    # Private officer notes
+    private_note = Column(Text, nullable=True)
+    private_note_updated_at = Column(DateTime, nullable=True)
 
     # Citizen appeal fields
     appealed = Column(Boolean, default=False, nullable=False)
@@ -362,6 +370,16 @@ class Complaint(Base):
 
     # Citizen satisfaction rating (1-5, set once after resolution verification)
     citizen_rating = Column(Integer, nullable=True)
+
+    # Tags (JSON array stored as string, max 3)
+    tags = Column(Text, nullable=True)
+
+    # Complaint language detection
+    complaint_language = Column(String, nullable=True)
+
+    # Complexity score fields
+    complexity_score = Column(Float, nullable=True)
+    complexity_label = Column(String, nullable=True)
 
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")

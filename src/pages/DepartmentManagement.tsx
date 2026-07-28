@@ -36,11 +36,20 @@ const DepartmentManagement = () => {
   const [sortAsc, setSortAsc] = useState(false);
   const [officerPerf, setOfficerPerf] = useState<OfficerPerf[]>([]);
   const [perfLoading, setPerfLoading] = useState(false);
+  const [slaReport, setSlaReport] = useState<any[]>([]);
+  const [slaLoading, setSlaLoading] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
     fetchOfficerPerformance();
+    fetchSlaReport();
   }, []);
+
+  const fetchSlaReport = async () => {
+    setSlaLoading(true);
+    try { setSlaReport(await api.getDepartmentSlaReport()); } catch {}
+    setSlaLoading(false);
+  };
 
   const fetchOfficerPerformance = async () => {
     setPerfLoading(true);
@@ -224,6 +233,32 @@ const DepartmentManagement = () => {
                       {o.avg_days_to_resolve.toFixed(1)}d
                     </td>
                     <td>{o.total_resolved}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      <div className="comparison-section">
+        <h2 className="comparison-title">Department SLA Report</h2>
+        {slaLoading ? <div className="loading">Loading...</div> : (
+          <div className="comparison-table-wrapper">
+            <table className="comparison-table">
+              <thead>
+                <tr>
+                  <th>Department</th><th>Open</th><th>Within SLA</th><th>Breached SLA</th><th>Avg Breach (days)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slaReport.map((s: any) => (
+                  <tr key={s.department}>
+                    <td className="dept-name">{t(getDeptI18nKey(s.department))}</td>
+                    <td>{s.total_open}</td>
+                    <td className="sla-green-text">{s.within_sla}</td>
+                    <td className={s.breached_sla > 0 ? 'sla-red-text' : ''}>{s.breached_sla}</td>
+                    <td>{s.avg_breach_duration_days ? s.avg_breach_duration_days.toFixed(1) + 'd' : '—'}</td>
                   </tr>
                 ))}
               </tbody>

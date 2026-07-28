@@ -44,6 +44,9 @@ const IncidentFeed = () => {
   const [updateMessage, setUpdateMessage] = useState('');
   const [updateLoading, setUpdateLoading] = useState(false);
   const [updateResult, setUpdateResult] = useState<{ success: boolean; message: string } | null>(null);
+  const [slaTick, setSlaTick] = useState(0);
+  const [noteText, setNoteText] = useState<Record<string, string>>({});
+  const [noteSaving, setNoteSaving] = useState<Record<string, boolean>>({});
 
   const handlePostUpdate = useCallback(async (incidentId: string) => {
     if (!updateMessage.trim()) return;
@@ -172,6 +175,24 @@ const IncidentFeed = () => {
     const interval = setInterval(() => fetchWithCancel(false), 30000);
     return () => { cancelled = true; clearInterval(interval); };
   }, [fetchIncidents]);
+
+  useEffect(() => {
+    const timer = setInterval(() => setSlaTick(t => t + 1), 60000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const computeSla = (incident: any) => {
+    if (!['open', 'in-progress'].includes(incident.status)) return null;
+    const created = new Date(incident.status_changed_at || incident.created_at).getTime();
+    const zone = getCoimbatoreZone(incident.ward);
+    const deadline = created + (zone ? 120 : 48) * 60 * 60 * 1000;
+    const remaining = deadline - Date.now();
+    if (remaining <= 0) return { text: 'EXPIRED', cls: 'sla-expired' };
+    const hours = Math.floor(remaining / 3600000);
+    const mins = Math.floor((remaining % 3600000) / 60000);
+    const cls = hours > 24 ? 'sla-green' : hours > 12 ? 'sla-amber' : 'sla-red';
+    return { text: `${hours}h ${mins}m`, cls };
+  };
 
   useDashboardSocket({
     onEvent: () => { fetchIncidents(false); },
@@ -348,6 +369,7 @@ const IncidentFeed = () => {
                   {t('incidents.colScore')} {sortField === 'priority_score' && (sortDirection === 'asc' ? <ChevronUp size={14} /> : <ChevronDown size={14} />)}
                 </th>
                 <th>{t('incidents.colPriority')}</th>
+                <th>SLA</th>
                 <th className="action-col">{t('incidents.colRecommendedAction')}</th>
               </tr>
             </thead>
@@ -374,13 +396,14 @@ const IncidentFeed = () => {
                     <td className="days-cell"><AgingBadge daysOpen={incident.days_open} /></td>
                     <td className="score-cell"><span className="score-badge">{incident.priority_score}</span></td>
                     <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || t('common.priority.low')}</span></td>
+                    <td className={`sla-cell ${(computeSla(incident)?.cls || '')}`}>{computeSla(incident)?.text || '—'}</td>
                     <td className="action-cell" title={incident.recommended_action || ''}>{incident.recommended_action}</td>
                   </tr>
                 ))
               )}
               {expandedId && pagedIncidents.map(incident => expandedId === incident.id && (
                 <tr key={`expanded-${incident.id}`} className="expanded-row">
-                  <td colSpan={11}>
+                  <td colSpan={12}>
                     <div className="expanded-content">
                       <div className="expanded-left">
                         <div className="detail-block">
@@ -433,6 +456,14 @@ const IncidentFeed = () => {
                                 <span className="complaint-id">{c.complaint_number}</span>
                                 <span className="complaint-date">{c.date_received}</span>
                                 <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{((c.similarity_score || 0) * 100).toFixed(0)}%</span></div>
+                                {c.complexity_label && (
+                                  <span className={`complexity-badge complexity-${c.complexity_label}`}>
+                                    {c.complexity_label}
+                                  </span>
+                                )}
+                                {c.complaint_language && (
+                                  <span className={`lang-badge lang-${c.complaint_language}`}>{c.complaint_language}</span>
+                                )}
                                 {c.photo_duplicate_flag && (
                                   <span className="photo-dup-badge" title={c.photo_duplicate_flag === 'reused_image' ? t('complaintDetail.photoDuplicate.reusedImage') : t('complaintDetail.photoDuplicate.possibleDuplicateSubmission')}>
                                     {c.photo_duplicate_flag === 'reused_image' ? '🔄' : '📷'}
@@ -446,6 +477,29 @@ const IncidentFeed = () => {
                           {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">{t('incidents.moreComplaints', { count: incident.complaints.length - 5 })}</div>}
                         </div>
                       </div>
+                      {(user?.role === 'Officer' || user?.role === 'Executive') && (
+                        <div className="private-notes-section">
+                          <h4>Private Notes</h4>
+                          <textarea
+                            placeholder="Add internal notes..."
+                            value={noteText[incident.id] || (incident as any).private_note || ''}
+                            onChange={e => setNoteText(prev => ({ ...prev, [incident.id]: e.target.value }))}
+                          />
+                          <button
+                            className="save-note-btn"
+                            onClick={async () => {
+                              setNoteSaving(prev => ({ ...prev, [incident.id]: true }));
+                              try {
+                                await api.updateIncidentNote(incident.id, noteText[incident.id] || '');
+                              } catch (e) {}
+                              setNoteSaving(prev => ({ ...prev, [incident.id]: false }));
+                            }}
+                            disabled={noteSaving[incident.id]}
+                          >
+                            {noteSaving[incident.id] ? 'Saving...' : 'Save Note'}
+                          </button>
+                        </div>
+                      )}
                     </div>
                   </td>
                 </tr>

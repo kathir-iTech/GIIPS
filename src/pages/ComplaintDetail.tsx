@@ -63,6 +63,11 @@ const ComplaintDetailPage = () => {
   const [nearbyComplaints, setNearbyComplaints] = useState<any[]>([]);
   const [nearbyLoading, setNearbyLoading] = useState(false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [withdrawLoading, setWithdrawLoading] = useState(false);
+  const [showWithdrawConfirm, setShowWithdrawConfirm] = useState(false);
+  const [tagEditorOpen, setTagEditorOpen] = useState(false);
+  const [tagEditInput, setTagEditInput] = useState('');
+  const [tagEditTags, setTagEditTags] = useState<string[]>([]);
 
   const fetchDetail = useCallback(async (showLoader = false) => {
     if (!id) return;
@@ -191,6 +196,17 @@ const ComplaintDetailPage = () => {
     }
   };
 
+  const handleWithdraw = async () => {
+    if (!id) return;
+    setWithdrawLoading(true);
+    try {
+      await api.withdrawComplaint(id);
+      await fetchDetail(true);
+    } catch {}
+    setWithdrawLoading(false);
+    setShowWithdrawConfirm(false);
+  };
+
   const startEditing = () => {
     if (!data) return;
     setEditDescription(data.description || '');
@@ -302,6 +318,18 @@ const ComplaintDetailPage = () => {
               {data.department && <div className="meta-item"><Building2 size={16} /> <span>{t(getDeptI18nKey(data.department))}</span></div>}
             </div>
 
+            {data.tags && data.tags.length > 0 && (
+              <div className="detail-tags">
+                {data.tags.map((tag: string, i: number) => (
+                  <span key={i} className="tag-badge">{tag}</span>
+                ))}
+              </div>
+            )}
+
+            {data.complaint_language && (
+              <span className={`lang-badge lang-${data.complaint_language}`}>{data.complaint_language}</span>
+            )}
+
             {nearbyComplaints.length > 0 && (
               <div className="nearby-section">
                 <h3><MapPin size={16} /> {t('complaintDetail.nearbyTitle')}</h3>
@@ -332,6 +360,19 @@ const ComplaintDetailPage = () => {
                   <span className="value">{getConfidenceLabel(data.confidence, t)}</span>
                 </div>
               </div>
+              {data.similarity_score != null && (
+                <div className="match-meter-section">
+                  <p className="match-text">
+                    {Math.round(data.similarity_score * 100)}% match to existing report
+                    {data.incident && <> <a href={`/incidents/${data.incident.id}`}>#{data.incident.incident_number}</a></>}
+                  </p>
+                  <div className="match-meter">
+                    <div className="match-meter-fill" style={{ width: `${data.similarity_score * 100}%` }} />
+                  </div>
+                  {data.merge_reason && <p className="match-reason">{data.merge_reason}</p>}
+                </div>
+              )}
+
               {data.merge_reason && data.incident && (
                 <div className="merge-banner">
                   <span className="merge-banner-icon">📋</span>
@@ -376,6 +417,30 @@ const ComplaintDetailPage = () => {
                     </div>
                   )}
                 </div>
+
+                {(user?.role === 'Officer' || user?.role === 'Executive') && (
+                  <div className="tag-editor-section">
+                    <h4>Tags</h4>
+                    <div className="tag-input-area">
+                      {(tagEditTags.length > 0 ? tagEditTags : data.tags || []).map((tag: string, i: number) => (
+                        <span key={i} className="tag-badge">{tag} <span className="tag-remove" onClick={() => setTagEditTags(prev => prev.filter((_, j) => j !== i))}>×</span></span>
+                      ))}
+                      {(tagEditTags.length > 0 ? tagEditTags : data.tags || []).length < 3 && (
+                        <input className="tag-input" placeholder="Add tag..." value={tagEditInput}
+                          onChange={e => setTagEditInput(e.target.value)}
+                          onKeyDown={e => {
+                            if (e.key === 'Enter' && tagEditInput.trim()) {
+                              const updated = [...(tagEditTags.length > 0 ? tagEditTags : data.tags || []), tagEditInput.trim()];
+                              setTagEditTags(updated);
+                              setTagEditInput('');
+                              api.updateComplaintTags(data.id, updated).catch(() => {});
+                            }
+                          }}
+                        />
+                      )}
+                    </div>
+                  </div>
+                )}
 
                 {user?.role === 'Citizen' && data.incident.status === 'pending_verification' && (
                   <div className="verify-section">
@@ -480,6 +545,62 @@ const ComplaintDetailPage = () => {
                     )}
                   </div>
                 )}
+
+                {(data as any).user_id === user?.user_id && ['open', 'pending'].includes(data.incident?.status || '') && (() => {
+                  const age = Date.now() - new Date(data.date_received).getTime();
+                  if (age > 86400000) return null;
+                  return (
+                    <div className="withdraw-section">
+                      {showWithdrawConfirm ? (
+                        <div className="withdraw-confirm">
+                          <p>Are you sure you want to withdraw this complaint?</p>
+                          <button className="withdraw-btn" onClick={handleWithdraw} disabled={withdrawLoading}>
+                            {withdrawLoading ? 'Withdrawing...' : 'Confirm Withdraw'}
+                          </button>
+                          <button className="cancel-btn" onClick={() => setShowWithdrawConfirm(false)}>Cancel</button>
+                        </div>
+                      ) : (
+                        <button className="withdraw-btn" onClick={() => setShowWithdrawConfirm(true)}>Withdraw Complaint</button>
+                      )}
+                    </div>
+                  );
+                })()}
+              </div>
+            )}
+
+            {user?.role === 'Executive' && data.incident && (
+              <div className="escalation-path">
+                <svg viewBox="0 0 600 80" xmlns="http://www.w3.org/2000/svg">
+                  <line x1="50" y1="30" x2="150" y2="30" stroke="#16a34a" strokeWidth="2" />
+                  <circle cx="50" cy="30" r="10" fill="#16a34a" />
+                  <text x="50" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Submitted</text>
+
+                  <line x1="150" y1="30" x2="250" y2="30" stroke="#16a34a" strokeWidth="2" />
+                  <circle cx="150" cy="30" r="10" fill="#16a34a" />
+                  <text x="150" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Classified</text>
+                  <text x="150" y="70" textAnchor="middle" fontSize="9" fill="var(--text-muted)">{data.predicted_category || ''}</text>
+
+                  <line x1="250" y1="30" x2="350" y2="30" stroke={data.incident.status !== 'open' ? '#16a34a' : '#3b82f6'} strokeWidth="2" />
+                  <circle cx="350" cy="30" r="10" fill={data.incident.status !== 'open' ? '#16a34a' : '#3b82f6'} />
+                  <text x="350" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Routed</text>
+                  <text x="350" y="70" textAnchor="middle" fontSize="9" fill="var(--text-muted)">{data.department || ''}</text>
+
+                  {(data.incident as any).escalated && (
+                    <>
+                      <line x1="350" y1="30" x2="450" y2="30" stroke="#ea580c" strokeWidth="2" />
+                      <circle cx="450" cy="30" r="10" fill="#ea580c" />
+                      <text x="450" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Escalated</text>
+                    </>
+                  )}
+
+                  {['resolved','closed'].includes(data.incident.status || '') && (
+                    <>
+                      <line x1={(data.incident as any).escalated ? 450 : 350} y1="30" x2="550" y2="30" stroke="#16a34a" strokeWidth="2" />
+                      <circle cx="550" cy="30" r="10" fill="#16a34a" />
+                      <text x="550" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Resolved</text>
+                    </>
+                  )}
+                </svg>
               </div>
             )}
 

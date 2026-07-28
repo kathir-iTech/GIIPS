@@ -70,12 +70,16 @@ CATEGORY_ROLE_LABEL = {
 }
 
 
-def route_complaint(ward: str, category: str) -> dict:
+def route_complaint(ward: str, category: str, db=None) -> dict:
     """Return the responsible officer for a complaint based on ward + category.
 
     Looks up the CCMC ward directory for the ward-specific contact, then
     enriches with department info.  Falls back to zone-level or department-level
     officers when no ward-specific match exists.
+
+    If `db` is provided, checks the User model for officer availability;
+    officers with availability='on_leave' are skipped and the next
+    available fallback is returned.
     """
     directory = _load_directory()
     ward_contacts = directory.get('ward_contacts', [])
@@ -99,6 +103,13 @@ def route_complaint(ward: str, category: str) -> dict:
         except ImportError:
             pass
 
+    def _is_available(name: str | None) -> bool:
+        if name is None or db is None:
+            return True
+        from database import User
+        user = db.query(User).filter(User.full_name == name, User.role == "Officer").first()
+        return user is None or user.availability != "on_leave"
+
     # ── 1. Find ward-specific contact from ward_contacts ──────────────
     role_key = CATEGORY_ROLE_MAP.get(category, "ae_je")
     officer_name = None
@@ -109,9 +120,11 @@ def route_complaint(ward: str, category: str) -> dict:
         w_ward = wc.get('ward')
         if w_ward == ward_num:
             role_phone_key = role_key + '_phone'
-            officer_name = wc.get(role_key)
-            officer_phone = wc.get(role_phone_key)
-            officer_role = CATEGORY_ROLE_LABEL.get(role_key, role_key)
+            candidate_name = wc.get(role_key)
+            if _is_available(candidate_name):
+                officer_name = candidate_name
+                officer_phone = wc.get(role_phone_key)
+                officer_role = CATEGORY_ROLE_LABEL.get(role_key, role_key)
             if zone is None:
                 zone = wc.get('zone')
             break
@@ -120,17 +133,19 @@ def route_complaint(ward: str, category: str) -> dict:
     if not officer_name and zone and zonal_officers:
         for zo in zonal_officers:
             if zo.get('zone', '').upper() == zone.upper() and 'Assistant Commissioner' in zo.get('designation', ''):
-                officer_name = zo.get('name')
-                officer_phone = zo.get('phone')
-                officer_role = zo.get('designation')
+                if _is_available(zo.get('name')):
+                    officer_name = zo.get('name')
+                    officer_phone = zo.get('phone')
+                    officer_role = zo.get('designation')
                 break
         if not officer_name:
             for zo in zonal_officers:
                 if zo.get('zone', '').upper() == zone.upper():
-                    officer_name = zo.get('name')
-                    officer_phone = zo.get('phone')
-                    officer_role = zo.get('designation')
-                    break
+                    if _is_available(zo.get('name')):
+                        officer_name = zo.get('name')
+                        officer_phone = zo.get('phone')
+                        officer_role = zo.get('designation')
+                        break
 
     # ── 3. Fallback to department-level City Engineer/Health Officer ──
     if not officer_name:
@@ -144,7 +159,7 @@ def route_complaint(ward: str, category: str) -> dict:
         }
         target_dept = ccmc_dept_map.get(dept_slug, "Engineering")
         for o in officer_directory:
-            if o.get('department') == target_dept:
+            if o.get('department') == target_dept and _is_available(o.get('officer_name')):
                 officer_name = o.get('officer_name')
                 officer_phone = o.get('phone')
                 officer_role = o.get('designation')

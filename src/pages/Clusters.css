@@ -1331,6 +1331,16 @@
   }
 }
 
+.merge-section { margin-top: 16px; border-top: 1px solid var(--border-subtle); padding-top: 12px; }
+.merge-section h4 { font-size: 13px; font-weight: 600; color: var(--text-primary); margin: 0 0 8px; }
+.merge-input-row { display: flex; gap: 8px; margin: 8px 0; }
+.merge-input-row input { flex: 1; padding: 6px 10px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); font-size: 13px; background: var(--card-bg); color: var(--text-primary); }
+.merge-input-row button { padding: 6px 14px; background: #3b82f6; color: white; border: none; border-radius: var(--radius-sm); cursor: pointer; font-size: 12px; }
+.merge-input-row button:disabled { opacity: 0.5; cursor: not-allowed; }
+.merge-result { font-size: 13px; padding: 6px 10px; border-radius: var(--radius-sm); margin-top: 4px; }
+.merge-result.success { background: rgba(22,163,74,0.1); color: #16a34a; }
+.merge-result.error { background: rgba(220,38,38,0.1); color: #dc2626; }
+
 @media (max-width: 480px) {
   .workspace-header {
     flex-direction: column;

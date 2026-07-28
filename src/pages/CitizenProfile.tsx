@@ -24,6 +24,7 @@ const CitizenProfile = () => {
   const [form, setForm] = useState({ full_name: '', email: '', phone: '', district: '', ward: '' });
   const [message, setMessage] = useState<string | null>(null);
   const [notifLoading, setNotifLoading] = useState(false);
+  const [userAvailability, setUserAvailability] = useState('available');
 
   useEffect(() => {
     setLoading(true);
@@ -208,6 +209,26 @@ const CitizenProfile = () => {
             </button>
           </div>
         </div>
+
+        {user?.role === 'Officer' && (
+          <div className="profile-card glass-card">
+            <div className="profile-header">
+              <div className="profile-title">
+                <h2>Availability</h2>
+              </div>
+            </div>
+            <div className="avail-toggle-row">
+              <button className={`avail-btn ${userAvailability === 'available' ? 'active-avail' : ''}`}
+                onClick={() => api.updateAvailability('available').then(() => setUserAvailability('available'))}>
+                Available
+              </button>
+              <button className={`avail-btn ${userAvailability === 'on_leave' ? 'active-leave' : ''}`}
+                onClick={() => api.updateAvailability('on_leave').then(() => setUserAvailability('on_leave'))}>
+                On Leave
+              </button>
+            </div>
+          </div>
+        )}
 
         <div className="info-card glass-card">
           <h3>{t('profile.aboutTitle')}</h3>

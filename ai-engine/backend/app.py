@@ -290,6 +290,25 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] notify_status_updates column already exists, skipping")
 
+        # Migration: add new columns for features
+        new_cols = [
+            "ALTER TABLE incidents ADD COLUMN resolution_photo_path VARCHAR",
+            "ALTER TABLE incidents ADD COLUMN private_note TEXT",
+            "ALTER TABLE incidents ADD COLUMN private_note_updated_at TIMESTAMP",
+            "ALTER TABLE complaints ADD COLUMN tags TEXT",
+            "ALTER TABLE complaints ADD COLUMN complaint_language VARCHAR",
+            "ALTER TABLE complaints ADD COLUMN complexity_score FLOAT",
+            "ALTER TABLE complaints ADD COLUMN complexity_label VARCHAR",
+            "ALTER TABLE users ADD COLUMN availability VARCHAR DEFAULT 'available'",
+        ]
+        for col_ddl in new_cols:
+            try:
+                with engine.connect() as conn:
+                    conn.execute(text(col_ddl))
+                    conn.commit()
+            except Exception:
+                pass
+
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
 

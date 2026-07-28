@@ -28,6 +28,7 @@ from models import (
     CopilotChatRequest,
     CopilotChatResponse,
     MergeIncidentsRequest,
+    MergeSingleRequest,
     NotificationResponse,
     UpdateStatusRequest,
     IncidentUpdateRequest,
@@ -35,6 +36,10 @@ from models import (
     BulkUpdateRequest,
     UpdateComplaintRequest,
     NotificationPrefsRequest,
+    NoteUpdateRequest,
+    TagsUpdateRequest,
+    AvailabilityUpdateRequest,
+    WithdrawRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status
@@ -245,6 +250,74 @@ async def get_ward_health(db: Session = Depends(get_db)):
 async def get_dept_workload(db: Session = Depends(get_db)):
     service = DecisionService()
     return await service.get_dept_workload(db)
+
+
+@executive_router.get("/ward-trend")
+async def get_ward_trend(db: Session = Depends(get_db)):
+    """Get complaint volume per ward over the last 7 days, grouped by date."""
+    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+    rows = db.query(
+        Complaint.ward,
+        func.date(Complaint.created_at).label("dt"),
+        func.count(Complaint.id),
+    ).filter(
+        Complaint.ward.isnot(None), Complaint.ward != "",
+        Complaint.created_at >= seven_days_ago,
+    ).group_by(Complaint.ward, "dt").order_by(Complaint.ward, "dt").all()
+
+    trend_by_ward: dict[str, list] = {}
+    for ward, dt, cnt in rows:
+        date_str = dt.isoformat() if hasattr(dt, 'isoformat') else str(dt)
+        if ward not in trend_by_ward:
+            trend_by_ward[ward] = []
+        trend_by_ward[ward].append({"date": date_str, "count": cnt})
+    return [{"ward": ward, "daily_counts": counts} for ward, counts in trend_by_ward.items()]
+
+
+@executive_router.get("/anomalies")
+async def get_anomalies(db: Session = Depends(get_db)):
+    """Detect statistical anomalies in complaint volume by ward+category using mean+stddev."""
+    from collections import defaultdict
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    today_start = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
+
+    rows = db.query(
+        Complaint.ward,
+        Complaint.predicted_category,
+        func.date(Complaint.created_at).label("dt"),
+        func.count(Complaint.id),
+    ).filter(
+        Complaint.ward.isnot(None), Complaint.ward != "",
+        Complaint.predicted_category.isnot(None),
+        Complaint.created_at >= thirty_days_ago,
+    ).group_by(Complaint.ward, Complaint.predicted_category, "dt").all()
+
+    data: dict = defaultdict(lambda: defaultdict(list))
+    for ward, cat, dt, cnt in rows:
+        data[(ward, cat)][str(dt)].append(cnt)
+
+    anomalies = []
+    for (ward, cat), daily_map in data.items():
+        counts = [sum(v) for v in daily_map.values()]
+        if len(counts) < 2:
+            continue
+        mean = sum(counts) / len(counts)
+        variance = sum((x - mean) ** 2 for x in counts) / len(counts)
+        stddev = variance ** 0.5
+        today_counts = [c for d, c in daily_map.items() if d >= str(today_start.date())]
+        today_count = sum(today_counts) if today_counts else 0
+        if today_count > mean + 2 * stddev:
+            severity = "high" if today_count > mean + 3 * stddev else "medium"
+            anomalies.append({
+                "ward": ward,
+                "category": cat,
+                "today_count": today_count,
+                "mean": round(mean, 2),
+                "stddev": round(stddev, 2),
+                "severity": severity,
+            })
+    return anomalies
+
 
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
@@ -660,13 +733,66 @@ async def rate_complaint(complaint_id: str, body: RateComplaintRequest, db_user:
     return {"message": "Rating submitted", "rating": body.rating}
 
 
+@complaint_router.post("/{complaint_id}/withdraw")
+async def withdraw_complaint(complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Withdraw a complaint by its owner. Only possible within 24h and if incident is open/pending."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found or not owned by you")
+    if complaint.created_at and (datetime.utcnow() - complaint.created_at) > timedelta(hours=24):
+        raise HTTPException(status_code=400, detail="Complaint can only be withdrawn within 24 hours of submission")
+    incident = db.query(Incident).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
+    if not incident or incident.status not in ("open", "pending"):
+        raise HTTPException(status_code=400, detail="Incident must be in open or pending status to withdraw")
+    incident.status = "withdrawn"
+    incident.status_changed_at = datetime.utcnow()
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "complaint_withdraw",
+                     complaint.id, "success")
+    return {"success": True}
+
+
+@complaint_router.patch("/{complaint_id}/tags")
+async def update_complaint_tags(complaint_id: str, body: TagsUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update tags on a complaint (Officer/Executive or complaint owner, max 3)."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    if db_user.role not in ("Officer", "Executive") and complaint.user_id != db_user.id:
+        raise HTTPException(status_code=403, detail="Not authorized to update tags on this complaint")
+    if len(body.tags) > 3:
+        raise HTTPException(status_code=400, detail="Maximum of 3 tags allowed")
+    complaint.tags = json.dumps(body.tags)
+    db.commit()
+    return {"tags": json.loads(complaint.tags)}
+
+
 # === Classification Routes ===
 
 @classify_router.post("", response_model=ClassifyResponse)
 async def classify_single(request: ClassifyRequest):
-    """Classify a single complaint into a category."""
+    """Classify a single complaint into a category with complexity and language detection."""
+    import re
+    from duplicate_detection.engine import _is_tanglish_text
     service = ClassificationService()
-    return await service.classify(request)
+    result = await service.classify(request)
+    description = request.text or ""
+
+    desc_len_score = min(len(description) / 500, 1.0) * 0.3
+    sent_count_score = min(len(re.split('[.!?]', description)) / 10, 1.0) * 0.25
+    category_weights = {"Roads": 0.25, "Water Supply": 0.3, "Waste Management": 0.2, "Public Health": 0.35, "Street Lighting": 0.2, "Electricity": 0.3, "Sanitation": 0.25}
+    total = desc_len_score + sent_count_score + category_weights.get(result.predicted_category, 0.2)
+    result.complexity_label = "simple" if total < 0.4 else "moderate" if total < 0.7 else "complex"
+    result.complexity_score = round(total, 4)
+
+    if any('\u0B80' <= c <= '\u0BFF' for c in description):
+        result.complaint_language = "tamil"
+    elif _is_tanglish_text(description):
+        result.complaint_language = "tamil"
+    else:
+        result.complaint_language = "english"
+
+    return result
 
 
 @classify_router.post("/batch")
@@ -1315,6 +1441,43 @@ async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_c
     return {"message": f"Incidents merged into {target.incident_number}", "incident_id": target.id}
 
 
+@incident_router.post("/{incident_id}/merge")
+async def merge_single_incident(incident_id: str, body: MergeSingleRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Merge a source incident into a target incident (Officer/Executive only)."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can merge incidents")
+
+    source = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    target = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == body.target_incident_id).first()
+    if not source or not target:
+        raise HTTPException(status_code=404, detail="Source or target incident not found")
+    if source.category != target.category:
+        raise HTTPException(status_code=400, detail="Incidents must belong to the same category to merge")
+    if source.id == target.id:
+        raise HTTPException(status_code=400, detail="Cannot merge an incident into itself")
+
+    for c in source.complaints:
+        c.incident_id = target.id
+        c.merge_reason = f"Merged from {source.incident_number} into {target.incident_number} by officer action"
+
+    db.query(PriorityHistory).filter(PriorityHistory.incident_id == source.id).delete()
+    db.delete(source)
+    db.flush()
+
+    target.cluster_size = db.query(Complaint).filter(Complaint.incident_id == target.id).count()
+
+    db.commit()
+
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_merge",
+                     target.id, "success",
+                     f"Merged {source.incident_number} into {target.incident_number}")
+
+    return {
+        "id": target.id, "incident_number": target.incident_number, "category": target.category,
+        "cluster_size": target.cluster_size, "status": target.status
+    }
+
+
 @incident_router.post("/{incident_id}/split/{complaint_id}")
 async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Remove a complaint from an incident and create a new standalone incident for it."""
@@ -1592,6 +1755,48 @@ async def post_incident_update(incident_id: str, body: IncidentUpdateRequest, db
         "update_id": update.id,
         "created_at": update.created_at.isoformat(),
     }
+
+
+@incident_router.patch("/{incident_id}/note")
+async def update_private_note(incident_id: str, body: NoteUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update the private note on an incident (Officer/Executive only)."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can add private notes")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    incident.private_note = body.note
+    incident.private_note_updated_at = datetime.utcnow()
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "private_note_update",
+                     incident.id, "success")
+    return {"success": True}
+
+
+@incident_router.post("/{incident_id}/resolution-photo")
+async def upload_resolution_photo(incident_id: str, file: UploadFile = File(...), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Upload a resolution photo for an incident (Officer/Executive only)."""
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Only officers and executives can upload resolution photos")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    data = await file.read()
+    err = validate_file(file.filename or "upload", file.content_type or "", len(data))
+    if err:
+        raise HTTPException(status_code=400, detail=err)
+    uploads_dir = os.path.join(os.path.dirname(__file__), "uploads")
+    os.makedirs(uploads_dir, exist_ok=True)
+    ext = os.path.splitext(file.filename or "photo.jpg")[1] or ".jpg"
+    saved_name = f"resolution_{incident_id}_{uuid.uuid4().hex[:8]}{ext}"
+    saved_path = os.path.join(uploads_dir, saved_name)
+    with open(saved_path, "wb") as f:
+        f.write(data)
+    incident.resolution_photo_path = saved_path
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "resolution_photo_upload",
+                     incident.id, "success")
+    return {"resolution_photo_url": f"/incidents/{incident_id}/resolution-photo"}
 
 
 # === Escalation & Ward-Level Routes ===
@@ -2563,6 +2768,62 @@ async def debug_sla_diagnostics(db: Session = Depends(get_db)):
         "ward_cutoff_utc": ward_cutoff.isoformat(),
         "now_utc": now.isoformat(),
     }
+
+
+@incident_router.get("/{incident_id}/resolution-photo")
+async def get_resolution_photo(incident_id: str, db: Session = Depends(get_db)):
+    """Get the resolution photo for an incident (public, no auth)."""
+    from fastapi.responses import FileResponse
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident or not incident.resolution_photo_path:
+        raise HTTPException(status_code=404, detail="Resolution photo not found")
+    if not os.path.exists(incident.resolution_photo_path):
+        raise HTTPException(status_code=404, detail="Resolution photo file not found")
+    return FileResponse(incident.resolution_photo_path)
+
+
+@admin_router.get("/department-sla-report")
+async def get_department_sla_report(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get SLA report per department."""
+    from collections import defaultdict
+    incidents = db.query(Incident).filter(Incident.status.in_(["open", "in-progress"])).all()
+    dept_data: dict = defaultdict(lambda: {"total_open": 0, "within_sla": 0, "breached_sla": 0, "breach_durations": []})
+    for inc in incidents:
+        dept = get_department(inc.category or "")
+        if not dept:
+            continue
+        dept_data[dept]["total_open"] += 1
+        days = inc.days_open or 0
+        sla_limit = 2 if inc.ward and inc.ward != "" else 5
+        if days <= sla_limit:
+            dept_data[dept]["within_sla"] += 1
+        else:
+            dept_data[dept]["breached_sla"] += 1
+            dept_data[dept]["breach_durations"].append(days)
+    result = []
+    for dept, data in dept_data.items():
+        avg_breach = round(sum(data["breach_durations"]) / len(data["breach_durations"]), 2) if data["breach_durations"] else 0
+        result.append({
+            "department": dept,
+            "total_open": data["total_open"],
+            "within_sla": data["within_sla"],
+            "breached_sla": data["breached_sla"],
+            "avg_breach_duration_days": avg_breach,
+        })
+    return result
+
+
+@auth_router.patch("/profile/availability")
+async def update_availability(body: AvailabilityUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Toggle officer availability (Officer only)."""
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Only officers can update availability")
+    if body.availability not in ("available", "on_leave"):
+        raise HTTPException(status_code=400, detail="Availability must be 'available' or 'on_leave'")
+    db_user.availability = body.availability
+    db.commit()
+    db.refresh(db_user)
+    return {"id": db_user.id, "full_name": db_user.full_name, "availability": db_user.availability}
 
 
 # === Public Endpoints (no auth required) ===

@@ -136,6 +136,12 @@ const CitizenPortal = () => {
   const [duplicateWarnings, setDuplicateWarnings] = useState<any[]>([]);
   const [dupCheckDone, setDupCheckDone] = useState(false);
   const [dupChecking, setDupChecking] = useState(false);
+  const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
+  const [suggestLoading, setSuggestLoading] = useState(false);
+  const [catSuggestAccepted, setCatSuggestAccepted] = useState(false);
+  const [tags, setTags] = useState<string[]>([]);
+  const [tagInput, setTagInput] = useState('');
+  const classifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const complaintIdRef = useRef<string | null>(null);
@@ -155,6 +161,33 @@ const CitizenPortal = () => {
   useEffect(() => {
     return () => stopPolling();
   }, [stopPolling]);
+
+  useEffect(() => {
+    if (catSuggestAccepted) return;
+    if (!formData.description || formData.description.trim().length < 20) {
+      setSuggestedCategory(null);
+      return;
+    }
+    if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current);
+    classifyTimerRef.current = setTimeout(async () => {
+      setSuggestLoading(true);
+      try {
+        const res = await fetch('http://localhost:8000/classify', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text: formData.description }),
+        });
+        if (!res.ok) return;
+        const { predicted_category } = await res.json();
+        if (predicted_category) setSuggestedCategory(predicted_category);
+      } catch {
+        // non-blocking
+      } finally {
+        setSuggestLoading(false);
+      }
+    }, 500);
+    return () => { if (classifyTimerRef.current) clearTimeout(classifyTimerRef.current); };
+  }, [formData.description, catSuggestAccepted]);
 
   const ward = user?.ward || '';
   useEffect(() => {
@@ -209,7 +242,11 @@ const CitizenPortal = () => {
     setProcessingStatus('submitting');
     setPhotoUploadStatus('idle');
     try {
-      const response = await api.submitComplaint(formData);
+      const response = await api.submitComplaint({
+        ...formData,
+        ...(catSuggestAccepted && suggestedCategory ? { predicted_category: suggestedCategory } : {}),
+        ...(tags.length > 0 ? { tags } : {}),
+      });
       if (response.statusUrl) {
         complaintIdRef.current = response.complaintId;
         setProcessingStatus('pending');
@@ -409,6 +446,13 @@ const CitizenPortal = () => {
                   Not sure which category applies? See the <Link to="/categories">Category Guide</Link>
                 </Trans>
               </div>
+              {suggestLoading && <div className="cat-suggest">Analyzing description...</div>}
+              {suggestedCategory && !catSuggestAccepted && (
+                <div className="cat-suggest">
+                  Suggested category: <strong>{suggestedCategory}</strong>
+                  <span className="accept-link" onClick={() => setCatSuggestAccepted(true)}>Accept</span>
+                </div>
+              )}
             </div>
           )}
           {step === 3 && (
@@ -487,6 +531,17 @@ const CitizenPortal = () => {
                   <div style={{ gridColumn: '1 / -1' }}>
                     <strong>{t('citizenPortal.reviewLocationPinned')}</strong> {t('common.yes')}
                   </div>
+                )}
+              </div>
+              <div className="tag-input-area">
+                {tags.map((tag, i) => (
+                  <span key={i} className="tag-badge">{tag} <span className="tag-remove" onClick={() => setTags(prev => prev.filter((_, j) => j !== i))}>×</span></span>
+                ))}
+                {tags.length < 3 && (
+                  <input className="tag-input" placeholder="Add tag..." value={tagInput}
+                    onChange={e => setTagInput(e.target.value)}
+                    onKeyDown={e => { if (e.key === 'Enter' && tagInput.trim()) { setTags(prev => [...prev, tagInput.trim()]); setTagInput(''); } }}
+                  />
                 )}
               </div>
             </div>

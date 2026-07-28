@@ -21,6 +21,9 @@ class ClassifyResponse(BaseModel):
     reason: str
     supporting_factors: List[str]
     method: str = Field("ml_model", description="Classification method used (ml_model, heuristic_fallback, tamil_keyword_fallback)")
+    complexity_score: Optional[float] = Field(None, description="Computed complexity score")
+    complexity_label: Optional[str] = Field(None, description="Complexity level (simple/moderate/complex)")
+    complaint_language: Optional[str] = Field(None, description="Detected language (english/tamil)")
 
 
 class ComplaintModel(BaseModel):
@@ -277,3 +280,18 @@ class UpdateComplaintRequest(BaseModel):
 
 class NotificationPrefsRequest(BaseModel):
     notify_status_updates: bool = Field(..., description="Opt in/out of status update notifications")
+
+class MergeSingleRequest(BaseModel):
+    target_incident_id: str = Field(..., description="Target incident ID to merge into")
+
+class NoteUpdateRequest(BaseModel):
+    note: str = Field(..., min_length=1, max_length=5000, description="Private note")
+
+class TagsUpdateRequest(BaseModel):
+    tags: List[str] = Field(..., description="List of tags")
+
+class AvailabilityUpdateRequest(BaseModel):
+    availability: str = Field(..., description="Availability status")
+
+class WithdrawRequest(BaseModel):
+    reason: str = Field(..., min_length=1, max_length=2000, description="Withdrawal reason")

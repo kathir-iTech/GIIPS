@@ -35,6 +35,7 @@ const SystemHealth = lazy(() => import('./pages/SystemHealth'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const LocalAuthorityDashboard = lazy(() => import('./pages/LocalAuthorityDashboard'));
 const OversightDashboard = lazy(() => import('./pages/OversightDashboard'));
+const Notifications = lazy(() => import('./pages/Notifications'));
 
 function LoadingScreen() {
   return (
@@ -186,6 +187,7 @@ function AnimatedRoutes() {
             </RoleGuard>
           
         } />
+        <Route path="/notifications" element={<Notifications />} />
         <Route path="/methodology" element={
           
             <Methodology />

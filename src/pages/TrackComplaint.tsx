@@ -177,6 +177,21 @@ const TrackComplaint = () => {
               </div>
             )}
 
+            {data.resolution_photo_url && (
+              <div className="track-resolution-photo">
+                <h4>Resolution Photo</h4>
+                <img src={data.resolution_photo_url} alt="Resolution proof" className="track-photo" />
+                <p className="track-photo-caption">Resolution photo (proof of fix)</p>
+              </div>
+            )}
+            {data.incident?.resolution_photo_path && (
+              <div className="track-resolution-photo">
+                <h4>Resolution Photo</h4>
+                <img src={`http://localhost:8000/incidents/${data.incident_id || data.complaintId}/resolution-photo`} alt="Resolution proof" className="track-photo" />
+                <p className="track-photo-caption">Resolution photo (proof of fix)</p>
+              </div>
+            )}
+
             <div className="track-timeline">
               <h3>{t('track.timelineTitle')}</h3>
               {data.timeline?.map((item: any, idx: number) => {
