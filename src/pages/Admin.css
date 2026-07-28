@@ -389,6 +389,9 @@
 .star-filled { color: #f59e0b; }
 .rating-count { font-size: 11px; color: var(--text-muted); font-weight: 400; }
 
+.histogram-section { margin-top: 2.5rem; }
+.histogram-section .comparison-title { margin-bottom: 0; }
+
 .comparison-section { margin-top: 2.5rem; }
 .comparison-title { font-size: 1.1rem; font-weight: 600; color: var(--text-primary); margin: 0 0 1rem 0; }
 .comparison-table-wrapper { overflow-x: auto; }
@@ -407,6 +410,19 @@
 
 .sla-green-text { color: #16a34a; font-weight: 600; }
 .sla-red-text { color: #dc2626; font-weight: 600; }
+.skill-badge { display: inline-block; padding: 1px 8px; border-radius: 10px; background: var(--accent-subtle); font-size: 0.7rem; margin-right: 4px; }
+
+.benchmark-badge { display: inline-block; font-size: 0.7rem; padding: 1px 6px; border-radius: 8px; margin-left: 6px; font-weight: 600; }
+.benchmark-good { background: #dcfce7; color: #16a34a; }
+.benchmark-bad { background: #fee2e2; color: #dc2626; }
+.dark .benchmark-good { background: #052e16; }
+.dark .benchmark-bad { background: #450a0a; }
+
+.heatmap-section { margin-top: 2rem; }
+.heatmap-grid { overflow-x: auto; }
+
+.heatmap-controls { margin-bottom: 1rem; }
+.heatmap-controls select { padding: 0.5rem; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: var(--bg-card); color: var(--text-primary); font-size: 0.85rem; }
 
 @media (max-width: 480px) {
   .stats-cards { grid-template-columns: 1fr; }

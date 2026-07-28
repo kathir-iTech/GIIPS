@@ -290,6 +290,33 @@ async def lifespan(app: FastAPI):
         except Exception:
             logger.info("[MIGRATION] notify_status_updates column already exists, skipping")
 
+        # Migration: create incident_comments table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS incident_comments (id VARCHAR PRIMARY KEY, incident_id VARCHAR, user_id VARCHAR, user_name VARCHAR, role VARCHAR, message TEXT, created_at TIMESTAMP)"))
+                conn.commit()
+            logger.info("[MIGRATION] Created incident_comments table")
+        except Exception as e:
+            logger.info("[MIGRATION] incident_comments table already exists, skipping: %s", e)
+
+        # Migration: create kpi_targets table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("CREATE TABLE IF NOT EXISTS kpi_targets (id VARCHAR PRIMARY KEY, metric_name VARCHAR, target_value FLOAT, current_value FLOAT, set_by VARCHAR, set_at TIMESTAMP)"))
+                conn.commit()
+            logger.info("[MIGRATION] Created kpi_targets table")
+        except Exception as e:
+            logger.info("[MIGRATION] kpi_targets table already exists, skipping: %s", e)
+
+        # Migration: add original_category column to incidents table
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN original_category VARCHAR"))
+                conn.commit()
+            logger.info("[MIGRATION] Added original_category column to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] original_category column already exists, skipping")
+
         # Migration: add new columns for features
         new_cols = [
             "ALTER TABLE incidents ADD COLUMN resolution_photo_path VARCHAR",
@@ -300,6 +327,8 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE complaints ADD COLUMN complexity_score FLOAT",
             "ALTER TABLE complaints ADD COLUMN complexity_label VARCHAR",
             "ALTER TABLE users ADD COLUMN availability VARCHAR DEFAULT 'available'",
+            "ALTER TABLE users ADD COLUMN skills VARCHAR",
+            "ALTER TABLE incidents ADD COLUMN resolution_quality_score FLOAT",
         ]
         for col_ddl in new_cols:
             try:
@@ -357,12 +386,94 @@ async def lifespan(app: FastAPI):
     task = asyncio.create_task(_auto_escalate_loop())
     logger.info("[STARTUP] SLA auto-escalation background task started (interval: 6h)")
 
+    async def send_verification_reminders():
+        while True:
+            try:
+                from database import SessionLocal, Incident, Complaint, Notification
+                db = SessionLocal()
+                now = datetime.utcnow()
+                three_days_ago = now - timedelta(days=6)
+                six_days_ago = now - timedelta(days=3)
+                reminders = db.query(Incident).filter(
+                    Incident.status == 'pending_verification',
+                    Incident.status_changed_at >= three_days_ago,
+                    Incident.status_changed_at <= six_days_ago
+                ).all()
+                for inc in reminders:
+                    days_left = 7 - (now - inc.status_changed_at).days
+                    complaint = db.query(Complaint).filter(Complaint.incident_id == inc.id).first()
+                    if complaint and complaint.user_id:
+                        existing = db.query(Notification).filter(
+                            Notification.user_id == complaint.user_id,
+                            Notification.type == 'verification_reminder',
+                            Notification.complaint_id == complaint.id
+                        ).first()
+                        if not existing:
+                            notif = Notification(
+                                id=str(uuid.uuid4()),
+                                user_id=complaint.user_id, complaint_id=complaint.id,
+                                type='verification_reminder',
+                                data=json.dumps({"incident_id": inc.id, "days_left": days_left, "message": f"Please verify your resolved complaint — it will auto-close in {days_left} days."})
+                            )
+                            db.add(notif)
+                db.commit()
+                db.close()
+            except Exception as e:
+                logger.error(f"Verification reminder task error: {e}")
+            await asyncio.sleep(43200)
+
+    task2 = asyncio.create_task(send_verification_reminders())
+    logger.info("[STARTUP] Verification reminder background task started (interval: 12h)")
+
+    # Start background auto-close task for stale pending_verification incidents (runs daily)
+    async def _auto_close_loop():
+        while True:
+            try:
+                from database import SessionLocal, Incident, AuditLog
+                from datetime import timedelta
+                db = SessionLocal()
+                try:
+                    seven_days_ago = datetime.utcnow() - timedelta(days=7)
+                    stale = db.query(Incident).filter(
+                        Incident.status == 'pending_verification',
+                        Incident.status_changed_at <= seven_days_ago
+                    ).all()
+                    for inc in stale:
+                        inc.status = 'closed'
+                        inc.status_changed_at = datetime.utcnow()
+                        audit = AuditLog(
+                            id=str(uuid.uuid4()),
+                            user_id='system',
+                            user_email='system',
+                            role='System',
+                            action='auto_close',
+                            target=inc.id,
+                            details="Auto-closed after 7 days in pending_verification (citizen did not verify)",
+                            status='success'
+                        )
+                        db.add(audit)
+                    db.commit()
+                    if stale:
+                        logger.info("[AUTO-CLOSE] Closed %d stale pending_verification incidents", len(stale))
+                finally:
+                    db.close()
+            except Exception as exc:
+                logger.warning("[AUTO-CLOSE] Cycle failed: %s", exc)
+            await asyncio.sleep(86400)
+
+    task3 = asyncio.create_task(_auto_close_loop())
+    logger.info("[STARTUP] Auto-close background task started (interval: 24h)")
+
     yield
 
-    # Cleanup: cancel the background task on shutdown
+    # Cleanup: cancel the background tasks on shutdown
     task.cancel()
+    task2.cancel()
+    task3.cancel()
     try:
         await task
+        await task2
+        await task3
     except asyncio.CancelledError:
         pass
 
@@ -449,7 +560,7 @@ async def csrf_origin_check(request: Request, call_next):
     return await call_next(request)
 
 
-from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router, ws_router
+from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router, ws_router, search_router
 
 app.include_router(classify_router)
 app.include_router(cluster_router)
@@ -469,6 +580,7 @@ app.include_router(notifications_router)
 app.include_router(debug_router)
 app.include_router(public_router)
 app.include_router(ws_router)
+app.include_router(search_router)
 
 
 # === Request/Response Models removed: now centralized in models.py and routes.py ===

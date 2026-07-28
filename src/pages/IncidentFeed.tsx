@@ -1,7 +1,9 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import { useTranslation } from 'react-i18next';
-import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge, Send, ArrowUp } from 'lucide-react';
+import { ChevronDown, ChevronUp, TriangleAlert as AlertTriangle, CircleCheck as CheckCircle, Clock, CircleAlert as AlertCircle, Search, Filter, ChevronLeft, ChevronRight, ArrowUpDown, GitMerge, Send, ArrowUp, MapPin, MessageSquare } from 'lucide-react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import L from 'leaflet';
 import { api } from '../services/api';
 import type { Incident, SortField, SortDirection } from '../types';
 import Header from '../components/Header';
@@ -40,6 +42,7 @@ const IncidentFeed = () => {
   const [mergeError, setMergeError] = useState<string | null>(null);
   const [splitError, setSplitError] = useState<string | null>(null);
   const [agingOnly, setAgingOnly] = useState(false);
+  const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [updateIncidentId, setUpdateIncidentId] = useState<string | null>(null);
   const [updateMessage, setUpdateMessage] = useState('');
   const [updateLoading, setUpdateLoading] = useState(false);
@@ -47,6 +50,10 @@ const IncidentFeed = () => {
   const [slaTick, setSlaTick] = useState(0);
   const [noteText, setNoteText] = useState<Record<string, string>>({});
   const [noteSaving, setNoteSaving] = useState<Record<string, boolean>>({});
+  const [comments, setComments] = useState<Record<string, any[]>>({});
+  const [commentInput, setCommentInput] = useState<Record<string, string>>({});
+  const [commentLoading, setCommentLoading] = useState<Record<string, boolean>>({});
+  const [showMap, setShowMap] = useState(false);
 
   const handlePostUpdate = useCallback(async (incidentId: string) => {
     if (!updateMessage.trim()) return;
@@ -69,7 +76,14 @@ const IncidentFeed = () => {
   }, [navigate]);
 
   const handleIncidentExpand = (incident: Incident) => {
-    if (expandedId !== incident.id) recordRecentlyViewed(incident, 'IncidentFeed');
+    if (expandedId !== incident.id) {
+      recordRecentlyViewed(incident, 'IncidentFeed');
+      if (!comments[incident.id]) {
+        api.get('/incidents/' + incident.id + '/comments').then(res => res.json()).then(data => {
+          setComments(prev => ({...prev, [incident.id]: data}));
+        }).catch(() => {});
+      }
+    }
     setExpandedId(expandedId === incident.id ? null : incident.id);
   };
 
@@ -181,6 +195,14 @@ const IncidentFeed = () => {
     return () => clearInterval(timer);
   }, []);
 
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults(null); return; }
+    const timer = setTimeout(async () => {
+      try { setSearchResults(await api.searchComplaints(searchQuery)); } catch { setSearchResults([]); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
   const computeSla = (incident: any) => {
     if (!['open', 'in-progress'].includes(incident.status)) return null;
     const created = new Date(incident.status_changed_at || incident.created_at).getTime();
@@ -278,6 +300,24 @@ const IncidentFeed = () => {
     <div className="incident-feed-page">
       <Header title={t('incidents.header.title')} subtitle={t('incidents.header.subtitle')} />
       <div className="page-content">
+        <button className="map-toggle-btn" onClick={() => setShowMap(!showMap)}>
+          <MapPin size={16} /> {showMap ? 'Hide Map' : 'Show Map'}
+        </button>
+        {showMap && (
+          <div className="incident-feed-map">
+            <MapContainer center={[11.0168, 76.9558]} zoom={12} style={{ height: 300, width: '100%' }}>
+              <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+              {allIncidents.filter(i => i.complaints?.length > 0).map(inc => {
+                const hasOfficer = inc.status !== 'open';
+                return (
+                  <Marker key={inc.id} position={[11.0168 + Math.random()*0.05, 76.9558 + Math.random()*0.05]} icon={L.divIcon({ className: hasOfficer ? 'marker-assigned' : 'marker-unassigned', html: `<div style="background:${hasOfficer?'#16a34a':'#ef4444'};width:12px;height:12px;border-radius:50%;border:2px solid white;box-shadow:0 1px 3px rgba(0,0,0,0.3)"/>` })}>
+                    <Popup>{inc.incident_number} — {inc.category}<br/>{inc.days_open} days open</Popup>
+                  </Marker>
+                );
+              })}
+            </MapContainer>
+          </div>
+        )}
         {user?.role === 'Officer' && <RecentlyViewedIncidents onOpen={handleRecentOpen} />}
         <div className="feed-toolbar">
           <div className="search-box">
@@ -331,6 +371,23 @@ const IncidentFeed = () => {
         </div>
         {mergeError && <div className="feed-error"><AlertCircle size={14} /> {mergeError} <button onClick={() => setMergeError(null)}>x</button></div>}
         {splitError && <div className="feed-error"><AlertCircle size={14} /> {splitError} <button onClick={() => setSplitError(null)}>x</button></div>}
+
+        {searchResults !== null && (
+          <div className="search-results-dropdown">
+            <div className="search-results-header">Search results ({searchResults.length})</div>
+            {searchResults.length === 0 ? (
+              <div className="search-results-empty">No complaints found</div>
+            ) : (
+              searchResults.slice(0, 10).map((r: any) => (
+                <div key={r.id} className="search-result-item" onClick={() => navigate(`/complaint/${r.id}`)}>
+                  <span className="search-result-title">{r.title}</span>
+                  <span className="search-result-meta">{r.ward} — {r.predicted_category}</span>
+                  <span className="search-result-status">{r.status}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {user?.role === 'Officer' && (
           <OfficerIncidentMap
@@ -498,6 +555,39 @@ const IncidentFeed = () => {
                           >
                             {noteSaving[incident.id] ? 'Saving...' : 'Save Note'}
                           </button>
+                        </div>
+                      )}
+                      {(user?.role === 'Officer' || user?.role === 'Executive') && (
+                        <div className="comment-thread">
+                          <h4><MessageSquare size={14} /> Comments ({comments[incident.id]?.length || 0})</h4>
+                          <div className="comment-list">
+                            {(comments[incident.id] || []).map((c: any) => (
+                              <div key={c.id} className={`comment-item comment-role-${c.role.toLowerCase()}`}>
+                                <div className="comment-header">
+                                  <strong>{c.user_name}</strong> <span className="comment-role">{c.role}</span>
+                                  <span className="comment-time">{new Date(c.created_at).toLocaleString('en-IN')}</span>
+                                </div>
+                                <p className="comment-message">{c.message}</p>
+                              </div>
+                            ))}
+                          </div>
+                          <div className="comment-input-area">
+                            <input className="comment-input" placeholder="Add a comment..." value={commentInput[incident.id] || ''}
+                              onChange={e => setCommentInput(prev => ({...prev, [incident.id]: e.target.value}))}
+                              onKeyDown={e => {
+                                if (e.key === 'Enter' && (commentInput[incident.id] || '').trim()) {
+                                  const msg = commentInput[incident.id].trim();
+                                  setCommentLoading(prev => ({...prev, [incident.id]: true}));
+                                  api.post('/incidents/' + incident.id + '/comments', { message: msg }).then(() => {
+                                    setCommentInput(prev => ({...prev, [incident.id]: ''}));
+                                    return api.get('/incidents/' + incident.id + '/comments');
+                                  }).then(res => res.json()).then(data => {
+                                    setComments(prev => ({...prev, [incident.id]: data}));
+                                  }).finally(() => setCommentLoading(prev => ({...prev, [incident.id]: false})));
+                                }
+                              }}
+                            />
+                          </div>
                         </div>
                       )}
                     </div>

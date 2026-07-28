@@ -66,6 +66,12 @@
 .ward-cat-name { color: var(--text-primary); }
 .ward-cat-count { color: var(--text-muted); font-weight: 600; }
 
+.word-cloud-section { margin-top: 2rem; }
+.word-cloud-section h3 { font-size: 1rem; margin-bottom: 0.75rem; color: var(--text-primary); }
+.word-cloud { display: flex; flex-wrap: wrap; gap: 0.5rem; align-items: center; justify-content: center; padding: 1rem; background: var(--card-bg); border-radius: 8px; }
+.word-cloud-tag { display: inline-block; padding: 0.15rem 0.4rem; border-radius: 4px; background: var(--accent-subtle); color: var(--text-primary); line-height: 1.3; cursor: default; transition: transform 0.15s; }
+.word-cloud-tag:hover { transform: scale(1.1); }
+
 @media (max-width: 768px) {
   .kpi-hero { grid-template-columns: 1fr; }
   .chart-grid-2 { grid-template-columns: 1fr; }

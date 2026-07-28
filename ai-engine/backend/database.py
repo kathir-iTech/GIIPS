@@ -290,6 +290,7 @@ class User(Base):
     status = Column(String, default="active", nullable=False)
     notify_status_updates = Column(Boolean, default=True, nullable=False)
     availability = Column(String, default="available", nullable=False)
+    skills = Column(String, nullable=True)
 
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""
@@ -298,6 +299,7 @@ class Incident(Base):
     id = Column(String, primary_key=True, index=True)
     incident_number = Column(String, unique=True, index=True, nullable=False)
     category = Column(String, nullable=False)
+    original_category = Column(String, nullable=True)
     ward = Column(String, nullable=False)
     cluster_size = Column(Integer, default=1, nullable=False)
     priority_score = Column(Float, default=0.0, nullable=False)
@@ -320,6 +322,9 @@ class Incident(Base):
 
     # Resolution note — officer's comment when marking resolved
     resolution_note = Column(Text, nullable=True)
+
+    # Resolution quality score
+    resolution_quality_score = Column(Float, nullable=True)
 
     # Resolution photo
     resolution_photo_path = Column(String, nullable=True)
@@ -448,6 +453,25 @@ class IncidentUpdate(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
     incident = relationship("Incident", backref="updates")
+
+class IncidentComment(Base):
+    __tablename__ = "incident_comments"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    incident_id = Column(String, ForeignKey('incidents.id'), nullable=False)
+    user_id = Column(String, nullable=False)
+    user_name = Column(String, nullable=False)
+    role = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+class KpiTarget(Base):
+    __tablename__ = "kpi_targets"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    metric_name = Column(String, nullable=False)
+    target_value = Column(Float, nullable=False)
+    current_value = Column(Float, nullable=True)
+    set_by = Column(String, nullable=False)
+    set_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 
 # Seed demo users

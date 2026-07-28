@@ -6,7 +6,7 @@ import { api } from '../services/api';
 import Header from '../components/Header';
 import HelpWidget from '../components/HelpWidget';
 import type { CitizenComplaint } from '../types';
-import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3, Download } from 'lucide-react';
+import { FileText, MapPin, Calendar, Tag, AlertCircle, Search, ChevronRight, X, Filter, Check, Clock, CheckCircle, Hourglass, BarChart3, Download, Activity } from 'lucide-react';
 import './MyComplaints.css';
 
 const STATUS_STYLES: Record<string, string> = {
@@ -39,9 +39,12 @@ const MyComplaints = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<any[] | null>(null);
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const [dateFrom, setDateFrom] = useState('');
   const [dateTo, setDateTo] = useState('');
+  const [streakBadge, setStreakBadge] = useState<string | null>(null);
+  const [peakPeriod, setPeakPeriod] = useState<string | null>(null);
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -111,6 +114,41 @@ const MyComplaints = () => {
     onEvent: () => { fetchComplaints(false); },
   });
 
+  useEffect(() => {
+    if (!searchQuery.trim()) { setSearchResults(null); return; }
+    const timer = setTimeout(async () => {
+      try { setSearchResults(await api.searchComplaints(searchQuery)); } catch { setSearchResults([]); }
+    }, 300);
+    return () => clearTimeout(timer);
+  }, [searchQuery]);
+
+  useEffect(() => {
+    const monthSet = new Set(complaints.map(c => c.date_received ? new Date(c.date_received).toISOString().slice(0, 7) : ''));
+    const months = Array.from(monthSet).sort();
+    let consecutive = 1;
+    for (let i = 1; i < months.length; i++) {
+      const prev = new Date(months[i-1] + '-01');
+      const curr = new Date(months[i] + '-01');
+      if ((curr.getFullYear() - prev.getFullYear()) * 12 + (curr.getMonth() - prev.getMonth()) === 1) {
+        consecutive++;
+        if (consecutive >= 3) break;
+      } else consecutive = 1;
+    }
+    setStreakBadge(consecutive >= 3 ? 'Active Reporter' : null);
+
+    const hourCounts = [0, 0, 0, 0];
+    complaints.forEach(c => {
+      if (!c.date_received) return;
+      const h = new Date(c.date_received).getHours();
+      if (h >= 5 && h < 12) hourCounts[0]++;
+      else if (h >= 12 && h < 17) hourCounts[1]++;
+      else if (h >= 17 && h < 21) hourCounts[2]++;
+      else hourCounts[3]++;
+    });
+    const periods = ['morning', 'afternoon', 'evening', 'night'];
+    setPeakPeriod(periods[hourCounts.indexOf(Math.max(...hourCounts))]);
+  }, [complaints]);
+
   const filtered = complaints.filter(c => {
     const matchesSearch = !searchQuery.trim() ||
       (c.title || '').toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -149,6 +187,23 @@ const MyComplaints = () => {
     <div className="my-complaints-page">
       <Header title={t('myComplaints.headerTitle')} subtitle={t('myComplaints.headerSubtitle')} />
       <div className="page-content">
+        {(streakBadge || peakPeriod) && (
+          <div className="insight-badges">
+            {streakBadge && <span className="streak-badge"><Activity size={14} /> {streakBadge}</span>}
+            {peakPeriod && <span className="peak-period-badge"><Clock size={14} /> Usually {peakPeriod}</span>}
+            {(() => {
+              const total = complaints.length;
+              const resolved = complaints.filter(c => c.incident?.status === 'closed' || c.incident?.status === 'resolved').length;
+              const verified = complaints.filter(c => c.citizen_rating != null).length;
+              const appealed = complaints.filter(c => (c.incident as any)?.appealed).length;
+              let score = total > 0 ? (resolved / total) * 100 : 0;
+              score += Math.min(verified * 5, 20);
+              score = Math.min(Math.round(score), 100);
+              const impactLabel = score >= 70 ? 'High' : score >= 40 ? 'Medium' : 'Low';
+              return <span className="impact-score-badge"><BarChart3 size={14} /> Impact: {score}% ({impactLabel})</span>;
+            })()}
+          </div>
+        )}
         <div className="toolbar">
           <div className="search-box">
             <Search size={18} className="search-icon" />
@@ -196,6 +251,23 @@ const MyComplaints = () => {
             </button>
           )}
         </div>
+
+        {searchResults !== null && (
+          <div className="search-results-dropdown">
+            <div className="search-results-header">Search results ({searchResults.length})</div>
+            {searchResults.length === 0 ? (
+              <div className="search-results-empty">No complaints found</div>
+            ) : (
+              searchResults.slice(0, 10).map((r: any) => (
+                <div key={r.id} className="search-result-item" onClick={() => navigate(`/complaint/${r.id}`)}>
+                  <span className="search-result-title">{r.title}</span>
+                  <span className="search-result-meta">{r.ward} — {r.predicted_category}</span>
+                  <span className="search-result-status">{r.status}</span>
+                </div>
+              ))
+            )}
+          </div>
+        )}
 
         {complaints.length > 0 && (
           <div className="citizen-stats">

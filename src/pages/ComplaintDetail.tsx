@@ -8,7 +8,7 @@ import Header from '../components/Header';
 import HelpWidget from '../components/HelpWidget';
 import { getDeptI18nKey } from '../data/departments';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
@@ -68,6 +68,9 @@ const ComplaintDetailPage = () => {
   const [tagEditorOpen, setTagEditorOpen] = useState(false);
   const [tagEditInput, setTagEditInput] = useState('');
   const [tagEditTags, setTagEditTags] = useState<string[]>([]);
+  const [catEditMode, setCatEditMode] = useState(false);
+  const [catEditValue, setCatEditValue] = useState('');
+  const [showChain, setShowChain] = useState(false);
 
   const fetchDetail = useCallback(async (showLoader = false) => {
     if (!id) return;
@@ -404,7 +407,30 @@ const ComplaintDetailPage = () => {
                 <h3><LinkIcon size={18} /> {t('complaintDetail.sectionIncident')}</h3>
                 <div className="incident-card">
                   <div className="incident-row"><span>{t('complaintDetail.fieldIncidentId')}</span><strong>{data.incident.incident_number}</strong></div>
-                  <div className="incident-row"><span>{t('complaintDetail.fieldCategory')}</span><strong>{data.incident.category}</strong></div>
+                  <div className="incident-row"><span>{t('complaintDetail.fieldCategory')}</span><strong>{data.incident.category}{data.incident.original_category && <span className="cat-corrected-badge">Corrected</span>}</strong></div>
+                  {(user?.role === 'Officer' || user?.role === 'Executive') && (
+                    <div className="category-correct-row">
+                      {catEditMode ? (
+                        <select value={catEditValue} onChange={e => setCatEditValue(e.target.value)} className="category-select">
+                          {Object.keys({Roads:'', 'Water Supply':'', 'Waste Management':'', Sanitation:'', 'Street Lighting':'', Electricity:'', 'Public Health':''}).map(cat => <option key={cat} value={cat}>{cat}</option>)}
+                        </select>
+                      ) : null}
+                      <button className="cat-correct-btn" onClick={() => {
+                        if (!catEditMode) {
+                          setCatEditMode(true);
+                          setCatEditValue(data.incident.category);
+                        } else {
+                          api.patch('/incidents/' + data.incident.id + '/category', { category: catEditValue }).then(() => {
+                            setCatEditMode(false);
+                            return api.getComplaintDetail(id!);
+                          }).then(setData).catch(() => {});
+                        }
+                      }}>
+                        <Edit3 size={12} /> {catEditMode ? 'Save' : 'Correct Category'}
+                      </button>
+                      {catEditMode && <button className="cat-correct-cancel" onClick={() => setCatEditMode(false)}><X size={12} /> Cancel</button>}
+                    </div>
+                  )}
                   <div className="incident-row"><span>{t('complaintDetail.fieldDepartment')}</span><strong>{t(getDeptI18nKey(data.department || data.incident.category || ''))}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldStatus')}</span><strong>{t(STATUS_KEY[data.incident.status || 'open'] || 'common.status.open')}</strong></div>
                   <div className="incident-row"><span>{t('complaintDetail.fieldPriority')}</span><strong>{data.incident.priority_label}</strong></div>
@@ -439,6 +465,27 @@ const ComplaintDetailPage = () => {
                         />
                       )}
                     </div>
+                  </div>
+                )}
+
+                {data.incident?.complaints?.length > 1 && (
+                  <div className="duplicate-chain">
+                    <button className="duplicate-chain-toggle" onClick={() => setShowChain(!showChain)}>
+                      <LinkIcon size={14} /> {data.incident.complaints.length - 1} other report{data.incident.complaints.length - 1 !== 1 ? 's' : ''} of this issue
+                      <ChevronDown size={14} className={`chain-chevron ${showChain ? 'open' : ''}`} />
+                    </button>
+                    {showChain && (
+                      <div className="duplicate-chain-list">
+                        {data.incident.complaints.filter((c: any) => c.id !== data.id).map((c: any) => (
+                          <div key={c.id} className="chain-item">
+                            <span className="chain-id">{c.complaint_number || c.id}</span>
+                            <span className="chain-ward">{c.ward || '—'}</span>
+                            <span className="chain-date">{c.date_received ? new Date(c.date_received).toLocaleDateString('en-IN') : '—'}</span>
+                            <span className="chain-status">{c.status || '—'}</span>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 )}
 
@@ -679,6 +726,47 @@ const ComplaintDetailPage = () => {
                 </div>
               ))}
             </div>
+
+            {data.incident?.priority_history && data.incident.priority_history.length > 1 && (
+              <div className="priority-chart-section">
+                <h3>Priority Score History</h3>
+                <svg className="priority-chart-svg" viewBox="0 0 300 100" xmlns="http://www.w3.org/2000/svg">
+                  {(() => {
+                    const entries = data.incident!.priority_history;
+                    const total = entries.length;
+                    const points = entries.map((h: any, i: number) => {
+                      const x = (i / (total - 1)) * 280 + 10;
+                      const y = 90 - (h.new_score * 0.9);
+                      return `${x},${y}`;
+                    }).join(' ');
+                    const scores = entries.map((h: any) => h.new_score);
+                    const minScore = Math.min(...scores);
+                    const maxScore = Math.max(...scores);
+                    return (
+                      <>
+                        <polyline points={points} fill="none" stroke="#ea580c" strokeWidth="2" strokeLinejoin="round" />
+                        {entries.map((h: any, i: number) => {
+                          const x = (i / (total - 1)) * 280 + 10;
+                          const y = 90 - (h.new_score * 0.9);
+                          const isMin = h.new_score === minScore;
+                          const isMax = h.new_score === maxScore;
+                          return (
+                            <g key={i}>
+                              <circle cx={x} cy={y} r="3" fill="#ea580c" />
+                              {(isMin || isMax) && (
+                                <text x={x} y={isMin ? y + 14 : y - 6} textAnchor="middle" fontSize="9" fill="var(--text-muted)">
+                                  {h.new_score}
+                                </text>
+                              )}
+                            </g>
+                          );
+                        })}
+                      </>
+                    );
+                  })()}
+                </svg>
+              </div>
+            )}
           </div>
         </div>
       </div>

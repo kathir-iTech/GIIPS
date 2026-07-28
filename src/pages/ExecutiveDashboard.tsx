@@ -118,13 +118,16 @@ const ExecutiveDashboard = () => {
   const [knowledge, setKnowledge] = useState<any>(null);
   const [decisionSupport, setDecisionSupport] = useState<any>(null);
   const [systemHealth, setSystemHealth] = useState<any>(null);
+  const [kpiTargets, setKpiTargets] = useState<any[]>([]);
   const [timelineDays, setTimelineDays] = useState<number>(30);
   const [escalating, setEscalating] = useState(false);
+  const [activeUsers, setActiveUsers] = useState(0);
   const [digestOpen, setDigestOpen] = useState(false);
   const [digestContent, setDigestContent] = useState('');
 
   const [trendLabels, setTrendLabels] = useState<string[]>([]);
   const [trendComplaints, setTrendComplaints] = useState<number[]>([]);
+  const [zoneAgeDist, setZoneAgeDist] = useState<any[]>([]);
 
   const [copilotMessages, setCopilotMessages] = useState<{ role: 'user' | 'assistant'; content: string }[]>([]);
   const [copilotInput, setCopilotInput] = useState('');
@@ -197,6 +200,7 @@ const ExecutiveDashboard = () => {
         api.getKnowledgeSummary(),
         api.getDecisionSupportSummary(),
         api.getSystemHealth().catch(() => ({})),
+        api.get('/executive/kpi-targets').then(r => r.json()).catch(() => []),
         fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/trend`).then(r => r.json()).catch(() => ({ labels: [], complaints: [], incidents: [] })),
       ]);
       const feedErrors: string[] = [];
@@ -217,11 +221,14 @@ const ExecutiveDashboard = () => {
       setKnowledge(checkFeed(results[7], 'knowledge'));
       setDecisionSupport(checkFeed(results[8], 'decisionSupport'));
       setSystemHealth(checkFeed(results[9], 'systemHealth'));
-      const trendRaw = checkFeed(results[10], 'trend');
+      setKpiTargets(checkFeed(results[10], 'kpiTargets') || []);
+      const trendRaw = checkFeed(results[11], 'trend');
       if (trendRaw && trendRaw.labels) {
         setTrendLabels(trendRaw.labels || []);
         setTrendComplaints(trendRaw.complaints || []);
       }
+      const zoneDist = checkFeed(results[11], 'zoneAge');
+      if (zoneDist) setZoneAgeDist(zoneDist);
       if (feedErrors.length > 0) {
         const msg = t('executive.feedErrors.someOffline') + feedErrors.join('; ');
         console.error(msg);
@@ -251,6 +258,19 @@ const ExecutiveDashboard = () => {
   useDashboardSocket({
     onEvent: () => { fetchAll(false); },
   });
+
+  useEffect(() => {
+    const fetchActive = async () => {
+      try {
+        const res = await fetch(`${import.meta.env.VITE_API_BASE_URL}/admin/active-users`, { credentials: 'include' });
+        const data = await res.json();
+        setActiveUsers(data.active_users ?? 0);
+      } catch {}
+    };
+    fetchActive();
+    const interval = setInterval(fetchActive, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) chatEndRef.current.scrollIntoView({ behavior: 'smooth' });
@@ -396,6 +416,7 @@ const ExecutiveDashboard = () => {
         <button className="action-btn" onClick={generateDigest}>
           <FileText size={14} /> Daily Digest
         </button>
+        {activeUsers > 0 && <span className="active-users-badge"><Activity size={14} /> {activeUsers} online now</span>}
       </div>
 
       {/* 1. Government Situation Summary */}
@@ -475,6 +496,24 @@ const ExecutiveDashboard = () => {
             </div>
           </div>
         </div>
+      </SectionCard>
+
+      {/* KPI Targets */}
+      <SectionCard title="KPI Targets" icon={<Target size={18} />}>
+        {kpiTargets.length === 0 && <p>No targets set.</p>}
+        {kpiTargets.map(t => (
+          <div key={t.id} className="kpi-target-row">
+            <span className="kpi-target-name">{t.metric_name}</span>
+            <span className="kpi-target-values">
+              <span>Target: {t.target_value}</span>
+              {t.current_value != null && (
+                <span className={`kpi-current ${t.current_value >= t.target_value ? 'kpi-met' : 'kpi-not-met'}`}>
+                  Current: {t.current_value}
+                </span>
+              )}
+            </span>
+          </div>
+        ))}
       </SectionCard>
 
       {/* 2. AI Executive Brief */}
@@ -740,6 +779,25 @@ const ExecutiveDashboard = () => {
           )}
         </div>
       </SectionCard>
+
+      {/* Zone Age Distribution */}
+      {zoneAgeDist.length > 0 && (
+        <SectionCard title="Zone Age Distribution" icon={<BarChart3 size={18} />}>
+          <Plot data={[{
+            x: zoneAgeDist.map((z: any) => z.zone),
+            y: zoneAgeDist.map((z: any) => z['0-7d']), name: '0-7d', type: 'bar'
+          }, {
+            x: zoneAgeDist.map((z: any) => z.zone),
+            y: zoneAgeDist.map((z: any) => z['7-30d']), name: '7-30d', type: 'bar'
+          }, {
+            x: zoneAgeDist.map((z: any) => z.zone),
+            y: zoneAgeDist.map((z: any) => z['30-90d']), name: '30-90d', type: 'bar'
+          }, {
+            x: zoneAgeDist.map((z: any) => z.zone),
+            y: zoneAgeDist.map((z: any) => z['90d+']), name: '90d+', type: 'bar'
+          }]} layout={{barmode: 'stack', title: '', width: null, height: 300, autosize: true, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: {color: 'var(--text-primary)'}, legend: {orientation: 'h', y: -0.2}}} config={{displayModeBar: false, responsive: true}} />
+        </SectionCard>
+      )}
 
       {/* 8. AI Copilot */}
       <SectionCard title={t('executive.copilot.title')} subtitle={t('executive.copilot.subtitle')} icon={<Bot size={18} />} badge={t('common.preview')}>

@@ -978,6 +978,8 @@
   text-overflow: ellipsis;
 }
 
+.active-users-badge { display: inline-flex; align-items: center; gap: 4px; padding: 4px 12px; border-radius: 20px; background: rgba(22, 163, 74, 0.1); color: #16a34a; font-size: 0.8rem; }
+
 .inc-detail-btn {
   display: inline-flex;
   align-items: center;
@@ -1345,6 +1347,14 @@
 .digest-actions button { padding: 8px 16px; border-radius: var(--radius-sm); border: none; cursor: pointer; font-size: 13px; }
 .digest-actions .copy-btn { background: #3b82f6; color: white; }
 .digest-actions .close-btn { background: var(--border-subtle); color: var(--text-secondary); }
+
+.kpi-target-row { display: flex; justify-content: space-between; padding: 0.5rem; border-bottom: 1px solid var(--border-subtle); font-size: 14px; }
+.kpi-target-name { font-weight: 600; color: var(--text-primary); }
+.kpi-target-values { display: flex; gap: 16px; align-items: center; }
+.kpi-current { font-weight: 600; }
+.kpi-met { color: #16a34a; }
+.kpi-not-met { color: #dc2626; }
+
 @media (max-width: 640px) {
   .exec-dashboard { padding: 16px; }
   .recommendations-grid { grid-template-columns: 1fr; }

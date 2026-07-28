@@ -204,6 +204,8 @@ class UserResponse(BaseModel):
     district: Optional[str] = None
     department: Optional[str] = None
     notify_status_updates: Optional[bool] = True
+    skills: Optional[str] = None
+    availability: Optional[str] = None
 
 
 class PredictionSummaryResponse(BaseModel):
@@ -290,8 +292,14 @@ class NoteUpdateRequest(BaseModel):
 class TagsUpdateRequest(BaseModel):
     tags: List[str] = Field(..., description="List of tags")
 
+class SkillsUpdateRequest(BaseModel):
+    skills: List[str] = Field(..., description="List of skill tags")
+
 class AvailabilityUpdateRequest(BaseModel):
     availability: str = Field(..., description="Availability status")
 
 class WithdrawRequest(BaseModel):
     reason: str = Field(..., min_length=1, max_length=2000, description="Withdrawal reason")
+
+class CategoryCorrectRequest(BaseModel):
+    category: str = Field(..., min_length=1)

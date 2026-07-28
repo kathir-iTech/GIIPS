@@ -141,6 +141,8 @@
       "stressed": "Stressed",
       "underStress": "Under Stress"
     },
+    "complexity": { "simple": "Simple", "moderate": "Moderate", "complex": "Complex" },
+    "lang": { "english": "English", "tamil": "Tamil", "tanglish": "Tanglish" },
     "tooltip": {
       "refresh": "Refresh",
       "download": "Download",
@@ -400,7 +402,10 @@
     "skipPhotoButton": "Skip Photo — Submit Without It",
     "categoryGuideHint": "Not sure which category applies? See the <1>Category Guide</1>",
     "nearMeTitle": "Recently resolved in Ward {{ward}}",
-    "nearMeNote": "Resolved in {{days}} days"
+    "nearMeNote": "Resolved in {{days}} days",
+    "suggestedCategory": "Suggested category:",
+    "accept": "Accept",
+    "addTag": "Add tag..."
   },
 
   "complaintDetail": {
@@ -467,7 +472,18 @@
       "reusedImage": "This photo matches an image from a different complaint. It has been flagged for officer review.",
       "reusedImageShort": "Reused image — flagged for review",
       "possibleDuplicateShort": "Possible duplicate photo"
-    }
+    },
+    "matchPercent": "{{percent}}% match to existing report",
+    "resolutionPhoto": "After Resolution Photo",
+    "resolutionPhotoUpload": "Upload fixed photo",
+    "beforePhoto": "Before",
+    "afterPhoto": "After",
+    "escalationPath": "Complaint Journey",
+    "withdraw": "Withdraw Complaint",
+    "withdrawConfirm": "Are you sure you want to withdraw this complaint?",
+    "withdrawing": "Withdrawing...",
+    "tags": "Tags",
+    "editTags": "Edit Tags"
   },
 
   "myComplaints": {
@@ -521,6 +537,11 @@
     "moreComplaints": "+{{count}} more",
     "prev": "Previous",
     "next": "Next",
+    "sla": "SLA",
+    "expired": "EXPIRED",
+    "privateNotes": "Private Notes",
+    "saveNote": "Save Note",
+    "saving": "Saving...",
     "catch": {
       "mergeFailed": "Failed to merge incidents",
       "splitFailed": "Failed to split complaint"
@@ -578,6 +599,11 @@
     "noKnowledge": "No knowledge available",
     "noPriorityHistory": "No priority history available",
     "noComplaintsTimeline": "No complaints in this cluster",
+    "mergeTitle": "Merge Into Another Incident",
+    "mergePlaceholder": "Enter target incident ID...",
+    "mergeButton": "Merge",
+    "mergeSuccess": "Merged successfully",
+    "mergeFailed": "Merge failed",
     "topComplaints": "Top Complaints",
     "recentComplaints": "Recent Complaints",
     "relatedIncidents": "{{count}} related incidents",
@@ -718,6 +744,16 @@
       "day": "Day",
       "empty": "Prediction data unavailable. The AI forecasting model will generate projections once sufficient incident data is collected."
     },
+    "anomalies": {
+      "title": "Anomaly Alerts",
+      "complaintsToday": "{{count}} complaints today vs avg {{mean}}"
+    },
+    "digest": {
+      "button": "Daily Digest",
+      "title": "Daily Digest",
+      "copy": "Copy to Clipboard",
+      "close": "Close"
+    },
     "footer": {
       "title": "GIIPS Executive Decision Intelligence v2.1",
       "dataRefreshed": "Data refreshed"
@@ -773,7 +809,11 @@
     "officers": "Officers",
     "avgResolution": "Avg Resolution",
     "completion": "Completion",
-    "workload": "Workload"
+    "workload": "Workload",
+    "slaReport": "Department SLA Report",
+    "withinSla": "Within SLA",
+    "breachedSla": "Breached SLA",
+    "avgBreach": "Avg Breach (days)"
   },
 
   "systemHealth": {
@@ -802,6 +842,14 @@
       "totalComplaints": "Total Complaints",
       "totalIncidents": "Total Incidents"
     }
+  },
+
+  "notificationsPage": {
+    "title": "Notifications",
+    "subtitle": "Your notification history",
+    "back": "Back",
+    "markAllRead": "Mark all read",
+    "empty": "No notifications yet"
   },
 
   "notification": {
@@ -844,7 +892,14 @@
     "colStatus": "Status",
     "loading": "Loading...",
     "retry": "Retry",
-    "empty": "No audit logs found"
+    "empty": "No audit logs found",
+    "exportCsv": "Export CSV"
+  },
+
+  "citizenProfile": {
+    "availability": "Availability",
+    "available": "Available",
+    "onLeave": "On Leave"
   },
 
   "analysis": {
@@ -1002,7 +1057,9 @@
     "assignedDepartment": "Assigned Department",
     "assignedOfficer": "Assigned Officer",
     "timelineTitle": "Status Timeline",
-    "forgotId": "Forgot your complaint ID? Log in to see all your complaints."
+    "forgotId": "Forgot your complaint ID? Log in to see all your complaints.",
+    "resolutionPhoto": "Resolution Photo",
+    "resolutionCaption": "Resolution photo (proof of fix)"
   },
 
   "transparency": {

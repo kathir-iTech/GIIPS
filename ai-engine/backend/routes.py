@@ -4,18 +4,20 @@ API route definitions for GIIPS backend.
 
 import os
 import json
+import re
 import uuid
 import time
 import random
 import logging
+from collections import Counter
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_, extract, text
+from sqlalchemy import func, and_, extract, text, or_
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, ZONE_BY_WARD
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, ZONE_BY_WARD
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -39,7 +41,9 @@ from models import (
     NoteUpdateRequest,
     TagsUpdateRequest,
     AvailabilityUpdateRequest,
+    SkillsUpdateRequest,
     WithdrawRequest,
+    CategoryCorrectRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status
@@ -250,6 +254,22 @@ async def get_ward_health(db: Session = Depends(get_db)):
 async def get_dept_workload(db: Session = Depends(get_db)):
     service = DecisionService()
     return await service.get_dept_workload(db)
+
+
+@executive_router.post("/kpi-targets")
+def set_kpi_target(body: KpiTargetCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != 'Executive':
+        raise HTTPException(status_code=403, detail="Executive only")
+    target = KpiTarget(metric_name=body.metric_name, target_value=body.target_value, current_value=body.current_value, set_by=current_user.full_name)
+    db.add(target); db.commit(); db.refresh(target)
+    return {"id": target.id, "metric_name": target.metric_name, "target_value": target.target_value, "current_value": target.current_value}
+
+@executive_router.get("/kpi-targets")
+def get_kpi_targets(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != 'Executive':
+        raise HTTPException(status_code=403, detail="Executive only")
+    targets = db.query(KpiTarget).order_by(KpiTarget.set_at.desc()).all()
+    return [{"id": t.id, "metric_name": t.metric_name, "target_value": t.target_value, "current_value": t.current_value, "set_by": t.set_by, "set_at": t.set_at.isoformat()} for t in targets]
 
 
 @executive_router.get("/ward-trend")
@@ -630,6 +650,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
     incident = db.query(Incident).options(
         joinedload(Incident.priority_history),
         joinedload(Incident.updates),
+        joinedload(Incident.complaints),
     ).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
     return {
         "id": complaint.id,
@@ -676,6 +697,13 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
                     "created_at": u.created_at.isoformat() if u.created_at else None,
                 } for u in incident.updates
             ] if incident else [],
+            "complaints": [{
+                "id": c.id,
+                "complaint_number": c.id,
+                "ward": c.ward,
+                "date_received": c.created_at.isoformat() if c.created_at else None,
+                "status": incident.status if incident else None,
+            } for c in incident.complaints] if incident else [],
         } if incident else None
     }
 
@@ -802,6 +830,14 @@ async def classify_batch(requests: List[ClassifyRequest]):
     results = [await service.classify(req) for req in requests]
     return {"results": results, "count": len(results)}
 
+
+class CommentCreate(BaseModel):
+    message: str
+
+class KpiTargetCreate(BaseModel):
+    metric_name: str
+    target_value: float
+    current_value: Optional[float] = None
 
 class PredictCategoryRequest(BaseModel):
     text: str
@@ -1711,6 +1747,22 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
     return {"message": f"Incident status updated to {body.status}", "incident_id": incident.id, "status": body.status}
 
 
+@incident_router.patch("/{incident_id}/category")
+def correct_incident_category(incident_id: str, body: CategoryCorrectRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Officer', 'Executive'):
+        raise HTTPException(status_code=403, detail="Only officers and executives can correct category")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    old_cat = incident.category
+    if not incident.original_category:
+        incident.original_category = old_cat
+    incident.category = body.category
+    db.commit()
+    _write_audit_log(db, current_user.id, current_user.email, current_user.role, 'category_correct', incident_id, 'success', f"Category corrected from {old_cat} to {body.category}")
+    return {"incident_id": incident_id, "old_category": old_cat, "new_category": body.category}
+
+
 @incident_router.post("/{incident_id}/updates")
 async def post_incident_update(incident_id: str, body: IncidentUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Post a free-text progress update visible to citizens in the tracking timeline.
@@ -1757,6 +1809,33 @@ async def post_incident_update(incident_id: str, body: IncidentUpdateRequest, db
     }
 
 
+@incident_router.post("/{incident_id}/comments")
+def post_comment(incident_id: str, body: CommentCreate, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Officer', 'Executive'):
+        raise HTTPException(status_code=403, detail="Only officers and executives can comment")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    comment = IncidentComment(
+        incident_id=incident_id,
+        user_id=current_user.id,
+        user_name=current_user.full_name,
+        role=current_user.role,
+        message=body.message
+    )
+    db.add(comment)
+    db.commit()
+    db.refresh(comment)
+    return {"id": comment.id, "message": comment.message, "user_name": comment.user_name, "role": comment.role, "created_at": comment.created_at.isoformat()}
+
+@incident_router.get("/{incident_id}/comments")
+def get_comments(incident_id: str, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Officer', 'Executive'):
+        raise HTTPException(status_code=403, detail="Only officers and executives can view comments")
+    comments = db.query(IncidentComment).filter(IncidentComment.incident_id == incident_id).order_by(IncidentComment.created_at.asc()).all()
+    return [{"id": c.id, "message": c.message, "user_name": c.user_name, "role": c.role, "created_at": c.created_at.isoformat()} for c in comments]
+
+
 @incident_router.patch("/{incident_id}/note")
 async def update_private_note(incident_id: str, body: NoteUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Update the private note on an incident (Officer/Executive only)."""
@@ -1767,6 +1846,13 @@ async def update_private_note(incident_id: str, body: NoteUpdateRequest, db_user
         raise HTTPException(status_code=404, detail="Incident not found")
     incident.private_note = body.note
     incident.private_note_updated_at = datetime.utcnow()
+    # Recompute resolution quality score when note changes
+    quality = 0
+    if incident.resolution_photo_path: quality += 30
+    if incident.resolution_note: quality += min(len(incident.resolution_note) * 2, 40)
+    if incident.days_open and incident.days_open <= 2: quality += 30
+    elif incident.days_open and incident.days_open <= 5: quality += 15
+    incident.resolution_quality_score = quality
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "private_note_update",
                      incident.id, "success")
@@ -1793,6 +1879,13 @@ async def upload_resolution_photo(incident_id: str, file: UploadFile = File(...)
     with open(saved_path, "wb") as f:
         f.write(data)
     incident.resolution_photo_path = saved_path
+    # Compute resolution quality score
+    quality = 0
+    if incident.resolution_photo_path: quality += 30
+    if incident.resolution_note: quality += min(len(incident.resolution_note) * 2, 40)
+    if incident.days_open and incident.days_open <= 2: quality += 30
+    elif incident.days_open and incident.days_open <= 5: quality += 15
+    incident.resolution_quality_score = quality
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "resolution_photo_upload",
                      incident.id, "success")
@@ -2042,6 +2135,17 @@ async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_use
     return {"complaints": result, "ward": ward, "count": len(result)}
 
 
+search_router = APIRouter(prefix="/search", tags=["Search"])
+
+@search_router.get("")
+def search_complaints(q: str = Query(..., min_length=1), db: Session = Depends(get_db)):
+    pattern = f"%{q}%"
+    results = db.query(Complaint).filter(
+        or_(Complaint.title.ilike(pattern), Complaint.description.ilike(pattern))
+    ).limit(20).all()
+    return [{"id": c.id, "title": c.title, "description": c.description[:100], "ward": c.ward, "predicted_category": c.predicted_category, "status": c.status, "date_received": c.created_at.isoformat() if c.created_at else None} for c in results]
+
+
 notifications_router = APIRouter(prefix="/notifications", tags=["Notifications"])
 
 
@@ -2160,6 +2264,8 @@ async def get_me(db_user: User = Depends(get_current_user)):
         district=db_user.district,
         department=db_user.department,
         notify_status_updates=db_user.notify_status_updates,
+        skills=db_user.skills,
+        availability=db_user.availability,
     )
 
 
@@ -2193,6 +2299,8 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
         district=db_user.district,
         department=db_user.department,
         notify_status_updates=db_user.notify_status_updates,
+        skills=db_user.skills,
+        availability=db_user.availability,
     )
 
 # === WebSocket endpoint for real-time dashboard updates ===
@@ -2317,6 +2425,21 @@ async def update_officer(officer_id: str, body: OfficerUpdate, db_user: User = D
                      f"department={officer.department} district={officer.district}")
     return {"message": "Officer updated", "department": officer.department, "district": officer.district, "full_name": officer.full_name}
 
+@admin_router.get("/zone-age-distribution")
+def get_zone_age_distribution(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Executive', 'Admin'):
+        raise HTTPException(status_code=403, detail="Executive only")
+    incidents = db.query(Incident.ward, Incident.days_open).filter(Incident.days_open.isnot(None)).all()
+    zones = {}
+    for ward, days in incidents:
+        zone = ZONE_BY_WARD.get(ward, 'Unknown')
+        if zone not in zones: zones[zone] = {"0-7d": 0, "7-30d": 0, "30-90d": 0, "90d+": 0}
+        if days <= 7: zones[zone]["0-7d"] += 1
+        elif days <= 30: zones[zone]["7-30d"] += 1
+        elif days <= 90: zones[zone]["30-90d"] += 1
+        else: zones[zone]["90d+"] += 1
+    return [{"zone": z, **buckets} for z, buckets in zones.items()]
+
 @admin_router.get("/departments")
 async def get_departments(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get department metrics."""
@@ -2387,6 +2510,7 @@ async def get_officer_performance(db_user: User = Depends(get_executive_user), d
             Complaint.predicted_category,
             Incident.days_open,
             Incident.status,
+            Incident.resolution_quality_score,
         )
         .join(Incident, Complaint.incident_id == Incident.id)
         .filter(
@@ -2398,7 +2522,7 @@ async def get_officer_performance(db_user: User = Depends(get_executive_user), d
     )
 
     officer_stats: dict[str, dict] = {}
-    for ward, category, days_open, status in rows:
+    for ward, category, days_open, status, quality_score in rows:
         officer = route_complaint(ward or "", category or "")
         name = officer.get("name")
         if not name:
@@ -2410,18 +2534,47 @@ async def get_officer_performance(db_user: User = Depends(get_executive_user), d
                 "department": dept,
                 "total_days": 0,
                 "resolved_count": 0,
+                "quality_scores": [],
             }
         officer_stats[name]["total_days"] += (days_open or 0)
         officer_stats[name]["resolved_count"] += 1
+        if quality_score is not None:
+            officer_stats[name]["quality_scores"].append(quality_score)
+
+    escalated_rows = (
+        db.query(Complaint.ward, Complaint.predicted_category)
+        .join(Incident, Complaint.incident_id == Incident.id)
+        .filter(Incident.escalated == True)
+        .all()
+    )
+    escalation_counts: dict[str, int] = {}
+    for ward, category in escalated_rows:
+        officer = route_complaint(ward or "", category or "")
+        name = officer.get("name")
+        if name:
+            escalation_counts[name] = escalation_counts.get(name, 0) + 1
+
+    # Get skills for officers
+    officers_db = db.query(User).filter(User.role == "Officer").all()
+    officer_skills: dict[str, str] = {}
+    for o in officers_db:
+        officer_skills[o.full_name] = o.skills
 
     result = []
     for name, stats in officer_stats.items():
         count = stats["resolved_count"]
+        esc_count = escalation_counts.get(name, 0)
+        qs = stats["quality_scores"]
+        avg_qs = round(sum(qs) / len(qs), 1) if qs else None
         result.append({
             "officer_name": stats["officer_name"],
             "department": stats["department"],
             "avg_days_to_resolve": round(stats["total_days"] / count, 1) if count > 0 else 0,
             "total_resolved": count,
+            "escalation_count": esc_count,
+            "esc_rate": round(esc_count / count * 100, 1) if count > 0 else 0,
+            "skills": officer_skills.get(name),
+            "avg_quality_score": avg_qs,
         })
 
     result.sort(key=lambda r: (r["avg_days_to_resolve"] if r["total_resolved"] > 0 else float("inf"), -r["total_resolved"]))
@@ -2782,6 +2935,27 @@ async def get_resolution_photo(incident_id: str, db: Session = Depends(get_db)):
     return FileResponse(incident.resolution_photo_path)
 
 
+@admin_router.get("/resolution-histogram")
+def get_resolution_histogram(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Executive', 'Admin'):
+        raise HTTPException(status_code=403, detail="Executive only")
+    incidents = db.query(Incident.days_open).filter(Incident.status.in_(['resolved','closed']), Incident.days_open.isnot(None)).all()
+    buckets = {"0-5": 0, "5-15": 0, "15-30": 0, "30+": 0}
+    for (days,) in incidents:
+        if days <= 5: buckets["0-5"] += 1
+        elif days <= 15: buckets["5-15"] += 1
+        elif days <= 30: buckets["15-30"] += 1
+        else: buckets["30+"] += 1
+    return [{"range": k, "count": v} for k, v in buckets.items()]
+
+
+@admin_router.get("/active-users")
+async def get_active_users(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Executive', 'Admin'):
+        raise HTTPException(status_code=403, detail="Executive only")
+    return {"active_users": manager.active_count}
+
+
 @admin_router.get("/department-sla-report")
 async def get_department_sla_report(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get SLA report per department."""
@@ -2813,6 +2987,36 @@ async def get_department_sla_report(db_user: User = Depends(get_executive_user),
     return result
 
 
+@admin_router.get("/department-heatmap")
+def get_department_heatmap(department: str = Query(''), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Executive', 'Admin'):
+        raise HTTPException(status_code=403, detail="Executive only")
+    query = db.query(
+        func.strftime('%w', Complaint.created_at).label('dow'),
+        func.strftime('%H', Complaint.created_at).label('hour'),
+        func.count(Complaint.id).label('count')
+    )
+    if department:
+        dept_slug = get_slug_for_department(department)
+        query = query.filter(Complaint.department == dept_slug)
+    results = query.group_by('dow', 'hour').order_by('dow', 'hour').all()
+    heatmap = [[0]*24 for _ in range(7)]
+    for r in results:
+        d = int(r.dow) % 7
+        h = int(r.hour) % 24
+        heatmap[d][h] = r.count
+    return {"days": ["Sun","Mon","Tue","Wed","Thu","Fri","Sat"], "hours": list(range(24)), "data": heatmap}
+
+
+@auth_router.patch("/profile/skills")
+def update_skills(body: SkillsUpdateRequest, db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role not in ('Officer', 'Executive'):
+        raise HTTPException(status_code=403, detail="Only officers and executives can set skills")
+    current_user.skills = json.dumps(body.skills)
+    db.commit()
+    return {"skills": body.skills}
+
+
 @auth_router.patch("/profile/availability")
 async def update_availability(body: AvailabilityUpdateRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Toggle officer availability (Officer only)."""
@@ -2828,7 +3032,33 @@ async def update_availability(body: AvailabilityUpdateRequest, db_user: User = D
 
 # === Public Endpoints (no auth required) ===
 
+STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","this","with","was","are","be","has","have","had","not","but","or","from","by","an","as","we","they","i","you","he","she","its","their","there","been","all","no","so","if","do","will","would","can","could","should","may","also","very","just","about","than","too","any","more","some","these","those","into","over","after","before","between","under","above","below","up","down","out","off","per","each","other","which","what","who","whom","when","where","why","how"}
+
 public_router = APIRouter(tags=["Public"])
+
+STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","this","with","was","are","be","has","have","had","not","but","or","from","by","an","as","we","they","i","you","he","she","its","their","there","been","all","no","so","if","do","will","would","can","could","should","may","also","very","just","about","than","too","any","more","some","these","those","into","over","after","before","between","under","above","below","up","down","out","off","per","each","other","which","what","who","whom","when","where","why","how"}
+
+@public_router.get("/public/satisfaction-trend")
+def get_satisfaction_trend(db: Session = Depends(get_db)):
+    eight_weeks_ago = datetime.utcnow() - timedelta(weeks=8)
+    results = db.query(
+        func.strftime('%Y-%W', Complaint.created_at).label('week'),
+        func.avg(Complaint.citizen_rating).label('avg_rating'),
+        func.count(Complaint.id).label('count')
+    ).filter(Complaint.created_at >= eight_weeks_ago, Complaint.citizen_rating.isnot(None))\
+     .group_by('week').order_by('week').all()
+    return [{"week": r.week, "avg_rating": round(float(r.avg_rating), 2), "count": r.count} for r in results]
+
+
+@public_router.get("/public/word-cloud")
+def get_word_cloud(db: Session = Depends(get_db)):
+    complaints = db.query(Complaint.description).filter(Complaint.description.isnot(None)).all()
+    words = []
+    for (desc,) in complaints:
+        tokens = re.findall(r'[a-zA-Z]+', desc.lower())
+        words.extend([w for w in tokens if w not in STOPWORDS and len(w) > 2])
+    top = Counter(words).most_common(30)
+    return [{"word": w, "count": c} for w, c in top]
 
 
 @public_router.get("/track/{complaint_id}", response_model=TrackComplaintResponse)

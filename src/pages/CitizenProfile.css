@@ -46,5 +46,12 @@
 .councillor-phone-link:hover { text-decoration: underline; }
 .councillor-empty { font-size: 13px; color: var(--text-muted); margin: 8px 0 0 0; line-height: 1.6; }
 
+.skills-section { margin-top: 1rem; }
+.skills-list { display: flex; flex-wrap: wrap; gap: 0.5rem; margin-bottom: 0.5rem; }
+.skill-remove { cursor: pointer; margin-left: 4px; }
+.skill-input-row { display: flex; }
+.skill-input { flex: 1; padding: 8px 12px; border: 1px solid var(--border-subtle); border-radius: var(--radius-sm); background: rgba(255,255,255,0.03); font-size: 14px; color: var(--text-primary); font-family: inherit; }
+.skill-input:focus { outline: none; border-color: #3b82f6; }
+
 @media (max-width: 768px) { .page-content { padding: 16px 20px; } .profile-header { flex-wrap: wrap; } }
 @media (max-width: 480px) { .page-content { padding: 12px; } .profile-card { padding: 16px; } .edit-actions { flex-direction: column; } .edit-btn, .save-btn, .cancel-btn { width: 100%; justify-content: center; min-height: 44px; } }

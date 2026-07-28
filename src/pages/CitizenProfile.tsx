@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
-import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2 } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2, BarChart3 } from 'lucide-react';
 import { getCouncillorByWard } from '../data/councillors';
 import './CitizenProfile.css';
 
@@ -25,6 +25,10 @@ const CitizenProfile = () => {
   const [message, setMessage] = useState<string | null>(null);
   const [notifLoading, setNotifLoading] = useState(false);
   const [userAvailability, setUserAvailability] = useState('available');
+  const [skills, setSkills] = useState<string[]>([]);
+  const [skillInput, setSkillInput] = useState('');
+  const [impactScore, setImpactScore] = useState(0);
+  const [impactLabel, setImpactLabel] = useState('Low');
 
   useEffect(() => {
     setLoading(true);
@@ -38,9 +42,23 @@ const CitizenProfile = () => {
           district: res.district || '',
           ward: res.ward || '',
         });
+        if (res.skills) {
+          try { setSkills(JSON.parse(res.skills)); } catch { setSkills([]); }
+        }
       })
       .catch(err => setError(err.message))
       .finally(() => setLoading(false));
+    api.getMyComplaints().then(res => {
+      const complaints = Array.isArray(res.complaints) ? res.complaints : [];
+      const total = complaints.length;
+      const resolved = complaints.filter((c: any) => c.incident?.status === 'closed' || c.incident?.status === 'resolved').length;
+      const verified = complaints.filter((c: any) => c.citizen_rating != null).length;
+      let score = total > 0 ? (resolved / total) * 100 : 0;
+      score += Math.min(verified * 5, 20);
+      score = Math.min(Math.round(score), 100);
+      setImpactScore(score);
+      setImpactLabel(score >= 70 ? 'High' : score >= 40 ? 'Medium' : 'Low');
+    }).catch(() => {});
   }, []);
 
   const handleSave = async () => {
@@ -135,6 +153,10 @@ const CitizenProfile = () => {
                 <span>{profile?.ward || '—'}</span>
               )}
             </div>
+            <div className="field">
+              <label><BarChart3 size={16} /> Impact Score</label>
+              <span>{impactScore}% ({impactLabel})</span>
+            </div>
           </div>
 
           {editing && (
@@ -226,6 +248,27 @@ const CitizenProfile = () => {
                 onClick={() => api.updateAvailability('on_leave').then(() => setUserAvailability('on_leave'))}>
                 On Leave
               </button>
+            </div>
+          </div>
+        )}
+        {user?.role === 'Officer' && (
+          <div className="profile-card glass-card">
+            <div className="profile-header">
+              <div className="profile-title">
+                <h2>Skills</h2>
+              </div>
+            </div>
+            <div className="skills-section">
+              <div className="skills-list">
+                {skills.map((s, i) => (
+                  <span key={i} className="skill-badge">{s} <span className="skill-remove" onClick={() => setSkills(prev => { const next = prev.filter((_, j) => j !== i); api.updateSkills(next); return next; })}>×</span></span>
+                ))}
+              </div>
+              <div className="skill-input-row">
+                <input value={skillInput} onChange={e => setSkillInput(e.target.value)} placeholder="Add skill..." className="skill-input"
+                  onKeyDown={e => { if (e.key === 'Enter' && skillInput.trim() && !skills.includes(skillInput.trim())) { const newSkills = [...skills, skillInput.trim()]; setSkills(newSkills); setSkillInput(''); api.updateSkills(newSkills); }}}
+                />
+              </div>
             </div>
           </div>
         )}

@@ -79,14 +79,18 @@ const Transparency = () => {
   const [wardStats, setWardStats] = useState<WardStats | null>(null);
   const [wardLoading, setWardLoading] = useState(false);
   const [wardError, setWardError] = useState<string | null>(null);
+  const [satisfactionData, setSatisfactionData] = useState<any[]>([]);
+  const [wordCloud, setWordCloud] = useState<any[]>([]);
 
   useEffect(() => {
     let cancelled = false;
     Promise.all([
       api.getPublicStats(),
       api.getSuccessStories(),
-    ]).then(([stats, successStories]) => {
-      if (!cancelled) { setData(stats); setStories(successStories); }
+      api.get('/public/satisfaction-trend').then(r => r.json()).catch(() => []),
+      api.get('/public/word-cloud').then(r => r.json()).catch(() => []),
+    ]).then(([stats, successStories, satData, wcData]) => {
+      if (!cancelled) { setData(stats); setStories(successStories); setSatisfactionData(satData); setWordCloud(wcData); }
     }).catch(e => {
       if (!cancelled) setError(e.message);
     }).finally(() => {
@@ -180,6 +184,21 @@ const Transparency = () => {
                 });
               })()}
             </div>
+          </div>
+        )}
+
+        {satisfactionData.length > 0 && (
+          <div className="chart-card" style={{ marginTop: '1.5rem' }}>
+            <div className="chart-hdr">
+              <h3>Citizen Satisfaction Trend</h3>
+              <span className="chart-desc">Average citizen rating per week over the last 8 weeks</span>
+            </div>
+            <Plot
+              data={[{x: satisfactionData.map(d=>d.week), y: satisfactionData.map(d=>d.avg_rating), type:'scatter', mode:'lines+markers', marker:{color:'#16a34a'}}]}
+              layout={{title:'', width: null, height: 300, autosize: true, paper_bgcolor:'transparent', plot_bgcolor:'transparent', font:{color:'var(--text-primary)'}, margin:{t:10,b:40,l:40,r:10}, xaxis:{gridcolor:'rgba(255,255,255,0.05)'}, yaxis:{gridcolor:'rgba(255,255,255,0.05)',range:[1,5]}}}
+              config={{ displayModeBar: false, responsive: true }}
+              style={{ width: '100%' }}
+            />
           </div>
         )}
 
@@ -367,6 +386,22 @@ const Transparency = () => {
             )}
           </div>
         </div>
+
+        {wordCloud.length > 0 && (() => {
+          const maxCount = Math.max(...wordCloud.map((w: any) => w.count));
+          return (
+            <div className="word-cloud-section">
+              <h3>Common Complaint Keywords</h3>
+              <div className="word-cloud">
+                {wordCloud.map((w: any) => (
+                  <span key={w.word} className="word-cloud-tag" style={{ fontSize: `${Math.max(0.7, Math.min(2.5, w.count / maxCount * 2.5))}rem`, opacity: `${0.5 + (w.count / maxCount) * 0.5}` }}>
+                    {w.word}
+                  </span>
+                ))}
+              </div>
+            </div>
+          );
+        })()}
 
         {stories.length > 0 && (
           <div className="success-stories-section">

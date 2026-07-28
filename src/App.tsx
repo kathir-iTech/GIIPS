@@ -36,6 +36,7 @@ const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const LocalAuthorityDashboard = lazy(() => import('./pages/LocalAuthorityDashboard'));
 const OversightDashboard = lazy(() => import('./pages/OversightDashboard'));
 const Notifications = lazy(() => import('./pages/Notifications'));
+const ApiDocs = lazy(() => import('./pages/ApiDocs'));
 
 function LoadingScreen() {
   return (
@@ -49,7 +50,7 @@ function LoadingScreen() {
   );
 }
 
-const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency', '/categories'];
+const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency', '/categories', '/api-docs'];
 
 function AppLayout() {
   const { user } = useAuth();
@@ -95,6 +96,7 @@ function AnimatedRoutes() {
         <Route path="/track" element={<TrackComplaint />} />
         <Route path="/transparency" element={<Transparency />} />
         <Route path="/categories" element={<CategoryGuide />} />
+        <Route path="/api-docs" element={<ApiDocs />} />
         
         <Route path="/citizen" element={
           

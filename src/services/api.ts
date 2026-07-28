@@ -635,6 +635,16 @@ export const api = {
     return response.json();
   },
 
+  updateSkills: async (skills: string[]): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/auth/profile/skills`, {
+      ...FETCH_DEFAULTS, method: 'PATCH',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ skills }),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   reopenIncident: async (incidentId: string): Promise<any> => {
     const response = await fetch(`${BASE_URL}/incidents/${incidentId}/reopen`, {
       ...FETCH_DEFAULTS,
@@ -660,6 +670,12 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     const data = await response.json();
     return data.token;
+  },
+
+  searchComplaints: async (q: string): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/search?q=${encodeURIComponent(q)}`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
   },
 
   getWsUrl: (token: string): string => {

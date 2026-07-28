@@ -1,6 +1,6 @@
 import React, { useEffect, useState, useMemo, useCallback, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
-import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap } from 'react-leaflet';
+import { MapContainer, TileLayer, GeoJSON, CircleMarker, Popup, Tooltip, useMap, Circle } from 'react-leaflet';
 import L from 'leaflet';
 import 'leaflet/dist/leaflet.css';
 import 'leaflet.markercluster';
@@ -152,6 +152,7 @@ const SpatialIntelligence = () => {
   const [simResult, setSimResult] = useState<any>(null);
   const [selectedIncident, setSelectedIncident] = useState<any | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
+  const [showGeoClusters, setShowGeoClusters] = useState(false);
 
   const districtData = useMemo(() => {
     const data: Record<string, any> = {};
@@ -218,6 +219,35 @@ const SpatialIntelligence = () => {
     const risks = Object.values(districtData).map((d: any) => d.riskScore).filter((r: any) => r > 0);
     return risks.length > 0 ? Math.round(risks.reduce((a: number, b: number) => a + b, 0) / risks.length) : 0;
   }, [districtData]);
+
+  const geoClusters = useMemo(() => {
+    const pins = complaintPins;
+    if (!pins.length) return [];
+    const assigned = new Set<number>();
+    const clusters: any[] = [];
+    pins.forEach((p: any, i: number) => {
+      if (assigned.has(i)) return;
+      const group = [p];
+      assigned.add(i);
+      pins.forEach((q: any, j: number) => {
+        if (assigned.has(j)) return;
+        const dx = (p.latitude || 0) - (q.latitude || 0);
+        const dy = (p.longitude || 0) - (q.longitude || 0);
+        if (Math.sqrt(dx*dx + dy*dy) < 0.005) {
+          group.push(q);
+          assigned.add(j);
+        }
+      });
+      if (group.length >= 2) {
+        const cats = group.map(g => g.category || 'Unknown');
+        const dominantCat = cats.sort((a,b) => cats.filter(v => v===a).length - cats.filter(v => v===b).length).pop();
+        const lat = group.reduce((s: number,g: any) => s + (g.latitude||0), 0) / group.length;
+        const lng = group.reduce((s: number,g: any) => s + (g.longitude||0), 0) / group.length;
+        clusters.push({ center: [lat, lng], count: group.length, category: dominantCat, incidents: group });
+      }
+    });
+    return clusters;
+  }, [complaintPins]);
 
   const forecastDistricts = useMemo(() => {
     if (!forecast) return new Set<string>();
@@ -490,6 +520,9 @@ const SpatialIntelligence = () => {
                   <span>{label}</span>
                 </label>
               ))}
+              <button className={`layer-toggle ${showGeoClusters ? 'active' : ''}`} onClick={() => setShowGeoClusters(!showGeoClusters)} style={{ display: 'flex', alignItems: 'center', gap: 8, width: '100%', cursor: 'pointer', padding: '8px 10px', borderRadius: 8, background: showGeoClusters ? 'rgba(59, 130, 246, 0.12)' : 'rgba(30, 41, 59, 0.4)', border: showGeoClusters ? '1px solid rgba(59, 130, 246, 0.3)' : '1px solid rgba(148, 163, 184, 0.08)', color: showGeoClusters ? '#3b82f6' : '#cbd5e1', fontSize: 12, fontFamily: 'inherit' }}>
+                <Radio size={14} /> Clusters
+              </button>
             </div>
           </div>
 
@@ -722,6 +755,15 @@ const SpatialIntelligence = () => {
             })}
 
             <ComplaintClusterLayer pins={complaintPins} visible={layers.complaintPins} />
+            {showGeoClusters && geoClusters.map((c: any, i: number) => (
+              <Circle key={i} center={c.center as [number, number]} radius={300} pathOptions={{color: getPriorityColor(c.category), fillOpacity: 0.15, weight: 2}}>
+                <Popup>
+                  <strong>{c.count} incidents</strong><br/>
+                  Category: {c.category}<br/>
+                  {c.incidents.slice(0, 3).map((inc: any) => `${inc.id || inc.incident_number || ''}`).join(', ')}
+                </Popup>
+              </Circle>
+            ))}
           </MapContainer>
 
           <div className="map-overlay-info">
