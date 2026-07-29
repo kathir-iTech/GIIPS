@@ -338,6 +338,7 @@ async def lifespan(app: FastAPI):
             "ALTER TABLE users ADD COLUMN availability VARCHAR DEFAULT 'available'",
             "ALTER TABLE users ADD COLUMN skills VARCHAR",
             "ALTER TABLE incidents ADD COLUMN resolution_quality_score FLOAT",
+            "ALTER TABLE complaints ADD COLUMN urgency_flag VARCHAR DEFAULT 'LOW'",
         ]
         for col_ddl in new_cols:
             try:
@@ -346,6 +347,34 @@ async def lifespan(app: FastAPI):
                     conn.commit()
             except Exception:
                 pass
+
+        # Migration: add affected_wards column to incidents table (Feature 8)
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN affected_wards TEXT"))
+                conn.commit()
+            logger.info("[MIGRATION] Added affected_wards column to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] affected_wards column already exists, skipping")
+
+        # Migration: add accepted_by and accepted_at columns to incidents table (Feature 15)
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN accepted_by VARCHAR"))
+                conn.execute(text("ALTER TABLE incidents ADD COLUMN accepted_at TIMESTAMP"))
+                conn.commit()
+            logger.info("[MIGRATION] Added accepted_by/accepted_at columns to incidents table")
+        except Exception:
+            logger.info("[MIGRATION] accepted_by/accepted_at columns already exist, skipping")
+
+        # Migration: add zone column to users table (Feature 17)
+        try:
+            with engine.connect() as conn:
+                conn.execute(text("ALTER TABLE users ADD COLUMN zone VARCHAR"))
+                conn.commit()
+            logger.info("[MIGRATION] Added zone column to users table")
+        except Exception:
+            logger.info("[MIGRATION] zone column already exists, skipping")
 
         # Migration: create geofences table
         try:

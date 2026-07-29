@@ -12,7 +12,7 @@ import logging
 from collections import Counter
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_, extract, text, or_
+from sqlalchemy import func, and_, extract, text, or_, case
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pydantic import BaseModel
@@ -373,6 +373,45 @@ async def get_anomalies(db: Session = Depends(get_db)):
                 "severity": severity,
             })
     return anomalies
+
+
+@executive_router.get("/hotspot-prediction")
+async def get_hotspot_prediction(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Predict complaint hotspots per ward for next week using PredictiveEngine.
+    Uses last 4 weeks of complaint data per ward, returns top 10 by predicted volume.
+    Executive auth required."""
+    if current_user.role != 'Executive':
+        raise HTTPException(status_code=403, detail="Executive only")
+    engine = PredictiveEngine()
+    now = datetime.utcnow()
+    predictions = []
+    ward_numbers = db.query(Complaint.ward).filter(
+        Complaint.ward.isnot(None), Complaint.ward != ""
+    ).distinct().all()
+    for (wn,) in ward_numbers:
+        weeks = []
+        for w in range(4):
+            start = now - timedelta(weeks=w+1)
+            end = now - timedelta(weeks=w)
+            cnt = db.query(Complaint).filter(
+                Complaint.ward == wn,
+                Complaint.created_at >= start,
+                Complaint.created_at < end,
+            ).count()
+            weeks.append(cnt)
+        weeks.reverse()
+        forecast = engine.forecast_complaints('week', history=weeks)
+        predicted = forecast.get("predicted_volume", 0)
+        confidence = forecast.get("confidence", 0)
+        risk = "HIGH" if predicted > 50 else "MEDIUM" if predicted > 20 else "LOW"
+        predictions.append({
+            "ward": wn,
+            "predicted_volume": round(predicted, 1),
+            "confidence": round(confidence, 2),
+            "risk_level": risk,
+        })
+    predictions.sort(key=lambda r: r["predicted_volume"], reverse=True)
+    return predictions[:10]
 
 
 class GeofenceCreate(BaseModel):
@@ -754,6 +793,7 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
         "photo_duplicate_flag": complaint.photo_duplicate_flag,
         "photo_duplicate_of": complaint.photo_duplicate_of,
         "citizen_rating": complaint.citizen_rating,
+        "urgency_flag": getattr(complaint, "urgency_flag", "LOW"),
         "date_received": complaint.created_at.isoformat() if complaint.created_at else None,
         "incident": {
             "id": incident.id if incident else None,
@@ -788,6 +828,8 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
                 "ward": c.ward,
                 "date_received": c.created_at.isoformat() if c.created_at else None,
                 "status": incident.status if incident else None,
+                "urgency_flag": getattr(c, "urgency_flag", "LOW"),
+                "image_path": c.image_path,
             } for c in incident.complaints] if incident else [],
         } if incident else None
     }
@@ -1256,12 +1298,19 @@ async def get_incidents(
             "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
             "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
             "recommended_action": inc.recommended_action, "days_open": inc.days_open,
+            "affected_wards": json.loads(inc.affected_wards) if inc.affected_wards else [],
+            "accepted_by": inc.accepted_by,
+            "accepted_at": inc.accepted_at.isoformat() if inc.accepted_at else None,
             "complaints": [{
                 "id": c.id, "complaint_number": c.id,
                 "date_received": c.created_at.isoformat() if c.created_at else None,
                 "text": c.title, "similarity_score": c.similarity_score or 0.85,
                 "photo_duplicate_flag": c.photo_duplicate_flag,
                 "photo_duplicate_of": c.photo_duplicate_of,
+                "urgency_flag": getattr(c, "urgency_flag", "LOW"),
+                "image_path": c.image_path,
+                "complexity_label": getattr(c, "complexity_label", None),
+                "complaint_language": getattr(c, "complaint_language", None),
             } for c in inc.complaints] if inc.complaints else []
         }
         result.append(inc_dict)
@@ -1303,7 +1352,9 @@ async def get_escalated_incidents(db_user: User = Depends(get_current_user), db:
                     {"id": c.id, "complaint_number": c.id, "text": c.title,
                      "date_received": c.created_at.isoformat() if c.created_at else None,
                      "photo_duplicate_flag": c.photo_duplicate_flag,
-                     "photo_duplicate_of": c.photo_duplicate_of}
+                     "photo_duplicate_of": c.photo_duplicate_of,
+                     "urgency_flag": getattr(c, "urgency_flag", "LOW"),
+                     "image_path": c.image_path}
                     for c in inc.complaints
                 ] if inc.complaints else [],
             }
@@ -1523,6 +1574,10 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
     inc = db.query(Incident).options(joinedload(Incident.complaints), joinedload(Incident.priority_history)).filter(Incident.id == incident_id).first()
     if not inc:
         raise HTTPException(status_code=404, detail="Incident not found")
+    affected = []
+    if inc.affected_wards:
+        try: affected = json.loads(inc.affected_wards)
+        except: pass
     return {
         "id": inc.id, "incident_number": inc.incident_number, "category": inc.category,
         "department": get_department(inc.category),
@@ -1532,12 +1587,19 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         "resolution_note": inc.resolution_note,
         "verification_code": inc.verification_code,
         "created_at": inc.created_at.isoformat() if inc.created_at else None,
+        "affected_wards": affected,
+        "accepted_by": inc.accepted_by,
+        "accepted_at": inc.accepted_at.isoformat() if inc.accepted_at else None,
         "complaints": [{
             "id": c.id, "complaint_number": c.id,
             "date_received": c.created_at.isoformat() if c.created_at else None,
             "text": c.title, "similarity_score": c.similarity_score or 0.85,
             "photo_duplicate_flag": c.photo_duplicate_flag,
             "photo_duplicate_of": c.photo_duplicate_of,
+            "urgency_flag": getattr(c, "urgency_flag", "LOW"),
+            "image_path": c.image_path,
+            "complexity_label": getattr(c, "complexity_label", None),
+            "complaint_language": getattr(c, "complaint_language", None),
         } for c in inc.complaints] if inc.complaints else [],
         "priority_history": [{
             "id": ph.id, "old_score": ph.old_score, "new_score": ph.new_score,
@@ -2571,7 +2633,13 @@ def get_executive_user(db_user: User = Depends(get_current_user)):
 async def get_officers(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get all officers."""
     officers = db.query(User).filter(User.role == "Officer").all()
-    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status, "last_login": o.last_login.isoformat() if o.last_login else None} for o in officers]
+    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "zone": o.zone, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status, "last_login": o.last_login.isoformat() if o.last_login else None} for o in officers]
+
+@admin_router.get("/zone-commanders")
+async def get_zone_commanders(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get all Zone Commanders."""
+    zcs = db.query(User).filter(User.role == "Zone Commander").all()
+    return [{"id": z.id, "full_name": z.full_name, "email": z.email, "district": z.district, "zone": z.zone, "department": z.department, "created_at": z.created_at.isoformat() if z.created_at else None, "status": z.status} for z in zcs]
 
 @admin_router.post("/officers")
 async def create_officer(body: OfficerCreate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -2595,6 +2663,29 @@ async def create_officer(body: OfficerCreate, db_user: User = Depends(get_execut
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_create", officer_id, "success", f"full_name={body.full_name} email={body.email} district={body.district}")
     return {"message": "Officer created", "officer_id": officer_id}
+
+@admin_router.post("/zone-commanders")
+async def create_zone_commander(body: OfficerCreate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Create a new Zone Commander (Executive only)."""
+    if not body.email.endswith("@gov.in"):
+        raise HTTPException(status_code=400, detail="Government accounts must use @gov.in email domain")
+    if db.query(User).filter(User.email == body.email).first():
+        raise HTTPException(status_code=400, detail="Email already exists")
+    new_zc = User(
+        id=str(uuid.uuid4()),
+        full_name=body.full_name,
+        email=body.email,
+        password_hash=hash_password(body.password),
+        district=body.district,
+        department=body.department or "Zone Command",
+        role="Zone Commander",
+        zone=body.zone,
+        status="active"
+    )
+    db.add(new_zc)
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "zone_commander_create", new_zc.id, "success", f"full_name={body.full_name} zone={body.zone}")
+    return {"message": "Zone Commander created", "user_id": new_zc.id}
 
 @admin_router.patch("/officers/{officer_id}/disable")
 async def disable_officer(officer_id: str, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -3281,6 +3372,248 @@ async def update_availability(body: AvailabilityUpdateRequest, db_user: User = D
     return {"id": db_user.id, "full_name": db_user.full_name, "availability": db_user.availability}
 
 
+# === Feature 17: Zone Commander auth dependency ===
+
+def get_zone_commander_or_executive(current_user: User = Depends(get_current_user)):
+    """Allow Zone Commander or Executive access."""
+    if current_user.role not in ("Zone Commander", "Executive"):
+        raise HTTPException(status_code=403, detail="Zone Commander or Executive access required")
+    return current_user
+
+
+# === Zone Commander: filtered incident overview ===
+
+@admin_router.get("/zone-incidents")
+async def get_zone_incidents(db_user: User = Depends(get_zone_commander_or_executive), db: Session = Depends(get_db)):
+    """Get incidents filtered by the zone commander's zone (or all for exec)."""
+    from sqlalchemy import case as sql_case
+    if db_user.role == "Zone Commander":
+        if not db_user.zone:
+            raise HTTPException(status_code=400, detail="Zone Commander has no zone assigned")
+        zone_wards = [w.strip() for w in db_user.zone.split(",")]
+        incidents = db.query(Incident).filter(Incident.ward.in_(zone_wards)).order_by(Incident.created_at.desc()).limit(50).all()
+    else:
+        incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(50).all()
+    result = []
+    for inc in incidents:
+        cat = inc.category or "unknown"
+        result.append({
+            "id": inc.id, "incident_number": inc.incident_number, "category": cat,
+            "department": get_department(cat),
+            "ward": inc.ward, "cluster_size": inc.cluster_size, "priority_score": inc.priority_score,
+            "priority_label": inc.priority_label, "status": inc.status, "summary": inc.summary,
+            "days_open": inc.days_open,
+            "affected_wards": json.loads(inc.affected_wards) if inc.affected_wards else [],
+            "accepted_by": inc.accepted_by,
+            "created_at": inc.created_at.isoformat() if inc.created_at else None,
+        })
+    return result
+
+
+# === Feature 8: Multi-ward incident linking ===
+
+class AffectedWardsRequest(BaseModel):
+    affected_wards: List[str]
+
+@incident_router.patch("/{incident_id}/affected-wards")
+async def update_affected_wards(incident_id: str, body: AffectedWardsRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Update affected wards for an incident (Officer auth required)."""
+    if db_user.role not in ("Officer", "Executive", "Zone Commander"):
+        raise HTTPException(status_code=403, detail="Only officers, executives, and zone commanders can update affected wards")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    incident.affected_wards = json.dumps(body.affected_wards)
+    db.commit()
+    return {"affected_wards": body.affected_wards}
+
+
+# === Feature 13: Incident bulk close (executive only) ===
+
+class BulkCloseRequest(BaseModel):
+    incident_ids: List[str]
+    close_reason: str
+
+@incident_router.post("/bulk-close")
+async def bulk_close_incidents(body: BulkCloseRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Bulk close incidents (Executive auth required)."""
+    if db_user.role != "Executive":
+        raise HTTPException(status_code=403, detail="Executive only")
+    incidents = db.query(Incident).filter(Incident.id.in_(body.incident_ids)).all()
+    now = datetime.utcnow()
+    success_count = 0
+    for inc in incidents:
+        inc.status = "closed"
+        inc.status_changed_at = now
+        inc.resolution_note = body.close_reason
+        _write_audit_log(db, db_user.id, db_user.email, db_user.role, "bulk_close", inc.id, "success", f"Bulk closed: {body.close_reason[:200]}")
+        success_count += 1
+    db.commit()
+    return {"success_count": success_count, "total": len(body.incident_ids)}
+
+
+# === Feature 15: Officer incident acceptance ===
+
+@incident_router.patch("/{incident_id}/accept")
+async def accept_incident(incident_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Accept an incident (Officer auth required). Sets accepted_by and accepted_at."""
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Only officers can accept incidents")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    if incident.accepted_by:
+        raise HTTPException(status_code=400, detail="Incident already accepted")
+    incident.accepted_by = db_user.full_name
+    incident.accepted_at = datetime.utcnow()
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_accept", incident.id, "success")
+    return {"accepted_by": incident.accepted_by, "accepted_at": incident.accepted_at.isoformat() if incident.accepted_at else None}
+
+
+# === Feature 9: Confidence distribution (executive) ===
+
+@admin_router.get("/confidence-distribution")
+async def get_confidence_distribution(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get confidence distribution buckets for all classified complaints."""
+    rows = db.query(Complaint.confidence).filter(Complaint.confidence.isnot(None)).all()
+    buckets = {"0-20%": 0, "20-40%": 0, "40-60%": 0, "60-80%": 0, "80-100%": 0}
+    for (c,) in rows:
+        pct = c * 100
+        if pct < 20: buckets["0-20%"] += 1
+        elif pct < 40: buckets["20-40%"] += 1
+        elif pct < 60: buckets["40-60%"] += 1
+        elif pct < 80: buckets["60-80%"] += 1
+        else: buckets["80-100%"] += 1
+    return [{"bucket": k, "count": v} for k, v in buckets.items()]
+
+
+# === Feature 12: Department capacity planning (executive) ===
+
+@admin_router.get("/department-capacity")
+async def get_department_capacity(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    """Get department capacity planning data."""
+    from department_map import CATEGORY_DEPT_MAP, get_slug_for_department, SLUG_TO_DISPLAY
+    dept_data = {}
+    for cat, slug in CATEGORY_DEPT_MAP.items():
+        dept = SLUG_TO_DISPLAY.get(slug, slug)
+        if dept not in dept_data:
+            dept_data[dept] = {"open_incidents": 0, "officers_available": 0, "total_daily_resolved": 0, "days_measured": 0}
+        open_cnt = db.query(Incident).filter(
+            Incident.category == cat,
+            Incident.status.in_(["open", "in-progress"])
+        ).count()
+        dept_data[dept]["open_incidents"] += open_cnt
+    for dept in dept_data:
+        available = db.query(User).filter(
+            User.role == "Officer",
+            User.department == dept,
+            User.availability == "available"
+        ).count()
+        dept_data[dept]["officers_available"] = available
+        # avg daily resolution rate over last 30 days
+        thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+        resolved_30d = db.query(Incident).filter(
+            Incident.department == dept,
+            Incident.status.in_(["resolved", "closed"]),
+            Incident.status_changed_at >= thirty_days_ago,
+        ).count()
+        avg_daily = resolved_30d / 30.0 if resolved_30d > 0 else 0.5
+        backlog_days = round(dept_data[dept]["open_incidents"] / max(avg_daily, 0.5), 1)
+        dept_data[dept]["avg_daily_resolution_rate"] = round(avg_daily, 2)
+        dept_data[dept]["estimated_days_to_clear_backlog"] = backlog_days
+    result = []
+    for dept_name, data in sorted(dept_data.items(), key=lambda x: -x[1]["open_incidents"]):
+        entry = {"department": dept_name, **data}
+        utilization = round((data["open_incidents"] / max(data["officers_available"], 1)) * 10, 1)  # scaled
+        entry["utilization_score"] = min(utilization, 100)
+        result.append(entry)
+    return result
+
+
+# === Feature 6: Citizen trust score ===
+
+@complaint_router.get("/trust-score")
+async def get_citizen_trust_score(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Compute trust score for the current citizen user."""
+    if db_user.role != "Citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can view trust score")
+    complaints = db.query(Complaint).filter(Complaint.user_id == db_user.id).all()
+    total = len(complaints)
+    if total == 0:
+        return {"trust_score": 0, "verify_score": 0, "genuine_score": 0, "rating_accuracy": 0}
+    resolved_verified = 0
+    not_withdrawn = 0
+    rating_diff_sum = 0
+    rating_count = 0
+    for c in complaints:
+        inc = db.query(Incident).filter(Incident.id == c.incident_id).first() if c.incident_id else None
+        if inc and inc.status in ("resolved", "closed") and not inc.appealed:
+            resolved_verified += 1
+        if inc and inc.status != "withdrawn":
+            not_withdrawn += 1
+        if c.citizen_rating is not None and c.predicted_category:
+            avg_for_cat = db.query(func.avg(Complaint.citizen_rating)).filter(
+                Complaint.predicted_category == c.predicted_category,
+                Complaint.citizen_rating.isnot(None)
+            ).scalar() or 3.0
+            rating_diff_sum += abs(c.citizen_rating - float(avg_for_cat))
+            rating_count += 1
+    verify_score = round((resolved_verified / total) * 100, 1)
+    genuine_score = round((not_withdrawn / total) * 100, 1)
+    rating_accuracy = round(max(0, 100 - (rating_diff_sum / max(rating_count, 1)) * 20), 1) if rating_count > 0 else 0
+    trust_score = round((verify_score + genuine_score + rating_accuracy) / 3, 1)
+    return {"trust_score": trust_score, "verify_score": verify_score, "genuine_score": genuine_score, "rating_accuracy": rating_accuracy}
+
+
+# === Feature 19: Public transparency score ===
+
+@public_router.get("/public/transparency-score")
+def get_transparency_score(db: Session = Depends(get_db)):
+    """Compute a 0-100 transparency score from:
+    - % incidents with resolution_notes (0-20)
+    - % incidents with resolution_photos (0-20)
+    - % citizen-verified (0-20)
+    - avg citizen rating (0-20)
+    - avg resolution time vs SLA of 120h (0-20)
+    """
+    total_incidents = db.query(Incident).count()
+    if total_incidents == 0:
+        return {"transparency_score": 0, "sub_scores": {}}
+    with_notes = db.query(Incident).filter(Incident.resolution_note.isnot(None), Incident.resolution_note != "").count()
+    with_photos = db.query(Incident).filter(Incident.resolution_photo_path.isnot(None)).count()
+    citizen_verified = db.query(Incident).filter(
+        Incident.status == "resolved",
+        Incident.verification_code.is_(None)
+    ).count()
+    avg_rating = db.query(func.avg(Complaint.citizen_rating)).filter(Complaint.citizen_rating.isnot(None)).scalar() or 0
+    avg_res_days = db.query(func.avg(Incident.days_open)).filter(
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.days_open.isnot(None)
+    ).scalar() or 0
+    sla_hours = 120
+    avg_res_hours = float(avg_res_days) * 24 if avg_res_days else 0
+    note_score = min(20, round((with_notes / total_incidents) * 20, 1))
+    photo_score = min(20, round((with_photos / total_incidents) * 20, 1))
+    verified_score = min(20, round((citizen_verified / total_incidents) * 20, 1))
+    rating_score = min(20, round((float(avg_rating) / 5) * 20, 1))
+    sla_score = min(20, round(max(0, 1 - (avg_res_hours / sla_hours)) * 20, 1))
+    total_score = round(note_score + photo_score + verified_score + rating_score + sla_score, 1)
+    return {
+        "transparency_score": total_score,
+        "sub_scores": {
+            "resolution_notes": {"score": note_score, "max": 20},
+            "resolution_photos": {"score": photo_score, "max": 20},
+            "citizen_verified": {"score": verified_score, "max": 20},
+            "citizen_rating": {"score": rating_score, "max": 20},
+            "sla_adherence": {"score": sla_score, "max": 20},
+        },
+        "total_incidents": total_incidents,
+        "avg_resolution_hours": round(avg_res_hours, 1),
+        "avg_citizen_rating": round(float(avg_rating), 2),
+    }
+
+
 # === Public Endpoints (no auth required) ===
 
 STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","this","with","was","are","be","has","have","had","not","but","or","from","by","an","as","we","they","i","you","he","she","its","their","there","been","all","no","so","if","do","will","would","can","could","should","may","also","very","just","about","than","too","any","more","some","these","those","into","over","after","before","between","under","above","below","up","down","out","off","per","each","other","which","what","who","whom","when","where","why","how"}
@@ -3288,6 +3621,41 @@ STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","th
 public_router = APIRouter(tags=["Public"])
 
 STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","this","with","was","are","be","has","have","had","not","but","or","from","by","an","as","we","they","i","you","he","she","its","their","there","been","all","no","so","if","do","will","would","can","could","should","may","also","very","just","about","than","too","any","more","some","these","those","into","over","after","before","between","under","above","below","up","down","out","off","per","each","other","which","what","who","whom","when","where","why","how"}
+
+@public_router.get("/public/ward-leaderboard")
+def get_ward_leaderboard(db: Session = Depends(get_db)):
+    """Public ward performance leaderboard — no auth required.
+    Groups complaints by ward, computes resolved count, resolution rate,
+    avg citizen rating, and avg resolution days. Sorted by resolution_rate desc.
+    """
+    from sqlalchemy import case as sql_case
+    rows = db.query(
+        Complaint.ward,
+        func.count(Complaint.id).label("total"),
+        func.sum(sql_case((Incident.status.in_(["resolved", "closed"]), 1), else_=0)).label("resolved"),
+        func.avg(Complaint.citizen_rating).label("avg_rating"),
+        func.avg(Incident.days_open).label("avg_days"),
+    ).outerjoin(Incident, Complaint.incident_id == Incident.id
+    ).filter(
+        Complaint.ward.isnot(None), Complaint.ward != "",
+    ).group_by(Complaint.ward).all()
+
+    result = []
+    for ward, total, resolved, avg_rating, avg_days in rows:
+        total = total or 0
+        resolved = resolved or 0
+        resolution_rate = round((resolved / total) * 100, 1) if total > 0 else 0.0
+        result.append({
+            "ward": ward,
+            "total_complaints": total,
+            "resolved": resolved,
+            "resolution_rate": resolution_rate,
+            "avg_citizen_rating": round(float(avg_rating), 2) if avg_rating else None,
+            "avg_resolution_days": round(float(avg_days), 1) if avg_days else None,
+        })
+
+    result.sort(key=lambda r: r["resolution_rate"], reverse=True)
+    return result
 
 @public_router.get("/public/satisfaction-trend")
 def get_satisfaction_trend(db: Session = Depends(get_db)):

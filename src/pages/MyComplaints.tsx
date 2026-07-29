@@ -47,6 +47,20 @@ const MyComplaints = () => {
   const [streakBadge, setStreakBadge] = useState<string | null>(null);
   const [peakPeriod, setPeakPeriod] = useState<string | null>(null);
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
+  const [followUpLoading, setFollowUpLoading] = useState<Record<string, boolean>>({});
+  const [followUpSent, setFollowUpSent] = useState<Record<string, boolean>>({});
+
+  const handleFollowUp = async (complaint: CitizenComplaint) => {
+    const key = `follow_up_${complaint.id}`;
+    if (localStorage.getItem(key)) return;
+    setFollowUpLoading(prev => ({ ...prev, [complaint.id]: true }));
+    try {
+      await api.post(`/complaints/${complaint.id}/updates`, { message: 'Follow-up: Status check requested by citizen.' });
+      setFollowUpSent(prev => ({ ...prev, [complaint.id]: true }));
+      localStorage.setItem(key, Date.now().toString());
+    } catch {}
+    setFollowUpLoading(prev => ({ ...prev, [complaint.id]: false }));
+  };
 
   const resetFilters = () => {
     setSearchQuery('');
@@ -377,6 +391,12 @@ const MyComplaints = () => {
                       )}
                     </div>
                   </div>
+                  {c.incident?.days_open != null && c.incident.days_open > 15 && !['resolved', 'closed', 'pending_verification'].includes(incidentStatus) && !localStorage.getItem(`follow_up_${c.id}`) && !followUpSent[c.id] && (
+                    <button className="nudge-btn" onClick={(e) => { e.stopPropagation(); handleFollowUp(c); }} disabled={followUpLoading[c.id]}>
+                      {followUpLoading[c.id] ? t('myComplaints.followUpSending') : t('myComplaints.followUp')}
+                    </button>
+                  )}
+                  {followUpSent[c.id] && <span className="follow-up-sent">{t('myComplaints.followUpSent')}</span>}
                   <ChevronRight size={18} className="arrow-icon" />
                 </div>
               );

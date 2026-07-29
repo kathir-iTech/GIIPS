@@ -18,8 +18,28 @@ const Landing = () => {
   );
   const [catStats, setCatStats] = useState<{ category: string; count: number }[] | null>(null);
   const [complaintsHandled, setComplaintsHandled] = useState<number>(0);
+  const [animatedCount, setAnimatedCount] = useState<number>(0);
   const counterRef = useRef<HTMLSpanElement>(null);
   const prevCountRef = useRef<number>(0);
+  const animFrameRef = useRef<number>(0);
+
+  useEffect(() => {
+    if (animatedCount !== complaintsHandled) {
+      const start = animatedCount;
+      const end = complaintsHandled;
+      const duration = 800;
+      const startTime = performance.now();
+      const animate = (now: number) => {
+        const elapsed = now - startTime;
+        const progress = Math.min(elapsed / duration, 1);
+        const eased = 1 - Math.pow(1 - progress, 3);
+        setAnimatedCount(Math.round(start + (end - start) * eased));
+        if (progress < 1) animFrameRef.current = requestAnimationFrame(animate);
+      };
+      animFrameRef.current = requestAnimationFrame(animate);
+    }
+    return () => cancelAnimationFrame(animFrameRef.current);
+  }, [complaintsHandled]);
 
   useEffect(() => {
     const fetchStats = () => {
@@ -81,7 +101,7 @@ const Landing = () => {
         <section className="crystal-section counter-section">
           <div className="counter-badge">{t('landing.counterBadge')}</div>
           <div className="counter-value">
-            <span className="counter-number" ref={counterRef}>{complaintsHandled.toLocaleString()}</span>
+            <span className="counter-number" ref={counterRef}>{animatedCount.toLocaleString()}</span>
           </div>
           <p className="counter-label">{t('landing.counterLabel')}</p>
         </section>

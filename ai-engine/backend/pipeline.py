@@ -86,6 +86,11 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
         confidence = classify_res.confidence
         department = get_department(category)
 
+        # Urgency keyword detection
+        urgency_keywords = ["fire", "flood", "collapse", "accident", "gas leak", "electrocution", "medical", "emergency", "blast", "building collapse"]
+        complaint_full_text = f"{data['title']} {data.get('description', '')}"
+        complaint.urgency_flag = "HIGH" if any(kw in complaint_full_text.lower() for kw in urgency_keywords) else "LOW"
+
         incident_id = None
         dup_conf = 0.0
         is_duplicate = False
@@ -177,6 +182,14 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
         complaint.priority = incident.priority_label
         complaint.merge_reason = merge_reason if is_duplicate else None
         complaint.user_id = user_id
+
+        # Urgency priority boost
+        if complaint.urgency_flag == "HIGH":
+            incident.priority_score = min(100, (incident.priority_score or 0) + 5)
+            if incident.priority_score >= 70:
+                incident.priority_label = "CRITICAL"
+            elif incident.priority_score >= 50:
+                incident.priority_label = "HIGH"
 
         # Create notification for the citizen when complaint is processed
         if user_id:

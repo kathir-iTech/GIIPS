@@ -155,6 +155,22 @@ const SpatialIntelligence = () => {
   const [selectedIncident, setSelectedIncident] = useState<any | null>(null);
   const [showMobileFilters, setShowMobileFilters] = useState(false);
   const [showGeoClusters, setShowGeoClusters] = useState(false);
+  const [compareOpen, setCompareOpen] = useState(false);
+  const [compareData, setCompareData] = useState<any>(null);
+
+  const openCompare = useCallback(async () => {
+    try {
+      const [current, historical] = await Promise.all([
+        api.getHeatmap(),
+        api.getPublicStats ? api.getPublicStats() : Promise.resolve(null),
+      ]);
+      setCompareData({ current, historical });
+      setCompareOpen(true);
+    } catch {
+      setCompareData(null);
+      setCompareOpen(true);
+    }
+  }, []);
 
   const districtData = useMemo(() => {
     const data: Record<string, any> = {};
@@ -493,6 +509,9 @@ const SpatialIntelligence = () => {
           </button>
           <button className="refresh-btn" onClick={handleRetry} title={t('common.tooltip.refresh')}>
             <RefreshCw size={18} />
+          </button>
+          <button className="compare-btn" onClick={openCompare} title={t('spatialIntelligence.compareButton')}>
+            <Gauge size={16} />
           </button>
           <div className="header-datetime">
             <Clock size={14} />
@@ -930,6 +949,33 @@ const SpatialIntelligence = () => {
             <button className="open-details-btn" onClick={() => { window.location.href = '/incident-feed'; }}>
               {t('spatialIntelligence.popup.openDetails')} <ArrowUpRight size={14} />
             </button>
+          </div>
+        </div>
+      )}
+
+      {compareOpen && (
+        <div className="modal-overlay" onClick={() => setCompareOpen(false)}>
+          <div className="digest-modal-content compare-modal" onClick={e => e.stopPropagation()}>
+            <div className="panel-header">
+              <h3>{t('spatialIntelligence.compareTitle')}</h3>
+              <button className="close-panel" onClick={() => setCompareOpen(false)}><X size={18} /></button>
+            </div>
+            {compareData ? (
+              <div className="compare-grid">
+                <div className="compare-col">
+                  <h4>{t('spatialIntelligence.compareCurrent')}</h4>
+                  <p>{t('spatialIntelligence.compareComplaints')}: {(compareData.current || []).reduce((s: number, h: any) => s + (h.count || 0), 0)}</p>
+                  <p>{t('spatialIntelligence.compareIncidents')}: {incidents.length}</p>
+                  <p>{t('spatialIntelligence.compareCritical')}: {criticalCount}</p>
+                </div>
+                <div className="compare-col">
+                  <h4>{t('spatialIntelligence.comparePrevious')}</h4>
+                  <p className="text-muted">{t('spatialIntelligence.compareHistoricalNote')}</p>
+                </div>
+              </div>
+            ) : (
+              <p className="text-muted">{t('spatialIntelligence.compareNoData')}</p>
+            )}
           </div>
         </div>
       )}

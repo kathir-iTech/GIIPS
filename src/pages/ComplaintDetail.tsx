@@ -282,6 +282,9 @@ const ComplaintDetailPage = () => {
               <h2>{data.title || t('common.untitled')}</h2>
               <div className="status-actions">
                 <span className={`status-badge ${STATUS_STYLES[incidentStatus] || 'status-open'}`}>{t(STATUS_KEY[incidentStatus] || 'common.status.open')}</span>
+                {data.urgency_flag === 'HIGH' && (
+                  <span className="urgency-badge">{t('complaintDetail.urgent')}</span>
+                )}
                 {data.incident?.days_open != null && (
                   <span className={`sla-badge sla-${getSLAStatus(data.incident.days_open, data.ward)}`}>
                     {getSLAStatusLabel(getSLAStatus(data.incident.days_open, data.ward), t)}

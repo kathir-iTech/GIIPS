@@ -320,11 +320,22 @@ const CitizenPortal = () => {
 
   const steps = [t('citizenPortal.stepDetails'), t('citizenPortal.stepComplaint'), t('citizenPortal.stepLocation'), t('citizenPortal.stepPhoto'), t('citizenPortal.stepReview'), t('citizenPortal.stepSubmit')];
 
+  const confettiColors = ['#3b82f6','#8b5cf6','#f59e0b','#16a34a','#ef4444','#06b6d4','#ea580c'];
+  const confettiPieces = Array.from({ length: 24 }, (_, i) => ({
+    left: `${(i / 24) * 100}%`, delay: `${i * 0.05}s`, color: confettiColors[i % confettiColors.length],
+    size: 6 + (i % 3) * 2,
+  }));
+
   if (result && !isProcessing) {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
     return (
     <div className="portal-container success">
       <div className="glass-card success-card receipt" id="complaint-receipt">
+        <div className="confetti-container">
+          {confettiPieces.map((p, i) => (
+            <div key={i} className="confetti-piece" style={{ left: p.left, animationDelay: p.delay, background: p.color, width: p.size, height: p.size }} />
+          ))}
+        </div>
         <CheckCircle size={64} className="success-icon" />
         <h2>{t('citizenPortal.successTitle')}</h2>
         <p>{t('citizenPortal.successBody')}</p>
@@ -535,6 +546,9 @@ const CitizenPortal = () => {
               </label>
               {photoError && <p className="field-error">{photoError}</p>}
               {imagePreview && <img src={imagePreview} className="preview" alt={t('complaintDetail.imageAlt')} />}
+              {!selectedFile && !imagePreview && (
+                <p className="photo-hint">{t('citizenPortal.photoHint')}</p>
+              )}
             </div>
           )}
           {step === 5 && (

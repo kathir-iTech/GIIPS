@@ -185,6 +185,7 @@ class OfficerCreate(BaseModel):
     password: str
     district: Optional[str] = None
     department: Optional[str] = None
+    zone: Optional[str] = None
 
 class OfficerUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -203,6 +204,7 @@ class UserResponse(BaseModel):
     ward: Optional[str] = None
     district: Optional[str] = None
     department: Optional[str] = None
+    zone: Optional[str] = None
     notify_status_updates: Optional[bool] = True
     skills: Optional[str] = None
     availability: Optional[str] = None

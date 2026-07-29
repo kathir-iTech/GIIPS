@@ -39,6 +39,9 @@ export interface Incident {
   complaints: Complaint[];
   status: string;
   priority_history: PriorityHistory[];
+  affected_wards?: string[];
+  accepted_by?: string | null;
+  accepted_at?: string | null;
 }
 
 export interface Complaint {
@@ -118,6 +121,7 @@ export interface CitizenComplaint {
   photo_duplicate_flag?: string | null;
   photo_duplicate_of?: string | null;
   citizen_rating?: number | null;
+  urgency_flag?: string | null;
   assigned_officer?: AssignedOfficer | null;
   tags?: string[];
   complaint_language?: string | null;
@@ -152,7 +156,7 @@ export interface CitizenComplaint {
 
 export interface ComplaintDetail extends CitizenComplaint {}
 
-export type UserRole = 'Citizen' | 'Officer' | 'Executive' | 'Councillor' | 'Commissioner' | 'MLA' | 'Collector';
+export type UserRole = 'Citizen' | 'Officer' | 'Executive' | 'Councillor' | 'Commissioner' | 'MLA' | 'Collector' | 'Zone Commander';
 
 export interface AppNotification {
   id: string;

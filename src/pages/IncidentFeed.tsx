@@ -513,6 +513,9 @@ const IncidentFeed = () => {
                                 <span className="complaint-id">{c.complaint_number}</span>
                                 <span className="complaint-date">{c.date_received}</span>
                                 <div className="similarity-indicator"><div className="sim-bar" style={{ width: `${(c.similarity_score || 0) * 100}%` }}></div><span>{((c.similarity_score || 0) * 100).toFixed(0)}%</span></div>
+                                {(c as any).urgency_flag === 'HIGH' && (
+                                  <span className="urgency-badge">{t('incidents.urgent')}</span>
+                                )}
                                 {c.complexity_label && (
                                   <span className={`complexity-badge complexity-${c.complexity_label}`}>
                                     {c.complexity_label}
@@ -534,6 +537,17 @@ const IncidentFeed = () => {
                           {incident.complaints && incident.complaints.length > 5 && <div className="more-complaints">{t('incidents.moreComplaints', { count: incident.complaints.length - 5 })}</div>}
                         </div>
                       </div>
+                      {(incident.complaints?.some((c: any) => c.image_path) || incident.complaints?.some((c: any) => (c as any).image_path)) && (
+                        <div className="media-gallery-section">
+                          <h4>{t('incidents.mediaGallery')}</h4>
+                          <div className="media-thumbnail-strip">
+                            {(incident.complaints ?? []).filter((c: any) => c.image_path).map((c:any) => (
+                              <img key={c.id} src={c.image_path} alt="" className="media-thumb"
+                                onClick={() => window.open(c.image_path, '_blank')} />
+                            ))}
+                          </div>
+                        </div>
+                      )}
                       {(user?.role === 'Officer' || user?.role === 'Executive') && (
                         <div className="private-notes-section">
                           <h4>{t('incidents.privateNotes')}</h4>

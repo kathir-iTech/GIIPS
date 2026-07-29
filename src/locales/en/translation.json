@@ -411,7 +411,8 @@
     "nearMeNote": "Resolved in {{days}} days",
     "suggestedCategory": "Suggested category:",
     "accept": "Accept",
-    "addTag": "Add tag..."
+    "addTag": "Add tag...",
+    "photoHint": "Adding a photo helps officers understand the issue faster"
   },
 
   "overview": {
@@ -521,7 +522,8 @@
     "nearbyTitle": "Nearby Similar Complaints",
     "rateTitle": "Rate this Resolution",
     "ratePrompt": "How satisfied are you with the resolution of this complaint?",
-    "rateSubmit": "Submit Rating"
+    "rateSubmit": "Submit Rating",
+    "urgent": "URGENT"
   },
 
   "myComplaints": {
@@ -555,7 +557,10 @@
     "statPending": "Pending",
     "statAvgResolution": "Avg Days",
     "daysUnit": "d",
-    "csvHeaders": "ID,Title,Category,Ward,Status,Date Filed,Date Resolved,Resolution Note"
+    "csvHeaders": "ID,Title,Category,Ward,Status,Date Filed,Date Resolved,Resolution Note",
+    "followUp": "Follow up?",
+    "followUpSending": "Sending...",
+    "followUpSent": "Follow-up sent"
   },
 
   "incidents": {
@@ -592,6 +597,8 @@
     "splitTitle": "Split this complaint into a new incident",
     "split": "Split",
     "moreComplaints": "+{{count}} more",
+    "urgent": "URGENT",
+    "mediaGallery": "Media Gallery",
     "prev": "Previous",
     "next": "Next",
     "sla": "SLA",
@@ -867,6 +874,12 @@
     "copySummary": {
       "button": "Copy Summary",
       "copied": "Copied!"
+    },
+    "shiftHandover": {
+      "button": "Shift Handover Report",
+      "title": "Shift Handover Report",
+      "copy": "Copy to Clipboard",
+      "close": "Close"
     },
     "activeUsers": "{{count}} online now",
     "runAutoEscalation": "Run SLA Auto-Escalation Check",
@@ -1219,7 +1232,16 @@
     "hotspotWard": "Ward:",
     "geoClusterIncidents": "incidents",
     "geoClusterCategory": "Category:",
-    "daysOpenUnit": "d open"
+    "daysOpenUnit": "d open",
+    "compareButton": "Before/After",
+    "compareTitle": "Before & After Comparison",
+    "compareCurrent": "Current Period",
+    "comparePrevious": "Previous Period",
+    "compareComplaints": "Complaints",
+    "compareIncidents": "Incidents",
+    "compareCritical": "Critical",
+    "compareHistoricalNote": "Historical data will appear once sufficient records are collected.",
+    "compareNoData": "No comparison data available yet."
   },
 
   "track": {

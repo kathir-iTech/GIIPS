@@ -291,6 +291,7 @@ class User(Base):
     notify_status_updates = Column(Boolean, default=True, nullable=False)
     availability = Column(String, default="available", nullable=False)
     skills = Column(String, nullable=True)
+    zone = Column(String, nullable=True)
 
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""
@@ -337,6 +338,13 @@ class Incident(Base):
     appealed = Column(Boolean, default=False, nullable=False)
     appeal_reason = Column(Text, nullable=True)
     appealed_at = Column(DateTime, nullable=True)
+
+    # Multi-ward incident linking (Feature 8)
+    affected_wards = Column(Text, nullable=True)
+
+    # Officer acceptance (Feature 15)
+    accepted_by = Column(String, nullable=True)
+    accepted_at = Column(DateTime, nullable=True)
 
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
@@ -385,6 +393,9 @@ class Complaint(Base):
     # Complexity score fields
     complexity_score = Column(Float, nullable=True)
     complexity_label = Column(String, nullable=True)
+
+    # Urgency flag (set by ML pipeline)
+    urgency_flag = Column(String, nullable=True, default="LOW")
 
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")
