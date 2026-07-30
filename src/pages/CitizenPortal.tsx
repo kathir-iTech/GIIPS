@@ -96,12 +96,23 @@ const DuplicateCheckStep: React.FC<DupCheckStepProps> = ({
               {duplicateWarnings.map((d, i) => (
                 <li key={i}>
                   <strong>{d.title || d.category}</strong>
+                  {d.tracking_id && <span> — {t('citizenPortal.similarExists', { trackingId: d.tracking_id })}</span>}
                   {d.distance_km != null && <span> — {t('citizenPortal.kmAway', { distance: d.distance_km.toFixed(2) })}</span>}
                   {d.status && <span> [{d.status}]</span>}
                 </li>
               ))}
             </ul>
             <p className="dup-note">{t('citizenPortal.duplicateNote')}</p>
+            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.75rem' }}>
+              {duplicateWarnings[0]?.tracking_id && (
+                <button className="secondary" onClick={() => window.open(`/track?complaintId=${duplicateWarnings[0].tracking_id}`, '_blank')} style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid #475569', background: '#1e293b', color: '#94a3b8', cursor: 'pointer' }}>
+                  {t('citizenPortal.trackExisting')}
+                </button>
+              )}
+              <button onClick={handleSubmit} disabled={loading} style={{ padding: '6px 12px', fontSize: '0.8rem', borderRadius: '6px', border: '1px solid #3b82f6', background: '#3b82f6', color: 'white', cursor: 'pointer' }}>
+                {loading ? t('citizenPortal.processingButton') : t('citizenPortal.submitAnyway')}
+              </button>
+            </div>
           </div>
         </div>
       )}
@@ -581,6 +592,12 @@ const CitizenPortal = () => {
                   onChange={e => { setFormData({ ...formData, description: e.target.value }); if (fieldErrors.description) setFieldErrors(prev => ({ ...prev, description: '' })); }}
                   className={fieldErrors.description ? 'input-error' : ''}
                 />
+                {formData.description.length < 20 && formData.description.length > 0 && (
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: 4 }}>
+                    <Clock size={12} style={{ verticalAlign: 'middle', marginRight: 4 }} />
+                    {t('citizenPortal.addMoreDetails')}: {t('citizenPortal.detailHint')}
+                  </p>
+                )}
                 <VoiceInput
                   onTranscript={(text) => setFormData(prev => ({ ...prev, description: text }))}
                   disabled={loading}
@@ -658,6 +675,11 @@ const CitizenPortal = () => {
                   }}
                 />
               </label>
+              {selectedFile && ['uploading', 'idle'].includes(photoUploadStatus) && (
+                <p className="compressing-hint" style={{ fontSize: '0.8rem', color: '#94a3b8', display: 'flex', alignItems: 'center', gap: 6, marginTop: 8 }}>
+                  <Loader2 size={14} className="spin" /> {t('citizenPortal.compressingImage')}
+                </p>
+              )}
               {photoError && <p className="field-error">{photoError}</p>}
               {imagePreview && <img src={imagePreview} className="preview" alt={t('complaintDetail.imageAlt')} />}
               {!selectedFile && !imagePreview && (

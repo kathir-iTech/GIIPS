@@ -421,3 +421,42 @@ class CouncillorPerformanceItem(BaseModel):
     resolution_rate: float
     avg_citizen_rating: float
     sla_compliance: float
+
+# F6: watchlist
+class WatchlistRequest(BaseModel):
+    incident_id: str
+
+class WatchlistResponse(BaseModel):
+    id: str
+    exec_user_id: str
+    incident_id: str
+    created_at: str
+
+# F9: resolution time by category
+class ResolutionTimeByCategory(BaseModel):
+    category: str
+    avg_resolution_days: float
+
+# F13: reassignment request
+class ReassignmentRequestResponse(BaseModel):
+    id: str
+    incident_id: str
+    requesting_officer_id: str
+    requesting_officer_name: str
+    reason: str
+    status: str
+    created_at: str
+
+# F14: complaint subscription
+class ComplaintSubscriptionRequest(BaseModel):
+    complaint_id: str
+    user_id: str
+    created_at: str
+
+# F19: system metrics
+class SystemMetrics(BaseModel):
+    active_connections: int
+    redis_status: str
+    redis_latency_ms: float
+    db_latency_ms: float
+    queue_depth: int

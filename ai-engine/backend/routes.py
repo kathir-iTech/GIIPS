@@ -22,7 +22,7 @@ from cryptography.fernet import Fernet
 from base64 import urlsafe_b64encode
 import hashlib
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory, PeerReview, AlertConfig, ResponseTemplate
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory, PeerReview, AlertConfig, ResponseTemplate, Watchlist, IncidentReassignmentRequest, ComplaintSubscription
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -55,6 +55,11 @@ from models import (
     ZoneTransferRequest,
     AlertConfigRequest,
     ResponseTemplateRequest,
+    WatchlistRequest, WatchlistResponse,
+    ResolutionTimeByCategory,
+    ReassignmentRequestResponse,
+    ComplaintSubscriptionRequest,
+    SystemMetrics,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status, get_pool
@@ -690,6 +695,50 @@ def get_councillor_performance(db: Session = Depends(get_db), db_user: User = De
     return result
 
 
+# F6: Watchlist endpoints
+@executive_router.post("/watchlist")
+def add_watchlist(body: WatchlistRequest, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    existing = db.query(Watchlist).filter(Watchlist.exec_user_id == db_user.id, Watchlist.incident_id == body.incident_id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Incident already in your watchlist")
+    incident = db.query(Incident).filter(Incident.id == body.incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    wl = Watchlist(id=str(uuid.uuid4()), exec_user_id=db_user.id, incident_id=body.incident_id)
+    db.add(wl)
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "watchlist_add", body.incident_id, "success")
+    return {"message": "Incident added to watchlist", "id": wl.id}
+
+@executive_router.delete("/watchlist/{incident_id}")
+def remove_watchlist(incident_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    wl = db.query(Watchlist).filter(Watchlist.exec_user_id == db_user.id, Watchlist.incident_id == incident_id).first()
+    if not wl:
+        raise HTTPException(status_code=404, detail="Watchlist entry not found")
+    db.delete(wl)
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "watchlist_remove", incident_id, "success")
+    return {"message": "Incident removed from watchlist"}
+
+@executive_router.get("/watchlist")
+def list_watchlist(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    entries = db.query(Watchlist).filter(Watchlist.exec_user_id == db_user.id).order_by(Watchlist.created_at.desc()).all()
+    result = []
+    for e in entries:
+        inc = db.query(Incident).filter(Incident.id == e.incident_id).first()
+        result.append({
+            "id": e.id,
+            "incident_id": e.incident_id,
+            "incident_number": inc.incident_number if inc else None,
+            "category": inc.category if inc else None,
+            "status": inc.status if inc else None,
+            "priority_label": inc.priority_label if inc else None,
+            "ward": inc.ward if inc else None,
+            "created_at": e.created_at.isoformat() if e.created_at else None,
+        })
+    return result
+
+
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
 priority_router = APIRouter(prefix="/priority", tags=["Priority"])
@@ -1266,6 +1315,47 @@ async def rate_complaint(complaint_id: str, body: RateComplaintRequest, db_user:
                      f"Rating: {body.rating}/5")
 
     return {"message": "Rating submitted", "rating": body.rating}
+
+
+@complaint_router.post("/{complaint_id}/follow-up")
+async def follow_up_complaint(complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Submit a follow-up on a complaint (F12). Max 3 follow-ups per complaint."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id, Complaint.user_id == db_user.id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found or not owned by you")
+    if complaint.follow_up_count >= 3:
+        raise HTTPException(status_code=400, detail="Maximum follow-ups reached for this complaint (3 max)")
+    incident = db.query(Incident).filter(Incident.id == complaint.incident_id).first() if complaint.incident_id else None
+    if not incident:
+        raise HTTPException(status_code=400, detail="Complaint not yet assigned to an incident")
+    complaint.follow_up_count = (complaint.follow_up_count or 0) + 1
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "complaint_follow_up", complaint.id, "success",
+                     f"Follow-up #{complaint.follow_up_count}")
+    _create_notification(db, db_user.id, "follow_up", complaint_id=complaint.id,
+                         data={"incident_number": incident.incident_number, "follow_up_count": complaint.follow_up_count})
+    return {"message": f"Follow-up submitted ({complaint.follow_up_count}/3)", "follow_up_count": complaint.follow_up_count}
+
+
+@complaint_router.post("/{complaint_id}/subscribe")
+async def subscribe_complaint(complaint_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Subscribe to status updates for a complaint (F14). Max 5 subscriptions per user."""
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    existing = db.query(ComplaintSubscription).filter(
+        ComplaintSubscription.user_id == db_user.id,
+        ComplaintSubscription.complaint_id == complaint_id,
+    ).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Already subscribed to this complaint")
+    sub_count = db.query(ComplaintSubscription).filter(ComplaintSubscription.user_id == db_user.id).count()
+    if sub_count >= 5:
+        raise HTTPException(status_code=400, detail="Maximum 5 subscriptions per user")
+    sub = ComplaintSubscription(id=str(uuid.uuid4()), user_id=db_user.id, complaint_id=complaint_id)
+    db.add(sub)
+    db.commit()
+    return {"message": "Subscribed to complaint updates", "id": sub.id}
 
 
 @complaint_router.post("/{complaint_id}/withdraw")
@@ -2464,6 +2554,24 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
                                         f"Incident {incident.incident_number} has been marked as fixed. Please confirm.",
                                         db=db)
 
+        # F6: Notify watchlist watchers
+        for watcher in db.query(Watchlist).filter(Watchlist.incident_id == incident.id).all():
+            _create_notification(
+                db, watcher.exec_user_id, "watchlist_status_change",
+                data={"incident_id": incident.id, "incident_number": incident.incident_number,
+                      "old_status": old_status, "new_status": "pending_verification"},
+            )
+
+        # F14: Notify complaint subscribers
+        for c in incident.complaints:
+            for sub in db.query(ComplaintSubscription).filter(ComplaintSubscription.complaint_id == c.id).all():
+                _create_notification(
+                    db, sub.user_id, "subscribed_status_change",
+                    complaint_id=c.id,
+                    data={"incident_id": incident.id, "incident_number": incident.incident_number,
+                          "old_status": old_status, "new_status": "pending_verification"},
+                )
+
         _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
                          incident.id, "success",
                          f"Status set to pending_verification (awaiting citizen confirmation)")
@@ -2507,6 +2615,24 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
             _send_push_notification(c.user_id, "Status Update",
                                     f"Incident {incident.incident_number} changed from {old_status} to {body.status}",
                                     db=db)
+
+    # F6: Notify watchlist watchers
+    for watcher in db.query(Watchlist).filter(Watchlist.incident_id == incident.id).all():
+        _create_notification(
+            db, watcher.exec_user_id, "watchlist_status_change",
+            data={"incident_id": incident.id, "incident_number": incident.incident_number,
+                  "old_status": old_status, "new_status": body.status},
+        )
+
+    # F14: Notify complaint subscribers
+    for c in incident.complaints:
+        for sub in db.query(ComplaintSubscription).filter(ComplaintSubscription.complaint_id == c.id).all():
+            _create_notification(
+                db, sub.user_id, "subscribed_status_change",
+                complaint_id=c.id,
+                data={"incident_id": incident.id, "incident_number": incident.incident_number,
+                      "old_status": old_status, "new_status": body.status},
+            )
 
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
                      incident.id, "success",
@@ -3211,6 +3337,15 @@ async def mark_all_notifications_read(db_user: User = Depends(get_current_user),
     return {"message": "All notifications marked as read"}
 
 
+# F18: Bulk notification mark-as-read (returns count)
+@notifications_router.post("/mark-all-read")
+async def mark_all_read_bulk(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    count = db.query(Notification).filter(Notification.user_id == db_user.id, Notification.is_read == False).count()
+    db.query(Notification).filter(Notification.user_id == db_user.id, Notification.is_read == False).update({"is_read": True})
+    db.commit()
+    return {"message": "All notifications marked as read", "count": count}
+
+
 # FEATURE 3: push notification structure
 class PushSubscribeRequest(BaseModel):
     endpoint: str
@@ -3878,11 +4013,106 @@ async def get_department_list(db_user: User = Depends(get_executive_user)):
         for slug in DEPARTMENT_SLUGS
     ]
 
+# F15: Executive export all data
+@admin_router.get("/export-all")
+async def export_all_data(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    import io, csv, zipfile
+    from fastapi.responses import StreamingResponse
+
+    buf = io.BytesIO()
+    with zipfile.ZipFile(buf, "w", zipfile.ZIP_DEFLATED) as zf:
+        # Complaints
+        c_buf = io.StringIO()
+        cw = csv.writer(c_buf)
+        cw.writerow(["id", "title", "description", "location", "ward", "predicted_category", "priority", "incident_id", "user_id", "created_at"])
+        for c in db.query(Complaint).all():
+            cw.writerow([c.id, c.title, c.description, c.location, c.ward, c.predicted_category, c.priority, c.incident_id, c.user_id, c.created_at.isoformat() if c.created_at else ""])
+        zf.writestr("complaints.csv", c_buf.getvalue())
+
+        # Incidents
+        i_buf = io.StringIO()
+        iw = csv.writer(i_buf)
+        iw.writerow(["id", "incident_number", "category", "ward", "status", "priority_score", "priority_label", "cluster_size", "days_open", "created_at"])
+        for inc in db.query(Incident).all():
+            iw.writerow([inc.id, inc.incident_number, inc.category, inc.ward, inc.status, inc.priority_score, inc.priority_label, inc.cluster_size, inc.days_open, inc.created_at.isoformat() if inc.created_at else ""])
+        zf.writestr("incidents.csv", i_buf.getvalue())
+
+        # Audit logs
+        a_buf = io.StringIO()
+        aw = csv.writer(a_buf)
+        aw.writerow(["id", "timestamp", "user_id", "user_email", "role", "action", "target", "status", "details"])
+        for al in db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(5000).all():
+            aw.writerow([al.id, al.timestamp.isoformat() if al.timestamp else "", al.user_id, al.user_email, al.role, al.action, al.target, al.status, al.details])
+        zf.writestr("audit_logs.csv", a_buf.getvalue())
+
+        # Notifications
+        n_buf = io.StringIO()
+        nw = csv.writer(n_buf)
+        nw.writerow(["id", "user_id", "complaint_id", "type", "is_read", "created_at"])
+        for n in db.query(Notification).order_by(Notification.created_at.desc()).limit(5000).all():
+            nw.writerow([n.id, n.user_id, n.complaint_id, n.type, n.is_read, n.created_at.isoformat() if n.created_at else ""])
+        zf.writestr("notifications.csv", n_buf.getvalue())
+
+        # Users
+        u_buf = io.StringIO()
+        uw = csv.writer(u_buf)
+        uw.writerow(["id", "full_name", "email", "role", "department", "ward", "district", "status", "created_at"])
+        for u in db.query(User).all():
+            uw.writerow([u.id, u.full_name, u.email, u.role, u.department, u.ward, u.district, u.status, u.created_at.isoformat() if u.created_at else ""])
+        zf.writestr("users.csv", u_buf.getvalue())
+
+    buf.seek(0)
+    date_str = datetime.utcnow().strftime("%Y-%m-%d")
+    return StreamingResponse(buf, media_type="application/zip",
+                             headers={"Content-Disposition": f"attachment; filename=giips-export-{date_str}.zip"})
+
+
 @admin_router.get("/system-health")
 async def get_system_health(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get system health status."""
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "system_health_view", "system", "success")
     return {"backend": "healthy", "database": "healthy", "ai_engine": "healthy", "jwt_auth": "healthy", "classification_model": "loaded", "prediction_engine": "loaded", "duplicate_detection": "loaded", "knowledge_engine": "loaded", "decision_engine": "loaded", "db_size": db.query(User).count() + db.query(Complaint).count(), "users": db.query(User).count(), "complaints": db.query(Complaint).count(), "incidents": db.query(Incident).count()}
+
+# F19: System health monitoring
+@admin_router.get("/system-metrics")
+async def get_system_metrics(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
+    import time as time_module
+    # Active WebSocket connections
+    active_connections = manager.active_count
+
+    # Redis status & latency
+    redis_status = "disconnected"
+    redis_latency_ms = 0.0
+    pool = get_pool()
+    if pool:
+        try:
+            start = time_module.monotonic()
+            await pool.execute_command("PING")
+            redis_latency_ms = round((time_module.monotonic() - start) * 1000, 2)
+            redis_status = "connected"
+        except Exception:
+            redis_status = "disconnected"
+
+    # DB latency
+    db_latency_ms = 0.0
+    try:
+        start = time_module.monotonic()
+        db.execute(text("SELECT 1"))
+        db_latency_ms = round((time_module.monotonic() - start) * 1000, 2)
+    except Exception:
+        db_latency_ms = 0.0
+
+    # Queue depth: complaints with predicted_category IS NULL (unprocessed)
+    queue_depth = db.query(func.count(Complaint.id)).filter(Complaint.predicted_category.is_(None)).scalar() or 0
+
+    return {
+        "active_connections": active_connections,
+        "redis_status": redis_status,
+        "redis_latency_ms": redis_latency_ms,
+        "db_latency_ms": db_latency_ms,
+        "queue_depth": queue_depth,
+    }
+
 
 @admin_router.get("/audit-logs")
 async def get_audit_logs(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -4306,6 +4536,21 @@ async def get_resolution_photo(incident_id: str, db: Session = Depends(get_db)):
     if not os.path.exists(incident.resolution_photo_path):
         raise HTTPException(status_code=404, detail="Resolution photo file not found")
     return FileResponse(incident.resolution_photo_path)
+
+
+@admin_router.get("/resolution-time-by-category")
+def get_resolution_time_by_category(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    """Return avg resolution days by category for the last 90 days (F9)."""
+    ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+    rows = db.query(
+        Incident.category,
+        func.avg(Incident.days_open).label("avg_days"),
+    ).filter(
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.created_at >= ninety_days_ago,
+        Incident.days_open.isnot(None),
+    ).group_by(Incident.category).all()
+    return [{"category": cat, "avg_resolution_days": round(float(avg), 1)} for cat, avg in rows if avg is not None]
 
 
 @admin_router.get("/resolution-histogram")
@@ -4759,6 +5004,34 @@ async def reassign_incident(incident_id: str, body: ReassignRequest, db_user: Us
     }
 
 
+@incident_router.post("/{incident_id}/reassignment-request")
+def create_reassignment_request(incident_id: str, body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    """Officer requests reassignment of an incident to another officer/department (F13)."""
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Only officers can request reassignment")
+    incident = db.query(Incident).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    reason = body.get("reason", "").strip()
+    if not reason:
+        raise HTTPException(status_code=400, detail="Reason is required")
+    req = IncidentReassignmentRequest(
+        id=str(uuid.uuid4()),
+        incident_id=incident_id,
+        requesting_officer_id=db_user.id,
+        reason=reason,
+    )
+    db.add(req)
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "reassignment_request_created", incident_id, "success", reason[:200])
+    # Notify all executives
+    for exec_user in db.query(User).filter(User.role == "Executive").all():
+        _create_notification(db, exec_user.id, "reassignment_request",
+                             data={"incident_id": incident_id, "incident_number": incident.incident_number,
+                                   "officer_name": db_user.full_name, "reason": reason})
+    return {"message": "Reassignment request submitted", "id": req.id}
+
+
 # === Feature 9: Confidence distribution (executive) ===
 
 @admin_router.get("/confidence-distribution")
@@ -4874,6 +5147,44 @@ def get_leave_calendar(month: int = None, year: int = None, db: Session = Depend
     prefix = f"{y}-{m:02d}"
     rows = db.query(OfficerLeave).filter(OfficerLeave.date.like(f"{prefix}%")).all()
     return [{"officer_id": r.officer_id, "date": r.date, "reason": r.reason} for r in rows]
+
+
+# F13: Reassignment request admin endpoints
+@admin_router.get("/reassignment-requests")
+def list_reassignment_requests(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    requests = db.query(IncidentReassignmentRequest).filter(IncidentReassignmentRequest.status == "pending").order_by(IncidentReassignmentRequest.created_at.desc()).all()
+    result = []
+    for r in requests:
+        officer = db.query(User).filter(User.id == r.requesting_officer_id).first()
+        inc = db.query(Incident).filter(Incident.id == r.incident_id).first()
+        result.append({
+            "id": r.id,
+            "incident_id": r.incident_id,
+            "incident_number": inc.incident_number if inc else None,
+            "requesting_officer_id": r.requesting_officer_id,
+            "requesting_officer_name": officer.full_name if officer else "Unknown",
+            "reason": r.reason,
+            "status": r.status,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+    return result
+
+@admin_router.post("/reassignment-requests/{request_id}/approve")
+def approve_reassignment_request(request_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    req = db.query(IncidentReassignmentRequest).filter(IncidentReassignmentRequest.id == request_id).first()
+    if not req:
+        raise HTTPException(status_code=404, detail="Reassignment request not found")
+    if req.status != "pending":
+        raise HTTPException(status_code=400, detail="Request already processed")
+    req.status = "approved"
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "reassignment_request_approved", req.incident_id, "success",
+                     f"Request {request_id} approved. Executive can now reassign via PATCH /incidents/{{id}}/reassign")
+    officer = db.query(User).filter(User.id == req.requesting_officer_id).first()
+    if officer:
+        _create_notification(db, officer.id, "reassignment_approved",
+                             data={"incident_id": req.incident_id, "message": "Your reassignment request has been approved"})
+    return {"message": "Reassignment request approved", "id": req.id}
 
 
 @admin_router.post("/check-flood")

@@ -2,7 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { Trans } from 'react-i18next';
-import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X, Hash, Image } from 'lucide-react';
+import { User, ShieldAlert, LogOut, LayoutDashboard, ArrowRight, AlertTriangle, Cpu, BarChart3, Search, Eye, X, Hash, Image, CheckCircle } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
 import './Landing.css';
@@ -19,6 +19,8 @@ const Landing = () => {
   const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [catStats, setCatStats] = useState<{ category: string; count: number }[] | null>(null);
   const [complaintsHandled, setComplaintsHandled] = useState<number>(0);
+  const [resolvedThisWeek, setResolvedThisWeek] = useState<number>(0);
+  const [byCategory, setByCategory] = useState<Record<string, number>>({});
   const [animatedCount, setAnimatedCount] = useState<number>(0);
   const counterRef = useRef<HTMLSpanElement>(null);
   const prevCountRef = useRef<number>(0);
@@ -67,11 +69,13 @@ const Landing = () => {
           const newCount = d.totalComplaintsThisMonth || 0;
           prevCountRef.current = complaintsHandled;
           setComplaintsHandled(newCount);
+          setResolvedThisWeek(d.resolvedThisWeek || 0);
+          setByCategory(d.byCategory || {});
         })
         .catch(() => {});
     };
     fetchStats();
-    const interval = setInterval(fetchStats, 60000);
+    const interval = setInterval(fetchStats, 30000);
     return () => clearInterval(interval);
   }, []);
 
@@ -130,6 +134,20 @@ const Landing = () => {
             <span className="counter-number" ref={counterRef}>{animatedCount.toLocaleString()}</span>
           </div>
           <p className="counter-label">{t('landing.counterLabel')}</p>
+          {resolvedThisWeek > 0 && (
+            <div style={{ display: 'flex', gap: '2rem', justifyContent: 'center', marginTop: '1rem', flexWrap: 'wrap' }}>
+              <div style={{ textAlign: 'center' }}>
+                <span style={{ fontSize: '1.8rem', fontWeight: 700, color: '#16a34a' }}>{resolvedThisWeek.toLocaleString()}</span>
+                <p style={{ fontSize: '0.8rem', color: '#94a3b8', margin: 0 }}>{t('landing.resolvedThisWeek')}</p>
+              </div>
+              {Object.entries(byCategory).slice(0, 4).map(([cat, count]) => (
+                <div key={cat} style={{ textAlign: 'center' }}>
+                  <span style={{ fontSize: '1.2rem', fontWeight: 600, color: '#60a5fa' }}>{count.toLocaleString()}</span>
+                  <p style={{ fontSize: '0.75rem', color: '#94a3b8', margin: 0 }}>{cat}</p>
+                </div>
+              ))}
+            </div>
+          )}
         </section>
       )}
 

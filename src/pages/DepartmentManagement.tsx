@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp, Star, ChevronUp, ChevronDown } from 'lucide-react';
+import { Building, AlertCircle, CheckCircle, Clock, Users, TrendingUp, Star, ChevronUp, ChevronDown, Layers } from 'lucide-react';
 import { getDeptI18nKey } from '../data/departments';
 import { getDepartmentHead } from '../data/officerDirectory';
 import { Phone, User as UserIcon } from 'lucide-react';
@@ -329,6 +329,12 @@ const DepartmentManagement = () => {
             </table>
           </div>
         )}
+      </div>
+
+      <div className="comparison-section">
+        <a href="/executive/escalation-matrix" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none', marginBottom: '1.5rem' }}>
+          <Layers size={14} /> {t('department.escalationMatrix')}
+        </a>
       </div>
 
       <div className="heatmap-section">

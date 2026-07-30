@@ -14,7 +14,7 @@ import {
   Minus, ChevronRight, ChevronDown, Wrench, Droplets, Lightbulb, Trash2, Heart,
   Road, Send, Loader2, Brain, Target, Compass, AlertTriangle, CheckCircle2,
   DollarSign, Calendar, Gauge, Sparkles, Bot, MessageSquare, Flame, ThermometerSun,
-  Users2, ArrowRight, FileText
+  Users2, ArrowRight, FileText, Layers
 } from 'lucide-react';
 import './ExecutiveDashboard.css';
 
@@ -575,6 +575,9 @@ const ExecutiveDashboard = () => {
         </button>
         <a href="/executive/department-kpis" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}>
           <BarChart3 size={14} /> {t('executive.departmentKPIsLink')}
+        </a>
+        <a href="/executive/zone-dashboard" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}>
+          <MapPin size={14} /> {t('executive.zoneDashboard')}
         </a>
         {copySummaryFeedback && <span className="copy-toast">{t('executive.copySummary.copied')}</span>}
         {activeUsers > 0 && <span className="active-users-badge"><Activity size={14} /> {t('executive.activeUsers', { count: activeUsers })}</span>}

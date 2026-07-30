@@ -105,6 +105,13 @@
     "councillorNotAssigned": "வார்டு ஒதுக்கப்படவில்லை — மேலே உள்ள சுயவிவரப் புலங்களில் உங்கள் வார்டைப் புதுப்பித்து உள்ளூர் கவுன்சிலரைப் பார்க்கவும்."
   },
 
+  "department": {
+    "escalationMatrix": "ஏற்றுமதி அணி",
+    "escalatesTo": "ஏற்றுமதி செய்யப்படுவது",
+    "authority": "அதிகாரி",
+    "activeOfficers": "செயலில் உள்ள அலுவலர்கள்"
+  },
+
   "common": {
     "status": {
       "all": "அனைத்து நிலைகள்",
@@ -214,7 +221,9 @@
     "footerBrand": "GIIPS — AI வகைப்படுத்தல் முன்மாதிரி",
     "footerCopy": "எந்த அரசு நிறுவனத்துடனும் இணைக்கப்படவில்லை அல்லது அங்கீகரிக்கப்படவில்லை.",
     "counterBadge": "நேரலை",
-    "counterLabel": "இந்த மாதம் கையாளப்பட்ட புகார்கள்"
+    "counterLabel": "இந்த மாதம் கையாளப்பட்ட புகார்கள்",
+    "resolvedThisWeek": "இந்த வாரம் தீர்க்கப்பட்டவை",
+    "byCategory": "வகை வாரியாக"
   },
 
   "methodology": {
@@ -437,17 +446,29 @@
     "faqBotSubtitle": "எங்கள் FAQ தளத்தில் இருந்து முறையான பொர்த்தமான பதில்கள்",
     "faqPlaceholder": "உங்கள் கேள்வியை தயவு செய்து உள்ளிடவும்...",
     "faqAsk": "கேள்",
-    "faqDisclaimer": "FAQ சாட்பாட் முறையான பொர்த்தத்தை பயன்படுத்துகிறது — செய்தித்திட்ட அறிவு இல்லை"
+    "faqDisclaimer": "FAQ சாட்பாட் முறையான பொர்த்தத்தை பயன்படுத்துகிறது — செய்தித்திட்ட அறிவு இல்லை",
+    "duplicateFound": "நகல் புகார் கண்டறியப்பட்டது",
+    "similarExists": "இதே போன்ற புகார் ஏற்கனவே உள்ளது, கண்காணிப்பு எண்: {{trackingId}}",
+    "trackExisting": "அதற்கு பதிலாக ஏற்கனவே உள்ள புகாரை கண்காணிக்கவும்",
+    "submitAnyway": "எப்படியும் சமர்ப்பிக்கவும்",
+    "compressingImage": "படம் சுருக்கப்படுகிறது...",
+    "addMoreDetails": "மேலும் விவரங்களைச் சேர்க்கவும்",
+    "detailHint": "மேலும் விவரங்களைச் சேர்க்கவும்: சரியான இடம், இந்த பிரச்சனை எவ்வளவு காலமாக உள்ளது, எத்தனை பேர் பாதிக்கப்பட்டுள்ளனர்."
   },
 
-  "overview": {
+    "overview": {
     "todayTasks": "இன்றைய பணிகள்",
     "openToday": "இன்று திறக்கப்பட்டது",
     "resolvedToday": "இன்று தீர்க்கப்பட்டது",
     "newToday": "புதிய சமர்ப்பிப்புகள்",
     "tasksLoading": "பணிகள் ஏற்றப்படுகின்றன...",
     "streakBadge": "🔥 {{count}} நாள் தொடர்",
-    "streakBadge_plural": "🔥 {{count}} நாட்கள் தொடர்"
+    "streakBadge_plural": "🔥 {{count}} நாட்கள் தொடர்",
+    "dailySummary": "உங்கள் தினசரி சுருக்கம்",
+    "openIncidents": "திறந்த சம்பவங்கள்",
+    "resolvedYesterday": "நேற்று தீர்க்கப்பட்டவை",
+    "slaBreaches": "SLA மீறல்கள்",
+    "followUpsPending": "நிலுவையில் உள்ள பின்தொடர்வுகள்"
   },
 
   "complaintDetail": {
@@ -572,7 +593,17 @@
     "downloadCertificate": "சான்றிதழைப் பதிவிறக்கவும்",
     "fieldWard": "வார்டு:",
     "fieldDate": "தேதி:",
-    "estimatedCost": "மதிப்பிடப்பட்ட செலவு:"
+    "estimatedCost": "மதிப்பிடப்பட்ட செலவு:",
+    "showQr": "QR காட்டு",
+    "qrCode": "QR குறியீடு",
+    "close": "மூடு",
+    "progress": "முன்னேற்றம்",
+    "progressLabel": "{{percent}}% நிறைவு",
+    "highConfidence": "அதிக நம்பிக்கை (>70%)",
+    "moderateConfidence": "மிதமான (40-70%)",
+    "lowConfidence": "குறைந்த (<40%) — அலுவலர் மதிப்பாய்வு பரிந்துரைக்கப்படுகிறது",
+    "whyThisCategory": "ஏன் இந்த வகை?",
+    "topKeywords": "முக்கிய வார்த்தைகள்"
   },
 
   "myComplaints": {
@@ -925,6 +956,9 @@
       "label": "மண்டலம்:",
       "clear": "வடிப்பானை அழி"
     },
+    "zoneDashboard": "மண்டல டாஷ்போர்டு",
+    "worstWard": "மோசமான வார்டு",
+    "wards": "வார்டுகள்",
     "copySummary": {
       "button": "சுருக்கத்தை நகலெடு",
       "copied": "நகலெடுக்கப்பட்டது!"
@@ -995,6 +1029,13 @@
     "zoneDialogDesc": "இந்த அதிகாரிக்கு புதிய மண்டலத்தை உள்ளிடவும். பழைய மண்டலத்தில் திறந்த சம்பவங்கள் அப்படியே ஒதுக்கப்பட்டிருக்கும்.",
     "zoneNewLabel": "புதிய மண்டலம்",
     "zoneTransferSuccess": "மண்டலம் வெற்றிகரமாக மாற்றப்பட்டது"
+  },
+
+  "department": {
+    "escalationMatrix": "ஏற்றுமதி அணி",
+    "escalatesTo": "ஏற்றுமதி செய்யப்படுவது",
+    "authority": "அதிகாரி",
+    "activeOfficers": "செயலில் உள்ள அலுவலர்கள்"
   },
 
   "departmentManagement": {
@@ -1069,14 +1110,20 @@
       "totalUsers": "மொத்த பயனர்கள்",
       "totalComplaints": "மொத்த புகார்கள்",
       "totalIncidents": "மொத்த சம்பவங்கள்"
-    }
+    },
+    "activeConnections": "செயலில் உள்ள WebSocket இணைப்புகள்",
+    "redisStatus": "Redis நிலை",
+    "dbLatency": "DB தாமதம்",
+    "queueDepth": "வரிசை ஆழம்",
+    "realTimeMetrics": "நிகழ்நேர அளவீடுகள்"
   },
 
-  "notificationsPage": {
+    "notificationsPage": {
     "title": "அறிவிப்புகள்",
     "subtitle": "உங்கள் அறிவிப்பு வரலாறு",
     "back": "பின்",
     "markAllRead": "அனைத்தையும் படித்ததாகக் குறிக்கவும்",
+    "filters": "வடிப்பான்கள்",
     "empty": "இதுவரை அறிவிப்புகள் எதுவும் இல்லை"
   },
 
@@ -1340,7 +1387,9 @@
     "timelineTitle": "நிலை காலவரிசை",
     "forgotId": "புகார் எண் மறந்துவிட்டதா? உங்கள் புகார்களைக் காண உள்நுழையவும்.",
     "resolutionPhoto": "தீர்வு புகைப்படம்",
-    "resolutionCaption": "தீர்வு புகைப்படம் (சரி செய்ததற்கான ஆதாரம்)"
+    "resolutionCaption": "தீர்வு புகைப்படம் (சரி செய்ததற்கான ஆதாரம்)",
+    "subscribe": "புதுப்பிப்புகளுக்கு குழுசேரவும்",
+    "subscribed": "குழுசேர்ந்துள்ளீர்கள்"
   },
 
   "transparency": {

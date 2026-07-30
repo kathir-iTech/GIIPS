@@ -922,4 +922,21 @@ export const api = {
   // F18: councillor performance
   getCouncillorPerformance: () =>
     fetchWithTimeout(`${BASE_URL}/executive/councillor-performance`, {}).then(safeJson),
+
+  // F19: system metrics
+  getSystemMetrics: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/admin/system-metrics`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  // F14: complaint subscribe
+  subscribeComplaint: async (complaintId: string): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/complaints/${complaintId}/subscribe`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
 };

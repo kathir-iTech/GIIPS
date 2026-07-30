@@ -216,16 +216,20 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
             elif incident.priority_score >= 50:
                 incident.priority_label = "HIGH"
 
-        # F11: Predict resolution time based on category historical avg + department backlog
+        # F9/F11: Predict resolution time based on category average (last 90 days) + department backlog
+        ninety_days_ago = datetime.utcnow() - timedelta(days=90)
         cat_avg = db.query(func.avg(Incident.days_open)).filter(
             Incident.category == category,
-            Incident.status == "resolved"
+            Incident.status == "resolved",
+            Incident.created_at >= ninety_days_ago,
         ).scalar() or 30.0
         dept_backlog = db.query(Incident).filter(
             Incident.category == category,
             Incident.status.in_(["open", "in-progress"])
         ).count()
-        complaint.predicted_resolution_days = round(cat_avg * (1 + dept_backlog * 0.05), 1)
+        backlog_factor = min(dept_backlog / 10.0, 2.0)
+        predicted = cat_avg * 0.7 + backlog_factor * 30.0 * 0.3
+        complaint.predicted_resolution_days = round(max(1.0, min(predicted, 90.0)), 1)
 
         # F17: Auto-tag complaint based on content analysis
         auto_tags = set()
@@ -302,6 +306,7 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
 
         # FEATURE 10: auto-assigned
         # FEATURE 15: shift schedule
+        # FEATURE 10 (v2): skill-based routing
         available_officers = db.query(User).filter(
             User.role == "Officer",
             User.department == department,
@@ -316,10 +321,16 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                 current_shift_period = "afternoon"
             else:
                 current_shift_period = "night"
+            category_lower = category.lower()
             def officer_sort_key(o):
+                skill_match = 0
+                if o.skills:
+                    officer_skills = [s.strip().lower() for s in o.skills.split(",") if s.strip()]
+                    if any(category_lower in sk or sk in category_lower for sk in officer_skills):
+                        skill_match = -1
                 on_shift = 0 if o.current_shift == current_shift_period else 1
                 open_count = db.query(Incident).filter(Incident.accepted_by == o.id, Incident.status.in_(["open", "in-progress"])).count()
-                return (on_shift, open_count)
+                return (skill_match, on_shift, open_count)
             available_officers.sort(key=officer_sort_key)
             best = available_officers[0]
             incident.accepted_by = best.id

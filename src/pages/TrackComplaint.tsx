@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2, Building2, User, Activity, LogIn } from 'lucide-react';
+import { Search, ArrowLeft, CheckCircle, Clock, MapPin, Tag, Calendar, AlertTriangle, Loader2, Building2, User, Activity, LogIn, Bell } from 'lucide-react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import { getDeptI18nKey } from '../data/departments';
 import HelpWidget from '../components/HelpWidget';
@@ -52,6 +52,8 @@ const TrackComplaint = () => {
   const [data, setData] = useState<any | null>(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [subscribed, setSubscribed] = useState(false);
+  const [subLoading, setSubLoading] = useState(false);
 
   const handleTrack = async () => {
     const id = complaintId.trim();
@@ -208,6 +210,25 @@ const TrackComplaint = () => {
                   </div>
                 );
               })}
+            </div>
+            <div className="track-section" style={{ marginTop: '1rem' }}>
+              <button
+                className={`subscribe-btn ${subscribed ? 'subscribed' : ''}`}
+                onClick={async () => {
+                  if (subLoading) return;
+                  setSubLoading(true);
+                  try {
+                    await api.subscribeComplaint(data.complaintId);
+                    setSubscribed(true);
+                  } catch {}
+                  setSubLoading(false);
+                }}
+                disabled={subLoading || subscribed}
+                style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: subscribed ? '1px solid #16a34a' : '1px solid var(--border-subtle)', background: subscribed ? 'rgba(22,163,74,0.1)' : 'var(--bg-card)', color: subscribed ? '#16a34a' : 'var(--text-primary)', fontSize: 13, fontWeight: 500, cursor: subscribed ? 'default' : 'pointer', fontFamily: 'inherit', width: '100%', justifyContent: 'center' }}
+              >
+                <Bell size={14} />
+                {subLoading ? t('common.loading') : subscribed ? t('complaintDetail.subscribed') : t('complaintDetail.subscribe')}
+              </button>
             </div>
           </div>
         )}

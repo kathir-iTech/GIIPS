@@ -434,6 +434,9 @@ class Complaint(Base):
     # FEATURE 10: resubmission
     resubmission_of = Column(String, nullable=True)
 
+    # F12: follow-up count
+    follow_up_count = Column(Integer, default=0, nullable=False)
+
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")
 
@@ -659,6 +662,32 @@ class ResponseTemplate(Base):
     officer_id = Column(String, nullable=False, index=True)
     title = Column(String, nullable=False)
     message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# F6: incident watchlist for executives
+class Watchlist(Base):
+    __tablename__ = "watchlists"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    exec_user_id = Column(String, nullable=False, index=True)
+    incident_id = Column(String, nullable=False, index=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# F13: officer reassignment request
+class IncidentReassignmentRequest(Base):
+    __tablename__ = "incident_reassignment_requests"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    incident_id = Column(String, nullable=False, index=True)
+    requesting_officer_id = Column(String, nullable=False)
+    reason = Column(Text, nullable=False)
+    status = Column(String, default="pending")
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# F14: citizen complaint subscription
+class ComplaintSubscription(Base):
+    __tablename__ = "complaint_subscriptions"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(String, nullable=False, index=True)
+    complaint_id = Column(String, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Seed demo users

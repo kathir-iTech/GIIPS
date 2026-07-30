@@ -36,6 +36,8 @@ const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
 const DepartmentKPIs = lazy(() => import('./pages/DepartmentKPIs'));
 const SystemHealth = lazy(() => import('./pages/SystemHealth'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
+const ZoneDashboard = lazy(() => import('./pages/ZoneDashboard'));
+const EscalationMatrix = lazy(() => import('./pages/EscalationMatrix'));
 const LocalAuthorityDashboard = lazy(() => import('./pages/LocalAuthorityDashboard'));
 const OversightDashboard = lazy(() => import('./pages/OversightDashboard'));
 const Notifications = lazy(() => import('./pages/Notifications'));
@@ -264,11 +266,25 @@ function AnimatedRoutes() {
           
         } />
         <Route path="/admin/audit-logs" element={
-          
+
             <RoleGuard allowedRoles={['Executive']}>
               <AuditLogs />
             </RoleGuard>
-          
+
+        } />
+        <Route path="/executive/zone-dashboard" element={
+
+            <RoleGuard allowedRoles={['Executive']}>
+              <ZoneDashboard />
+            </RoleGuard>
+
+        } />
+        <Route path="/executive/escalation-matrix" element={
+
+            <RoleGuard allowedRoles={['Executive']}>
+              <EscalationMatrix />
+            </RoleGuard>
+
         } />
       </Routes>
       </motion.div>

@@ -9,7 +9,8 @@ import HelpWidget from '../components/HelpWidget';
 import { getDeptI18nKey } from '../data/departments';
 import { getSLAStatus, getSLAStatusLabel } from '../utils/sla';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown, TrendingUp, TrendingDown, Send } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown, TrendingUp, TrendingDown, Send, QrCode } from 'lucide-react';
+import { QRCodeSVG } from 'qrcode.react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
 
@@ -73,6 +74,7 @@ const ComplaintDetailPage = () => {
   const [catEditValue, setCatEditValue] = useState('');
   const [showChain, setShowChain] = useState(false);
   const [forwardModalOpen, setForwardModalOpen] = useState(false);
+  const [qrModalOpen, setQrModalOpen] = useState(false);
   const [forwardDept, setForwardDept] = useState('');
   const [forwardLoading, setForwardLoading] = useState(false);
   const [forwardResult, setForwardResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -295,6 +297,9 @@ const ComplaintDetailPage = () => {
                                     <Edit3 size={14} /> {t('complaintDetail.editButton')}
                                   </button>
                 )}
+                <button className="edit-complaint-btn" onClick={() => setQrModalOpen(true)} title={t('complaintDetail.showQr')}>
+                  <QrCode size={14} /> {t('complaintDetail.showQr')}
+                </button>
               </div>
             </div>
             {editing ? (
@@ -339,6 +344,17 @@ const ComplaintDetailPage = () => {
                   <button className="lightbox-close-btn" onClick={() => setLightboxOpen(false)}><X size={20} /></button>
                   <a className="lightbox-download-btn" href={photoUrl} download target="_blank" rel="noopener noreferrer"><Download size={16} /> {t('complaintDetail.downloadLink')}</a>
                   <img src={photoUrl} alt={t('complaintDetail.imageAlt')} className="lightbox-image" />
+                </div>
+              </div>
+            )}
+
+            {qrModalOpen && (
+              <div className="lightbox-overlay" onClick={() => setQrModalOpen(false)}>
+                <div className="lightbox-content" onClick={e => e.stopPropagation()} style={{ textAlign: 'center', padding: '2rem' }}>
+                  <button className="lightbox-close-btn" onClick={() => setQrModalOpen(false)}><X size={20} /></button>
+                  <h3 style={{ marginBottom: '1rem' }}>{t('complaintDetail.qrCode')}</h3>
+                  <QRCodeSVG value={`${window.location.origin}/track?complaintId=${data.id}`} size={200} />
+                  <p style={{ marginTop: '1rem', fontSize: '0.8rem', color: '#94a3b8' }}>{data.id}</p>
                 </div>
               </div>
             )}
@@ -399,6 +415,27 @@ const ComplaintDetailPage = () => {
                   <span className="value">{getConfidenceLabel(data.confidence, t)}</span>
                 </div>
               </div>
+
+              {(data.confidence != null || data.categories_kw) && (
+                <div className="confidence-bands" style={{ margin: '1rem 0', padding: '1rem', background: 'rgba(99,102,241,0.05)', borderRadius: '8px', border: '1px solid rgba(99,102,241,0.15)' }}>
+                  <h4 style={{ fontSize: '0.85rem', marginBottom: '0.5rem', color: '#818cf8' }}>{t('complaintDetail.whyThisCategory')}</h4>
+                  {data.confidence != null && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)', marginBottom: '0.5rem' }}>
+                      <span style={{ display: 'inline-block', padding: '2px 8px', borderRadius: '4px', background: data.confidence >= 0.8 ? 'rgba(22,163,74,0.15)' : data.confidence >= 0.5 ? 'rgba(202,138,4,0.15)' : 'rgba(220,38,38,0.15)', color: data.confidence >= 0.8 ? '#16a34a' : data.confidence >= 0.5 ? '#ca8a04' : '#dc2626', fontSize: '0.75rem', fontWeight: 600 }}>
+                        {data.confidence >= 0.8 ? t('complaintDetail.highConfidence') : data.confidence >= 0.5 ? t('complaintDetail.moderateConfidence') : t('complaintDetail.lowConfidence')}
+                      </span>
+                    </div>
+                  )}
+                  {data.categories_kw && data.categories_kw.length > 0 && (
+                    <div style={{ fontSize: '0.8rem', color: 'var(--text-secondary)' }}>
+                      <span style={{ fontWeight: 600 }}>{t('complaintDetail.topKeywords')}: </span>
+                      {data.categories_kw.slice(0, 5).map((kw: string, i: number) => (
+                        <span key={i} style={{ display: 'inline-block', padding: '1px 6px', margin: '1px 2px', borderRadius: '4px', background: 'rgba(99,102,241,0.1)', color: '#818cf8', fontSize: '0.75rem' }}>{kw}</span>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
               {data.similarity_score != null && (
                 <div className="match-meter-section">
                   <p className="match-text">
@@ -867,7 +904,17 @@ const ComplaintDetailPage = () => {
               </div>
             )}
 
-            <div className="priority-history-section">
+              {(data.incident?.status !== 'open' || data.progress) && (
+                <div className="progress-bar-section" style={{ marginTop: '1.5rem' }}>
+                  <h3 style={{ fontSize: '0.9rem', marginBottom: '0.5rem', color: 'var(--text-secondary)' }}>{t('complaintDetail.progress')}</h3>
+                  <div style={{ width: '100%', height: '8px', background: 'rgba(99,102,241,0.15)', borderRadius: '4px', overflow: 'hidden' }}>
+                    <div style={{ height: '100%', width: `${data.progress || (data.incident?.status === 'resolved' ? 100 : data.incident?.status === 'closed' ? 100 : data.incident?.status === 'pending_verification' ? 90 : data.incident?.status === 'in-progress' ? 60 : 30)}%`, background: 'linear-gradient(90deg, #6366f1, #818cf8)', borderRadius: '4px', transition: 'width 0.5s ease' }} />
+                  </div>
+                  <span style={{ fontSize: '0.75rem', color: '#94a3b8', marginTop: '0.25rem', display: 'block' }}>{t('complaintDetail.progressLabel', { percent: data.progress || (data.incident?.status === 'resolved' ? 100 : data.incident?.status === 'closed' ? 100 : data.incident?.status === 'pending_verification' ? 90 : data.incident?.status === 'in-progress' ? 60 : 30) })}</span>
+                </div>
+              )}
+
+              <div className="priority-history-section">
               <h3 style={{ marginTop: 20 }}>{t('complaintDetail.priorityHistoryTitle')}</h3>
               {data.incident?.priority_history && data.incident.priority_history.length > 0 ? (
                 <div className="priority-history-timeline">

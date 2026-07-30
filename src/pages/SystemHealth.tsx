@@ -1,7 +1,7 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
-import { Server, Database, Brain, Shield, Clock, Users, MessageSquare, Activity } from 'lucide-react';
+import { Server, Database, Brain, Shield, Clock, Users, MessageSquare, Activity, Wifi, Zap, Gauge } from 'lucide-react';
 import './Admin.css';
 
 const SystemHealth = () => {
@@ -9,10 +9,22 @@ const SystemHealth = () => {
   const [health, setHealth] = useState<any>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [realTimeMetrics, setRealTimeMetrics] = useState<any>(null);
+  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
   useEffect(() => {
     fetchHealth();
+    fetchRealTimeMetrics();
+    intervalRef.current = setInterval(fetchRealTimeMetrics, 10000);
+    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
   }, []);
+
+  const fetchRealTimeMetrics = async () => {
+    try {
+      const data = await api.getSystemMetrics();
+      setRealTimeMetrics(data);
+    } catch {}
+  };
 
   const fetchHealth = async () => {
     setLoading(true);
@@ -109,6 +121,28 @@ const SystemHealth = () => {
           <div className="health-info">
             <h3>{t('systemHealth.card.decisionEngine')}</h3>
             <span className={`status ${health?.decision_engine || 'unknown'}`}>{(health?.decision_engine || 'unknown').toUpperCase()}</span>
+          </div>
+        </div>
+      </div>
+
+      <div className="metrics-section">
+        <h2>{t('systemHealth.realTimeMetrics')}</h2>
+        <div className="metrics-grid">
+          <div className="metric-card">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Wifi size={16} style={{ color: realTimeMetrics?.activeConnections > 0 ? '#16a34a' : '#dc2626' }} /> {realTimeMetrics?.activeConnections ?? '—'}</h3>
+            <p>{t('systemHealth.activeConnections')}</p>
+          </div>
+          <div className="metric-card">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Zap size={16} style={{ color: realTimeMetrics?.redisStatus === 'connected' ? '#16a34a' : '#dc2626' }} /> {realTimeMetrics?.redisStatus === 'connected' ? 'Connected' : realTimeMetrics?.redisStatus ?? '—'}</h3>
+            <p>{t('systemHealth.redisStatus')}</p>
+          </div>
+          <div className="metric-card">
+            <h3 style={{ display: 'flex', alignItems: 'center', gap: 6 }}><Gauge size={16} style={{ color: (realTimeMetrics?.dbLatency ?? 0) < 100 ? '#16a34a' : (realTimeMetrics?.dbLatency ?? 0) < 500 ? '#ca8a04' : '#dc2626' }} /> {realTimeMetrics?.dbLatency != null ? `${realTimeMetrics.dbLatency}ms` : '—'}</h3>
+            <p>{t('systemHealth.dbLatency')}</p>
+          </div>
+          <div className="metric-card">
+            <h3>{realTimeMetrics?.queueDepth ?? '—'}</h3>
+            <p>{t('systemHealth.queueDepth')}</p>
           </div>
         </div>
       </div>

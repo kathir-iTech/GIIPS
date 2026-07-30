@@ -434,12 +434,13 @@ const IncidentFeed = () => {
                 <th>{t('incidents.colPriority')}</th>
                 <th>{t('incidents.sla')}</th>
                 <th className="action-col">{t('incidents.colRecommendedAction')}</th>
+                <th>{t('complaintDetail.progress')}</th>
               </tr>
             </thead>
             <tbody>
               {pagedIncidents.length === 0 ? (
-                  <tr className="empty-row">
-                    <td colSpan={10}>
+                    <tr className="empty-row">
+                    <td colSpan={13}>
                     <div className="empty-state">
                       <AlertCircle size={32} />
                       <p>{t('incidents.emptyFiltered')}</p>
@@ -461,12 +462,24 @@ const IncidentFeed = () => {
                     <td className="priority-cell">{getPriorityIcon(incident.priority_label || 'Low')}<span>{incident.priority_label || t('common.priority.low')}</span></td>
                     <td className={`sla-cell ${(computeSla(incident)?.cls || '')}`}>{computeSla(incident)?.text || '—'}</td>
                     <td className="action-cell" title={incident.recommended_action || ''}>{incident.recommended_action}</td>
+                    <td className="progress-cell" style={{ minWidth: '80px' }}>
+                      {['open', 'in-progress', 'pending_verification', 'resolved', 'closed'].includes(incident.status) && (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                          <div style={{ width: '50px', height: '6px', background: 'rgba(99,102,241,0.15)', borderRadius: '3px', overflow: 'hidden' }}>
+                            <div style={{ height: '100%', width: `${incident.status === 'closed' ? 100 : incident.status === 'resolved' ? 100 : incident.status === 'pending_verification' ? 90 : incident.status === 'in-progress' ? 60 : 30}%`, background: 'linear-gradient(90deg, #6366f1, #818cf8)', borderRadius: '3px' }} />
+                          </div>
+                          <span style={{ fontSize: '0.7rem', color: '#94a3b8', whiteSpace: 'nowrap' }}>
+                            {incident.status === 'closed' ? '100%' : incident.status === 'resolved' ? '100%' : incident.status === 'pending_verification' ? '90%' : incident.status === 'in-progress' ? '60%' : '30%'}
+                          </span>
+                        </div>
+                      )}
+                    </td>
                   </tr>
                 ))
               )}
               {expandedId && pagedIncidents.map(incident => expandedId === incident.id && (
                 <tr key={`expanded-${incident.id}`} className="expanded-row">
-                  <td colSpan={12}>
+                    <td colSpan={13}>
                     <div className="expanded-content">
                       <div className="expanded-left">
                         <div className="detail-block">

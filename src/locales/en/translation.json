@@ -105,6 +105,13 @@
     "councillorNotAssigned": "No ward assigned — update your ward in the profile fields above to see your local councillor."
   },
 
+  "department": {
+    "escalationMatrix": "Escalation Matrix",
+    "escalatesTo": "Escalates To",
+    "authority": "Authority",
+    "activeOfficers": "Active Officers"
+  },
+
   "common": {
     "status": {
       "all": "All Status",
@@ -214,7 +221,9 @@
     "footerBrand": "GIIPS — AI triage layer prototype",
     "footerCopy": "Not affiliated with or endorsed by any government entity.",
     "counterBadge": "Live",
-    "counterLabel": "complaints handled this month"
+    "counterLabel": "complaints handled this month",
+    "resolvedThisWeek": "Resolved This Week",
+    "byCategory": "By Category"
   },
 
   "methodology": {
@@ -342,7 +351,9 @@
     "registerButton": "Register",
     "loginButton": "Login",
     "forgotId": "Forgot your complaint ID? Log in to see all your complaints.",
-    "trackExisting": "Track an existing complaint"
+    "trackExisting": "Track an existing complaint",
+    "subscribe": "Subscribe to updates",
+    "subscribed": "Subscribed"
   },
 
   "citizenPortal": {
@@ -438,7 +449,14 @@
     "faqBotSubtitle": "Keyword-matched answers from our FAQ database",
     "faqPlaceholder": "Type your question...",
     "faqAsk": "Ask",
-    "faqDisclaimer": "FAQ Bot uses keyword matching \u2014 not artificial intelligence"
+    "faqDisclaimer": "FAQ Bot uses keyword matching \u2014 not artificial intelligence",
+    "duplicateFound": "Duplicate issue detected",
+    "similarExists": "A similar complaint already exists with tracking ID: {{trackingId}}",
+    "trackExisting": "Track existing complaint instead",
+    "submitAnyway": "Submit Anyway",
+    "compressingImage": "Compressing image...",
+    "addMoreDetails": "Add more details",
+    "detailHint": "Add more details like: exact location, how long this has been a problem, how many people are affected."
   },
 
   "overview": {
@@ -448,7 +466,12 @@
     "newToday": "New Submissions",
     "tasksLoading": "Loading tasks...",
     "streakBadge": "🔥 {{count}} day streak",
-    "streakBadge_plural": "🔥 {{count}} day streak"
+    "streakBadge_plural": "🔥 {{count}} day streak",
+    "dailySummary": "Your Daily Summary",
+    "openIncidents": "Open Incidents",
+    "resolvedYesterday": "Resolved Yesterday",
+    "slaBreaches": "SLA Breaches",
+    "followUpsPending": "Follow-ups Pending"
   },
 
   "complaintDetail": {
@@ -574,7 +597,17 @@
     "downloadCertificate": "Download Certificate",
     "fieldWard": "Ward:",
     "fieldDate": "Date:",
-    "estimatedCost": "Estimated Remediation Cost:"
+    "estimatedCost": "Estimated Remediation Cost:",
+    "showQr": "Show QR",
+    "qrCode": "QR Code",
+    "close": "Close",
+    "progress": "Progress",
+    "progressLabel": "{{percent}}% complete",
+    "highConfidence": "High confidence (>70%)",
+    "moderateConfidence": "Moderate (40-70%)",
+    "lowConfidence": "Low (<40%) — officer review recommended",
+    "whyThisCategory": "Why this category?",
+    "topKeywords": "Top Keywords"
   },
 
   "myComplaints": {
@@ -932,6 +965,9 @@
       "label": "Zone:",
       "clear": "Clear filter"
     },
+    "zoneDashboard": "Zone Dashboard",
+    "worstWard": "Worst Ward",
+    "wards": "Wards",
     "copySummary": {
       "button": "Copy Summary",
       "copied": "Copied!"
@@ -1082,14 +1118,20 @@
       "totalUsers": "Total Users",
       "totalComplaints": "Total Complaints",
       "totalIncidents": "Total Incidents"
-    }
+    },
+    "activeConnections": "Active WebSocket Connections",
+    "redisStatus": "Redis Status",
+    "dbLatency": "DB Latency",
+    "queueDepth": "Queue Depth",
+    "realTimeMetrics": "Real-Time Metrics"
   },
 
-  "notificationsPage": {
+    "notificationsPage": {
     "title": "Notifications",
     "subtitle": "Your notification history",
     "back": "Back",
     "markAllRead": "Mark all read",
+    "filters": "Filters",
     "empty": "No notifications yet"
   },
 
@@ -1362,7 +1404,9 @@
     "timelineTitle": "Status Timeline",
     "forgotId": "Forgot your complaint ID? Log in to see all your complaints.",
     "resolutionPhoto": "Resolution Photo",
-    "resolutionCaption": "Resolution photo (proof of fix)"
+    "resolutionCaption": "Resolution photo (proof of fix)",
+    "subscribe": "Subscribe to updates",
+    "subscribed": "Subscribed"
   },
 
   "transparency": {

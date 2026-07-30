@@ -157,7 +157,10 @@ export interface CitizenComplaint {
   } | null;
 }
 
-export interface ComplaintDetail extends CitizenComplaint {}
+export interface ComplaintDetail extends CitizenComplaint {
+  progress?: number;
+  categories_kw?: string[];
+}
 
 export type UserRole = 'Citizen' | 'Officer' | 'Executive' | 'Councillor' | 'Commissioner' | 'MLA' | 'Collector' | 'Zone Commander';
 

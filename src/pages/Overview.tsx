@@ -4,7 +4,7 @@ import Plot from 'react-plotly.js';
 import { api } from '../services/api';
 import Header from '../components/Header';
 import KPICard from '../components/KPICard';
-import { AlertTriangle, Clock, Activity, Target, ListChecks } from 'lucide-react';
+import { AlertTriangle, Clock, Activity, Target, ListChecks, Bell, AlertCircle } from 'lucide-react';
 import { AgingBadge } from '../components/AgingBadge';
 import { useAuth } from '../context/AuthContext';
 import { useTranslation } from 'react-i18next';
@@ -121,6 +121,31 @@ const Overview = () => {
           <KPICard title="High Priority" value={data.highPriorityIncidents} subtitle="Urgent action needed" icon={Clock} />
           <KPICard title="Medium" value={data.mediumPriorityIncidents} subtitle="Scheduled response" icon={Activity} />
           <KPICard title="Low" value={data.lowPriorityIncidents} subtitle="Routine handling" icon={Target} variant="success" />
+        </section>
+
+        <section className="today-tasks-card">
+          <div className="today-tasks-header">
+            <Bell size={20} />
+            <h3>{t('overview.dailySummary')}</h3>
+          </div>
+          <div className="today-tasks-grid">
+            <div className="task-stat">
+              <span className="task-value">{data?.criticalIncidents ?? 0}</span>
+              <span className="task-label">{t('overview.openIncidents')}</span>
+            </div>
+            <div className="task-stat">
+              <span className="task-value resolved">{data?.recentIncidents?.filter((i: any) => i.status === 'resolved' || i.status === 'closed').length ?? 0}</span>
+              <span className="task-label">{t('overview.resolvedYesterday')}</span>
+            </div>
+            <div className="task-stat">
+              <span className="task-value" style={{ color: '#dc2626' }}>{data?.recentIncidents?.filter((i: any) => i.sla_breached).length ?? 0}</span>
+              <span className="task-label">{t('overview.slaBreaches')}</span>
+            </div>
+            <div className="task-stat">
+              <span className="task-value new">{data?.recentIncidents?.filter((i: any) => (i.days_open ?? 0) > 7 && i.status !== 'resolved' && i.status !== 'closed').length ?? 0}</span>
+              <span className="task-label">{t('overview.followUpsPending')}</span>
+            </div>
+          </div>
         </section>
 
         {user?.role === 'Officer' && (
