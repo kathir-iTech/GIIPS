@@ -3,6 +3,20 @@
   min-height: 100vh;
 }
 
+.ice-page .preview-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  color: #d97706;
+  background: rgba(251,191,36,0.1);
+  border: 1px solid rgba(251,191,36,0.25);
+  padding: 2px 8px;
+  border-radius: 4px;
+  margin-left: 8px;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+}
+
 .aging-badge { display: inline-flex; align-items: center; padding: 3px 10px; border-radius: 100px; font-size: 12px; font-weight: 700; min-width: 36px; justify-content: center; }
 .aging-normal { background: rgba(34, 197, 94, 0.1); color: #16a34a; }
 .aging-warning { background: rgba(250, 204, 21, 0.15); color: #a16207; border: 1px solid rgba(250, 204, 21, 0.3); }

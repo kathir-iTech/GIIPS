@@ -15,6 +15,7 @@ from sqlalchemy.orm import Session, joinedload
 from sqlalchemy import func, and_, extract, text, or_, case
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
+from pathlib import Path
 from pydantic import BaseModel
 
 from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ZONE_BY_WARD
@@ -1054,13 +1055,33 @@ async def get_dashboard(db: Session = Depends(get_db)):
 
 @dashboard_router.get("/metrics")
 async def get_metrics():
-    """Get key performance metrics."""
+    """Get key performance metrics from the trained model metadata."""
+    metadata_path = Path(__file__).parent.parent.parent / 'ai-engine' / 'models' / 'classification' / 'metadata.json'
+    if metadata_path.exists():
+        try:
+            with open(metadata_path) as f:
+                meta = json.load(f)
+            accuracy_pct = round(meta.get('accuracy', 0) * 100, 2)
+            return {
+                "model_accuracy": accuracy_pct,
+                "model_type": meta.get('model_type', 'unknown'),
+                "num_classes": meta.get('num_classes', 0),
+                "categories": meta.get('classes', []),
+                "dataset_size": meta.get('total_samples', 0),
+                "num_train_samples": meta.get('num_train_samples', 0),
+                "num_test_samples": meta.get('num_test_samples', 0),
+                "processing_time_ms": 45,
+                "last_updated": meta.get('trained_at', datetime.now().isoformat())
+            }
+        except Exception as e:
+            logger.warning(f"Failed to load model metadata: {e}")
     return {
-        "model_accuracy": 92.3,
-        "model_precision": 91.7,
-        "model_recall": 93.1,
-        "model_f1": 92.4,
-        "processing_time_ms": 45,
+        "model_accuracy": 0,
+        "model_type": "not available",
+        "num_classes": 0,
+        "categories": [],
+        "dataset_size": 0,
+        "processing_time_ms": 0,
         "last_updated": datetime.now().isoformat()
     }
 

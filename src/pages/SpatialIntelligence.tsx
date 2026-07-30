@@ -853,12 +853,12 @@ const SpatialIntelligence = () => {
               </div>
 
               <div className="detail-section">
-                <h4><Brain size={14} /> {t('spatialIntelligence.detail.aiRecommendation')}</h4>
+                <h4><Brain size={14} /> {t('spatialIntelligence.detail.aiRecommendation')} <span className="preview-badge">{t('common.preview')}</span></h4>
                 <p className="detail-text recommendation">{generateAIRecommendation(selectedDistrict)}</p>
               </div>
 
               <div className="detail-section">
-                <h4><Zap size={14} /> {t('spatialIntelligence.detail.resourceSimulation')}</h4>
+                <h4><Zap size={14} /> {t('spatialIntelligence.detail.resourceSimulation')} <span className="preview-badge">{t('common.preview')}</span></h4>
                 <div className="sim-controls">
                   <button className="sim-btn" onClick={() => handleSimulate(2)} disabled={simulating}>
                     {simulating ? <RefreshCw size={14} className="spin" /> : <Users size={14} />} {t('spatialIntelligence.simPlusTeams', { count: 2 })}

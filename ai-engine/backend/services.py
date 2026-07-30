@@ -190,7 +190,7 @@ class DashboardService:
         return {
             "totalComplaints": total_complaints,
             "uniqueIncidents": total_incidents,
-            "workloadReduction": 85.0,
+            "workloadReduction": round((1 - total_incidents / total_complaints) * 100, 1) if total_complaints > 0 else 0.0,
             "criticalIncidents": priority_dist.get('Critical', 0),
             "highPriorityIncidents": priority_dist.get('High', 0),
             "mediumPriorityIncidents": priority_dist.get('Medium', 0),

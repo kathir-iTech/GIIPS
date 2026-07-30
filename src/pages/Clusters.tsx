@@ -99,13 +99,14 @@ const SectionCard: React.FC<{
   accent?: string;
   children: React.ReactNode;
   className?: string;
-}> = ({ title, subtitle, icon, accent, children, className = '' }) => (
+  badge?: string;
+}> = ({ title, subtitle, icon, accent, children, className = '', badge }) => (
   <div className={`section-card glass-card ${className}`} style={accent ? { borderLeft: `3px solid ${accent}` } : undefined}>
     <div className="card-header">
       <div className="card-title-group">
         {icon && <span className="card-icon">{icon}</span>}
         <div>
-          <h3>{title}</h3>
+          <h3>{title}{badge && <span className="preview-badge">{badge}</span>}</h3>
           {subtitle && <span className="card-subtitle">{subtitle}</span>}
         </div>
       </div>
@@ -576,7 +577,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Root Cause Analysis */}
-                  <SectionCard title={t('clusters.section.rootCause')} icon={<Target size={18} />}>
+                  <SectionCard title={t('clusters.section.rootCause')} icon={<Target size={18} />} badge={t('common.preview')}>
                     <div className="root-cause-content">
                       <p className="root-cause-text">{rootCause}</p>
                       {selectedComplaints.length > 0 && (
@@ -631,7 +632,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Prediction & Escalation Risk */}
-                  <SectionCard title={t('clusters.section.predictions')} subtitle={t('clusters.section.predictionsSubtitle')} icon={<Flame size={18} />}>
+                  <SectionCard title={t('clusters.section.predictions')} subtitle={t('clusters.section.predictionsSubtitle')} icon={<Flame size={18} />} badge={t('common.preview')}>
                     <div className="escalation-content">
                       <div className="escalation-meter">
                         <span className="escalation-label">{t('clusters.escalationProbability')}</span>
@@ -722,7 +723,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Responsible Department & Resource Allocation */}
-                  <SectionCard title={t('clusters.section.responsibleDept')} subtitle={t('clusters.section.responsibleDeptSubtitle')} icon={<Building2 size={18} />}>
+                  <SectionCard title={t('clusters.section.responsibleDept')} subtitle={t('clusters.section.responsibleDeptSubtitle')} icon={<Building2 size={18} />} badge={t('common.preview')}>
                     <div className="dept-allocation">
                       <div className="dept-primary">
                         <span className="dept-icon-wrap"><Wrench size={18} /></span>
@@ -795,7 +796,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Knowledge Insights */}
-                  <SectionCard title={t('clusters.section.knowledge')} subtitle={t('clusters.section.knowledgeSubtitle')} icon={<BookOpen size={18} />}>
+                  <SectionCard title={t('clusters.section.knowledge')} subtitle={t('clusters.section.knowledgeSubtitle')} icon={<BookOpen size={18} />} badge={t('common.preview')}>
                     {relatedKnowledge.length > 0 ? (
                       <div className="knowledge-list">
                         {relatedKnowledge.slice(0, 6).map((ki: any, i: number) => (
@@ -816,7 +817,7 @@ const Clusters = () => {
                   </SectionCard>
 
                   {/* Decision Recommendations */}
-                  <SectionCard title={t('clusters.section.decisions')} subtitle={t('clusters.section.decisionsSubtitle')} icon={<ArrowUpRight size={18} />}>
+                  <SectionCard title={t('clusters.section.decisions')} subtitle={t('clusters.section.decisionsSubtitle')} icon={<ArrowUpRight size={18} />} badge={t('common.preview')}>
                     {recs.length > 0 ? (
                       <div className="recs-list">
                         {recs.slice(0, 6).map((rec: DecisionRecommendation, i: number) => (
