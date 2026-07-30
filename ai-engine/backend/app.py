@@ -110,73 +110,20 @@ async def lifespan(app: FastAPI):
         Base.metadata.create_all(bind=engine)
         logger.info("[STARTUP] Database tables created/verified successfully")
 
-        # Migration: add address column to complaints table if missing
+        # Run Alembic migrations
         try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE complaints ADD COLUMN address VARCHAR"))
-                conn.commit()
-            logger.info("[MIGRATION] Added address column to complaints table")
-        except Exception:
-            logger.info("[MIGRATION] address column already exists, skipping")
-
-        # Migration: add department column to users table if missing
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN department VARCHAR"))
-                conn.commit()
-            logger.info("[MIGRATION] Added department column to users table")
-        except Exception:
-            logger.info("[MIGRATION] department column already exists or not applicable, skipping")
-
-        # Migration: add escalation columns to incidents table if missing
-        try:
-            with engine.connect() as conn:
-                for col_ddl in [
-                    "ALTER TABLE incidents ADD COLUMN escalated BOOLEAN DEFAULT FALSE",
-                    "ALTER TABLE incidents ADD COLUMN escalated_at TIMESTAMP",
-                    "ALTER TABLE incidents ADD COLUMN escalated_by VARCHAR",
-                    "ALTER TABLE incidents ADD COLUMN escalation_reason TEXT",
-                ]:
-                    try:
-                        conn.execute(text(col_ddl))
-                        conn.commit()
-                    except Exception:
-                        conn.rollback()
-            logger.info("[MIGRATION] Escalation columns added to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] Escalation columns already exist on incidents table, skipping")
-
-        # Migration: add verification_code column to incidents table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN verification_code VARCHAR"))
-                conn.commit()
-            logger.info("[MIGRATION] Added verification_code column to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] verification_code column already exists, skipping")
-
-        # Migration: add photo duplicate detection columns to complaints table
-        for col_ddl in [
-            "ALTER TABLE complaints ADD COLUMN photo_hash VARCHAR",
-            "ALTER TABLE complaints ADD COLUMN photo_duplicate_flag VARCHAR",
-            "ALTER TABLE complaints ADD COLUMN photo_duplicate_of VARCHAR",
-        ]:
-            try:
-                with engine.connect() as conn:
-                    conn.execute(text(col_ddl))
-                    conn.commit()
-                logger.info("[MIGRATION] Added column to complaints table")
-            except Exception:
-                pass
-
-        # Migration: add resolution_note column to incidents table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN resolution_note TEXT"))
-                conn.commit()
-            logger.info("[MIGRATION] Added resolution_note column to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] resolution_note column already exists, skipping")
+            import subprocess
+            result = subprocess.run(
+                ["alembic", "upgrade", "head"],
+                capture_output=True, text=True, check=False
+            )
+            if result.returncode == 0:
+                logger.info("[MIGRATION] Alembic upgrade succeeded:\n%s", result.stdout)
+            else:
+                logger.warning("[MIGRATION] Alembic upgrade had issues (exit %d):\n%s\n%s",
+                               result.returncode, result.stdout, result.stderr)
+        except Exception as exc:
+            logger.warning("[MIGRATION] Alembic upgrade skipped: %s", exc)
 
         # Migration: fix district for government users from old Chennai data
         try:
@@ -249,24 +196,6 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[STARTUP] Officer department backfill skipped: %s", exc)
 
-        # Migration: add status_changed_at column to incidents table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN status_changed_at TIMESTAMP"))
-                conn.commit()
-            logger.info("[MIGRATION] Added status_changed_at column to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] status_changed_at column already exists, skipping")
-
-        # Migration: add last_login column to users table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN last_login DATETIME"))
-                conn.commit()
-            logger.info("[MIGRATION] Added last_login column to users table")
-        except Exception:
-            logger.info("[MIGRATION] last_login column already exists, skipping")
-
         # Backfill status_changed_at for existing incidents (set to created_at)
         try:
             from database import SessionLocal, Incident
@@ -280,119 +209,6 @@ async def lifespan(app: FastAPI):
                     logger.info("[BACKFILL] Set status_changed_at = created_at for %d incidents", count)
         except Exception as exc:
             logger.warning("[BACKFILL] status_changed_at backfill skipped: %s", exc)
-
-        # Migration: add citizen_rating column to complaints table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE complaints ADD COLUMN citizen_rating INTEGER"))
-                conn.commit()
-            logger.info("[MIGRATION] Added citizen_rating column to complaints table")
-        except Exception:
-            logger.info("[MIGRATION] citizen_rating column already exists, skipping")
-
-        # Migration: add notify_status_updates column to users table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN notify_status_updates BOOLEAN DEFAULT TRUE"))
-                conn.commit()
-            logger.info("[MIGRATION] Added notify_status_updates column to users table")
-        except Exception:
-            logger.info("[MIGRATION] notify_status_updates column already exists, skipping")
-
-        # Migration: create incident_comments table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("CREATE TABLE IF NOT EXISTS incident_comments (id VARCHAR PRIMARY KEY, incident_id VARCHAR, user_id VARCHAR, user_name VARCHAR, role VARCHAR, message TEXT, created_at TIMESTAMP)"))
-                conn.commit()
-            logger.info("[MIGRATION] Created incident_comments table")
-        except Exception as e:
-            logger.info("[MIGRATION] incident_comments table already exists, skipping: %s", e)
-
-        # Migration: create kpi_targets table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("CREATE TABLE IF NOT EXISTS kpi_targets (id VARCHAR PRIMARY KEY, metric_name VARCHAR, target_value FLOAT, current_value FLOAT, set_by VARCHAR, set_at TIMESTAMP)"))
-                conn.commit()
-            logger.info("[MIGRATION] Created kpi_targets table")
-        except Exception as e:
-            logger.info("[MIGRATION] kpi_targets table already exists, skipping: %s", e)
-
-        # Migration: add original_category column to incidents table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN original_category VARCHAR"))
-                conn.commit()
-            logger.info("[MIGRATION] Added original_category column to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] original_category column already exists, skipping")
-
-        # Migration: add new columns for features
-        new_cols = [
-            "ALTER TABLE incidents ADD COLUMN resolution_photo_path VARCHAR",
-            "ALTER TABLE incidents ADD COLUMN private_note TEXT",
-            "ALTER TABLE incidents ADD COLUMN private_note_updated_at TIMESTAMP",
-            "ALTER TABLE complaints ADD COLUMN tags TEXT",
-            "ALTER TABLE complaints ADD COLUMN complaint_language VARCHAR",
-            "ALTER TABLE complaints ADD COLUMN complexity_score FLOAT",
-            "ALTER TABLE complaints ADD COLUMN complexity_label VARCHAR",
-            "ALTER TABLE users ADD COLUMN availability VARCHAR DEFAULT 'available'",
-            "ALTER TABLE users ADD COLUMN skills VARCHAR",
-            "ALTER TABLE incidents ADD COLUMN resolution_quality_score FLOAT",
-            "ALTER TABLE complaints ADD COLUMN urgency_flag VARCHAR DEFAULT 'LOW'",
-        ]
-        for col_ddl in new_cols:
-            try:
-                with engine.connect() as conn:
-                    conn.execute(text(col_ddl))
-                    conn.commit()
-            except Exception:
-                pass
-
-        # Migration: add affected_wards column to incidents table (Feature 8)
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN affected_wards TEXT"))
-                conn.commit()
-            logger.info("[MIGRATION] Added affected_wards column to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] affected_wards column already exists, skipping")
-
-        # Migration: add accepted_by and accepted_at columns to incidents table (Feature 15)
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN accepted_by VARCHAR"))
-                conn.execute(text("ALTER TABLE incidents ADD COLUMN accepted_at TIMESTAMP"))
-                conn.commit()
-            logger.info("[MIGRATION] Added accepted_by/accepted_at columns to incidents table")
-        except Exception:
-            logger.info("[MIGRATION] accepted_by/accepted_at columns already exist, skipping")
-
-        # Migration: add zone column to users table (Feature 17)
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE users ADD COLUMN zone VARCHAR"))
-                conn.commit()
-            logger.info("[MIGRATION] Added zone column to users table")
-        except Exception:
-            logger.info("[MIGRATION] zone column already exists, skipping")
-
-        # Migration: create geofences table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("CREATE TABLE IF NOT EXISTS geofences (id VARCHAR PRIMARY KEY, lat FLOAT NOT NULL, lng FLOAT NOT NULL, radius_meters FLOAT NOT NULL, label VARCHAR NOT NULL, created_by VARCHAR NOT NULL, created_at TIMESTAMP)"))
-                conn.commit()
-            logger.info("[MIGRATION] Created geofences table")
-        except Exception as e:
-            logger.info("[MIGRATION] geofences table already exists, skipping: %s", e)
-
-        # Migration: add batched column to notifications table
-        try:
-            with engine.connect() as conn:
-                conn.execute(text("ALTER TABLE notifications ADD COLUMN batched BOOLEAN DEFAULT FALSE"))
-                conn.commit()
-            logger.info("[MIGRATION] Added batched column to notifications table")
-        except Exception:
-            logger.info("[MIGRATION] batched column already exists, skipping")
 
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
@@ -604,6 +420,11 @@ async def csrf_origin_check(request: Request, call_next):
                 if referer.startswith(ao.rstrip("/")):
                     origin_valid = True
                     break
+        else:
+            # No Origin AND no Referer — non-browser client (curl/Postman/etc.)
+            logger.warning("CSRF origin check: no Origin or Referer header (non-browser client), allowing request: method=%s path=%s",
+                           request.method, path)
+            origin_valid = True
 
         if not origin_valid:
             logger.warning("CSRF origin check failed: method=%s path=%s origin=%s referer=%s",

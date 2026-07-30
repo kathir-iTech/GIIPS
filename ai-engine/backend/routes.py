@@ -3,6 +3,7 @@ API route definitions for GIIPS backend.
 """
 
 import os
+import asyncio
 import json
 import re
 import uuid
@@ -18,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ZONE_BY_WARD
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, ZONE_BY_WARD
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -43,12 +44,13 @@ from models import (
     TagsUpdateRequest,
     AvailabilityUpdateRequest,
     SkillsUpdateRequest,
+    VerifyEmailRequest,
     WithdrawRequest,
     CategoryCorrectRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
-from job_queue import get_complaint_status
-from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit
+from job_queue import get_complaint_status, get_pool
+from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit, check_appeal_rate_limit, check_reopen_rate_limit, check_search_rate_limit, check_copilot_rate_limit, check_public_stats_rate_limit, check_track_public_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS, SLA_PRIORITY_BUMP
 from department_map import (
     get_department, get_department_slug, get_slug_for_department,
@@ -257,7 +259,17 @@ spatial_router = APIRouter(prefix="/spatial", tags=["Spatial"])
 
 @spatial_router.get("/heatmap")
 async def get_heatmap(db: Session = Depends(get_db)):
-    return await SpatialService().get_heatmap(db)
+    # FEATURE 13: 60s Redis cache
+    pool = get_pool()
+    cache_key = "cache:/spatial/heatmap"
+    if pool:
+        cached = await pool.get(cache_key)
+        if cached:
+            return json.loads(cached)
+    response = await SpatialService().get_heatmap(db)
+    if pool:
+        await pool.set(cache_key, json.dumps(response), ex=60)
+    return response
 
 @spatial_router.get("/hotspots")
 async def get_hotspots(db: Session = Depends(get_db)):
@@ -284,8 +296,18 @@ async def get_executive_summary(db: Session = Depends(get_db)):
 
 @executive_router.get("/ward-health")
 async def get_ward_health(db: Session = Depends(get_db)):
+    # FEATURE 13: 60s Redis cache
+    pool = get_pool()
+    cache_key = "cache:/executive/ward-health"
+    if pool:
+        cached = await pool.get(cache_key)
+        if cached:
+            return json.loads(cached)
     service = DecisionService()
-    return await service.get_ward_health(db)
+    response = await service.get_ward_health(db)
+    if pool:
+        await pool.set(cache_key, json.dumps(response), ex=60)
+    return response
 
 @executive_router.get("/department-workload")
 async def get_dept_workload(db: Session = Depends(get_db)):
@@ -464,6 +486,90 @@ def list_geofences(db: Session = Depends(get_db)):
     ]
 
 
+# FEATURE 19: daily briefing
+@executive_router.get("/daily-briefing")
+async def get_daily_briefing(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    if current_user.role != 'Executive':
+        raise HTTPException(status_code=403, detail="Executive only")
+    from collections import defaultdict
+    from prediction.engine import PredictiveEngine
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+
+    new_complaints_today = db.query(func.count(Complaint.id)).filter(Complaint.created_at >= today_start).scalar() or 0
+
+    resolved_today = db.query(func.count(Incident.id)).filter(
+        Incident.status_changed_at >= today_start,
+        Incident.status.in_(["resolved", "closed"]),
+    ).scalar() or 0
+
+    sla_breaches_today = db.query(func.count(Incident.id)).filter(
+        Incident.days_open > 7,
+        ~Incident.status.in_(["resolved", "closed"]),
+    ).scalar() or 0
+
+    pending_appeals = db.query(func.count(Incident.id)).filter(
+        Incident.appealed == True,
+        Incident.status != "resolved",
+    ).scalar() or 0
+
+    thirty_days_ago = now - timedelta(days=30)
+    rows = db.query(
+        Complaint.ward,
+        Complaint.predicted_category,
+        func.date(Complaint.created_at).label("dt"),
+        func.count(Complaint.id),
+    ).filter(
+        Complaint.ward.isnot(None), Complaint.ward != "",
+        Complaint.predicted_category.isnot(None),
+        Complaint.created_at >= thirty_days_ago,
+    ).group_by(Complaint.ward, Complaint.predicted_category, "dt").all()
+    data = defaultdict(lambda: defaultdict(list))
+    for ward, cat, dt, cnt in rows:
+        data[(ward, cat)][str(dt)].append(cnt)
+    top_anomaly = None
+    for (ward, cat), daily_map in data.items():
+        counts = [sum(v) for v in daily_map.values()]
+        if len(counts) < 2:
+            continue
+        mean = sum(counts) / len(counts)
+        variance = sum((x - mean) ** 2 for x in counts) / len(counts)
+        stddev = variance ** 0.5
+        today_counts = [c for d, c in daily_map.items() if d >= str(today_start.date())]
+        today_count = sum(today_counts) if today_counts else 0
+        if today_count > mean + 2 * stddev:
+            severity = "high" if today_count > mean + 3 * stddev else "medium"
+            if not top_anomaly or today_count > top_anomaly["today_count"]:
+                top_anomaly = {"ward": ward, "category": cat, "today_count": today_count, "mean": round(mean, 2), "stddev": round(stddev, 2), "severity": severity}
+
+    engine = PredictiveEngine()
+    predictions = []
+    ward_numbers = db.query(Complaint.ward).filter(Complaint.ward.isnot(None), Complaint.ward != "").distinct().all()
+    for (wn,) in ward_numbers:
+        weeks = []
+        for w in range(4):
+            start = now - timedelta(weeks=w+1)
+            end = now - timedelta(weeks=w)
+            cnt = db.query(Complaint).filter(Complaint.ward == wn, Complaint.created_at >= start, Complaint.created_at < end).count()
+            weeks.append(cnt)
+        weeks.reverse()
+        forecast = engine.forecast_complaints('week', history=weeks)
+        predicted = forecast.get("predicted_volume", 0)
+        predictions.append({"ward": wn, "predicted_volume": round(predicted, 1)})
+    predictions.sort(key=lambda r: r["predicted_volume"], reverse=True)
+    hotspot_prediction = predictions[:5] if predictions else []
+
+    return {
+        "date": now.date().isoformat(),
+        "new_complaints_today": new_complaints_today,
+        "resolved_today": resolved_today,
+        "sla_breaches_today": sla_breaches_today,
+        "pending_appeals": pending_appeals,
+        "top_anomaly": top_anomaly,
+        "hotspot_prediction": hotspot_prediction,
+    }
+
+
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
 priority_router = APIRouter(prefix="/priority", tags=["Priority"])
@@ -475,7 +581,7 @@ complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 # === Complaint Submission Routes ===
 
 @complaint_router.post("", status_code=202, response_model=SubmissionAcceptedResponse)
-async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Submit a new citizen complaint. Runs ML pipeline inline via asyncio.create_task
     (no separate worker process needed — keeps Render free tier viable)."""
 
@@ -486,6 +592,29 @@ async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_com
     if is_khata_complaint(combined_text):
         khata_resp = get_khata_rejection_response()
         raise HTTPException(status_code=400, detail=khata_resp["message"])
+
+    # FEATURE 14: email verification
+    if not db_user.email_verified:
+        raise HTTPException(status_code=403, detail="Please verify your email before submitting complaints.")
+
+    # FEATURE 8: 10/day per citizen limit
+    last_24h = datetime.utcnow() - timedelta(hours=24)
+    count_today = db.query(func.count(Complaint.id)).filter(
+        Complaint.user_id == db_user.id,
+        Complaint.created_at >= last_24h,
+    ).scalar() or 0
+    if count_today >= 10:
+        raise HTTPException(status_code=429, detail="Maximum 10 complaints per day. You have used all your submissions for today.")
+
+    # FEATURE 12: HTML strip + spam detection
+    request.title = re.sub(r'<[^>]+>', '', request.title)
+    request.description = re.sub(r'<[^>]+>', '', request.description)
+    for field in (request.title, request.description):
+        if field:
+            alnum_count = sum(c.isalnum() for c in field)
+            total_count = len(field)
+            if total_count > 0 and alnum_count / total_count < 0.4:
+                raise HTTPException(status_code=400, detail="Complaint text appears to be spam or contains invalid characters.")
 
     complaint_id = str(uuid.uuid4())
     complaint = Complaint(
@@ -505,6 +634,15 @@ async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_com
 
     import asyncio
     asyncio.create_task(process_complaint_pipeline(complaint_id, db_user.id))
+
+    # FEATURE 13: cache invalidated
+    pool = get_pool()
+    if pool:
+        for key in ["cache:/spatial/heatmap", "cache:/executive/ward-health"]:
+            try:
+                await pool.delete(key)
+            except Exception:
+                pass
 
     await manager.broadcast("complaint:new", {
         "complaint_id": complaint_id,
@@ -576,6 +714,16 @@ async def upload_complaint_photo(
         raise HTTPException(status_code=404, detail="Complaint not found")
 
     data = await file.read()
+
+    # FEATURE 9: 5MB max, jpg/png/webp only
+    if len(data) > 5 * 1024 * 1024:
+        raise HTTPException(status_code=400, detail="Photo exceeds maximum size of 5MB.")
+    ext = Path(file.filename or "").suffix.lower() if file.filename else ""
+    allowed_exts = {".jpg", ".jpeg", ".png", ".webp"}
+    allowed_mimes = {"image/jpeg", "image/png", "image/webp"}
+    if ext not in allowed_exts or file.content_type not in allowed_mimes:
+        raise HTTPException(status_code=400, detail="Invalid file type. Allowed types: jpg, png, webp.")
+
     err = validate_file(file.filename or "upload", file.content_type or "", len(data))
     if err:
         raise HTTPException(status_code=400, detail=err)
@@ -699,6 +847,13 @@ async def get_my_complaints(
     ).order_by(Complaint.created_at.desc())
 
     total = db.query(Complaint).filter(Complaint.user_id == db_user.id).count()
+
+    # FEATURE 8: 10/day per citizen limit
+    last_24h = datetime.utcnow() - timedelta(hours=24)
+    count_today = db.query(func.count(Complaint.id)).filter(
+        Complaint.user_id == db_user.id,
+        Complaint.created_at >= last_24h,
+    ).scalar() or 0
     offset_val = (page - 1) * limit
     complaints = q.offset(offset_val).limit(limit).all()
 
@@ -735,6 +890,10 @@ async def get_my_complaints(
                 "recommended_action": incident.recommended_action if incident else None,
                 "resolution_note": incident.resolution_note if incident else None,
                 "days_open": incident.days_open if incident else None,
+            # FEATURE 17: Impact assessment
+            "impact_score": incident.impact_score if incident else None,
+            "economic_impact": incident.economic_impact if incident else None,
+            "beneficiaries": incident.beneficiaries if incident else None,
             } if incident else None
         })
     return {
@@ -806,6 +965,10 @@ async def get_complaint_detail(complaint_id: str, db_user: User = Depends(get_cu
             "recommended_action": incident.recommended_action if incident else None,
             "summary": incident.summary if incident else None,
             "resolution_note": incident.resolution_note if incident else None,
+            # FEATURE 17: Impact assessment
+            "impact_score": incident.impact_score if incident else None,
+            "economic_impact": incident.economic_impact if incident else None,
+            "beneficiaries": incident.beneficiaries if incident else None,
             "priority_history": [
                 {
                     "id": ph.id,
@@ -921,6 +1084,76 @@ async def update_complaint_tags(complaint_id: str, body: TagsUpdateRequest, db_u
     complaint.tags = json.dumps(body.tags)
     db.commit()
     return {"tags": json.loads(complaint.tags)}
+
+
+# FEATURE 16: drafts
+class DraftCreate(BaseModel):
+    title: Optional[str] = None
+    description: Optional[str] = None
+    location: Optional[str] = None
+    ward: Optional[str] = None
+    category: Optional[str] = None
+    tags: Optional[str] = None
+
+@complaint_router.post("/draft")
+async def save_draft(body: DraftCreate, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if db_user.role != 'Citizen':
+        raise HTTPException(status_code=403, detail="Only citizens can save drafts")
+    existing = db.query(ComplaintDraft).filter(ComplaintDraft.user_id == db_user.id).order_by(ComplaintDraft.updated_at.asc()).all()
+    if len(existing) >= 3:
+        draft = existing[0]
+    else:
+        draft = ComplaintDraft(id=str(uuid.uuid4()), user_id=db_user.id)
+        db.add(draft)
+    if body.title is not None: draft.title = body.title
+    if body.description is not None: draft.description = body.description
+    if body.location is not None: draft.location = body.location
+    if body.ward is not None: draft.ward = body.ward
+    if body.category is not None: draft.category = body.category
+    if body.tags is not None: draft.tags = body.tags
+    draft.updated_at = datetime.utcnow()
+    db.commit()
+    db.refresh(draft)
+    return {
+        "id": draft.id,
+        "title": draft.title,
+        "description": draft.description,
+        "location": draft.location,
+        "ward": draft.ward,
+        "category": draft.category,
+        "tags": draft.tags,
+        "created_at": draft.created_at.isoformat() if draft.created_at else None,
+        "updated_at": draft.updated_at.isoformat() if draft.updated_at else None,
+    }
+
+@complaint_router.get("/drafts")
+async def list_drafts(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if db_user.role != 'Citizen':
+        raise HTTPException(status_code=403, detail="Only citizens can view drafts")
+    drafts = db.query(ComplaintDraft).filter(ComplaintDraft.user_id == db_user.id).order_by(ComplaintDraft.updated_at.desc()).limit(3).all()
+    return [
+        {
+            "id": d.id,
+            "title": d.title,
+            "description": d.description,
+            "location": d.location,
+            "ward": d.ward,
+            "category": d.category,
+            "tags": d.tags,
+            "created_at": d.created_at.isoformat() if d.created_at else None,
+            "updated_at": d.updated_at.isoformat() if d.updated_at else None,
+        }
+        for d in drafts
+    ]
+
+@complaint_router.delete("/draft/{draft_id}")
+async def delete_draft(draft_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    draft = db.query(ComplaintDraft).filter(ComplaintDraft.id == draft_id, ComplaintDraft.user_id == db_user.id).first()
+    if not draft:
+        raise HTTPException(status_code=404, detail="Draft not found")
+    db.delete(draft)
+    db.commit()
+    return {"success": True}
 
 
 # === Classification Routes ===
@@ -1056,6 +1289,7 @@ async def get_dashboard(db: Session = Depends(get_db)):
 @dashboard_router.get("/metrics")
 async def get_metrics():
     """Get key performance metrics from the trained model metadata."""
+    # FEATURE 7: real per-category metrics
     metadata_path = Path(__file__).parent.parent.parent / 'ai-engine' / 'models' / 'classification' / 'metadata.json'
     if metadata_path.exists():
         try:
@@ -1070,8 +1304,8 @@ async def get_metrics():
                 "dataset_size": meta.get('total_samples', 0),
                 "num_train_samples": meta.get('num_train_samples', 0),
                 "num_test_samples": meta.get('num_test_samples', 0),
-                "processing_time_ms": 45,
-                "last_updated": meta.get('trained_at', datetime.now().isoformat())
+                "last_updated": meta.get('trained_at', datetime.now().isoformat()),
+                "per_category_metrics": meta.get('per_category_metrics', {}),
             }
         except Exception as e:
             logger.warning(f"Failed to load model metadata: {e}")
@@ -1081,8 +1315,8 @@ async def get_metrics():
         "num_classes": 0,
         "categories": [],
         "dataset_size": 0,
-        "processing_time_ms": 0,
-        "last_updated": datetime.now().isoformat()
+        "last_updated": datetime.now().isoformat(),
+        "per_category_metrics": {},
     }
 
 
@@ -1322,6 +1556,9 @@ async def get_incidents(
             "affected_wards": json.loads(inc.affected_wards) if inc.affected_wards else [],
             "accepted_by": inc.accepted_by,
             "accepted_at": inc.accepted_at.isoformat() if inc.accepted_at else None,
+            "impact_score": inc.impact_score,
+            "economic_impact": inc.economic_impact,
+            "beneficiaries": inc.beneficiaries,
             "complaints": [{
                 "id": c.id, "complaint_number": c.id,
                 "date_received": c.created_at.isoformat() if c.created_at else None,
@@ -1611,6 +1848,9 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
         "affected_wards": affected,
         "accepted_by": inc.accepted_by,
         "accepted_at": inc.accepted_at.isoformat() if inc.accepted_at else None,
+        "impact_score": inc.impact_score,
+        "economic_impact": inc.economic_impact,
+        "beneficiaries": inc.beneficiaries,
         "complaints": [{
             "id": c.id, "complaint_number": c.id,
             "date_received": c.created_at.isoformat() if c.created_at else None,
@@ -1630,7 +1870,7 @@ async def get_incident(incident_id: str, db: Session = Depends(get_db)):
 
 
 @incident_router.post("/merge")
-async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def merge_incidents(body: MergeIncidentsRequest, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Merge multiple incidents into one. Moves all complaints to the target and recalculates priority."""
     if db_user.role not in ("Officer", "Executive", "Commissioner"):
         raise HTTPException(status_code=403, detail="Only officers, executives, and commissioners can merge incidents")
@@ -1755,7 +1995,7 @@ async def merge_single_incident(incident_id: str, body: MergeSingleRequest, db_u
 
 
 @incident_router.post("/{incident_id}/split/{complaint_id}")
-async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Remove a complaint from an incident and create a new standalone incident for it."""
     if db_user.role not in ("Officer", "Executive", "Commissioner"):
         raise HTTPException(status_code=403, detail="Only officers, executives, and commissioners can split complaints")
@@ -2232,7 +2472,7 @@ async def escalate_incident(incident_id: str, body: EscalateRequest, db_user: Us
 
 
 @incident_router.post("/{incident_id}/verify-resolution")
-async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: None = Depends(check_verify_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: None = Depends(check_verify_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Verify resolution as the citizen who filed the original complaint.
     Only the citizen who owns a complaint linked to this incident can confirm.
     Rate-limited to 3 attempts/min to prevent code-guessing."""
@@ -2261,6 +2501,16 @@ async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: 
 
     # Code matches — mark as truly resolved
     old_status = incident.status
+
+    # FEATURE 17: Impact assessment
+    severity_weights = {"Roads": 3, "Water Supply": 4, "Waste Management": 2, "Sanitation": 3, "Street Lighting": 1, "Electricity": 4, "Public Health": 5}
+    cat = incident.category or ""
+    weight = severity_weights.get(cat, 1)
+    days = incident.days_open or 1
+    incident.impact_score = incident.cluster_size * 4
+    incident.economic_impact = weight * days * 100
+    incident.beneficiaries = incident.cluster_size * 3
+
     incident.status = "resolved"
     incident.verification_code = None
     db.commit()
@@ -2285,7 +2535,7 @@ async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: 
 
 
 @incident_router.post("/{incident_id}/reopen")
-async def reopen_incident(incident_id: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def reopen_incident(incident_id: str, request: Request, _: None = Depends(check_reopen_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: newly rate-limited
     """Reopen a resolved/pending_verification incident. Only the complaint submitter can reopen."""
     incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
     if not incident:
@@ -2327,7 +2577,7 @@ async def reopen_incident(incident_id: str, db_user: User = Depends(get_current_
 
 
 @incident_router.post("/{incident_id}/appeal")
-async def appeal_incident(incident_id: str, body: AppealRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+async def appeal_incident(incident_id: str, body: AppealRequest, request: Request, _: None = Depends(check_appeal_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: newly rate-limited
     """Citizen appeal — formal escalation with reason when resolution is unsatisfactory.
     Sets appealed flag, bumps priority, notifies department officers, and writes audit log.
     Distinct from reopen (which is a simple retry with no escalation)."""
@@ -2431,7 +2681,7 @@ async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_use
 search_router = APIRouter(prefix="/search", tags=["Search"])
 
 @search_router.get("")
-def search_complaints(q: str = Query(..., min_length=1), db: Session = Depends(get_db)):
+def search_complaints(q: str = Query(..., min_length=1), request: Request = None, _: None = Depends(check_search_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: newly rate-limited
     pattern = f"%{q}%"
     results = db.query(Complaint).filter(
         or_(Complaint.title.ilike(pattern), Complaint.description.ilike(pattern))
@@ -2499,13 +2749,15 @@ async def mark_all_notifications_read(db_user: User = Depends(get_current_user),
 auth_router = APIRouter(prefix="/auth", tags=["Auth"])
 
 @auth_router.post("/register")
-async def register(user: UserRegister, request: Request, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):
+async def register(user: UserRegister, request: Request, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Register a new citizen account. Government accounts must be created by Executive through Officer Management."""
     if user.email.endswith("@gov.in"):
         raise HTTPException(status_code=400, detail="Government accounts must be created by an Executive. Use @gov.in emails are not allowed for public registration.")
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_pw = hash_password(user.password)
+    # FEATURE 14: email verification
+    verification_code = f"{random.randint(100000, 999999)}"
     new_user = User(
         id=str(uuid.uuid4()),
         full_name=user.full_name,
@@ -2514,14 +2766,29 @@ async def register(user: UserRegister, request: Request, _: None = Depends(check
         phone=user.phone,
         district=user.district,
         ward=user.ward,
-        role="Citizen"
+        role="Citizen",
+        verification_code=verification_code,
+        email_verified=False,
     )
     db.add(new_user)
     db.commit()
-    return {"message": "User registered successfully", "user_id": new_user.id, "role": new_user.role}
+    return {"message": "User registered successfully", "user_id": new_user.id, "role": new_user.role, "verification_code": verification_code}
+
+@auth_router.post("/verify-email")
+async def verify_email(body: VerifyEmailRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Verify email with 6-digit code."""
+    # FEATURE 14: email verification
+    if db_user.email_verified:
+        raise HTTPException(status_code=400, detail="Email already verified")
+    if db_user.verification_code != body.code:
+        raise HTTPException(status_code=400, detail="Invalid verification code")
+    db_user.email_verified = True
+    db_user.verification_code = None
+    db.commit()
+    return {"message": "Email verified successfully"}
 
 @auth_router.post("/login")
-async def login(user: UserLogin, request: Request, response: Response, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):
+async def login(user: UserLogin, request: Request, response: Response, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Authenticate user and return JWT token as httpOnly cookie."""
     db_user = db.query(User).filter(User.email == user.email).first()
     if not db_user or not verify_password(user.password, db_user.password_hash):
@@ -2561,6 +2828,8 @@ async def get_me(db_user: User = Depends(get_current_user)):
         notify_status_updates=db_user.notify_status_updates,
         skills=db_user.skills,
         availability=db_user.availability,
+        current_shift=db_user.current_shift,
+        email_verified=db_user.email_verified,
     )
 
 
@@ -2583,6 +2852,8 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
     if data.district is not None: db_user.district = data.district
     if data.ward is not None: db_user.ward = data.ward
     if data.password: db_user.password_hash = hash_password(data.password)
+    # FEATURE 15: shift schedule
+    if data.current_shift is not None: db_user.current_shift = data.current_shift
     db.commit()
     db.refresh(db_user)
     return UserResponse(
@@ -2596,6 +2867,8 @@ async def update_profile(data: ProfileUpdate, db_user: User = Depends(get_curren
         notify_status_updates=db_user.notify_status_updates,
         skills=db_user.skills,
         availability=db_user.availability,
+        current_shift=db_user.current_shift,
+        email_verified=db_user.email_verified,
     )
 
 # === WebSocket endpoint for real-time dashboard updates ===
@@ -2654,7 +2927,7 @@ def get_executive_user(db_user: User = Depends(get_current_user)):
 async def get_officers(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get all officers."""
     officers = db.query(User).filter(User.role == "Officer").all()
-    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "zone": o.zone, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status, "last_login": o.last_login.isoformat() if o.last_login else None} for o in officers]
+    return [{"id": o.id, "full_name": o.full_name, "email": o.email, "district": o.district, "department": o.department, "zone": o.zone, "created_at": o.created_at.isoformat() if o.created_at else None, "status": o.status, "last_login": o.last_login.isoformat() if o.last_login else None, "current_shift": o.current_shift} for o in officers]
 
 @admin_router.get("/zone-commanders")
 async def get_zone_commanders(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -2769,6 +3042,53 @@ async def get_departments(db_user: User = Depends(get_executive_user), db: Sessi
     """Get department metrics."""
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "departments_view", "departments", "success")
     depts = db.query(DepartmentMetrics).all()
+
+    # FEATURE 4: department_metrics — found used, populated
+    if not depts:
+        from types import SimpleNamespace
+        cat_to_dept = {}
+        for cat, slug in CATEGORY_DEPT_MAP.items():
+            cat_to_dept[cat] = SLUG_TO_DISPLAY.get(slug, slug)
+        for slug in DEPARTMENT_SLUGS:
+            dept_name = SLUG_TO_DISPLAY.get(slug, slug)
+            cats_for_dept = [c for c, d in cat_to_dept.items() if d == dept_name]
+            if not cats_for_dept:
+                continue
+            open_cnt = db.query(func.count(Incident.id)).filter(
+                Incident.category.in_(cats_for_dept),
+                Incident.status.in_(["open", "in_progress", "escalated"])
+            ).scalar() or 0
+            critical_cnt = db.query(func.count(Incident.id)).filter(
+                Incident.category.in_(cats_for_dept),
+                Incident.status.in_(["open", "in_progress", "escalated"]),
+                Incident.priority_score >= 75
+            ).scalar() or 0
+            officer_cnt = db.query(func.count(User.id)).filter(
+                User.role == "Officer",
+                User.department == dept_name
+            ).scalar() or 0
+            avg_res = db.query(func.avg(Incident.days_open)).filter(
+                Incident.status.in_(["resolved", "closed"]),
+                Incident.category.in_(cats_for_dept)
+            ).scalar() or 0.0
+            total_inc = db.query(func.count(Incident.id)).filter(
+                Incident.category.in_(cats_for_dept)
+            ).scalar() or 1
+            resolved_inc = db.query(func.count(Incident.id)).filter(
+                Incident.status.in_(["resolved", "closed"]),
+                Incident.category.in_(cats_for_dept)
+            ).scalar() or 0
+            comp_pct = round((resolved_inc / total_inc) * 100, 1) if total_inc > 0 else 0.0
+            workload = round((open_cnt / max(officer_cnt, 1)) * 10, 1)
+            depts.append(SimpleNamespace(
+                department=dept_name,
+                open_incidents=open_cnt,
+                critical_incidents=critical_cnt,
+                assigned_officers=officer_cnt,
+                avg_resolution_time=round(float(avg_res), 1),
+                completion_percentage=comp_pct,
+                workload_indicator=min(workload, 100),
+            ))
 
     avg_ratings = db.query(
         Complaint.predicted_category,
@@ -2973,6 +3293,13 @@ prediction_router = APIRouter(prefix="/predictions", tags=["Predictions"])
 @prediction_router.get("/summary", response_model=PredictionSummaryResponse)
 async def get_predictions_summary(db: Session = Depends(get_db)):
     """Get AI predictions summary using live complaint and incident data."""
+    # FEATURE 13: 60s Redis cache
+    pool = get_pool()
+    cache_key = "cache:/predictions/summary"
+    if pool:
+        cached = await pool.get(cache_key)
+        if cached:
+            return json.loads(cached)
     try:
         engine = PredictiveEngine()
         history_counts = []
@@ -2981,37 +3308,51 @@ async def get_predictions_summary(db: Session = Depends(get_db)):
             next_cutoff = datetime.utcnow() - timedelta(days=4 - i)
             count = db.query(Complaint).filter(Complaint.created_at >= cutoff, Complaint.created_at < next_cutoff).count()
             history_counts.append(count)
-        forecast = engine.forecast_complaints('week', history=history_counts)
 
-        total_incidents = db.query(Incident).count()
-        critical_count = db.query(Incident).filter(Incident.priority_label == 'Critical').count()
-        high_count = db.query(Incident).filter(Incident.priority_label == 'High').count()
-        avg_days_open = db.query(func.avg(Incident.days_open)).scalar() or 0.0
+        loop = asyncio.get_event_loop()
 
-        recent_incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(5).all()
-        escalation_risks = []
-        for inc in recent_incidents:
-            esc = engine.predict_escalation(inc)
-            escalation_risks.append({
-                "incident_id": inc.id,
-                "priority_label": inc.priority_label,
-                "escalation_probability": esc.get("probability", 0.0),
-                "risk_level": esc.get("risk_level", "LOW")
-            })
+        def _run_engine():
+            forecast = engine.forecast_complaints('week', history=history_counts)
+            total_incidents = db.query(Incident).count()
+            critical_count = db.query(Incident).filter(Incident.priority_label == 'Critical').count()
+            high_count = db.query(Incident).filter(Incident.priority_label == 'High').count()
+            avg_days_open = db.query(func.avg(Incident.days_open)).scalar() or 0.0
+            recent_incidents = db.query(Incident).order_by(Incident.created_at.desc()).limit(5).all()
+            escalation_risks = []
+            for inc in recent_incidents:
+                esc = engine.predict_escalation(inc)
+                escalation_risks.append({
+                    "incident_id": inc.id,
+                    "priority_label": inc.priority_label,
+                    "escalation_probability": esc.get("probability", 0.0),
+                    "risk_level": esc.get("risk_level", "LOW")
+                })
+            active_alerts = engine.generate_alerts(db)
+            return PredictionSummaryResponse(
+                timeframe=forecast.get("timeframe", "week"),
+                predicted_volume=forecast.get("predicted_volume", 0.0),
+                confidence=forecast.get("confidence", 0.0),
+                model=forecast.get("model", "unknown"),
+                total_incidents=total_incidents,
+                critical_count=critical_count,
+                high_priority_count=high_count,
+                avg_days_open=round(float(avg_days_open), 1),
+                recent_escalation_risks=escalation_risks,
+                active_alerts=active_alerts
+            )
 
-        active_alerts = engine.generate_alerts(db)
-
+        response = await asyncio.wait_for(
+            loop.run_in_executor(None, _run_engine),
+            timeout=10.0
+        )
+        if pool:
+            await pool.set(cache_key, json.dumps(response.dict() if hasattr(response, 'dict') else response), ex=60)
+        return response
+    except asyncio.TimeoutError:
+        logger.warning("/predictions/summary timed out after 10s")  # FEATURE 3: 10s timeout with fallback
         return PredictionSummaryResponse(
-            timeframe=forecast.get("timeframe", "week"),
-            predicted_volume=forecast.get("predicted_volume", 0.0),
-            confidence=forecast.get("confidence", 0.0),
-            model=forecast.get("model", "unknown"),
-            total_incidents=total_incidents,
-            critical_count=critical_count,
-            high_priority_count=high_count,
-            avg_days_open=round(float(avg_days_open), 1),
-            recent_escalation_risks=escalation_risks,
-            active_alerts=active_alerts
+            predicted_volume=0, confidence=0, timeout=True,
+            recent_escalation_risks=[], active_alerts=[]
         )
     except Exception:
         logger.exception("/predictions/summary failed")
@@ -3119,10 +3460,10 @@ async def get_decision_support_summary(db: Session = Depends(get_db)):
 copilot_router = APIRouter(prefix="/copilot", tags=["Copilot"])
 
 @copilot_router.post("/chat", response_model=CopilotChatResponse)
-async def copilot_chat(request: CopilotChatRequest):
+async def copilot_chat(body: CopilotChatRequest, request: Request, _: None = Depends(check_copilot_rate_limit)):  # FEATURE 2: newly rate-limited
     """Process copilot chat query."""
     engine = CopilotEngine()
-    result = engine.chat(request.user_id, request.message)
+    result = engine.chat(body.user_id, body.message)
     return CopilotChatResponse(
         response=result.get("response", ""),
         confidence=result.get("confidence", 0.0),
@@ -3589,6 +3930,8 @@ async def get_citizen_trust_score(db_user: User = Depends(get_current_user), db:
 
 # === Feature 19: Public transparency score ===
 
+public_router = APIRouter(tags=["Public"])
+
 @public_router.get("/public/transparency-score")
 def get_transparency_score(db: Session = Depends(get_db)):
     """Compute a 0-100 transparency score from:
@@ -3635,11 +3978,33 @@ def get_transparency_score(db: Session = Depends(get_db)):
     }
 
 
+# FEATURE 18: ward improvement tracking
+@public_router.get("/public/ward-improvement")
+def get_ward_improvement(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    thirty_days_ago = now - timedelta(days=30)
+    ward_numbers = db.query(Complaint.ward).filter(Complaint.ward.isnot(None), Complaint.ward != "").distinct().all()
+    results = []
+    for (wn,) in ward_numbers:
+        current_open = db.query(func.count(Incident.id)).join(Complaint, Complaint.incident_id == Incident.id).filter(
+            Complaint.ward == wn,
+            ~Incident.status.in_(["resolved", "closed", "withdrawn"]),
+        ).scalar() or 0
+        past_open = db.query(func.count(Incident.id)).join(Complaint, Complaint.incident_id == Incident.id).filter(
+            Complaint.ward == wn,
+            Complaint.created_at < thirty_days_ago,
+            ~Incident.status.in_(["resolved", "closed", "withdrawn"]),
+        ).scalar() or 0
+        improvement = past_open - current_open
+        results.append({"ward": wn, "current_open_count": current_open, "past_count": past_open, "improvement": improvement})
+    results.sort(key=lambda r: r["improvement"], reverse=True)
+    return {
+        "top_5_improved": results[:5],
+        "bottom_5_deteriorated": results[-5:] if len(results) >= 5 else results,
+    }
+
+
 # === Public Endpoints (no auth required) ===
-
-STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","this","with","was","are","be","has","have","had","not","but","or","from","by","an","as","we","they","i","you","he","she","its","their","there","been","all","no","so","if","do","will","would","can","could","should","may","also","very","just","about","than","too","any","more","some","these","those","into","over","after","before","between","under","above","below","up","down","out","off","per","each","other","which","what","who","whom","when","where","why","how"}
-
-public_router = APIRouter(tags=["Public"])
 
 STOPWORDS = {"the","is","in","at","of","a","and","to","for","it","on","that","this","with","was","are","be","has","have","had","not","but","or","from","by","an","as","we","they","i","you","he","she","its","their","there","been","all","no","so","if","do","will","would","can","could","should","may","also","very","just","about","than","too","any","more","some","these","those","into","over","after","before","between","under","above","below","up","down","out","off","per","each","other","which","what","who","whom","when","where","why","how"}
 
@@ -3702,7 +4067,7 @@ def get_word_cloud(db: Session = Depends(get_db)):
 
 
 @public_router.get("/track/{complaint_id}", response_model=TrackComplaintResponse)
-async def track_complaint(complaint_id: str, request: Request, _: None = Depends(check_track_rate_limit), db: Session = Depends(get_db)):
+async def track_complaint(complaint_id: str, request: Request, _: None = Depends(check_track_public_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: newly rate-limited
     """Public complaint tracking — no auth required. Returns status-only info, no PII."""
     complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
     if not complaint:
@@ -3811,8 +4176,15 @@ async def public_success_stories(ward: Optional[str] = None, db: Session = Depen
 
 
 @public_router.get("/public/stats", response_model=PublicStatsResponse)
-async def public_stats(db: Session = Depends(get_db)):
+async def public_stats(request: Request, _: None = Depends(check_public_stats_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: newly rate-limited
     """Public aggregate stats — no auth required. Only anonymized counts, no PII."""
+    # FEATURE 13: 60s Redis cache
+    pool = get_pool()
+    cache_key = "cache:/public/stats"
+    if pool:
+        cached = await pool.get(cache_key)
+        if cached:
+            return json.loads(cached)
     now = datetime.utcnow()
     first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
 
@@ -3915,7 +4287,7 @@ async def public_stats(db: Session = Depends(get_db)):
         *[FunnelStage(label=display, count=status_map.get(db_status, 0)) for db_status, display in STAGES],
     ]
 
-    return PublicStatsResponse(
+    response = PublicStatsResponse(
         totalComplaintsThisMonth=total_this_month,
         resolutionRate=resolution_rate,
         avgResolutionDays=avg_resolution,
@@ -3925,6 +4297,9 @@ async def public_stats(db: Session = Depends(get_db)):
         complaintsByDay=by_day,
         complaintsByStatus=by_status,
     )
+    if pool:
+        await pool.set(cache_key, json.dumps(response.dict() if hasattr(response, 'dict') else response), ex=60)
+    return response
 
 
 @public_router.get("/public/ward-stats/{ward}")

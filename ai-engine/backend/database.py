@@ -293,6 +293,13 @@ class User(Base):
     skills = Column(String, nullable=True)
     zone = Column(String, nullable=True)
 
+    # FEATURE 14: email verification
+    verification_code = Column(String, nullable=True)
+    email_verified = Column(Boolean, default=False, nullable=False)
+
+    # FEATURE 15: shift schedule
+    current_shift = Column(String, nullable=True)
+
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""
     __tablename__ = "incidents"
@@ -345,6 +352,14 @@ class Incident(Base):
     # Officer acceptance (Feature 15)
     accepted_by = Column(String, nullable=True)
     accepted_at = Column(DateTime, nullable=True)
+
+    # FEATURE 11: sibling incident
+    sibling_of = Column(String, nullable=True)
+
+    # FEATURE 17: Impact assessment
+    impact_score = Column(Float, nullable=True)
+    economic_impact = Column(Float, nullable=True)
+    beneficiaries = Column(Integer, nullable=True)
 
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
@@ -497,6 +512,21 @@ class Geofence(Base):
     label = Column(String, nullable=False)
     created_by = Column(String, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
+
+
+# FEATURE 16: drafts
+class ComplaintDraft(Base):
+    __tablename__ = "complaint_drafts"
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), index=True, nullable=False)
+    title = Column(String, nullable=True)
+    description = Column(Text, nullable=True)
+    location = Column(String, nullable=True)
+    ward = Column(String, nullable=True)
+    category = Column(String, nullable=True)
+    tags = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+    updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
 
 # Seed demo users

@@ -178,6 +178,7 @@ class ProfileUpdate(BaseModel):
     district: Optional[str] = None
     ward: Optional[str] = None
     password: Optional[str] = None
+    current_shift: Optional[str] = None  # FEATURE 15: shift schedule
 
 class OfficerCreate(BaseModel):
     full_name: str
@@ -208,6 +209,8 @@ class UserResponse(BaseModel):
     notify_status_updates: Optional[bool] = True
     skills: Optional[str] = None
     availability: Optional[str] = None
+    current_shift: Optional[str] = None  # FEATURE 15: shift schedule
+    email_verified: Optional[bool] = False  # FEATURE 14: email verification
 
 
 class PredictionSummaryResponse(BaseModel):
@@ -221,6 +224,7 @@ class PredictionSummaryResponse(BaseModel):
     avg_days_open: float
     recent_escalation_risks: List[Dict[str, Any]]
     active_alerts: List[Dict[str, Any]]
+    timeout: bool = False
 
 
 class KnowledgeSummaryResponse(BaseModel):
@@ -299,6 +303,9 @@ class SkillsUpdateRequest(BaseModel):
 
 class AvailabilityUpdateRequest(BaseModel):
     availability: str = Field(..., description="Availability status")
+
+class VerifyEmailRequest(BaseModel):
+    code: str
 
 class WithdrawRequest(BaseModel):
     reason: str = Field(..., min_length=1, max_length=2000, description="Withdrawal reason")

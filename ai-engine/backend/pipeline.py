@@ -20,7 +20,7 @@ from typing import Optional
 from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
-from database import SessionLocal, Complaint, Incident, PriorityHistory, Geofence
+from database import SessionLocal, Complaint, Incident, PriorityHistory, Geofence, User, AuditLog
 from job_queue import get_pool
 from models import ClassifyRequest, PriorityRequest
 from services import ClassificationService, DuplicateDetector, PriorityService as PriorityScorer
@@ -130,8 +130,30 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
         if is_duplicate and incident_id:
             incident = db.query(Incident).filter(Incident.id == incident_id).first()
             if incident:
-                incident.cluster_size += 1
-                merge_reason = f"Automated merge based on {dup_conf:.2%} confidence score."
+                # FEATURE 11: max 200 cluster cap
+                if incident.cluster_size >= 200:
+                    sibling = Incident(
+                        id=str(uuid.uuid4()),
+                        incident_number=f"INC-{uuid.uuid4().hex[:6].upper()}",
+                        category=category,
+                        ward=data["ward"],
+                        cluster_size=1,
+                        priority_score=0.0,
+                        priority_label="Low",
+                        summary=data["title"],
+                        sibling_of=incident.id,
+                    )
+                    db.add(sibling)
+                    incident = sibling
+                    merge_reason = "Cluster size cap (200) hit, created sibling"
+                    try:
+                        audit = AuditLog(id=str(uuid.uuid4()), user_id=None, user_email=None, role="system", action="cluster_cap_sibling", target=incident.id, details=f"Cluster size cap (200) hit for incident {incident_id}, created sibling", status="success")
+                        db.add(audit)
+                    except Exception:
+                        logger.warning("Failed to write cluster cap audit log")
+                else:
+                    incident.cluster_size += 1
+                    merge_reason = f"Automated merge based on {dup_conf:.2%} confidence score."
             else:
                 is_duplicate = False
 
@@ -240,6 +262,38 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                             "distance_m": round(distance_m, 1),
                         },
                     )
+
+        # FEATURE 10: auto-assigned
+        # FEATURE 15: shift schedule
+        available_officers = db.query(User).filter(
+            User.role == "Officer",
+            User.department == department,
+            User.availability == "available",
+            User.status == "active",
+        ).all()
+        if available_officers:
+            current_hour = datetime.utcnow().hour
+            if 6 <= current_hour < 14:
+                current_shift_period = "morning"
+            elif 14 <= current_hour < 22:
+                current_shift_period = "afternoon"
+            else:
+                current_shift_period = "night"
+            def officer_sort_key(o):
+                on_shift = 0 if o.current_shift == current_shift_period else 1
+                open_count = db.query(Incident).filter(Incident.accepted_by == o.id, Incident.status.in_(["open", "in-progress"])).count()
+                return (on_shift, open_count)
+            available_officers.sort(key=officer_sort_key)
+            best = available_officers[0]
+            incident.accepted_by = best.id
+            incident.accepted_at = datetime.utcnow()
+            try:
+                audit = AuditLog(id=str(uuid.uuid4()), user_id=best.id, user_email=best.email, role="Officer", action="incident_auto_assigned", target=incident.id, details=f"Auto-assigned to {best.full_name} (department: {department})", status="success")
+                db.add(audit)
+            except Exception:
+                logger.warning("Failed to write auto-assign audit log")
+        else:
+            logger.warning("No available officers for department: %s", department)
 
         db.commit()
         db.refresh(complaint)

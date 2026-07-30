@@ -29,11 +29,17 @@ database.migrate_old_departments = lambda *a, **kw: None
 database.backfill_officer_departments = lambda *a, **kw: None
 database.seed_default_executive = lambda *a, **kw: None
 
-from database import Base, engine, seed_demo_users
+from database import Base, engine, SessionLocal, User, seed_demo_users
 
 Base.metadata.drop_all(bind=engine)
 Base.metadata.create_all(bind=engine)
 seed_demo_users()
+
+# Mark all demo users as email_verified so tests pass (Feature 14)
+_db = SessionLocal()
+_db.query(User).update({User.email_verified: True})
+_db.commit()
+_db.close()
 
 from app import app
 from fastapi.testclient import TestClient

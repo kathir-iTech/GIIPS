@@ -7,6 +7,8 @@ delimitation notification on ccmc.gov.in.
 Each ward lists its primary area/neighbourhood names so that seed
 data and complaint templates can reference the CORRECT ward number
 for any given Coimbatore locality.
+
+# Canonical location: ai-engine/backend/coimbatore_wards.py
 """
 
 # ── Zone definitions with (ward_start, ward_end) ranges ────────────

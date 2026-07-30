@@ -167,6 +167,20 @@ class ComplaintClassifier:
         # Store confusion matrix
         self.metrics['confusion_matrix'] = confusion_matrix(y_test, y_pred).tolist()
 
+        # FEATURE 7: real per-category metrics
+        report = classification_report(y_test, y_pred, target_names=self.classes_, output_dict=True)
+        per_cat = {}
+        for label, metrics_dict in report.items():
+            if label in ('accuracy', 'macro avg', 'weighted avg'):
+                continue
+            per_cat[label] = {
+                'precision': round(metrics_dict['precision'], 4),
+                'recall': round(metrics_dict['recall'], 4),
+                'f1_score': round(metrics_dict['f1-score'], 4),
+                'support': metrics_dict['support'],
+            }
+        self.metrics['per_category_metrics'] = per_cat
+
     def predict(self, texts: list) -> np.ndarray:
         """
         Predict categories for new texts.
@@ -225,6 +239,19 @@ class ComplaintClassifier:
         # Save metrics
         with open(output_dir / 'metrics.json', 'w') as f:
             json.dump({k: v for k, v in self.metrics.items() if k != 'confusion_matrix'}, f, indent=2)
+
+        # FEATURE 7: update metadata.json with per_category_metrics
+        metadata_path = output_dir / 'metadata.json'
+        if metadata_path.exists():
+            try:
+                with open(metadata_path) as f:
+                    meta = json.load(f)
+            except Exception:
+                meta = {}
+            meta['per_category_metrics'] = self.metrics.get('per_category_metrics', {})
+            with open(metadata_path, 'w') as f:
+                json.dump(meta, f, indent=2)
+            print(f"[SAVED] Updated metadata.json with per-category metrics")
 
         print(f"[SAVED] Model artifacts saved to {output_dir}")
 
