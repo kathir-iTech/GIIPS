@@ -1,5 +1,6 @@
 .portal-container { min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 40px; background: var(--bg-app); }
 .wizard { background: var(--bg-card); backdrop-filter: blur(16px); border: 1px solid var(--border-subtle); border-radius: var(--radius-lg); padding: 40px; width: 100%; max-width: 600px; box-shadow: var(--shadow-lg); }
+.offline-queue-indicator { width: 100%; max-width: 600px; margin-bottom: 12px; padding: 10px 16px; background: rgba(245,158,11,0.12); border: 1px solid rgba(245,158,11,0.25); border-radius: var(--radius-sm); font-size: 13px; color: #fbbf24; display: flex; align-items: center; gap: 8px; }
 .progress-bar-container { height: 6px; background: var(--primary-100); border-radius: var(--radius-sm); margin-bottom: 24px; }
 .progress-fill { height: 100%; background: var(--primary-900); border-radius: var(--radius-sm); transition: width 0.3s ease; }
 .steps-header { font-size: 18px; font-weight: 700; margin-bottom: 24px; color: var(--text-primary); }

@@ -24,6 +24,7 @@ const Unauthorized = lazy(() => import('./pages/Unauthorized'));
 const MyComplaints = lazy(() => import('./pages/MyComplaints'));
 const ComplaintDetail = lazy(() => import('./pages/ComplaintDetail'));
 const CitizenProfile = lazy(() => import('./pages/CitizenProfile'));
+const CitizenAnalytics = lazy(() => import('./pages/CitizenAnalytics'));
 const CitizenServices = lazy(() => import('./pages/CitizenServices'));
 const GovernmentPortal = lazy(() => import('./pages/GovernmentPortal'));
 const TrackComplaint = lazy(() => import('./pages/TrackComplaint'));
@@ -31,6 +32,7 @@ const Transparency = lazy(() => import('./pages/Transparency'));
 const CategoryGuide = lazy(() => import('./pages/CategoryGuide'));
 const OfficerManagement = lazy(() => import('./pages/OfficerManagement'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
+const DepartmentKPIs = lazy(() => import('./pages/DepartmentKPIs'));
 const SystemHealth = lazy(() => import('./pages/SystemHealth'));
 const AuditLogs = lazy(() => import('./pages/AuditLogs'));
 const LocalAuthorityDashboard = lazy(() => import('./pages/LocalAuthorityDashboard'));
@@ -128,6 +130,13 @@ function AnimatedRoutes() {
             </RoleGuard>
           
         } />
+        <Route path="/citizen/analytics" element={
+          
+            <RoleGuard allowedRoles={['Citizen']}>
+              <CitizenAnalytics />
+            </RoleGuard>
+          
+        } />
         
         <Route path="/officer" element={
           
@@ -217,6 +226,13 @@ function AnimatedRoutes() {
           
             <RoleGuard allowedRoles={['Executive']}>
               <DepartmentManagement />
+            </RoleGuard>
+          
+        } />
+        <Route path="/executive/department-kpis" element={
+          
+            <RoleGuard allowedRoles={['Executive']}>
+              <DepartmentKPIs />
             </RoleGuard>
           
         } />

@@ -25,6 +25,13 @@
 .onboarding-banner .banner-close { position: absolute; top: 10px; right: 10px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
 .onboarding-banner .banner-close:hover { color: #94a3b8; background: rgba(255,255,255,0.05); }
 
+/* ── Install Banner ── */
+.install-banner { position: relative; z-index: 10; max-width: 500px; margin: 12px auto 0; padding: 10px 44px 10px 18px; background: rgba(16,185,129,0.1); border: 1px solid rgba(16,185,129,0.25); border-radius: 12px; font-size: 13px; color: #6ee7b7; display: flex; align-items: center; gap: 12px; }
+.install-banner .install-btn { background: linear-gradient(135deg, #10b981, #059669); color: white; border: none; padding: 6px 14px; border-radius: 8px; font-size: 13px; font-weight: 600; cursor: pointer; font-family: inherit; transition: all 0.2s; white-space: nowrap; }
+.install-banner .install-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 16px rgba(16,185,129,0.3); }
+.install-banner .banner-close { position: absolute; top: 8px; right: 8px; background: none; border: none; color: #64748b; cursor: pointer; padding: 4px; border-radius: 4px; display: flex; align-items: center; justify-content: center; }
+.install-banner .banner-close:hover { color: #94a3b8; background: rgba(255,255,255,0.05); }
+
 /* ── Content Sections (Problem / Solution / Impact) ── */
 .crystal-section { position: relative; z-index: 10; text-align: center; padding: 48px 20px 32px; max-width: 700px; margin: 0 auto; }
 .section-badge { display: inline-flex; align-items: center; gap: 6px; padding: 6px 18px; background: linear-gradient(135deg, rgba(59,130,246,0.12), rgba(139,92,246,0.1)); border: 1px solid rgba(59,130,246,0.2); border-radius: 20px; font-size: 12px; color: #93c5fd; margin-bottom: 16px; letter-spacing: 0.8px; backdrop-filter: blur(4px); }

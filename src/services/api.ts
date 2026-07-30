@@ -221,6 +221,12 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+  getDepartments: async (): Promise<any[]> => {
+    const response = await fetch(`${BASE_URL}/admin/departments`, FETCH_DEFAULTS);
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
   getDepartmentSlaReport: async (): Promise<any[]> => {
     const response = await fetch(`${BASE_URL}/admin/department-sla-report`, FETCH_DEFAULTS);
     if (!response.ok) throw new Error(await getErrorMessage(response));
@@ -721,5 +727,27 @@ export const api = {
   getWsUrl: (token: string): string => {
     const wsBase = BASE_URL.replace(/^http/, 'ws');
     return `${wsBase}/ws/dashboard?token=${encodeURIComponent(token)}`;
+  },
+
+  // FEATURE 3: push notification structure
+  subscribePush: async (subscription: PushSubscription): Promise<any> => {
+    const subJSON = subscription.toJSON();
+    const response = await fetch(`${BASE_URL}/notifications/subscribe`, {
+      ...FETCH_DEFAULTS,
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(subJSON),
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
+  },
+
+  unsubscribePush: async (): Promise<any> => {
+    const response = await fetch(`${BASE_URL}/notifications/unsubscribe`, {
+      ...FETCH_DEFAULTS,
+      method: 'DELETE',
+    });
+    if (!response.ok) throw new Error(await getErrorMessage(response));
+    return response.json();
   },
 };

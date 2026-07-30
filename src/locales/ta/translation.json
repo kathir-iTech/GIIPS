@@ -173,6 +173,8 @@
   },
 
   "landing": {
+    "installPrompt": "ஆஃப்லைன் அணுகலுக்காக GIIPS ஐ நிறுவவும்",
+    "installButton": "நிறுவு",
     "brand": "GIIPS OS",
     "navDashboard": "டாஷ்போர்டு",
     "navSignOut": "வெளியேறு",
@@ -411,7 +413,22 @@
     "nearMeNote": "{{days}} நாட்களில் தீர்க்கப்பட்டது",
     "suggestedCategory": "பரிந்துரைக்கப்பட்ட வகை:",
     "accept": "ஏற்க",
-    "addTag": "குறிச்சொல்லைச் சேர்..."
+    "addTag": "குறிச்சொல்லைச் சேர்...",
+    "checkingDuplicates": "ஒத்த புகார்கள் சரிபார்க்கப்படுகின்றன…",
+    "possibleDuplicate": "சாத்தியமான நகல் புகார் கண்டறியப்பட்டது",
+    "similarFoundNearby": "பின்வரும் ஒத்த புகார் அருகில் காணப்பட்டது:",
+    "similarFoundNearbyPlural": "பின்வரும் ஒத்த புகார்கள் அருகில் காணப்பட்டன:",
+    "kmAway": "{{distance}} கிமீ தொலைவில்",
+    "duplicateNote": "இது வேறு பிரச்சினையாக இருந்தால், நீங்கள் இன்னும் உங்கள் புகாரை சமர்ப்பிக்கலாம்.",
+    "savedOfflineTitle": "ஆஃப்லைனில் சேமிக்கப்பட்டது",
+    "savedOfflineBody": "உங்கள் புகார் உள்ளூரில் சேமிக்கப்பட்டுள்ளது, நீங்கள் மீண்டும் இணைந்தவுடன் தானாக சமர்ப்பிக்கப்படும்.",
+    "offlineReference": "குறிப்பு",
+    "offlineDateTime": "தேதி/நேரம்",
+    "offlineWard": "வார்டு",
+    "mergeNoticeText": "உங்கள் புகார் இதே பிரச்சினையின் {{count}} அறிக்கை(களுடன்) தொகுக்கப்பட்டுள்ளது.",
+    "offlineQueueMessage": "{{count}} புகார் நிலுவையில் — இணைக்கும்போது சமர்ப்பிக்கப்படும்",
+    "offlineQueueMessagePlural": "{{count}} புகார்கள் நிலுவையில் — இணைக்கும்போது சமர்ப்பிக்கப்படும்",
+    "analyzingDescription": "விளக்கம் பகுப்பாய்வு செய்யப்படுகிறது..."
   },
 
   "overview": {
@@ -521,7 +538,26 @@
     "nearbyTitle": "அருகில் உள்ள ஒத்த புகார்கள்",
     "rateTitle": "இந்த தீர்வை மதிப்பிடவும்",
     "ratePrompt": "இந்த புகாரின் தீர்வில் நீங்கள் எவ்வளவு திருப்தி அடைந்தீர்கள்?",
-    "rateSubmit": "மதிப்பீட்டை சமர்ப்பிக்கவும்"
+    "rateSubmit": "மதிப்பீட்டை சமர்ப்பிக்கவும்",
+    "languageHintTamil": "இந்த புகார் தமிழில் சமர்ப்பிக்கப்பட்டது",
+    "languageHintTanglish": "இந்த புகார் தங்கிளிஷில் சமர்ப்பிக்கப்பட்டது",
+    "exportTimeline": "காலவரிசையை ஏற்றுமதி செய்",
+    "editButton": "திருத்து",
+    "editFieldDescription": "விளக்கம்",
+    "editFieldLocation": "இருப்பிடம்",
+    "cancelEdit": "ரத்து செய்",
+    "saveEdit": "சேமி",
+    "savingEdit": "சேமிக்கிறது...",
+    "downloadLink": "பதிவிறக்கம்",
+    "notSet": "(அமைக்கப்படவில்லை)",
+    "daysOpen": "{{days}} நா திறந்தது",
+    "justReported": "இப்போது புகாரளிக்கப்பட்டது",
+    "mergeGroupedText": "உங்கள் புகார் இதே பிரச்சினையின் {{count}} அறிக்கை(களுடன்) தொகுக்கப்பட்டுள்ளது.",
+    "mergeGroupedStatus": "தற்போதைய நிலை:",
+    "escalationSubmitted": "சமர்ப்பிக்கப்பட்டது",
+    "escalationClassified": "வகைப்படுத்தப்பட்டது",
+    "escalationRouted": "அனுப்பப்பட்டது",
+    "escalationEscalated": "மேல்நிலைக்கு அனுப்பப்பட்டது"
   },
 
   "myComplaints": {
@@ -870,6 +906,16 @@
     },
     "activeUsers": "{{count}} இப்போது இணைப்பில் உள்ளனர்",
     "runAutoEscalation": "SLA தானியக்க அதிகரிப்பு சரிபார்ப்பை இயக்கு",
+    "departmentKPIsLink": "துறை KPI கள்",
+    "wardPlanner": {
+      "title": "வார்டு விஜய திட்டமிடல்",
+      "subtitle": "உடனடி நேரடி ஆய்வு தேவைப்படும் முதல் வார்டுகள்",
+      "hideRecommendations": "பரிந்துரைகளை மறை",
+      "showRecommendations": "பரிந்துரைக்கப்பட்ட {{count}} வார்டைக் காட்டு",
+      "showRecommendationsPlural": "பரிந்துரைக்கப்பட்ட {{count}} வார்டுகளைக் காட்டு",
+      "empty": "உடனடி கவனம் தேவைப்படும் வார்டுகள் எதுவும் இல்லை.",
+      "needsInspection": "ஆய்வு தேவை"
+    },
     "exportCsv": "CSV ஏற்றுமதி",
     "agingLabel": "முதுமை >30நா",
     "footer": {
@@ -1288,8 +1334,38 @@
     "overdue": "காலாவதியானது"
   },
 
+  "departmentKPIs": {
+    "title": "துறை அளவிலான KPI டாஷ்போர்டு",
+    "subtitle": "அனைத்து துறைகளின் செயல்திறன் அளவீடுகள்",
+    "loading": "துறை KPI கள் ஏற்றப்படுகின்றன...",
+    "empty": "துறை தரவுகள் எதுவும் இல்லை.",
+    "resolutionRate": "தீர்வு விகிதம்",
+    "avgResolution": "சராசரி தீர்வு",
+    "slaCompliance": "SLA இணக்கம்",
+    "avgRating": "சராசரி மதிப்பீடு",
+    "officers": "அலுவலர்கள்",
+    "openIncidents": "திறந்த சம்பவங்கள்"
+  },
+
   "citizenAnalytics": {
     "title": "எனது பகுப்பாய்வு",
+    "subtitle": "உங்கள் புகார் பகுப்பாய்வு மற்றும் போக்குகள்",
+    "totalComplaints": "மொத்த புகார்கள்",
+    "resolutionRate": "தீர்வு விகிதம்",
+    "avgResolutionTime": "சராசரி தீர்வு நேரம்",
+    "citywideAvg": "நகர சராசரி",
+    "complaintsByMonth": "மாதம் வாரியாக புகார்கள்",
+    "monthlyVolume": "மாதாந்திர புகார் அளவு",
+    "resolutionRateTrend": "தீர்வு விகித போக்கு",
+    "resolutionRateOverTime": "காலப்போக்கில் தீர்வு விகிதம்",
+    "resolutionRateTraceName": "தீர்வு விகிதம்",
+    "categoryBreakdown": "வகை பிரிப்பு",
+    "complaintsByCategory": "வகை வாரியாக புகார்கள்",
+    "avgVsCitywide": "சராசரி தீர்வு நேரம் vs நகர சராசரி",
+    "yourAvgVsCitywide": "உங்கள் சராசரி vs நகர சராசரி",
+    "youLabel": "நீங்கள்",
+    "citywideLabel": "நகரம்",
+    "noData": "தரவு இல்லை",
     "complaintCountByCategory": "வகை வாரியாக புகார்கள்",
     "mostActiveWard": "மிகவும் செயலில் உள்ள வார்டு",
     "totalDaysSaved": "மொத்த சேமிக்கப்பட்ட நாட்கள்",

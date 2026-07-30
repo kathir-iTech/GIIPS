@@ -11,7 +11,7 @@ import { getCoimbatoreZone } from '../data/coimbatoreZones';
 import {
   AlertOctagon, TrendingUp, ShieldAlert, Building2, Zap, Activity, Users, Clock,
   MapPin, BarChart3, RefreshCw, Download, Share2, ArrowUpRight, ArrowDownRight,
-  Minus, ChevronRight, Wrench, Droplets, Lightbulb, Trash2, Heart,
+  Minus, ChevronRight, ChevronDown, Wrench, Droplets, Lightbulb, Trash2, Heart,
   Road, Send, Loader2, Brain, Target, Compass, AlertTriangle, CheckCircle2,
   DollarSign, Calendar, Gauge, Sparkles, Bot, MessageSquare, Flame, ThermometerSun,
   Users2, ArrowRight, FileText
@@ -304,6 +304,55 @@ const ExecutiveDashboard = () => {
   const topDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (b.healthScore || 0) - (a.healthScore || 0)).slice(0, 5), [wardHealth]);
   const criticalDistricts = useMemo(() => [...(wardHealth || [])].sort((a: any, b: any) => (a.healthScore || 0) - (b.healthScore || 0)).slice(0, 5), [wardHealth]);
 
+  const [wardPlanOpen, setWardPlanOpen] = useState(false);
+  const topWardsToVisit = useMemo(() => {
+    const overdueMap: Record<string, number> = {};
+    (incidents || []).forEach((i: any) => {
+      const w = i.ward || 'Unknown';
+      if ((i.days_open ?? 0) >= 30) {
+        overdueMap[w] = (overdueMap[w] || 0) + 1;
+      }
+    });
+
+    const anomalyScoreMap: Record<string, number> = {};
+    (anomalies || []).forEach((a: any) => {
+      const w = a.ward || 'Unknown';
+      anomalyScoreMap[w] = (anomalyScoreMap[w] || 0) + 1;
+    });
+
+    const wardScores: { ward: string; score: number; reason: string[] }[] = [];
+    const seen = new Set<string>();
+
+    (wardHealth || []).forEach((w: any) => {
+      const name = w.ward || w.district || w.name || '';
+      if (!name) return;
+      const healthScore = w.healthScore ?? 100;
+      const anomalyScore = anomalyScoreMap[name] || 0;
+      const overdueCount = overdueMap[name] || 0;
+      const combinedScore = (100 - healthScore) + (anomalyScore * 25) + (overdueCount * 15);
+      const reasons: string[] = [];
+      if (anomalyScore > 0) reasons.push(`High anomaly score (${anomalyScore.toFixed(1)}σ)`);
+      if (overdueCount > 0) reasons.push(`${overdueCount} overdue incident${overdueCount > 1 ? 's' : ''}`);
+      if (healthScore < 60) reasons.push(`Low health score (${healthScore})`);
+      wardScores.push({ ward: name, score: combinedScore, reason: reasons });
+      seen.add(name);
+    });
+
+    Object.keys(anomalyScoreMap).forEach(name => {
+      if (!seen.has(name)) {
+        wardScores.push({ ward: name, score: anomalyScoreMap[name] * 25, reason: [`High anomaly score (${anomalyScoreMap[name].toFixed(1)}σ)`] });
+      }
+    });
+
+    Object.keys(overdueMap).forEach(name => {
+      if (!seen.has(name) && !anomalyScoreMap[name]) {
+        wardScores.push({ ward: name, score: overdueMap[name] * 15, reason: [`${overdueMap[name]} overdue incident${overdueMap[name] > 1 ? 's' : ''}`] });
+      }
+    });
+
+    return wardScores.sort((a, b) => b.score - a.score).slice(0, 3);
+  }, [wardHealth, anomalies, incidents]);
+
   const zones = useMemo(() => {
     const zoneSet = new Set<string>();
     (wardHealth || []).forEach((w: any) => {
@@ -524,6 +573,9 @@ const ExecutiveDashboard = () => {
         <button className="action-btn" onClick={generateShiftHandover}>
           <Send size={14} /> {t('executive.shiftHandover.button')}
         </button>
+        <a href="/executive/department-kpis" className="action-btn" style={{ display: 'inline-flex', alignItems: 'center', gap: 6, padding: '8px 16px', borderRadius: 8, border: '1px solid var(--border-subtle)', background: 'var(--bg-card)', color: 'var(--text-primary)', fontSize: 13, fontWeight: 500, cursor: 'pointer', fontFamily: 'inherit', textDecoration: 'none' }}>
+          <BarChart3 size={14} /> {t('executive.departmentKPIsLink')}
+        </a>
         {copySummaryFeedback && <span className="copy-toast">{t('executive.copySummary.copied')}</span>}
         {activeUsers > 0 && <span className="active-users-badge"><Activity size={14} /> {t('executive.activeUsers', { count: activeUsers })}</span>}
       </div>
@@ -802,6 +854,42 @@ const ExecutiveDashboard = () => {
             ))}
           </div>
         </div>
+      </SectionCard>
+
+      {/* Ward Visit Planner */}
+      <SectionCard
+        title={t('executive.wardPlanner.title')}
+        subtitle={t('executive.wardPlanner.subtitle')}
+        icon={<MapPin size={18} />}
+      >
+        <div className="ward-plan-header" style={{ marginBottom: 12 }}>
+          <button
+            className="ward-plan-toggle"
+            onClick={() => setWardPlanOpen(!wardPlanOpen)}
+            style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '8px 16px', background: 'rgba(59,130,246,0.1)', border: '1px solid rgba(59,130,246,0.2)', borderRadius: 8, color: '#3b82f6', fontSize: 13, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}
+          >
+            <MapPin size={16} />
+            {wardPlanOpen ? t('executive.wardPlanner.hideRecommendations') : topWardsToVisit.length === 1 ? t('executive.wardPlanner.showRecommendations', { count: 1 }) : t('executive.wardPlanner.showRecommendationsPlural', { count: topWardsToVisit.length })}
+            <ChevronDown size={14} style={{ transform: wardPlanOpen ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }} />
+          </button>
+        </div>
+        {wardPlanOpen && (
+          <div className="ward-plan-list" style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {topWardsToVisit.length === 0 ? (
+              <p style={{ color: 'var(--text-muted)', fontSize: 13, padding: 16, textAlign: 'center' }}>{t('executive.wardPlanner.empty')}</p>
+            ) : (
+              topWardsToVisit.map((w, i) => (
+                <div key={w.ward} style={{ display: 'flex', alignItems: 'flex-start', gap: 12, padding: 14, background: 'var(--bg-card)', border: '1px solid var(--border-subtle)', borderRadius: 8, borderLeft: `3px solid ${i === 0 ? '#dc2626' : i === 1 ? '#f59e0b' : '#3b82f6'}` }}>
+                  <div style={{ width: 28, height: 28, borderRadius: '50%', background: i === 0 ? '#dc2626' : i === 1 ? '#f59e0b' : '#3b82f6', color: 'white', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 13, fontWeight: 700, flexShrink: 0 }}>#{i + 1}</div>
+                  <div style={{ flex: 1 }}>
+                    <strong style={{ fontSize: 14, color: 'var(--text-primary)' }}>{w.ward}</strong>
+                    <p style={{ margin: '4px 0 0', fontSize: 12, color: 'var(--text-secondary)', lineHeight: 1.5 }}>{w.reason.join(', ') || t('executive.wardPlanner.needsInspection')}</p>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        )}
       </SectionCard>
 
       {/* 5. Department Performance */}

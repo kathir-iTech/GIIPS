@@ -4,7 +4,8 @@ import { api } from '../services/api';
 type WsEventType =
   | 'complaint:new'
   | 'incident:update'
-  | 'incident:appealed';
+  | 'incident:appealed'
+  | 'notification_new';
 
 interface WsEvent {
   type: WsEventType;

@@ -62,6 +62,7 @@ def find_duplicate_photo(
     Returns (match_complaint_id, flag_type, matched_user_id) where flag_type is:
       - "same_user"    — exact/near-exact match from the SAME user (possible spam)
       - "cross_user"   — match from a DIFFERENT user (reused image)
+      - "similar"      — hamming distance < 10 against a recent pHash (last 30 days)
       - None           — no match found
     """
     if not phash_str:
@@ -69,22 +70,30 @@ def find_duplicate_photo(
 
     # Import here to avoid circular import at module level
     from database import Complaint
+    from datetime import datetime, timedelta
 
-    existing: List[Complaint] = (
+    # FEATURE 18: check against pHashes from last 30 days for similarity
+    thirty_days_ago = datetime.utcnow() - timedelta(days=30)
+    recent_hashes: List[Complaint] = (
         db_session.query(Complaint)
-        .filter(Complaint.photo_hash.isnot(None), Complaint.photo_hash != "")
+        .filter(
+            Complaint.photo_hash.isnot(None),
+            Complaint.photo_hash != "",
+            Complaint.created_at >= thirty_days_ago,
+        )
         .all()
     )
 
     best_match_id = None
     best_match_user = None
     best_distance = threshold + 1
+    similar_distance = 10  # threshold for 'similar' flag
 
-    for c in existing:
+    for c in recent_hashes:
         if not c.photo_hash:
             continue
         dist = hamming_distance(phash_str, c.photo_hash)
-        if dist <= threshold and dist < best_distance:
+        if dist < similar_distance and dist < best_distance:
             best_distance = dist
             best_match_id = c.id
             best_match_user = c.user_id
@@ -94,8 +103,11 @@ def find_duplicate_photo(
 
     if best_match_user == current_user_id:
         return best_match_id, "same_user", best_match_user
-    else:
+    elif best_distance <= threshold:
         return best_match_id, "cross_user", best_match_user
+    else:
+        # Hamming distance < 10 but above exact threshold — flag as similar
+        return best_match_id, "similar", best_match_user
 
 
 def _config(key: str, default: str) -> str:

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import { Bell } from 'lucide-react';
 import { useAuth } from '../context/AuthContext';
 import { api } from '../services/api';
+import { useDashboardSocket } from '../hooks/useDashboardSocket';
 import type { AppNotification } from '../types';
 import './NotificationBell.css';
 
@@ -84,6 +85,15 @@ export default function NotificationBell() {
     const interval = setInterval(fetchNotifications, POLL_INTERVAL);
     return () => clearInterval(interval);
   }, [fetchNotifications]);
+
+  useDashboardSocket({
+    onEvent: (event) => {
+      if (event.type === 'notification_new') {
+        fetchNotifications();
+      }
+    },
+    enabled: !!user && ['Citizen', 'Officer', 'Executive'].includes(user.role),
+  });
 
   useEffect(() => {
     function handleClickOutside(e: MouseEvent) {

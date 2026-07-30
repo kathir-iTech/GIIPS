@@ -160,6 +160,23 @@ const Overview = () => {
               <div className="empty-chart">No category data available.</div>
             )}
           </div>
+          <div className="chart-card">
+            <h3>Incident Distribution by Category</h3>
+            {hasCategory ? (
+              <Plot data={[{
+                values: data.categoryBreakdown.map(d => d.count),
+                labels: data.categoryBreakdown.map(d => d.category),
+                type: 'pie', hole: 0.5,
+                marker: { colors: data.categoryBreakdown.map(d => d.color) },
+                textinfo: 'label+percent', textposition: 'outside',
+                textfont: { size: 11 },
+              }]}
+                layout={{ paper_bgcolor: 'transparent', margin: { t: 10, r: 10, b: 10, l: 10 }, showlegend: false, height: 280 }}
+                config={{ displayModeBar: false, responsive: true }} style={{ width: '100%' }} />
+            ) : (
+              <div className="empty-chart">No data</div>
+            )}
+          </div>
         </section>
         
         <section className="recent-incidents-card">

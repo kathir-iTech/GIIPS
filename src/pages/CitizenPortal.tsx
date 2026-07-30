@@ -7,7 +7,8 @@ import Header from '../components/Header';
 import AddressSearch from '../components/AddressSearch';
 import VoiceInput from '../components/VoiceInput';
 import HelpWidget from '../components/HelpWidget';
-import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock } from 'lucide-react';
+import { CheckCircle, Upload, MapPin, FileText, ChevronRight, ChevronLeft, Loader2, Sparkles, AlertCircle, Clock, WifiOff } from 'lucide-react';
+import { saveOfflineComplaint, getOfflineCount, retryOfflineSubmissions } from '../utils/offlineQueue';
 import './CitizenPortal.css';
 
 const DRAFT_KEY = 'giips_complaint_wizard_draft';
@@ -23,7 +24,7 @@ interface DupCheckStepProps {
   setDupCheckDone: (d: boolean) => void;
   dupChecking: boolean;
   setDupChecking: (d: boolean) => void;
-  t: (key: string) => string;
+  t: (key: string, options?: any) => string;
 }
 
 const DuplicateCheckStep: React.FC<DupCheckStepProps> = ({
@@ -71,7 +72,7 @@ const DuplicateCheckStep: React.FC<DupCheckStepProps> = ({
 
       {dupChecking && (
         <div className="dup-checking">
-          <Loader2 className="spinner" size={16} /> Checking for similar complaints…
+          <Loader2 className="spinner" size={16} /> {t('citizenPortal.checkingDuplicates')}
         </div>
       )}
 
@@ -79,18 +80,18 @@ const DuplicateCheckStep: React.FC<DupCheckStepProps> = ({
         <div className="duplicate-warning">
           <AlertCircle size={18} />
           <div>
-            <strong>Possible duplicate issue detected</strong>
-            <p>The following similar complaint{duplicateWarnings.length > 1 ? 's were' : ' was'} found nearby:</p>
+            <strong>{t('citizenPortal.possibleDuplicate')}</strong>
+            <p>{duplicateWarnings.length === 1 ? t('citizenPortal.similarFoundNearby') : t('citizenPortal.similarFoundNearbyPlural')}</p>
             <ul>
               {duplicateWarnings.map((d, i) => (
                 <li key={i}>
                   <strong>{d.title || d.category}</strong>
-                  {d.distance_km != null && <span> — {d.distance_km.toFixed(2)} km away</span>}
+                  {d.distance_km != null && <span> — {t('citizenPortal.kmAway', { distance: d.distance_km.toFixed(2) })}</span>}
                   {d.status && <span> [{d.status}]</span>}
                 </li>
               ))}
             </ul>
-            <p className="dup-note">You can still submit your complaint if this is a different issue.</p>
+            <p className="dup-note">{t('citizenPortal.duplicateNote')}</p>
           </div>
         </div>
       )}
@@ -138,6 +139,7 @@ const CitizenPortal = () => {
   const [duplicateWarnings, setDuplicateWarnings] = useState<any[]>([]);
   const [dupCheckDone, setDupCheckDone] = useState(false);
   const [dupChecking, setDupChecking] = useState(false);
+  const [offlineQueueCount, setOfflineQueueCount] = useState(0);
   const [suggestedCategory, setSuggestedCategory] = useState<string | null>(null);
   const [suggestLoading, setSuggestLoading] = useState(false);
   const [catSuggestAccepted, setCatSuggestAccepted] = useState(false);
@@ -217,6 +219,13 @@ const CitizenPortal = () => {
     } catch {}
   }, [formData]);
 
+  useEffect(() => {
+    getOfflineCount().then(setOfflineQueueCount);
+    const onOnline = () => { retryOfflineSubmissions().then(() => getOfflineCount().then(setOfflineQueueCount)); };
+    window.addEventListener('online', onOnline);
+    return () => window.removeEventListener('online', onOnline);
+  }, []);
+
   const uploadPhoto = async (complaintId: string) => {
     if (!selectedFile || isUploadingRef.current) return;
     isUploadingRef.current = true;
@@ -259,6 +268,19 @@ const CitizenPortal = () => {
     setSubmitError(null);
     setProcessingStatus('submitting');
     setPhotoUploadStatus('idle');
+    if (!navigator.onLine) {
+      await saveOfflineComplaint({
+        ...formData,
+        ...(catSuggestAccepted && suggestedCategory ? { predicted_category: suggestedCategory } : {}),
+        ...(tags.length > 0 ? { tags } : {}),
+      });
+      setResult({ offline: true, complaintId: `OFFLINE-${Date.now()}` });
+      setLoading(false);
+      setProcessingStatus(null);
+      getOfflineCount().then(setOfflineQueueCount);
+      return;
+    }
+
     try {
       const response = await api.submitComplaint({
         ...formData,
@@ -328,6 +350,26 @@ const CitizenPortal = () => {
 
   if (result && !isProcessing) {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    if (result.offline) {
+      return (
+        <div className="portal-container success">
+          <div className="glass-card success-card">
+            <WifiOff size={64} className="success-icon" style={{ color: '#f59e0b' }} />
+            <h2>{t('citizenPortal.savedOfflineTitle')}</h2>
+            <p>{t('citizenPortal.savedOfflineBody')}</p>
+            <div className="summary-card">
+              <p><strong>{t('citizenPortal.offlineReference')}</strong> {result.complaintId}</p>
+              <p><strong>{t('citizenPortal.offlineDateTime')}</strong> {new Date().toLocaleString('en-IN')}</p>
+              <p><strong>{t('citizenPortal.offlineWard')}</strong> {formData.ward || '—'}</p>
+            </div>
+            <div className="success-actions">
+              <button onClick={() => navigate('/my-complaints')}>{t('citizenPortal.viewComplaintsButton')}</button>
+              <button className="secondary" onClick={() => navigate('/citizen')}>{t('citizenPortal.submitAnotherButton')}</button>
+            </div>
+          </div>
+        </div>
+      );
+    }
     return (
     <div className="portal-container success">
       <div className="glass-card success-card receipt" id="complaint-receipt">
@@ -341,7 +383,7 @@ const CitizenPortal = () => {
         <p>{t('citizenPortal.successBody')}</p>
         {result.duplicate && (
           <div className="merge-notice">
-            📋 Your complaint has been grouped with <strong>{result.cluster_size - 1} other report{(result.cluster_size - 1) !== 1 ? 's' : ''}</strong> of the same issue.
+            📋 {t('citizenPortal.mergeNoticeText', { count: result.cluster_size - 1 })}
             <br />
             Current status: <strong>{result.incident_status || 'open'}</strong>
           </div>
@@ -425,6 +467,12 @@ const CitizenPortal = () => {
           </div>
         </div>
       )}
+      {offlineQueueCount > 0 && (
+        <div className="offline-queue-indicator">
+          <WifiOff size={14} />
+          <span>{offlineQueueCount === 1 ? t('citizenPortal.offlineQueueMessage', { count: 1 }) : t('citizenPortal.offlineQueueMessagePlural', { count: offlineQueueCount })}</span>
+        </div>
+      )}
       <div className="wizard glass-card">
         <div className="progress-bar-container">
           <div className="progress-fill" style={{ width: `${(step / steps.length) * 100}%` }}></div>
@@ -478,7 +526,7 @@ const CitizenPortal = () => {
                   Not sure which category applies? See the <Link to="/categories">Category Guide</Link>
                 </Trans>
               </div>
-              {suggestLoading && <div className="cat-suggest">Analyzing description...</div>}
+              {suggestLoading && <div className="cat-suggest">{t('citizenPortal.analyzingDescription')}</div>}
               {suggestedCategory && !catSuggestAccepted && (
                 <div className="cat-suggest">
                   Suggested category: <strong>{suggestedCategory}</strong>

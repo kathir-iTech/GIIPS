@@ -173,6 +173,8 @@
   },
 
   "landing": {
+    "installPrompt": "Install GIIPS for offline access",
+    "installButton": "Install",
     "brand": "GIIPS OS",
     "navDashboard": "Dashboard",
     "navSignOut": "Sign Out",
@@ -412,7 +414,22 @@
     "suggestedCategory": "Suggested category:",
     "accept": "Accept",
     "addTag": "Add tag...",
-    "photoHint": "Adding a photo helps officers understand the issue faster"
+    "photoHint": "Adding a photo helps officers understand the issue faster",
+    "checkingDuplicates": "Checking for similar complaints…",
+    "possibleDuplicate": "Possible duplicate issue detected",
+    "similarFoundNearby": "The following similar complaint found nearby:",
+    "similarFoundNearbyPlural": "The following similar complaints found nearby:",
+    "kmAway": "{{distance}} km away",
+    "duplicateNote": "You can still submit your complaint if this is a different issue.",
+    "savedOfflineTitle": "Saved Offline",
+    "savedOfflineBody": "Your complaint has been saved locally and will be submitted automatically when you're back online.",
+    "offlineReference": "Reference",
+    "offlineDateTime": "Date/Time",
+    "offlineWard": "Ward",
+    "mergeNoticeText": "Your complaint has been grouped with {{count}} report(s) of the same issue.",
+    "offlineQueueMessage": "{{count}} complaint pending — will submit when connected",
+    "offlineQueueMessagePlural": "{{count}} complaints pending — will submit when connected",
+    "analyzingDescription": "Analyzing description..."
   },
 
   "overview": {
@@ -523,7 +540,26 @@
     "rateTitle": "Rate this Resolution",
     "ratePrompt": "How satisfied are you with the resolution of this complaint?",
     "rateSubmit": "Submit Rating",
-    "urgent": "URGENT"
+    "urgent": "URGENT",
+    "languageHintTamil": "This complaint was submitted in Tamil",
+    "languageHintTanglish": "This complaint was submitted in Tanglish",
+    "exportTimeline": "Export Timeline",
+    "editButton": "Edit",
+    "editFieldDescription": "Description",
+    "editFieldLocation": "Location",
+    "cancelEdit": "Cancel",
+    "saveEdit": "Save",
+    "savingEdit": "Saving...",
+    "downloadLink": "Download",
+    "notSet": "(not set)",
+    "daysOpen": "{{days}}d open",
+    "justReported": "Just reported",
+    "mergeGroupedText": "Your complaint has been grouped with {{count}} report(s) of the same issue.",
+    "mergeGroupedStatus": "Current status:",
+    "escalationSubmitted": "Submitted",
+    "escalationClassified": "Classified",
+    "escalationRouted": "Routed",
+    "escalationEscalated": "Escalated"
   },
 
   "myComplaints": {
@@ -883,6 +919,16 @@
     },
     "activeUsers": "{{count}} online now",
     "runAutoEscalation": "Run SLA Auto-Escalation Check",
+    "departmentKPIsLink": "Department KPIs",
+    "wardPlanner": {
+      "title": "Ward Visit Planner",
+      "subtitle": "Top wards requiring immediate physical inspection",
+      "hideRecommendations": "Hide recommendations",
+      "showRecommendations": "Show {{count}} recommended ward to visit",
+      "showRecommendationsPlural": "Show {{count}} recommended wards to visit",
+      "empty": "No wards require immediate attention.",
+      "needsInspection": "Needs inspection"
+    },
     "exportCsv": "Export CSV",
     "agingLabel": "Aging >30d",
     "footer": {
@@ -1310,8 +1356,38 @@
     "overdue": "Overdue"
   },
 
+  "departmentKPIs": {
+    "title": "Department-level KPI Dashboard",
+    "subtitle": "Performance metrics across all departments",
+    "loading": "Loading department KPIs...",
+    "empty": "No department data available.",
+    "resolutionRate": "Resolution Rate",
+    "avgResolution": "Avg Resolution",
+    "slaCompliance": "SLA Compliance",
+    "avgRating": "Avg Rating",
+    "officers": "Officers",
+    "openIncidents": "Open Incidents"
+  },
+
   "citizenAnalytics": {
     "title": "My Analytics",
+    "subtitle": "Your complaint analytics and trends",
+    "totalComplaints": "Total Complaints",
+    "resolutionRate": "Resolution Rate",
+    "avgResolutionTime": "Avg Resolution Time",
+    "citywideAvg": "Citywide Avg",
+    "complaintsByMonth": "Complaints by Month",
+    "monthlyVolume": "Monthly complaint volume",
+    "resolutionRateTrend": "Resolution Rate Trend",
+    "resolutionRateOverTime": "Resolution rate over time",
+    "resolutionRateTraceName": "Resolution Rate",
+    "categoryBreakdown": "Category Breakdown",
+    "complaintsByCategory": "Complaints by category",
+    "avgVsCitywide": "Avg Resolution Time vs Citywide",
+    "yourAvgVsCitywide": "Your average vs citywide average",
+    "youLabel": "You",
+    "citywideLabel": "Citywide",
+    "noData": "No data",
     "complaintCountByCategory": "Complaints by Category",
     "mostActiveWard": "Most Active Ward",
     "totalDaysSaved": "Total Days Saved",

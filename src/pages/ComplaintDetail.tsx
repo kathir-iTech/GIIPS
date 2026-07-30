@@ -291,15 +291,15 @@ const ComplaintDetailPage = () => {
                   </span>
                 )}
                 {canEdit && !editing && (
-                  <button className="edit-complaint-btn" onClick={startEditing} title="Edit complaint">
-                    <Edit3 size={14} /> Edit
-                  </button>
+                  <button className="edit-complaint-btn" onClick={startEditing} title={t('complaintDetail.editButton')}>
+                                    <Edit3 size={14} /> {t('complaintDetail.editButton')}
+                                  </button>
                 )}
               </div>
             </div>
             {editing ? (
               <div className="edit-fields">
-                <label className="edit-label">Description</label>
+                <label className="edit-label">{t('complaintDetail.editFieldDescription')}</label>
                 <textarea
                   className="edit-textarea"
                   value={editDescription}
@@ -307,7 +307,7 @@ const ComplaintDetailPage = () => {
                   rows={4}
                   disabled={editLoading}
                 />
-                <label className="edit-label">Location</label>
+                <label className="edit-label">{t('complaintDetail.editFieldLocation')}</label>
                 <input
                   className="edit-input"
                   value={editLocation}
@@ -316,10 +316,10 @@ const ComplaintDetailPage = () => {
                 />
                 <div className="edit-actions">
                   <button className="cancel-edit-btn" onClick={() => setEditing(false)} disabled={editLoading}>
-                    <X size={14} /> Cancel
+                    <X size={14} /> {t('complaintDetail.cancelEdit')}
                   </button>
                   <button className="save-edit-btn" onClick={handleEdit} disabled={editLoading || !editDescription.trim()}>
-                    <Save size={14} /> {editLoading ? 'Saving...' : 'Save'}
+                    <Save size={14} /> {editLoading ? t('complaintDetail.savingEdit') : t('complaintDetail.saveEdit')}
                   </button>
                 </div>
                 {editError && <p className="edit-error">{editError}</p>}
@@ -337,14 +337,14 @@ const ComplaintDetailPage = () => {
               <div className="lightbox-overlay" onClick={() => setLightboxOpen(false)}>
                 <div className="lightbox-content" onClick={e => e.stopPropagation()}>
                   <button className="lightbox-close-btn" onClick={() => setLightboxOpen(false)}><X size={20} /></button>
-                  <a className="lightbox-download-btn" href={photoUrl} download target="_blank" rel="noopener noreferrer"><Download size={16} /> Download</a>
+                  <a className="lightbox-download-btn" href={photoUrl} download target="_blank" rel="noopener noreferrer"><Download size={16} /> {t('complaintDetail.downloadLink')}</a>
                   <img src={photoUrl} alt={t('complaintDetail.imageAlt')} className="lightbox-image" />
                 </div>
               </div>
             )}
 
             <div className="detail-meta-grid">
-              <div className="meta-item"><MapPin size={16} /> <span>{editing ? editLocation || '(not set)' : (data.location || t('common.na'))}</span></div>
+              <div className="meta-item"><MapPin size={16} /> <span>{editing ? editLocation || t('complaintDetail.notSet') : (data.location || t('common.na'))}</span></div>
               <div className="meta-item"><Tag size={16} /> <span>{data.ward || t('common.na')}</span></div>
               <div className="meta-item"><Calendar size={16} /> <span>{data.date_received ? new Date(data.date_received).toLocaleString('en-IN') : t('common.na')}</span></div>
               <div className="meta-item"><AlertTriangle size={16} /> <span>{data.predicted_category || t('common.uncategorized')}</span></div>
@@ -362,6 +362,12 @@ const ComplaintDetailPage = () => {
             {data.complaint_language && (
               <span className={`lang-badge lang-${data.complaint_language}`}>{data.complaint_language}</span>
             )}
+            {(data.complaint_language === 'tamil' || data.complaint_language === 'tanglish') && (
+              <div className="language-hint-badge">
+                <AlertTriangle size={14} />
+                <span>{data.complaint_language === 'tamil' ? t('complaintDetail.languageHintTamil') : t('complaintDetail.languageHintTanglish')}</span>
+              </div>
+            )}
 
             {nearbyComplaints.length > 0 && (
               <div className="nearby-section">
@@ -374,7 +380,7 @@ const ComplaintDetailPage = () => {
                         <span className="nearby-priority">{nc.priority || '—'}</span>
                       </div>
                       <div className="nearby-item-meta">
-                        <span>{nc.days_open > 0 ? `${nc.days_open}d open` : 'Just reported'}</span>
+                        <span>{nc.days_open > 0 ? t('complaintDetail.daysOpen', { days: nc.days_open }) : t('complaintDetail.justReported')}</span>
                         <span>{nc.ward}</span>
                       </div>
                     </div>
@@ -678,23 +684,23 @@ const ComplaintDetailPage = () => {
                 <svg viewBox="0 0 600 80" xmlns="http://www.w3.org/2000/svg">
                   <line x1="50" y1="30" x2="150" y2="30" stroke="#16a34a" strokeWidth="2" />
                   <circle cx="50" cy="30" r="10" fill="#16a34a" />
-                  <text x="50" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Submitted</text>
+                  <text x="50" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">{t('complaintDetail.escalationSubmitted')}</text>
 
                   <line x1="150" y1="30" x2="250" y2="30" stroke="#16a34a" strokeWidth="2" />
                   <circle cx="150" cy="30" r="10" fill="#16a34a" />
-                  <text x="150" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Classified</text>
+                  <text x="150" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">{t('complaintDetail.escalationClassified')}</text>
                   <text x="150" y="70" textAnchor="middle" fontSize="9" fill="var(--text-muted)">{data.predicted_category || ''}</text>
 
                   <line x1="250" y1="30" x2="350" y2="30" stroke={data.incident.status !== 'open' ? '#16a34a' : '#3b82f6'} strokeWidth="2" />
                   <circle cx="350" cy="30" r="10" fill={data.incident.status !== 'open' ? '#16a34a' : '#3b82f6'} />
-                  <text x="350" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Routed</text>
+                  <text x="350" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">{t('complaintDetail.escalationRouted')}</text>
                   <text x="350" y="70" textAnchor="middle" fontSize="9" fill="var(--text-muted)">{data.department || ''}</text>
 
                   {(data.incident as any).escalated && (
                     <>
                       <line x1="350" y1="30" x2="450" y2="30" stroke="#ea580c" strokeWidth="2" />
                       <circle cx="450" cy="30" r="10" fill="#ea580c" />
-                      <text x="450" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">Escalated</text>
+                      <text x="450" y="55" textAnchor="middle" fontSize="11" fill="var(--text-secondary)">{t('complaintDetail.escalationEscalated')}</text>
                     </>
                   )}
 
@@ -771,7 +777,12 @@ const ComplaintDetailPage = () => {
             <h3><Activity size={16} /> {t('complaintDetail.statusTimelineTitle')}</h3>
             <StatusTimeline stages={statusStages} />
 
-            <h3 style={{ marginTop: 20 }}>{t('complaintDetail.sectionTimeline')}</h3>
+            <div className="timeline-header" style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginTop: 20 }}>
+              <h3 style={{ margin: 0 }}>{t('complaintDetail.sectionTimeline')}</h3>
+              <button className="export-timeline-btn" onClick={() => window.print()} style={{ display: 'inline-flex', alignItems: 'center', gap: 4, padding: '4px 10px', border: '1px solid var(--border-subtle)', borderRadius: 6, background: 'rgba(99,102,241,0.08)', color: '#818cf8', fontSize: 11, fontWeight: 600, cursor: 'pointer', fontFamily: 'inherit' }}>
+                <Download size={12} /> {t('complaintDetail.exportTimeline')}
+              </button>
+            </div>
             <div className="timeline">
               {fullTimeline.map((item, idx) => (
                 <div key={idx} className="timeline-item">

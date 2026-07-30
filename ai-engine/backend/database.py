@@ -402,6 +402,9 @@ class Complaint(Base):
     # Tags (JSON array stored as string, max 3)
     tags = Column(Text, nullable=True)
 
+    # FEATURE 14: location accuracy
+    location_accuracy = Column(String, nullable=True)
+
     # Complaint language detection
     complaint_language = Column(String, nullable=True)
 
@@ -513,6 +516,16 @@ class Geofence(Base):
     created_by = Column(String, ForeignKey("users.id"), nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
+
+# FEATURE 3: push notification structure
+class PushSubscription(Base):
+    __tablename__ = "push_subscriptions"
+    id = Column(String, primary_key=True, index=True)
+    user_id = Column(String, ForeignKey("users.id"), index=True, nullable=False)
+    endpoint = Column(String, nullable=False)
+    p256dh = Column(String, nullable=False)
+    auth = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # FEATURE 16: drafts
 class ComplaintDraft(Base):

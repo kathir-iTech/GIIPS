@@ -19,7 +19,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from pydantic import BaseModel
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, ZONE_BY_WARD
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -58,6 +58,7 @@ from department_map import (
 )
 from officer_routing import route_complaint
 from pipeline import process_complaint_pipeline
+from vapid import get_vapid_keys
 from services import (
     ClassificationService,
     ClusteringService,
@@ -167,6 +168,17 @@ def _create_notification(db: Session, user_id: str, notification_type: str, comp
         )
         db.add(notif)
         db.flush()
+        try:
+            asyncio.get_running_loop().create_task(
+                manager.broadcast("notification_new", {
+                    "user_id": user_id,
+                    "notification_type": notification_type,
+                    "complaint_id": complaint_id,
+                    "notification_id": notif.id,
+                })
+            )
+        except RuntimeError:
+            pass
     except Exception:
         logger.error("Notification creation failed for user=%s type=%s", user_id, notification_type)
 
@@ -576,6 +588,7 @@ priority_router = APIRouter(prefix="/priority", tags=["Priority"])
 dashboard_router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 incident_router = APIRouter(prefix="/incidents", tags=["Incidents"])
 complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
+officer_router = APIRouter(prefix="/officer", tags=["Officer"])
 
 
 # === Complaint Submission Routes ===
@@ -617,6 +630,16 @@ async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_com
                 raise HTTPException(status_code=400, detail="Complaint text appears to be spam or contains invalid characters.")
 
     complaint_id = str(uuid.uuid4())
+
+    # FEATURE 14: compute location accuracy
+    location_accuracy = None
+    if request.latitude is not None and request.longitude is not None:
+        location_accuracy = "gps"
+    elif request.address:
+        location_accuracy = "address"
+    elif request.ward:
+        location_accuracy = "ward_only"
+
     complaint = Complaint(
         id=complaint_id,
         title=request.title,
@@ -628,6 +651,7 @@ async def submit_complaint(request: ComplaintCreate, _: None = Depends(check_com
         longitude=request.longitude,
         image_path=request.image_path,
         user_id=db_user.id,
+        location_accuracy=location_accuracy,
     )
     db.add(complaint)
     db.commit()
@@ -748,6 +772,13 @@ async def upload_complaint_photo(
             complaint.photo_duplicate_of = match_id
             logger.info(
                 "Photo reused (cross-user): complaint %s (user %s) matches %s (different user)",
+                complaint_id, db_user.id, match_id,
+            )
+        elif flag_type == "similar":
+            complaint.photo_duplicate_flag = "similar"
+            complaint.photo_duplicate_of = match_id
+            logger.info(
+                "Photo similar (hamming < 10): complaint %s (user %s) matches %s",
                 complaint_id, db_user.id, match_id,
             )
     else:
@@ -1043,6 +1074,26 @@ async def rate_complaint(complaint_id: str, body: RateComplaintRequest, db_user:
         raise HTTPException(status_code=400, detail="Complaint must be resolved before rating")
 
     complaint.citizen_rating = body.rating
+
+    # FEATURE 9: recompute resolution quality score with citizen_rating factor
+    if incident:
+        quality = 0
+        if incident.resolution_photo_path:
+            quality += 30
+        if incident.resolution_note:
+            quality += min(len(incident.resolution_note) * 2, 40)
+        if incident.days_open and incident.days_open <= 2:
+            quality += 30
+        elif incident.days_open and incident.days_open <= 5:
+            quality += 15
+        # 4th factor — citizen_rating
+        if body.rating >= 4:
+            quality += 20
+        elif body.rating == 3:
+            quality += 10
+        else:
+            quality -= 10
+        incident.resolution_quality_score = max(0, quality)
     db.commit()
 
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "complaint_rated",
@@ -2160,6 +2211,9 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
                         "message": "Your issue has been marked as fixed. Please confirm with the verification code.",
                     },
                 )
+                _send_push_notification(c.user_id, "Pending Verification",
+                                        f"Incident {incident.incident_number} has been marked as fixed. Please confirm.",
+                                        db=db)
 
         _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
                          incident.id, "success",
@@ -2201,6 +2255,9 @@ async def update_incident_status(incident_id: str, body: UpdateStatusRequest, db
                 complaint_id=c.id,
                 data={"old_status": old_status, "new_status": body.status, "incident_number": incident.incident_number},
             )
+            _send_push_notification(c.user_id, "Status Update",
+                                    f"Incident {incident.incident_number} changed from {old_status} to {body.status}",
+                                    db=db)
 
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_status_update",
                      incident.id, "success",
@@ -2385,7 +2442,17 @@ async def update_private_note(incident_id: str, body: NoteUpdateRequest, db_user
     if incident.resolution_note: quality += min(len(incident.resolution_note) * 2, 40)
     if incident.days_open and incident.days_open <= 2: quality += 30
     elif incident.days_open and incident.days_open <= 5: quality += 15
-    incident.resolution_quality_score = quality
+    # FEATURE 9: citizen_rating factor
+    if incident.id:
+        rating = db.query(func.avg(Complaint.citizen_rating)).filter(
+            Complaint.incident_id == incident.id,
+            Complaint.citizen_rating.isnot(None),
+        ).scalar()
+        if rating:
+            if rating >= 4: quality += 20
+            elif rating >= 3: quality += 10
+            else: quality -= 10
+    incident.resolution_quality_score = max(0, quality)
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "private_note_update",
                      incident.id, "success")
@@ -2418,7 +2485,17 @@ async def upload_resolution_photo(incident_id: str, file: UploadFile = File(...)
     if incident.resolution_note: quality += min(len(incident.resolution_note) * 2, 40)
     if incident.days_open and incident.days_open <= 2: quality += 30
     elif incident.days_open and incident.days_open <= 5: quality += 15
-    incident.resolution_quality_score = quality
+    # FEATURE 9: citizen_rating factor
+    if incident.id:
+        rating = db.query(func.avg(Complaint.citizen_rating)).filter(
+            Complaint.incident_id == incident.id,
+            Complaint.citizen_rating.isnot(None),
+        ).scalar()
+        if rating:
+            if rating >= 4: quality += 20
+            elif rating >= 3: quality += 10
+            else: quality -= 10
+    incident.resolution_quality_score = max(0, quality)
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "resolution_photo_upload",
                      incident.id, "success")
@@ -2513,6 +2590,27 @@ async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: 
 
     incident.status = "resolved"
     incident.verification_code = None
+
+    # FEATURE 15: auto-close follow-up complaints linked to this incident
+    follow_up_complaints = db.query(Complaint).filter(
+        Complaint.incident_id == incident.id,
+        or_(
+            Complaint.merge_reason.ilike("%follow_up%"),
+            Complaint.tags.ilike("%follow-up%"),
+        ),
+    ).all()
+    for fc in follow_up_complaints:
+        fc_incident = db.query(Incident).filter(Incident.id == fc.incident_id).first()
+        if fc_incident and fc_incident.status not in ("resolved", "closed"):
+            fc_incident.status = "closed"
+            fc_incident.status_changed_at = datetime.utcnow()
+            fc_incident.resolution_note = "Auto-closed: parent incident resolved"
+            _write_audit_log(
+                db, "system", "system", "System",
+                "auto_close_follow_up", fc_incident.id, "success",
+                f"Auto-closed follow-up complaint {fc.id} linked to resolved incident {incident.incident_number}",
+            )
+
     db.commit()
 
     # Notify the citizen
@@ -2522,6 +2620,9 @@ async def verify_resolution(incident_id: str, body: VerifyResolutionRequest, _: 
         data={"old_status": old_status, "new_status": "resolved", "incident_number": incident.incident_number,
               "message": "Resolution confirmed. Thank you for confirming!"},
     )
+    _send_push_notification(db_user.id, "Resolution Confirmed",
+                            f"Incident {incident.incident_number} resolved. Thank you!",
+                            db=db)
 
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "verify_resolution",
                      incident.id, "success", "Citizen confirmed resolution")
@@ -2564,6 +2665,9 @@ async def reopen_incident(incident_id: str, request: Request, _: None = Depends(
         data={"old_status": old_status, "new_status": "open", "incident_number": incident.incident_number,
               "message": "Your complaint has been reopened."},
     )
+    _send_push_notification(db_user.id, "Incident Reopened",
+                            f"Incident {incident.incident_number} has been reopened.",
+                            db=db)
 
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_reopen",
                      incident.id, "success", f"Citizen reopened incident from {old_status} to open")
@@ -2628,6 +2732,9 @@ async def appeal_incident(incident_id: str, body: AppealRequest, request: Reques
         data={"old_status": old_status, "new_status": "open", "incident_number": incident.incident_number,
               "message": "Your appeal has been filed. Your complaint has been reopened and escalated."},
     )
+    _send_push_notification(db_user.id, "Appeal Filed",
+                            f"Your appeal for incident {incident.incident_number} has been filed.",
+                            db=db)
 
     # Notify department officers
     dept = get_department(incident.category or "")
@@ -2681,12 +2788,61 @@ async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_use
 search_router = APIRouter(prefix="/search", tags=["Search"])
 
 @search_router.get("")
-def search_complaints(q: str = Query(..., min_length=1), request: Request = None, _: None = Depends(check_search_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: newly rate-limited
+def search_complaints(
+    q: str = Query(..., min_length=1),
+    category: Optional[str] = Query(None, description="Exact match on predicted_category"),
+    ward: Optional[str] = Query(None, description="Exact match on ward"),
+    status: Optional[str] = Query(None, description="Exact match on incident status"),
+    priority: Optional[str] = Query(None, description="Exact match on priority"),
+    date_from: Optional[str] = Query(None, description="Filter created_at >= date_from (YYYY-MM-DD)"),
+    date_to: Optional[str] = Query(None, description="Filter created_at <= date_to (YYYY-MM-DD)"),
+    page: int = Query(1, ge=1, description="Page number (1-based)"),
+    limit: int = Query(20, ge=1, le=200, description="Items per page"),
+    request: Request = None,
+    _: None = Depends(check_search_rate_limit),
+    db: Session = Depends(get_db),
+):  # FEATURE 4: advanced search filters
     pattern = f"%{q}%"
-    results = db.query(Complaint).filter(
+    query = db.query(Complaint).options(joinedload(Complaint.incident)).filter(
         or_(Complaint.title.ilike(pattern), Complaint.description.ilike(pattern))
-    ).limit(20).all()
-    return [{"id": c.id, "title": c.title, "description": c.description[:100], "ward": c.ward, "predicted_category": c.predicted_category, "status": c.status, "date_received": c.created_at.isoformat() if c.created_at else None} for c in results]
+    )
+    if category:
+        query = query.filter(Complaint.predicted_category == category)
+    if ward:
+        query = query.filter(Complaint.ward == ward)
+    if status:
+        query = query.filter(Complaint.incident.has(Incident.status == status))
+    if priority:
+        query = query.filter(Complaint.priority == priority)
+    if date_from:
+        try:
+            dt_from = datetime.strptime(date_from, "%Y-%m-%d")
+            query = query.filter(Complaint.created_at >= dt_from)
+        except ValueError:
+            pass
+    if date_to:
+        try:
+            dt_to = datetime.strptime(date_to, "%Y-%m-%d") + timedelta(days=1)
+            query = query.filter(Complaint.created_at <= dt_to)
+        except ValueError:
+            pass
+
+    total = query.count()
+    offset_val = (page - 1) * limit
+    results = query.order_by(Complaint.created_at.desc()).offset(offset_val).limit(limit).all()
+    return {
+        "results": [{
+            "id": c.id, "title": c.title, "description": c.description[:100],
+            "ward": c.ward, "predicted_category": c.predicted_category,
+            "priority": c.priority,
+            "status": c.incident.status if c.incident else None,
+            "date_received": c.created_at.isoformat() if c.created_at else None,
+        } for c in results],
+        "total": total,
+        "page": page,
+        "limit": limit,
+        "pages": (total + limit - 1) // limit,
+    }
 
 
 notifications_router = APIRouter(prefix="/notifications", tags=["Notifications"])
@@ -2727,6 +2883,78 @@ async def mark_all_notifications_read(db_user: User = Depends(get_current_user),
     db.query(Notification).filter(Notification.user_id == db_user.id, Notification.is_read == False).update({"is_read": True})
     db.commit()
     return {"message": "All notifications marked as read"}
+
+
+# FEATURE 3: push notification structure
+class PushSubscribeRequest(BaseModel):
+    endpoint: str
+    keys: dict
+
+
+@notifications_router.post("/subscribe")
+async def subscribe_push(body: PushSubscribeRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    existing = db.query(PushSubscription).filter(PushSubscription.user_id == db_user.id).first()
+    if existing:
+        existing.endpoint = body.endpoint
+        existing.p256dh = body.keys.get("p256dh", "")
+        existing.auth = body.keys.get("auth", "")
+    else:
+        sub = PushSubscription(
+            id=str(uuid.uuid4()),
+            user_id=db_user.id,
+            endpoint=body.endpoint,
+            p256dh=body.keys.get("p256dh", ""),
+            auth=body.keys.get("auth", ""),
+        )
+        db.add(sub)
+    db.commit()
+    return {"status": "subscribed"}
+
+
+@notifications_router.delete("/unsubscribe")
+async def unsubscribe_push(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    db.query(PushSubscription).filter(PushSubscription.user_id == db_user.id).delete()
+    db.commit()
+    return {"status": "unsubscribed"}
+
+
+def _send_push_notification(user_id: str, title: str, body: str, url: str = "/", db: Optional[Session] = None):
+    """Send a Web Push notification to the user's subscribed device.
+    Uses pywebpush if available; silently falls back to logging.
+    On failure (expired subscription), deletes the subscription."""
+    if db is None:
+        return
+    try:
+        sub = db.query(PushSubscription).filter(PushSubscription.user_id == user_id).first()
+        if not sub:
+            return
+        vapid = get_vapid_keys()
+        if not vapid["public_key"] or not vapid["private_key"]:
+            logger.info("VAPID keys not configured — skipping push for user %s", user_id)
+            return
+        try:
+            from pywebpush import webpush
+            webpush(
+                subscription_info={
+                    "endpoint": sub.endpoint,
+                    "keys": {"p256dh": sub.p256dh, "auth": sub.auth},
+                },
+                data=json.dumps({"title": title, "body": body, "url": url}),
+                vapid_private_key=vapid["private_key"],
+                vapid_claims={"sub": f"mailto:{vapid['claim_email']}"},
+            )
+        except ImportError:
+            logger.info("pywebpush not installed — push notification logged for user %s: %s — %s", user_id, title, body)
+        except Exception as push_err:
+            err_str = str(push_err).lower()
+            if "expired" in err_str or "410" in err_str or "gone" in err_str:
+                db.query(PushSubscription).filter(PushSubscription.user_id == user_id).delete()
+                db.flush()
+                logger.info("Removed expired push subscription for user %s", user_id)
+            else:
+                logger.warning("Push notification failed for user %s: %s", user_id, push_err)
+    except Exception:
+        logger.warning("Push notification lookup failed for user %s", user_id)
 
 
 # === Incident Intelligence Routes ===
@@ -3808,6 +4036,25 @@ async def bulk_close_incidents(body: BulkCloseRequest, db_user: User = Depends(g
         inc.status = "closed"
         inc.status_changed_at = now
         inc.resolution_note = body.close_reason
+        # FEATURE 15: auto-close follow-up complaints
+        follow_up_complaints = db.query(Complaint).filter(
+            Complaint.incident_id == inc.id,
+            or_(
+                Complaint.merge_reason.ilike("%follow_up%"),
+                Complaint.tags.ilike("%follow-up%"),
+            ),
+        ).all()
+        for fc in follow_up_complaints:
+            fc_inc = db.query(Incident).filter(Incident.id == fc.incident_id).first()
+            if fc_inc and fc_inc.status not in ("resolved", "closed"):
+                fc_inc.status = "closed"
+                fc_inc.status_changed_at = now
+                fc_inc.resolution_note = "Auto-closed: parent incident closed"
+                _write_audit_log(
+                    db, db_user.id, db_user.email, db_user.role,
+                    "auto_close_follow_up", fc_inc.id, "success",
+                    f"Auto-closed follow-up complaint {fc.id} linked to closed incident {inc.incident_number}",
+                )
         _write_audit_log(db, db_user.id, db_user.email, db_user.role, "bulk_close", inc.id, "success", f"Bulk closed: {body.close_reason[:200]}")
         success_count += 1
     db.commit()
@@ -3831,6 +4078,186 @@ async def accept_incident(incident_id: str, db_user: User = Depends(get_current_
     db.commit()
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "incident_accept", incident.id, "success")
     return {"accepted_by": incident.accepted_by, "accepted_at": incident.accepted_at.isoformat() if incident.accepted_at else None}
+
+
+@officer_router.get("/my-performance")
+async def officer_self_performance(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Officer performance self-view. Returns key metrics for the authenticated officer.
+    # FEATURE 6: Officer performance self-view"""
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Only officers can view their performance")
+    officer_name = db_user.full_name
+    department = db_user.department
+    if not department:
+        raise HTTPException(status_code=400, detail="Officer has no department assigned")
+
+    now = datetime.utcnow()
+    first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Resolved incidents accepted_by this officer
+    resolved_incs = db.query(Incident).filter(
+        Incident.accepted_by == officer_name,
+        Incident.status.in_(["resolved", "closed"]),
+    ).all()
+    resolved_count = len(resolved_incs)
+    total_days = sum(inc.days_open or 0 for inc in resolved_incs)
+    avg_resolution_time = round(total_days / resolved_count, 1) if resolved_count > 0 else 0.0
+
+    # Total resolved this month
+    total_resolved_this_month = db.query(Incident).filter(
+        Incident.accepted_by == officer_name,
+        Incident.status_changed_at.isnot(None),
+        Incident.status_changed_at >= first_of_month,
+        Incident.status.in_(["resolved", "closed"]),
+    ).count()
+
+    # Citizen ratings received — avg from complaints linked to incidents accepted_by this officer
+    rating_result = db.query(func.avg(Complaint.citizen_rating)).join(
+        Incident, Complaint.incident_id == Incident.id
+    ).filter(
+        Incident.accepted_by == officer_name,
+        Complaint.citizen_rating.isnot(None),
+    ).scalar()
+    citizen_ratings_received = round(float(rating_result), 2) if rating_result else 0.0
+
+    # SLA compliance rate — percentage resolved within 7 days
+    sla_ok = db.query(Incident).filter(
+        Incident.accepted_by == officer_name,
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.days_open.isnot(None),
+        Incident.days_open <= 7,
+    ).count()
+    sla_total = db.query(Incident).filter(
+        Incident.accepted_by == officer_name,
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.days_open.isnot(None),
+    ).count()
+    sla_compliance_rate = round((sla_ok / sla_total) * 100, 1) if sla_total > 0 else 0.0
+
+    # Department averages
+    dept_resolved = db.query(Incident).filter(
+        Incident.accepted_by == officer_name,
+        Incident.status.in_(["resolved", "closed"]),
+    ).subquery()
+    dept_resolved_incs = db.query(Incident).filter(
+        Incident.status.in_(["resolved", "closed"]),
+    ).all()
+    dept_all_resolved = [i for i in dept_resolved_incs]
+    dept_days = sum(i.days_open or 0 for i in dept_all_resolved)
+    dept_res_count = len(dept_all_resolved)
+    department_avg_resolution = round(dept_days / dept_res_count, 1) if dept_res_count > 0 else 0.0
+
+    dept_this_month = db.query(Incident).filter(
+        Incident.status_changed_at.isnot(None),
+        Incident.status_changed_at >= first_of_month,
+        Incident.status.in_(["resolved", "closed"]),
+    ).count()
+
+    dept_rating_result = db.query(func.avg(Complaint.citizen_rating)).join(
+        Incident, Complaint.incident_id == Incident.id
+    ).filter(
+        Complaint.citizen_rating.isnot(None),
+    ).scalar()
+    dept_avg_rating = round(float(dept_rating_result), 2) if dept_rating_result else 0.0
+
+    dept_sla_ok = db.query(Incident).filter(
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.days_open.isnot(None),
+        Incident.days_open <= 7,
+    ).count()
+    dept_sla_total = db.query(Incident).filter(
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.days_open.isnot(None),
+    ).count()
+    dept_sla_rate = round((dept_sla_ok / dept_sla_total) * 100, 1) if dept_sla_total > 0 else 0.0
+
+    return {
+        "officer_name": officer_name,
+        "department": department,
+        "avg_resolution_time": avg_resolution_time,
+        "total_resolved_this_month": total_resolved_this_month,
+        "citizen_ratings_received": citizen_ratings_received,
+        "sla_compliance_rate": sla_compliance_rate,
+        "department_avg": {
+            "avg_resolution_time": department_avg_resolution,
+            "total_resolved_this_month": dept_this_month,
+            "citizen_ratings_received": dept_avg_rating,
+            "sla_compliance_rate": dept_sla_rate,
+        },
+    }
+
+
+class ReassignRequest(BaseModel):
+    new_department: Optional[str] = None
+    new_officer: Optional[str] = None
+    reason: str
+
+@incident_router.patch("/{incident_id}/reassign")
+async def reassign_incident(incident_id: str, body: ReassignRequest, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Reassign an incident to a different officer and/or department. Executive only.
+    # FEATURE 7: Incident reassignment"""
+    if db_user.role != "Executive":
+        raise HTTPException(status_code=403, detail="Executive only")
+    incident = db.query(Incident).options(joinedload(Incident.complaints)).filter(Incident.id == incident_id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    if not body.reason:
+        raise HTTPException(status_code=400, detail="Reason is required for reassignment")
+
+    old_officer = incident.accepted_by
+    old_category = incident.category
+
+    if body.new_officer:
+        incident.accepted_by = body.new_officer
+        incident.accepted_at = datetime.utcnow()
+
+    if body.new_department:
+        new_slug = get_slug_for_department(body.new_department)
+        dept_cats = [cat for cat, slug in CATEGORY_DEPT_MAP.items() if slug == new_slug]
+        if dept_cats:
+            incident.category = dept_cats[0]
+
+    _write_audit_log(
+        db, db_user.id, db_user.email, db_user.role,
+        "incident_reassign", incident.id, "success",
+        f"Reassigned by {db_user.full_name}. Reason: {body.reason}. "
+        f"Old officer: {old_officer or 'none'}, New officer: {body.new_officer or 'unchanged'}. "
+        f"Old category: {old_category}, New category: {incident.category}"
+    )
+
+    # Notify old officer
+    if old_officer:
+        old_user = db.query(User).filter(User.full_name == old_officer).first()
+        if old_user:
+            _create_notification(
+                db, old_user.id, "incident_reassigned",
+                data={
+                    "incident_id": incident.id,
+                    "incident_number": incident.incident_number,
+                    "message": f"Incident {incident.incident_number} has been reassigned away from you. Reason: {body.reason}",
+                }
+            )
+    # Notify new officer
+    if body.new_officer:
+        new_user = db.query(User).filter(User.full_name == body.new_officer).first()
+        if new_user:
+            _create_notification(
+                db, new_user.id, "incident_assigned",
+                data={
+                    "incident_id": incident.id,
+                    "incident_number": incident.incident_number,
+                    "message": f"Incident {incident.incident_number} has been assigned to you. Reason: {body.reason}",
+                }
+            )
+
+    db.commit()
+    return {
+        "id": incident.id,
+        "incident_number": incident.incident_number,
+        "accepted_by": incident.accepted_by,
+        "category": incident.category,
+        "status": incident.status,
+    }
 
 
 # === Feature 9: Confidence distribution (executive) ===
@@ -4064,6 +4491,76 @@ def get_word_cloud(db: Session = Depends(get_db)):
         words.extend([w for w in tokens if w not in STOPWORDS and len(w) > 2])
     top = Counter(words).most_common(30)
     return [{"word": w, "count": c} for w, c in top]
+
+
+@public_router.get("/public/councillor-briefing/{ward}")
+async def councillor_briefing(ward: str, db: Session = Depends(get_db)):
+    """Public ward councillor briefing — no auth required.
+    # FEATURE 17: Ward councillor complaint briefing"""
+    now = datetime.utcnow()
+    first_of_month = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    # Top 3 open issues by priority_score
+    top_open = db.query(Incident).filter(
+        Incident.ward == ward,
+        ~Incident.status.in_(["resolved", "closed"]),
+    ).order_by(Incident.priority_score.desc().nullslast()).limit(3).all()
+    top_3_open_issues = [{
+        "id": inc.id,
+        "incident_number": inc.incident_number,
+        "category": inc.category,
+        "priority_score": inc.priority_score,
+        "priority_label": inc.priority_label,
+        "days_open": inc.days_open,
+        "summary": inc.summary,
+    } for inc in top_open]
+
+    # Resolved count this month
+    resolved_count_this_month = db.query(Incident).join(
+        Complaint, Complaint.incident_id == Incident.id
+    ).filter(
+        Complaint.ward == ward,
+        Incident.status.in_(["resolved", "closed"]),
+        Incident.status_changed_at.isnot(None),
+        Incident.status_changed_at >= first_of_month,
+    ).count()
+
+    # Most common category
+    category_row = db.query(
+        Complaint.predicted_category,
+        func.count(Complaint.id).label("cnt"),
+    ).filter(
+        Complaint.ward == ward,
+        Complaint.predicted_category.isnot(None),
+    ).group_by(Complaint.predicted_category).order_by(func.count(Complaint.id).desc()).first()
+    most_common_category = category_row[0] if category_row else None
+
+    # SLA breach count: incidents where days_open > 7 and not resolved/closed
+    sla_breach_count = db.query(Incident).join(
+        Complaint, Complaint.incident_id == Incident.id
+    ).filter(
+        Complaint.ward == ward,
+        ~Incident.status.in_(["resolved", "closed"]),
+        Incident.days_open.isnot(None),
+        Incident.days_open > 7,
+    ).count()
+
+    # Total open count
+    total_open_count = db.query(Incident).join(
+        Complaint, Complaint.incident_id == Incident.id
+    ).filter(
+        Complaint.ward == ward,
+        ~Incident.status.in_(["resolved", "closed"]),
+    ).count()
+
+    return {
+        "ward": ward,
+        "top_3_open_issues": top_3_open_issues,
+        "resolved_count_this_month": resolved_count_this_month,
+        "most_common_category": most_common_category,
+        "sla_breach_count": sla_breach_count,
+        "total_open_count": total_open_count,
+    }
 
 
 @public_router.get("/track/{complaint_id}", response_model=TrackComplaintResponse)

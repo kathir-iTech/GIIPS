@@ -239,7 +239,7 @@ async def lifespan(app: FastAPI):
         """Periodically check and auto-escalate stale incidents."""
         while True:
             try:
-                from database import SessionLocal
+                from database import SessionLocal, Incident, Complaint, AuditLog
                 from routes import auto_escalate_aging_incidents
                 from fastapi import Request
                 # Create a minimal request stub — auto-escalate doesn't use request fields
@@ -249,6 +249,39 @@ async def lifespan(app: FastAPI):
                     msg = result.get("message", "")
                     if "No incidents" not in msg:
                         logger.info("[SLA-AUTO-ESCALATE] %s", msg)
+
+                    # FEATURE 12: Follow-up escalation — check incidents linked to follow-up complaints
+                    # where no officer response for > 48 hours
+                    now = datetime.utcnow()
+                    forty_eight_hours_ago = now - timedelta(hours=48)
+                    follow_up_complaints = db.query(Complaint).filter(
+                        Complaint.merge_reason.ilike("%follow_up%"),
+                        Complaint.incident_id.isnot(None),
+                    ).all()
+                    for fc in follow_up_complaints:
+                        inc = db.query(Incident).filter(Incident.id == fc.incident_id).first()
+                        if inc and not inc.escalated and inc.status not in ("resolved", "closed"):
+                            if inc.status_changed_at and inc.status_changed_at <= forty_eight_hours_ago:
+                                inc.escalated = True
+                                inc.escalated_at = now
+                                inc.escalated_by = "system"
+                                inc.escalation_reason = "Auto-escalated: follow-up complaint with no officer response for > 48h"
+                                # Bump priority
+                                old_score = inc.priority_score or 0.0
+                                inc.priority_score = min(100.0, old_score + 10)
+                                from routes import _label_for_score
+                                inc.priority_label = _label_for_score(inc.priority_score)
+                                audit = AuditLog(
+                                    id=str(uuid.uuid4()),
+                                    user_id="system", user_email="system", role="System",
+                                    action="auto_escalate_follow_up",
+                                    target=inc.id,
+                                    details=f"Follow-up escalation: no response for > 48h. Priority bumped {old_score} -> {inc.priority_score}",
+                                    status="success",
+                                )
+                                db.add(audit)
+                                logger.info("[FOLLOW-UP-ESCALATE] Auto-escalated incident %s (follow-up complaint %s)", inc.id, fc.id)
+                    db.commit()
                 finally:
                     db.close()
             except Exception as exc:
@@ -437,7 +470,7 @@ async def csrf_origin_check(request: Request, call_next):
     return await call_next(request)
 
 
-from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router, ws_router, search_router
+from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router, ws_router, search_router, officer_router
 
 app.include_router(classify_router)
 app.include_router(cluster_router)
@@ -458,6 +491,7 @@ app.include_router(debug_router)
 app.include_router(public_router)
 app.include_router(ws_router)
 app.include_router(search_router)
+app.include_router(officer_router)
 
 
 # === Request/Response Models removed: now centralized in models.py and routes.py ===

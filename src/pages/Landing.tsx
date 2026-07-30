@@ -16,12 +16,30 @@ const Landing = () => {
   const [bannerDismissed, setBannerDismissed] = React.useState(
     () => localStorage.getItem(BANNER_DISMISSED_KEY) === 'true'
   );
+  const [installPrompt, setInstallPrompt] = useState<any>(null);
   const [catStats, setCatStats] = useState<{ category: string; count: number }[] | null>(null);
   const [complaintsHandled, setComplaintsHandled] = useState<number>(0);
   const [animatedCount, setAnimatedCount] = useState<number>(0);
   const counterRef = useRef<HTMLSpanElement>(null);
   const prevCountRef = useRef<number>(0);
   const animFrameRef = useRef<number>(0);
+
+  useEffect(() => {
+    const handler = (e: Event) => {
+      e.preventDefault();
+      setInstallPrompt(e);
+    };
+    window.addEventListener('beforeinstallprompt', handler);
+    return () => window.removeEventListener('beforeinstallprompt', handler);
+  }, []);
+
+  const handleInstallClick = () => {
+    if (!installPrompt) return;
+    installPrompt.prompt();
+    installPrompt.userChoice.then((result: { outcome: string }) => {
+      if (result.outcome === 'accepted') setInstallPrompt(null);
+    });
+  };
 
   useEffect(() => {
     if (animatedCount !== complaintsHandled) {
@@ -94,6 +112,14 @@ const Landing = () => {
         <div className="onboarding-banner">
           <p>{t('landing.onboardingBanner')}</p>
           <button className="banner-close" onClick={dismissBanner} title={t('landing.dismissTitle')}><X size={16} /></button>
+        </div>
+      )}
+
+      {installPrompt && (
+        <div className="install-banner">
+          <span>{t('landing.installPrompt')}</span>
+          <button className="install-btn" onClick={handleInstallClick}>{t('landing.installButton')}</button>
+          <button className="banner-close" onClick={() => setInstallPrompt(null)}><X size={16} /></button>
         </div>
       )}
 

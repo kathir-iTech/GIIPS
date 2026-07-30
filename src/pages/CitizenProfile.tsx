@@ -234,6 +234,20 @@ const CitizenProfile = () => {
           </div>
         </div>
 
+        <div className="profile-card glass-card">
+          <div className="profile-header">
+            <BarChart3 size={20} />
+            <div className="profile-title">
+              <h2>{t('citizenAnalytics.title')}</h2>
+            </div>
+          </div>
+          <div className="analytics-section" style={{ padding: '0 0 16px' }}>
+            <a href="/citizen/analytics" className="analytics-link" style={{ display: 'inline-flex', alignItems: 'center', gap: 8, padding: '10px 20px', background: 'var(--accent)', color: 'white', borderRadius: 8, fontSize: 14, fontWeight: 600, textDecoration: 'none' }}>
+              <BarChart3 size={18} /> View Analytics
+            </a>
+          </div>
+        </div>
+
         {complaints.length > 0 && (() => {
           const catCounts: Record<string, number> = {};
           const wardCounts: Record<string, number> = {};
