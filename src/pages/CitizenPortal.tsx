@@ -13,6 +13,16 @@ import './CitizenPortal.css';
 
 const DRAFT_KEY = 'giips_complaint_wizard_draft';
 
+const COMPLAINT_TEMPLATES = [
+  { category: 'Roads', title: 'Pothole on my street needs repair', description: 'There is a large pothole on our road that has been causing issues for vehicles and pedestrians. It is located near the main junction and gets worse every time it rains. Please repair it as soon as possible.' },
+  { category: 'Water Supply', title: 'No water supply in our area', description: 'We have not received water supply for the past few days. The entire street is affected and residents are struggling to get water for daily needs. Please restore water supply urgently.' },
+  { category: 'Waste Management', title: 'Garbage not collected in our area', description: 'Garbage has not been collected from our street for over a week. The waste is piling up and creating unhygienic conditions. Please send the collection vehicle.' },
+  { category: 'Sanitation', title: 'Drainage block on our street', description: 'The drainage line on our street is completely blocked, causing water to stagnate and creating a foul smell. Please clear the blockage at the earliest.' },
+  { category: 'Street Lighting', title: 'Street light not working on our road', description: 'The street light near our house has not been working for several nights. The entire stretch is dark, making it unsafe especially for women and elderly residents.' },
+  { category: 'Electricity', title: 'Frequent power cuts in our area', description: 'We are experiencing frequent power cuts throughout the day. Voltage fluctuations are also damaging appliances. Please look into this matter urgently.' },
+  { category: 'Public Health', title: 'Mosquito menace due to stagnant water', description: 'Stagnant water in our area is breeding mosquitoes, creating a serious health risk. There is a risk of dengue and other diseases. Please arrange for fogging and drain cleaning.' },
+];
+
 interface DupCheckStepProps {
   formData: any;
   submitError: string | null;
@@ -500,6 +510,26 @@ const CitizenPortal = () => {
           )}
           {step === 2 && (
             <div className="form-step">
+              {/* Quick Start Templates */}
+              <div className="quick-templates">
+                <h4>{t('citizenPortal.quickStart')}</h4>
+                <p className="template-hint">{t('citizenPortal.pickTemplate')}</p>
+                <div className="template-grid">
+                  {COMPLAINT_TEMPLATES.map((tmpl, i) => (
+                    <button
+                      key={i}
+                      className="template-btn"
+                      onClick={() => {
+                        setFormData(prev => ({ ...prev, title: tmpl.title, description: tmpl.description }));
+                        setSuggestedCategory(tmpl.category);
+                      }}
+                    >
+                      <span className="template-category">{tmpl.category}</span>
+                      <span className="template-title">{tmpl.title}</span>
+                    </button>
+                  ))}
+                </div>
+              </div>
               <input
                 type="text"
                 placeholder={t('citizenPortal.complaintTitlePlaceholder')}

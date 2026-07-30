@@ -750,4 +750,109 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  // FEATURE 1: daily volume
+  getDailyVolume: (days: number = 90) =>
+    fetchWithTimeout(`${BASE_URL}/admin/daily-volume?days=${days}`, {}).then(safeJson),
+
+  // FEATURE 3: training feedback
+  recordTrainingFeedback: (complaintId: string, predicted: string, corrected: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/training-feedback`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ complaint_id: complaintId, predicted, corrected })
+    }).then(safeJson),
+  getTrainingFeedback: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/training-feedback`, {}).then(safeJson),
+
+  // FEATURE 4: incident dependencies
+  updateDependencies: (id: string, body: any) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/${id}/dependencies`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(safeJson),
+  getDependencies: (id: string) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/${id}/dependencies`, {}).then(safeJson),
+
+  // FEATURE 6: budget
+  logBudget: (data: any) =>
+    fetchWithTimeout(`${BASE_URL}/executive/budget`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(safeJson),
+  getBudget: (department?: string) =>
+    fetchWithTimeout(`${BASE_URL}/executive/budget${department ? `?department=${encodeURIComponent(department)}` : ''}`, {}).then(safeJson),
+
+  // FEATURE 8: multi-photo upload
+  uploadMultiPhoto: (id: string, files: File[]) => {
+    const formData = new FormData();
+    files.forEach((f: File) => formData.append('files', f));
+    return fetchWithTimeout(`${BASE_URL}/complaints/${id}/upload-multi`, {
+      method: 'POST', body: formData
+    }).then(safeJson);
+  },
+
+  // FEATURE 9: merge suggestions
+  getMergeSuggestions: () =>
+    fetchWithTimeout(`${BASE_URL}/incidents/merge-suggestions`, {}).then(safeJson),
+  acceptMergeSuggestion: (id: string) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/merge-suggestions/${id}/accept`, { method: 'POST' }).then(safeJson),
+  dismissMergeSuggestion: (id: string) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/merge-suggestions/${id}/dismiss`, { method: 'POST' }).then(safeJson),
+
+  // FEATURE 10: resubmit
+  resubmitComplaint: (id: string, body: any) =>
+    fetchWithTimeout(`${BASE_URL}/complaints/${id}/resubmit`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    }).then(safeJson),
+
+  // FEATURE 11: officer leave
+  addOfficerLeave: (officerId: string, date: string, reason: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/officers/${officerId}/leave`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ date, reason })
+    }).then(safeJson),
+  getOfficerLeave: (officerId: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/officers/${officerId}/leave`, {}).then(safeJson),
+  deleteOfficerLeave: (officerId: string, leaveId: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/officers/${officerId}/leave/${leaveId}`, { method: 'DELETE' }).then(safeJson),
+  getLeaveCalendar: (month: number, year: number) =>
+    fetchWithTimeout(`${BASE_URL}/admin/leave-calendar?month=${month}&year=${year}`, {}).then(safeJson),
+
+  // FEATURE 12: check flood
+  checkFlood: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/check-flood`, { method: 'POST' }).then(safeJson),
+
+  // FEATURE 16: webhooks
+  registerWebhook: (url: string, events: string[]) =>
+    fetchWithTimeout(`${BASE_URL}/admin/webhooks`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ url, events })
+    }).then(safeJson),
+  getWebhooks: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/webhooks`, {}).then(safeJson),
+  deleteWebhook: (id: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/webhooks/${id}`, { method: 'DELETE' }).then(safeJson),
+
+  // FEATURE 17: ward risk history
+  saveRiskSnapshot: (data: any) =>
+    fetchWithTimeout(`${BASE_URL}/admin/save-risk-snapshot`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(data)
+    }).then(safeJson),
+  getWardRiskHistory: (ward: string) =>
+    fetchWithTimeout(`${BASE_URL}/public/ward-risk-history/${ward}`, {}).then(safeJson),
+
+  // FEATURE 18: needs review
+  getNeedsReview: () =>
+    fetchWithTimeout(`${BASE_URL}/incidents/needs-review`, {}).then(safeJson),
+  acceptNeedsReview: (complaintId: string, category: string, confidence: number) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/needs-review/${complaintId}/accept`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ category, confidence })
+    }).then(safeJson),
+
+  // FEATURE 19: citizen leaderboard
+  getCitizenLeaderboard: () =>
+    fetchWithTimeout(`${BASE_URL}/public/citizen-leaderboard`, {}).then(safeJson),
 };

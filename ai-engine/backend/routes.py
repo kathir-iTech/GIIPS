@@ -13,13 +13,16 @@ import logging
 from collections import Counter
 from fastapi import APIRouter, HTTPException, Depends, Query, UploadFile, File, Request, Response, WebSocket, WebSocketDisconnect
 from sqlalchemy.orm import Session, joinedload
-from sqlalchemy import func, and_, extract, text, or_, case
+from sqlalchemy import func, and_, extract, text, or_, case, Text
 from typing import List, Dict, Any, Optional
 from datetime import datetime, timedelta
 from pathlib import Path
 from pydantic import BaseModel
+from cryptography.fernet import Fernet
+from base64 import urlsafe_b64encode
+import hashlib
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -47,6 +50,7 @@ from models import (
     VerifyEmailRequest,
     WithdrawRequest,
     CategoryCorrectRequest,
+    WebhookRegister,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status, get_pool
@@ -112,6 +116,35 @@ def _write_audit_log(db: Session, user_id: Optional[str], user_email: Optional[s
     except Exception:
         logger.error("Audit log write failed for action=%s target=%s", action, target)
         db.rollback()
+
+
+def _get_fernet():
+    key = hashlib.pbkdf2_hmac('sha256', os.environ.get("GIIPS_JWT_SECRET", "giips-default-secret").encode(), b'giips-salt', 100000)
+    return Fernet(urlsafe_b64encode(key))
+
+def _encrypt_note(plaintext: str) -> str:
+    if not plaintext:
+        return ""
+    return _get_fernet().encrypt(plaintext.encode()).decode()
+
+def _decrypt_note(ciphertext: str) -> str:
+    if not ciphertext:
+        return ""
+    try:
+        return _get_fernet().decrypt(ciphertext.encode()).decode()
+    except:
+        return ciphertext
+
+
+async def _fire_webhooks(event: str, payload: dict, db: Session):
+    import httpx
+    hooks = db.query(Webhook).filter(Webhook.events.contains(event)).all()
+    async with httpx.AsyncClient(timeout=10) as client:
+        for h in hooks:
+            try:
+                await client.post(h.url, json={"event": event, "payload": payload})
+            except:
+                pass
 
 
 def _create_notification(db: Session, user_id: str, notification_type: str, complaint_id: Optional[str] = None, data: Optional[dict] = None):
@@ -300,6 +333,11 @@ async def simulate(additional_teams: int, db: Session = Depends(get_db)):
     return await SpatialService().simulate_resources(db, additional_teams)
 
 executive_router = APIRouter(prefix="/executive", tags=["Executive"])
+
+def get_executive_user(db_user: User = Depends(get_current_user)):
+    if db_user.role != "Executive":
+        raise HTTPException(status_code=403, detail="Executive access required")
+    return db_user
 
 @executive_router.get("/summary")
 async def get_executive_summary(db: Session = Depends(get_db)):
@@ -582,11 +620,70 @@ async def get_daily_briefing(db: Session = Depends(get_db), current_user: User =
     }
 
 
+@executive_router.post("/budget")
+def log_budget(body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    budget = KpiBudget(
+        department=body["department"],
+        month=body.get("month", str(datetime.utcnow().month)),
+        year=body.get("year", datetime.utcnow().year),
+        budget_allocated=body.get("budget_allocated", 0.0),
+        budget_spent=body.get("budget_spent", 0.0),
+        created_by=db_user.id,
+    )
+    db.add(budget)
+    db.commit()
+    return {"message": "Budget logged", "id": budget.id}
+
+@executive_router.get("/budget")
+def get_budget(department: str = None, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    q = db.query(KpiBudget)
+    if department:
+        q = q.filter(KpiBudget.department == department)
+    rows = q.order_by(KpiBudget.year.desc(), KpiBudget.month.desc()).limit(50).all()
+    return [{"id": r.id, "department": r.department, "month": r.month, "year": r.year, "budget_allocated": r.budget_allocated, "budget_spent": r.budget_spent, "created_by": r.created_by} for r in rows]
+
+
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
 cluster_router = APIRouter(prefix="/cluster", tags=["Clustering"])
 priority_router = APIRouter(prefix="/priority", tags=["Priority"])
 dashboard_router = APIRouter(prefix="/dashboard", tags=["Dashboard"])
 incident_router = APIRouter(prefix="/incidents", tags=["Incidents"])
+@incident_router.patch("/{id}/dependencies")
+def update_dependencies(id: str, body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    incident = db.query(Incident).filter(Incident.id == id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    for dep_id in body.get("blocks", []):
+        if not db.query(Incident).filter(Incident.id == dep_id).first():
+            raise HTTPException(status_code=404, detail=f"Incident {dep_id} not found")
+        existing = db.query(IncidentDependency).filter(IncidentDependency.incident_id == id, IncidentDependency.depends_on_id == dep_id).first()
+        if not existing:
+            dep = IncidentDependency(incident_id=id, depends_on_id=dep_id, created_by=db_user.id, reason=body.get("reason", ""))
+            db.add(dep)
+    for dep_id in body.get("blocked_by", []):
+        if not db.query(Incident).filter(Incident.id == dep_id).first():
+            raise HTTPException(status_code=404, detail=f"Incident {dep_id} not found")
+        existing = db.query(IncidentDependency).filter(IncidentDependency.incident_id == dep_id, IncidentDependency.depends_on_id == id).first()
+        if not existing:
+            dep = IncidentDependency(incident_id=dep_id, depends_on_id=id, created_by=db_user.id, reason=body.get("reason", ""))
+            db.add(dep)
+    db.commit()
+    return {"message": "Dependencies updated"}
+
+@incident_router.get("/{id}/dependencies")
+def get_dependencies(id: str, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    incident = db.query(Incident).filter(Incident.id == id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    blocks = db.query(IncidentDependency).filter(IncidentDependency.incident_id == id).all()
+    blocked_by = db.query(IncidentDependency).filter(IncidentDependency.depends_on_id == id).all()
+    return {
+        "blocks": [{"incident_id": d.depends_on_id, "reason": d.reason} for d in blocks],
+        "blocked_by": [{"incident_id": d.incident_id, "reason": d.reason} for d in blocked_by]
+    }
+
 complaint_router = APIRouter(prefix="/complaints", tags=["Complaints"])
 officer_router = APIRouter(prefix="/officer", tags=["Officer"])
 
@@ -824,6 +921,27 @@ async def upload_complaint_photo(
         "photoDuplicateOf": complaint.photo_duplicate_of,
         "message": "Photo uploaded successfully." + flag_msg,
     }
+
+
+@complaint_router.post("/{id}/upload-multi")
+async def upload_multi_photo(id: str, files: List[UploadFile] = File(...), db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    complaint = db.query(Complaint).filter(Complaint.id == id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    if len(files) > 3:
+        raise HTTPException(status_code=400, detail="Maximum 3 photos allowed")
+    storage = S3Storage()
+    paths = []
+    for f in files:
+        valid, err = validate_file(f)
+        if not valid:
+            raise HTTPException(status_code=400, detail=err)
+        path = await storage.save(f, f"complaints/{id}/photos")
+        paths.append(path)
+    existing = json.loads(complaint.photo_paths) if complaint.photo_paths else []
+    complaint.photo_paths = json.dumps(existing + paths)
+    db.commit()
+    return {"message": "Photos uploaded", "paths": paths}
 
 
 @complaint_router.get("/{complaint_id}/photo")
@@ -1205,6 +1323,31 @@ async def delete_draft(draft_id: str, db_user: User = Depends(get_current_user),
     db.delete(draft)
     db.commit()
     return {"success": True}
+
+
+@complaint_router.post("/{id}/resubmit")
+def resubmit_complaint(id: str, body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    original = db.query(Complaint).filter(Complaint.id == id).first()
+    if not original:
+        raise HTTPException(status_code=404, detail="Original complaint not found")
+    if original.user_id != db_user.id:
+        raise HTTPException(status_code=403, detail="Not your complaint")
+    new_id = f"COMP-{str(uuid.uuid4())[:8].upper()}"
+    new_c = Complaint(
+        id=new_id,
+        title=body.get("title", original.title),
+        description=body.get("description", original.description),
+        location=original.location,
+        ward=original.ward,
+        predicted_category=original.predicted_category,
+        latitude=original.latitude,
+        longitude=original.longitude,
+        user_id=db_user.id,
+        resubmission_of=original.id,
+    )
+    db.add(new_c)
+    db.commit()
+    return {"message": "Resubmitted", "new_complaint_id": new_id}
 
 
 # === Classification Routes ===
@@ -2045,6 +2188,50 @@ async def merge_single_incident(incident_id: str, body: MergeSingleRequest, db_u
     }
 
 
+@incident_router.get("/merge-suggestions")
+def get_merge_suggestions(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    rows = db.query(MergeSuggestion).filter(MergeSuggestion.status == "pending").order_by(MergeSuggestion.similarity_score.desc()).limit(20).all()
+    result = []
+    for r in rows:
+        src = db.query(Incident).filter(Incident.id == r.incident_id).first()
+        tgt = db.query(Incident).filter(Incident.id == r.suggested_merge_id).first()
+        result.append({
+            "id": r.id,
+            "incident_id": r.incident_id,
+            "incident_number": src.incident_number if src else r.incident_id,
+            "suggested_merge_id": r.suggested_merge_id,
+            "suggested_merge_number": tgt.incident_number if tgt else r.suggested_merge_id,
+            "similarity_score": r.similarity_score,
+            "status": r.status,
+        })
+    return result
+
+@incident_router.post("/merge-suggestions/{id}/accept")
+def accept_merge_suggestion(id: str, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    sug = db.query(MergeSuggestion).filter(MergeSuggestion.id == id).first()
+    if not sug:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+    sug.status = "accepted"
+    db.commit()
+    return {"message": "Merge suggestion accepted, use existing merge endpoint"}
+
+@incident_router.post("/merge-suggestions/{id}/dismiss")
+def dismiss_merge_suggestion(id: str, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    sug = db.query(MergeSuggestion).filter(MergeSuggestion.id == id).first()
+    if not sug:
+        raise HTTPException(status_code=404, detail="Suggestion not found")
+    sug.status = "dismissed"
+    sug.dismissed_by = db_user.id
+    db.commit()
+    return {"message": "Merge suggestion dismissed"}
+
+
 @incident_router.post("/{incident_id}/split/{complaint_id}")
 async def split_complaint(incident_id: str, complaint_id: str, _: None = Depends(check_complaint_rate_limit), db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Remove a complaint from an incident and create a new standalone incident for it."""
@@ -2434,7 +2621,7 @@ async def update_private_note(incident_id: str, body: NoteUpdateRequest, db_user
     incident = db.query(Incident).filter(Incident.id == incident_id).first()
     if not incident:
         raise HTTPException(status_code=404, detail="Incident not found")
-    incident.private_note = body.note
+    incident.private_note = _encrypt_note(body.note)
     incident.private_note_updated_at = datetime.utcnow()
     # Recompute resolution quality score when note changes
     quality = 0
@@ -3023,6 +3210,16 @@ async def login(user: UserLogin, request: Request, response: Response, _: None =
         _write_audit_log(db, None, user.email, None, "login", "auth", "failure", "Invalid credentials")
         raise HTTPException(status_code=401, detail="Invalid credentials")
     db_user.last_login = datetime.utcnow()
+    # FEATURE 2: login streak
+    last = db_user.last_login
+    today = datetime.utcnow().date()
+    if last:
+        if last.date() == today - timedelta(days=1):
+            db_user.login_streak = (db_user.login_streak or 0) + 1
+        elif last.date() < today - timedelta(days=1):
+            db_user.login_streak = 1
+    else:
+        db_user.login_streak = 1
     db.commit()
     token = create_access_token({"sub": db_user.email, "role": db_user.role})
     set_auth_cookie(response, token)
@@ -3145,12 +3342,6 @@ async def get_ws_token(db_user: User = Depends(get_current_user)):
 
 admin_router = APIRouter(prefix="/admin", tags=["Admin"])
 
-def get_executive_user(db_user: User = Depends(get_current_user)):
-    """Verify user is Executive role."""
-    if db_user.role != "Executive":
-        raise HTTPException(status_code=403, detail="Executive access required")
-    return db_user
-
 @admin_router.get("/officers")
 async def get_officers(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Get all officers."""
@@ -3264,6 +3455,38 @@ def get_zone_age_distribution(db: Session = Depends(get_db), current_user: User 
         elif days <= 90: zones[zone]["30-90d"] += 1
         else: zones[zone]["90d+"] += 1
     return [{"zone": z, **buckets} for z, buckets in zones.items()]
+
+@admin_router.get("/daily-volume")
+def get_daily_volume(days: int = Query(90, le=365), db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    """Return complaint count per day for the last N days."""
+    from datetime import datetime, timedelta
+    cutoff = datetime.utcnow() - timedelta(days=days)
+    rows = db.query(
+        func.date(Complaint.created_at).label("day"),
+        func.count(Complaint.id).label("count")
+    ).filter(Complaint.created_at >= cutoff).group_by(func.date(Complaint.created_at)).order_by("day").all()
+    result = {row.day: row.count for row in rows}
+    return result
+
+@admin_router.post("/training-feedback")
+def record_training_feedback(complaint_id: str, predicted: str, corrected: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    fb = TrainingFeedback(
+        complaint_id=complaint_id,
+        original_text=f"{complaint.title} {complaint.description}",
+        predicted_category=predicted,
+        corrected_category=corrected,
+    )
+    db.add(fb)
+    db.commit()
+    return {"message": "Feedback recorded"}
+
+@admin_router.get("/training-feedback")
+def list_training_feedback(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    rows = db.query(TrainingFeedback).order_by(TrainingFeedback.corrected_at.desc()).limit(100).all()
+    return [{"id": r.id, "complaint_id": r.complaint_id, "original_text": r.original_text[:200], "predicted": r.predicted_category, "corrected": r.corrected_category, "corrected_at": r.corrected_at.isoformat()} for r in rows]
 
 @admin_router.get("/departments")
 async def get_departments(db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
@@ -4061,6 +4284,35 @@ async def bulk_close_incidents(body: BulkCloseRequest, db_user: User = Depends(g
     return {"success_count": success_count, "total": len(body.incident_ids)}
 
 
+# === F18: Needs review queue ===
+
+@incident_router.get("/needs-review")
+def get_needs_review(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    complaints = db.query(Complaint).filter(
+        Complaint.confidence.isnot(None),
+        Complaint.confidence < 0.4,
+        Complaint.incident_id.is_(None)
+    ).order_by(Complaint.created_at.desc()).limit(50).all()
+    return [{"id": c.id, "title": c.title, "description": c.description[:200], "category": c.predicted_category, "confidence": c.confidence, "ward": c.ward, "created_at": c.created_at.isoformat()} for c in complaints]
+
+@incident_router.post("/needs-review/{complaint_id}/accept")
+def accept_needs_review(complaint_id: str, body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    complaint = db.query(Complaint).filter(Complaint.id == complaint_id).first()
+    if not complaint:
+        raise HTTPException(status_code=404, detail="Complaint not found")
+    complaint.predicted_category = body.get("category", complaint.predicted_category)
+    complaint.confidence = body.get("confidence", 0.8)
+    from pipeline import process_complaint_pipeline
+    import asyncio
+    asyncio.create_task(process_complaint_pipeline(complaint_id, db))
+    db.commit()
+    return {"message": "Moved to normal queue"}
+
+
 # === Feature 15: Officer incident acceptance ===
 
 @incident_router.patch("/{incident_id}/accept")
@@ -4277,6 +4529,30 @@ async def get_confidence_distribution(db_user: User = Depends(get_executive_user
     return [{"bucket": k, "count": v} for k, v in buckets.items()]
 
 
+# === F16: Webhook management ===
+
+@admin_router.post("/webhooks")
+def register_webhook(body: WebhookRegister, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    wh = Webhook(url=body.url, events=",".join(body.events), created_by=db_user.id)
+    db.add(wh)
+    db.commit()
+    return {"message": "Webhook registered", "id": wh.id}
+
+@admin_router.get("/webhooks")
+def list_webhooks(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    rows = db.query(Webhook).all()
+    return [{"id": r.id, "url": r.url, "events": r.events.split(","), "created_by": r.created_by, "created_at": r.created_at.isoformat()} for r in rows]
+
+@admin_router.delete("/webhooks/{webhook_id}")
+def delete_webhook(webhook_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    wh = db.query(Webhook).filter(Webhook.id == webhook_id).first()
+    if not wh:
+        raise HTTPException(status_code=404, detail="Webhook not found")
+    db.delete(wh)
+    db.commit()
+    return {"message": "Webhook deleted"}
+
+
 # === Feature 12: Department capacity planning (executive) ===
 
 @admin_router.get("/department-capacity")
@@ -4321,6 +4597,84 @@ async def get_department_capacity(db_user: User = Depends(get_executive_user), d
 
 
 # === Feature 6: Citizen trust score ===
+
+@admin_router.post("/officers/{officer_id}/leave")
+def add_officer_leave(officer_id: str, body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    leave = OfficerLeave(officer_id=officer_id, date=body["date"], reason=body.get("reason", ""))
+    db.add(leave)
+    db.commit()
+    return {"message": "Leave added"}
+
+@admin_router.get("/officers/{officer_id}/leave")
+def get_officer_leave(officer_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    rows = db.query(OfficerLeave).filter(OfficerLeave.officer_id == officer_id).order_by(OfficerLeave.date).all()
+    return [{"id": r.id, "date": r.date, "reason": r.reason} for r in rows]
+
+@admin_router.delete("/officers/{officer_id}/leave/{leave_id}")
+def delete_officer_leave(officer_id: str, leave_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    leave = db.query(OfficerLeave).filter(OfficerLeave.id == leave_id, OfficerLeave.officer_id == officer_id).first()
+    if not leave:
+        raise HTTPException(status_code=404, detail="Leave not found")
+    db.delete(leave)
+    db.commit()
+    return {"message": "Leave deleted"}
+
+@admin_router.get("/leave-calendar")
+def get_leave_calendar(month: int = None, year: int = None, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    from datetime import datetime
+    m = month or datetime.utcnow().month
+    y = year or datetime.utcnow().year
+    prefix = f"{y}-{m:02d}"
+    rows = db.query(OfficerLeave).filter(OfficerLeave.date.like(f"{prefix}%")).all()
+    return [{"officer_id": r.officer_id, "date": r.date, "reason": r.reason} for r in rows]
+
+
+@admin_router.post("/check-flood")
+def check_flood(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    """Check for flood events: >50 complaints in same category/ward within 1 hour."""
+    from datetime import datetime, timedelta
+    one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+    rows = db.query(Complaint.predicted_category, Complaint.ward, func.count(Complaint.id).label("cnt")).filter(
+        Complaint.created_at >= one_hour_ago
+    ).group_by(Complaint.predicted_category, Complaint.ward).having(func.count(Complaint.id) > 50).all()
+    events = []
+    for cat, ward, cnt in rows:
+        inc_id = f"FLOOD-{str(uuid.uuid4())[:8].upper()}"
+        inc = Incident(
+            id=inc_id, incident_number=inc_id, category=cat, ward=ward,
+            cluster_size=cnt, priority_score=95, priority_label="Critical",
+            summary=f"Flood alert: {cnt} {cat} complaints in Ward {ward} in 1h",
+            status="open", days_open=0,
+        )
+        db.add(inc)
+        execs = db.query(User).filter(User.role == "Executive").all()
+        for ex in execs:
+            notif = Notification(user_id=ex.id, type="flood_event", data=json.dumps({"incident_id": inc_id, "category": cat, "ward": ward, "count": cnt}))
+            db.add(notif)
+        events.append({"incident_id": inc_id, "category": cat, "ward": ward, "count": cnt})
+    db.commit()
+    if events:
+        from ws_manager import manager
+        import asyncio
+        try:
+            loop = asyncio.get_event_loop()
+            if loop.is_running():
+                loop.create_task(manager.broadcast("complaint:flood", json.dumps(events)))
+        except RuntimeError:
+            pass
+    return {"events": events}
+
+
+# === F17: Ward risk snapshot ===
+
+@admin_router.post("/save-risk-snapshot")
+def save_risk_snapshot(data: dict, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    for ward_entry in data.get("wards", []):
+        wh = WardRiskHistory(ward=str(ward_entry.get("ward", "")), risk_score=float(ward_entry.get("riskScore", 0)))
+        db.add(wh)
+    db.commit()
+    return {"message": "Snapshot saved"}
+
 
 @complaint_router.get("/trust-score")
 async def get_citizen_trust_score(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
@@ -4429,6 +4783,12 @@ def get_ward_improvement(db: Session = Depends(get_db)):
         "top_5_improved": results[:5],
         "bottom_5_deteriorated": results[-5:] if len(results) >= 5 else results,
     }
+
+
+@public_router.get("/public/ward-risk-history/{ward}")
+def get_ward_risk_history(ward: str, db: Session = Depends(get_db)):
+    rows = db.query(WardRiskHistory).filter(WardRiskHistory.ward == ward).order_by(WardRiskHistory.snapshot_at.desc()).limit(30).all()
+    return [{"risk_score": r.risk_score, "snapshot_at": r.snapshot_at.isoformat()} for r in rows]
 
 
 # === Public Endpoints (no auth required) ===
@@ -4929,4 +5289,30 @@ async def public_resolved_gallery(db: Session = Depends(get_db)):
             "resolution_photo_url": presigned_url,
         })
     return result
+
+
+@public_router.get("/public/citizen-leaderboard")
+def get_citizen_leaderboard(db: Session = Depends(get_db)):
+    citizens = db.query(User).filter(User.role == "Citizen", User.show_on_leaderboard == True).all()
+    result = []
+    for c in citizens:
+        total = db.query(Complaint).filter(Complaint.user_id == c.id).count()
+        if total == 0:
+            continue
+        resolved = db.query(Complaint).join(Incident, Complaint.incident_id == Incident.id).filter(
+            Complaint.user_id == c.id, Incident.status.in_(["resolved", "closed"])
+        ).count()
+        ratings = db.query(Complaint.citizen_rating).filter(Complaint.user_id == c.id, Complaint.citizen_rating.isnot(None)).all()
+        avg_rating = sum(r[0] for r in ratings) / len(ratings) if ratings else 0
+        name_parts = c.full_name.split()
+        display_name = name_parts[0] + (" " + name_parts[-1][0] + "." if len(name_parts) > 1 else "")
+        result.append({
+            "name": display_name,
+            "ward": c.ward,
+            "complaint_count": total,
+            "resolution_rate": round(resolved / total * 100, 1) if total > 0 else 0,
+            "avg_rating": round(avg_rating, 1),
+        })
+    result.sort(key=lambda x: x["complaint_count"], reverse=True)
+    return result[:10]
 

@@ -23,6 +23,8 @@ interface User {
   ward?: string;
   district?: string;
   department?: string;
+  login_streak?: number;
+  show_on_leaderboard?: boolean;
 }
 
 interface AuthContextType {

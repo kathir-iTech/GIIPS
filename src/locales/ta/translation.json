@@ -428,7 +428,9 @@
     "mergeNoticeText": "உங்கள் புகார் இதே பிரச்சினையின் {{count}} அறிக்கை(களுடன்) தொகுக்கப்பட்டுள்ளது.",
     "offlineQueueMessage": "{{count}} புகார் நிலுவையில் — இணைக்கும்போது சமர்ப்பிக்கப்படும்",
     "offlineQueueMessagePlural": "{{count}} புகார்கள் நிலுவையில் — இணைக்கும்போது சமர்ப்பிக்கப்படும்",
-    "analyzingDescription": "விளக்கம் பகுப்பாய்வு செய்யப்படுகிறது..."
+    "analyzingDescription": "விளக்கம் பகுப்பாய்வு செய்யப்படுகிறது...",
+    "quickStart": "விரைவு தொடக்கம் — வார்ப்புருவை தேர்ந்தெடுக்கவும்",
+    "pickTemplate": "படிவத்தை முன்கூட்டியே நிரப்ப கீழே உள்ள வார்ப்புருவை தேர்ந்தெடுக்கவும், பின்னர் தேவையானபடி திருத்தவும்."
   },
 
   "overview": {
@@ -436,7 +438,9 @@
     "openToday": "இன்று திறக்கப்பட்டது",
     "resolvedToday": "இன்று தீர்க்கப்பட்டது",
     "newToday": "புதிய சமர்ப்பிப்புகள்",
-    "tasksLoading": "பணிகள் ஏற்றப்படுகின்றன..."
+    "tasksLoading": "பணிகள் ஏற்றப்படுகின்றன...",
+    "streakBadge": "🔥 {{count}} நாள் தொடர்",
+    "streakBadge_plural": "🔥 {{count}} நாட்கள் தொடர்"
   },
 
   "complaintDetail": {
@@ -557,7 +561,10 @@
     "escalationSubmitted": "சமர்ப்பிக்கப்பட்டது",
     "escalationClassified": "வகைப்படுத்தப்பட்டது",
     "escalationRouted": "அனுப்பப்பட்டது",
-    "escalationEscalated": "மேல்நிலைக்கு அனுப்பப்பட்டது"
+    "escalationEscalated": "மேல்நிலைக்கு அனுப்பப்பட்டது",
+    "downloadCertificate": "சான்றிதழைப் பதிவிறக்கவும்",
+    "fieldWard": "வார்டு:",
+    "fieldDate": "தேதி:"
   },
 
   "myComplaints": {
@@ -1141,7 +1148,14 @@
     "complaintCount": "எண்ணிக்கை",
     "avgResolutionDays": "சராசரி தீர்வு நாட்கள்",
     "categoryTrendTitle": "வகை போக்கு",
-    "categoryTrendSubtitle": "வகை வாரியாக மாதாந்திர புகார்கள்"
+    "categoryTrendSubtitle": "வகை வாரியாக மாதாந்திர புகார்கள்",
+    "severityHeatmap": "புகார் தீவிர வெப்ப வரைபடம்",
+    "last90Days": "கடந்த 90 நாட்கள் — தினசரி புகார் அளவு",
+    "ageDistribution": "சம்பவ வயது விநியோகம்",
+    "fresh": "புதியது (0-7 நா)",
+    "developing": "வளரும் (7-30 நா)",
+    "chronic": "நாள்பட்ட (30-90 நா)",
+    "criticalBacklog": "முக்கியமான நிலுவை (90 நா+)"
   },
 
   "la": {
@@ -1265,7 +1279,14 @@
     "hotspotWard": "வார்டு:",
     "geoClusterIncidents": "சம்பவங்கள்",
     "geoClusterCategory": "வகை:",
-    "daysOpenUnit": "d திறந்த"
+    "daysOpenUnit": "d திறந்த",
+    "mapLayers": "வரைபட அடுக்குகள்",
+    "wardHeatmap": "வார்டு வெப்ப வரைபடம்",
+    "incidentMarkers": "சம்பவ குறிப்பான்கள்",
+    "citizenPins": "குடிமக்கள் குறிகள்",
+    "geoClusters": "புவியியல் தொகுப்புகள்",
+    "geofences": "புவி வேலிகள்",
+    "hotspots": "ஹாட்ஸ்பாட்கள்"
   },
 
   "track": {
@@ -1510,5 +1531,16 @@
   "beneficiaries": "பயனாளிகள்",
   "photoTooLarge": "புகைப்படம் அதிகபட்ச அளவான 5MB ஐ விட அதிகமாக உள்ளது.",
   "photoInvalidType": "தவறான கோப்பு வகை. அனுமதிக்கப்பட்ட வகைகள்: jpg, png, webp.",
-  "spamDetected": "புகார் உரை ஸ்பேமாக உள்ளது அல்லது தவறான எழுத்துக்களை கொண்டுள்ளது."
+  "spamDetected": "புகார் உரை ஸ்பேமாக உள்ளது அல்லது தவறான எழுத்துக்களை கொண்டுள்ளது.",
+  "citizenLeaderboard": {
+    "title": "குடிமக்கள் தரவரிசை",
+    "subtitle": "முதல் 10 மிகவும் சுறுசுறுப்பான குடிமக்கள் — பெயர் தெரியாத மற்றும் விருப்பம் மட்டும்",
+    "empty": "இதுவரை எந்த குடிமகனும் தரவரிசையில் சேரவில்லை.",
+    "name": "பெயர்",
+    "ward": "வார்டு",
+    "complaints": "புகார்கள்",
+    "resolutionRate": "தீர்வு %",
+    "avgRating": "சராசரி மதிப்பீடு",
+    "wardPrefix": "வார்டு {{ward}}"
+  }
 }

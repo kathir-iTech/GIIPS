@@ -429,7 +429,9 @@
     "mergeNoticeText": "Your complaint has been grouped with {{count}} report(s) of the same issue.",
     "offlineQueueMessage": "{{count}} complaint pending — will submit when connected",
     "offlineQueueMessagePlural": "{{count}} complaints pending — will submit when connected",
-    "analyzingDescription": "Analyzing description..."
+    "analyzingDescription": "Analyzing description...",
+    "quickStart": "Quick Start — Pick a Template",
+    "pickTemplate": "Choose a template below to pre-fill the form, then edit as needed."
   },
 
   "overview": {
@@ -437,7 +439,9 @@
     "openToday": "Open Today",
     "resolvedToday": "Resolved Today",
     "newToday": "New Submissions",
-    "tasksLoading": "Loading tasks..."
+    "tasksLoading": "Loading tasks...",
+    "streakBadge": "🔥 {{count}} day streak",
+    "streakBadge_plural": "🔥 {{count}} day streak"
   },
 
   "complaintDetail": {
@@ -559,7 +563,10 @@
     "escalationSubmitted": "Submitted",
     "escalationClassified": "Classified",
     "escalationRouted": "Routed",
-    "escalationEscalated": "Escalated"
+    "escalationEscalated": "Escalated",
+    "downloadCertificate": "Download Certificate",
+    "fieldWard": "Ward:",
+    "fieldDate": "Date:"
   },
 
   "myComplaints": {
@@ -1154,7 +1161,14 @@
     "complaintCount": "Count",
     "avgResolutionDays": "Avg Resolution Days",
     "categoryTrendTitle": "Category Trend",
-    "categoryTrendSubtitle": "Monthly complaint count by category"
+    "categoryTrendSubtitle": "Monthly complaint count by category",
+    "severityHeatmap": "Complaint Severity Heatmap",
+    "last90Days": "Last 90 days — daily complaint volume",
+    "ageDistribution": "Incident Age Distribution",
+    "fresh": "Fresh (0-7d)",
+    "developing": "Developing (7-30d)",
+    "chronic": "Chronic (30-90d)",
+    "criticalBacklog": "Critical Backlog (90d+)"
   },
 
   "la": {
@@ -1287,7 +1301,14 @@
     "compareIncidents": "Incidents",
     "compareCritical": "Critical",
     "compareHistoricalNote": "Historical data will appear once sufficient records are collected.",
-    "compareNoData": "No comparison data available yet."
+    "compareNoData": "No comparison data available yet.",
+    "mapLayers": "Map Layers",
+    "wardHeatmap": "Ward Heatmap",
+    "incidentMarkers": "Incident Markers",
+    "citizenPins": "Citizen Pins",
+    "geoClusters": "Geographic Clusters",
+    "geofences": "Geofences",
+    "hotspots": "Hotspots"
   },
 
   "track": {
@@ -1532,5 +1553,16 @@
   "beneficiaries": "Beneficiaries",
   "photoTooLarge": "Photo exceeds maximum size of 5MB.",
   "photoInvalidType": "Invalid file type. Allowed types: jpg, png, webp.",
-  "spamDetected": "Complaint text appears to be spam or contains invalid characters."
+  "spamDetected": "Complaint text appears to be spam or contains invalid characters.",
+  "citizenLeaderboard": {
+    "title": "Citizen Leaderboard",
+    "subtitle": "Top 10 most active citizens — anonymized and opt-in only",
+    "empty": "No citizens have opted into the leaderboard yet.",
+    "name": "Name",
+    "ward": "Ward",
+    "complaints": "Complaints",
+    "resolutionRate": "Resolved %",
+    "avgRating": "Avg Rating",
+    "wardPrefix": "Ward {{ward}}"
+  }
 }

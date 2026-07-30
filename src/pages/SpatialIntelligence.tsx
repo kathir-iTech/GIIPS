@@ -143,6 +143,7 @@ const SpatialIntelligence = () => {
     prediction: true,
     deptWorkload: true,
   });
+  const [activeLayers, setActiveLayers] = useState({ heatmap: true, incidents: true, citizenPins: true, clusters: true, geofences: true, hotspots: true });
   const [filters, setFilters] = useState({
     district: 'all',
     category: 'all',
@@ -549,6 +550,27 @@ const SpatialIntelligence = () => {
             </div>
           </div>
 
+          <div className="layer-controls">
+            <h4>{t('spatialIntelligence.mapLayers')}</h4>
+            {[
+              { key: 'heatmap', label: t('spatialIntelligence.wardHeatmap') },
+              { key: 'incidents', label: t('spatialIntelligence.incidentMarkers') },
+              { key: 'citizenPins', label: t('spatialIntelligence.citizenPins') },
+              { key: 'clusters', label: t('spatialIntelligence.geoClusters') },
+              { key: 'geofences', label: t('spatialIntelligence.geofences') },
+              { key: 'hotspots', label: t('spatialIntelligence.hotspots') },
+            ].map(layer => (
+              <label key={layer.key} className="layer-checkbox">
+                <input
+                  type="checkbox"
+                  checked={activeLayers[layer.key as keyof typeof activeLayers] !== false}
+                  onChange={() => setActiveLayers(prev => ({ ...prev, [layer.key]: !(prev[layer.key as keyof typeof activeLayers] !== false) }))}
+                />
+                {layer.label}
+              </label>
+            ))}
+          </div>
+
           <div className="panel-section">
             <h3><Filter size={14} /> {t('spatialIntelligence.sidebar.smartFilters')}</h3>
             <div className="filter-grid">
@@ -658,7 +680,7 @@ const SpatialIntelligence = () => {
               attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
             />
 
-            {layers.complaints && (
+            {activeLayers.heatmap && layers.complaints && (
               <GeoJSON
                 data={tamilNaduDistricts as any}
                 style={(feature: any) => {
@@ -695,7 +717,7 @@ const SpatialIntelligence = () => {
               />
             )}
 
-            {geofences.length > 0 && geofences.map((gf: any) => (
+            {activeLayers.geofences && geofences.length > 0 && geofences.map((gf: any) => (
               <Circle
                 key={gf.id}
                 center={[gf.lat, gf.lng]}
@@ -743,7 +765,7 @@ const SpatialIntelligence = () => {
               />
             )}
 
-            {layers.incidents && hotspots.map((hotspot: any, idx: number) => {
+            {activeLayers.hotspots && layers.incidents && hotspots.map((hotspot: any, idx: number) => {
               const lat = hotspot.lat ?? hotspot.latitude ?? hotspot.y;
               const lng = hotspot.lng ?? hotspot.longitude ?? hotspot.x;
               if (lat == null || lng == null) return null;
@@ -771,7 +793,7 @@ const SpatialIntelligence = () => {
               );
             })}
 
-            {layers.incidents && filteredIncidents.map((inc: any) => {
+            {activeLayers.incidents && layers.incidents && filteredIncidents.map((inc: any) => {
               const districtName = inc.district || mapWardToDistrict(inc.ward);
               const centroid = districtCentroids[districtName];
               if (!centroid) return null;
@@ -797,8 +819,8 @@ const SpatialIntelligence = () => {
               );
             })}
 
-            <ComplaintClusterLayer pins={complaintPins} visible={layers.complaintPins} />
-            {showGeoClusters && geoClusters.map((c: any, i: number) => (
+            {activeLayers.citizenPins && <ComplaintClusterLayer pins={complaintPins} visible={layers.complaintPins} />}
+            {activeLayers.clusters && showGeoClusters && geoClusters.map((c: any, i: number) => (
               <Circle key={i} center={c.center as [number, number]} radius={300} pathOptions={{color: getPriorityColor(c.category), fillOpacity: 0.15, weight: 2}}>
                 <Popup>
                   <strong>{c.count} {t('spatialIntelligence.geoClusterIncidents')}</strong><br/>

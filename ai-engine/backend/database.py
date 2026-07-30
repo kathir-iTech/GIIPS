@@ -300,6 +300,10 @@ class User(Base):
     # FEATURE 15: shift schedule
     current_shift = Column(String, nullable=True)
 
+    # FEATURE 2: login streak
+    login_streak = Column(Integer, default=0, nullable=False)
+    show_on_leaderboard = Column(Boolean, default=False, nullable=False)
+
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""
     __tablename__ = "incidents"
@@ -414,6 +418,12 @@ class Complaint(Base):
 
     # Urgency flag (set by ML pipeline)
     urgency_flag = Column(String, nullable=True, default="LOW")
+
+    # FEATURE 8: multi-photo
+    photo_paths = Column(Text, nullable=True)
+
+    # FEATURE 10: resubmission
+    resubmission_of = Column(String, nullable=True)
 
     # Relationship back to the aggregated incident
     incident = relationship("Incident", back_populates="complaints")
@@ -541,6 +551,74 @@ class ComplaintDraft(Base):
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
     updated_at = Column(DateTime, default=datetime.datetime.utcnow, onupdate=datetime.datetime.utcnow)
 
+# FEATURE 3: training feedback
+class TrainingFeedback(Base):
+    __tablename__ = "training_feedback"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    complaint_id = Column(String, ForeignKey("complaints.id"), nullable=True)
+    original_text = Column(Text, nullable=False)
+    predicted_category = Column(String, nullable=False)
+    corrected_category = Column(String, nullable=False)
+    corrected_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 4: incident dependencies
+class IncidentDependency(Base):
+    __tablename__ = "incident_dependencies"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    incident_id = Column(String, ForeignKey("incidents.id"), nullable=False)
+    depends_on_id = Column(String, ForeignKey("incidents.id"), nullable=False)
+    created_by = Column(String, nullable=False)
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 6: budget tracking
+class KpiBudget(Base):
+    __tablename__ = "kpi_budgets"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    department = Column(String, nullable=False)
+    month = Column(String, nullable=False)
+    year = Column(Integer, nullable=False)
+    budget_allocated = Column(Float, default=0.0)
+    budget_spent = Column(Float, default=0.0)
+    created_by = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 9: merge suggestions
+class MergeSuggestion(Base):
+    __tablename__ = "merge_suggestions"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    incident_id = Column(String, ForeignKey("incidents.id"), nullable=False)
+    suggested_merge_id = Column(String, ForeignKey("incidents.id"), nullable=False)
+    similarity_score = Column(Float, nullable=False)
+    status = Column(String, default="pending")
+    dismissed_by = Column(String, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 11: officer leave
+class OfficerLeave(Base):
+    __tablename__ = "officer_leave"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    officer_id = Column(String, ForeignKey("users.id"), nullable=False)
+    date = Column(String, nullable=False)
+    reason = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 16: webhooks
+class Webhook(Base):
+    __tablename__ = "webhooks"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    url = Column(String, nullable=False)
+    events = Column(Text, nullable=False)
+    created_by = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 17: ward risk history
+class WardRiskHistory(Base):
+    __tablename__ = "ward_risk_history"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    ward = Column(String, nullable=False, index=True)
+    risk_score = Column(Float, nullable=False)
+    snapshot_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Seed demo users
 def seed_demo_users():

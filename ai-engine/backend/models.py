@@ -312,3 +312,7 @@ class WithdrawRequest(BaseModel):
 
 class CategoryCorrectRequest(BaseModel):
     category: str = Field(..., min_length=1)
+
+class WebhookRegister(BaseModel):
+    url: str
+    events: List[str]

@@ -480,6 +480,33 @@ const ComplaintDetailPage = () => {
                   )}
                 </div>
 
+                {data?.incident?.status === 'resolved' && (
+                  <>
+                    <button className="certificate-btn" onClick={() => window.print()}>
+                      <Download size={14} /> {t('complaintDetail.downloadCertificate')}
+                    </button>
+                    <div className="resolution-certificate" id="resolution-certificate">
+                      <div className="cert-header">
+                        <h2>GIIPS — Resolution Certificate</h2>
+                        <p className="cert-subtitle">Governance Intelligence & Incident Prevention System</p>
+                      </div>
+                      <div className="cert-body">
+                        <p><strong>{t('complaintDetail.fieldIncidentId')}</strong> {data.incident.incident_number || data.incident.id}</p>
+                        <p><strong>{t('complaintDetail.fieldCategory')}</strong> {data.predicted_category}</p>
+                        <p><strong>{t('complaintDetail.fieldWard')}</strong> {data.ward}</p>
+                        <p><strong>{t('complaintDetail.description')}</strong> {data.description}</p>
+                        <p><strong>{t('complaintDetail.resolutionNote')}</strong> {data.incident.resolution_note || t('common.na')}</p>
+                        <p><strong>{t('complaintDetail.fieldDate')}</strong> {data.incident.status_changed_at ? new Date(data.incident.status_changed_at).toLocaleDateString() : t('common.na')}</p>
+                        <p><strong>{t('complaintDetail.fieldOfficerName')}</strong> {data.incident.accepted_by || t('common.na')}</p>
+                      </div>
+                      <div className="cert-footer">
+                        <p>GIIPS — AI Triage Layer for Tamil Nadu Governance</p>
+                        <p>{t('common.na')}</p>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 {user?.role === 'Officer' && (
                   <div className="forward-section">
                     <button className="forward-btn" onClick={() => { setForwardModalOpen(true); setForwardDept(''); setForwardResult(null); }}>

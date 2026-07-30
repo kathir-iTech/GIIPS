@@ -112,6 +112,10 @@ const Overview = () => {
           </div>
         </section>
 
+        {user && user.login_streak != null && user.login_streak >= 3 && (
+          <div className="streak-badge">🔥 {t('overview.streakBadge', { count: user.login_streak })}</div>
+        )}
+
         <section className="kpi-grid">
           <KPICard title="Critical" value={data.criticalIncidents} subtitle="Immediate attention" variant="critical" icon={AlertTriangle} />
           <KPICard title="High Priority" value={data.highPriorityIncidents} subtitle="Urgent action needed" icon={Clock} />

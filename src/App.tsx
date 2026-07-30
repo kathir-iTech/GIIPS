@@ -29,6 +29,7 @@ const CitizenServices = lazy(() => import('./pages/CitizenServices'));
 const GovernmentPortal = lazy(() => import('./pages/GovernmentPortal'));
 const TrackComplaint = lazy(() => import('./pages/TrackComplaint'));
 const Transparency = lazy(() => import('./pages/Transparency'));
+const CitizenLeaderboard = lazy(() => import('./pages/CitizenLeaderboard'));
 const CategoryGuide = lazy(() => import('./pages/CategoryGuide'));
 const OfficerManagement = lazy(() => import('./pages/OfficerManagement'));
 const DepartmentManagement = lazy(() => import('./pages/DepartmentManagement'));
@@ -98,6 +99,7 @@ function AnimatedRoutes() {
         <Route path="/government-portal" element={<GovernmentPortal />} />
         <Route path="/track" element={<TrackComplaint />} />
         <Route path="/transparency" element={<Transparency />} />
+        <Route path="/citizen-leaderboard" element={<CitizenLeaderboard />} />
         <Route path="/categories" element={<CategoryGuide />} />
         <Route path="/api-docs" element={<ApiDocs />} />
         <Route path="/resolved-gallery" element={<ResolvedGallery />} />

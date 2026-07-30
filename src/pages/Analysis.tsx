@@ -50,16 +50,52 @@ const Analysis = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [qualityData, setQualityData] = useState<QualityItem[] | null>(null);
+  const [dailyVolume, setDailyVolume] = useState<any>(null);
+  const [ageDistribution, setAgeDistribution] = useState<any>(null);
 
   useEffect(() => {
     let cancelled = false;
-    Promise.all([
-      api.getAnalytics(),
-      api.getComplaintQuality().catch(() => null),
-    ]).then(([d, q]) => {
-      if (!cancelled) { setData(d); if (q) setQualityData(q.distribution); }
-    }).catch(e => { if (!cancelled) setError(e.message); })
-    .finally(() => { if (!cancelled) setLoading(false); });
+    (async () => {
+      try {
+        const [d, q] = await Promise.all([
+          api.getAnalytics(),
+          api.getComplaintQuality().catch(() => null),
+        ]);
+        if (!cancelled) { setData(d); if (q) setQualityData(q.distribution); }
+
+        // FEATURE 1: daily volume
+        try {
+          const dv = await api.getDailyVolume(90);
+          if (typeof dv === 'object' && !dv.error) setDailyVolume(dv);
+        } catch {}
+
+        // FEATURE 14: age distribution
+        try {
+          const ad = await api.get('/admin/zone-age-distribution');
+          const adData = await ad.json();
+          if (adData && typeof adData === 'object') {
+            const buckets = [
+              { label: t('analysis.fresh'), from: 0, to: 7 },
+              { label: t('analysis.developing'), from: 7, to: 30 },
+              { label: t('analysis.chronic'), from: 30, to: 90 },
+              { label: t('analysis.criticalBacklog'), from: 90, to: Infinity },
+            ];
+            const allIncidents = Object.values(adData).flatMap((z: any) => z.buckets ? Object.entries(z.buckets).map(([k, v]) => ({ label: k, count: v })) : []);
+            setAgeDistribution(buckets.map(b => ({
+              label: b.label,
+              count: allIncidents.filter(i => {
+                const days = parseInt(i.label) || 0;
+                return days >= b.from && days < b.to;
+              }).reduce((s, i) => s + (typeof i.count === 'number' ? i.count : 0), 0)
+            })));
+          }
+        } catch {}
+      } catch (e) {
+        if (!cancelled) setError((e as any)?.message || 'Unknown error');
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    })();
     return () => { cancelled = true; };
   }, []);
 
@@ -317,6 +353,58 @@ const Analysis = () => {
             </div>
           </div>
         )}
+
+      {/* FEATURE 1: Severity Heatmap Calendar */}
+      {dailyVolume && Object.keys(dailyVolume).length > 0 && (
+        <div className="chart-card">
+          <h3>{t('analysis.severityHeatmap')}</h3>
+          <p className="chart-subtitle">{t('analysis.last90Days')}</p>
+          <div className="heatmap-calendar">
+            {(() => {
+              const today = new Date();
+              const cells = [];
+              for (let i = 89; i >= 0; i--) {
+                const d = new Date(today);
+                d.setDate(d.getDate() - i);
+                const key = d.toISOString().split('T')[0];
+                const count = dailyVolume[key] || 0;
+                let color = '#ebedf0';
+                if (count > 20) color = '#216e39';
+                else if (count > 10) color = '#30a14e';
+                else if (count > 5) color = '#9be9a8';
+                else if (count > 0) color = '#c6e48b';
+                cells.push(
+                  <div
+                    key={key}
+                    className="heatmap-cell"
+                    style={{ backgroundColor: color }}
+                    title={`${key}: ${count} complaints`}
+                  />
+                );
+              }
+              return cells;
+            })()}
+          </div>
+        </div>
+      )}
+
+      {/* FEATURE 14: Age Distribution Pie */}
+      {ageDistribution && ageDistribution.length > 0 && (
+        <div className="chart-card">
+          <h3>{t('analysis.ageDistribution')}</h3>
+          <Plot
+            data={[{
+              type: 'pie',
+              labels: ageDistribution.map((a: any) => a.label),
+              values: ageDistribution.map((a: any) => a.count),
+              marker: { colors: ['#22c55e', '#eab308', '#f97316', '#ef4444'] },
+              textinfo: 'label+percent',
+            }]}
+            layout={{ height: 350, margin: { t: 20, r: 20, b: 40, l: 40 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#e2e8f0' }, showlegend: true }}
+            config={{ responsive: true, displayModeBar: false }}
+          />
+        </div>
+      )}
 
       </div>
     </div>

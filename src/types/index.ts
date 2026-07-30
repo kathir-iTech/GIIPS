@@ -137,6 +137,8 @@ export interface CitizenComplaint {
     resolution_note?: string | null;
     days_open?: number | null;
     original_category?: string | null;
+    status_changed_at?: string | null;
+    accepted_by?: string | null;
     complaints?: Array<{
       id: string;
       complaint_number: string;
