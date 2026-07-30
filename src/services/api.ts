@@ -855,4 +855,71 @@ export const api = {
   // FEATURE 19: citizen leaderboard
   getCitizenLeaderboard: () =>
     fetchWithTimeout(`${BASE_URL}/public/citizen-leaderboard`, {}).then(safeJson),
+
+  // F1: sentiment trend
+  getSentimentTrend: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/sentiment-trend`, {}).then(safeJson),
+
+  // F2: peer reviews
+  submitPeerReview: (id: string, rating: number, comment?: string) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/${id}/peer-review`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ rating, comment })
+    }).then(safeJson),
+  getPeerReviews: (id: string) =>
+    fetchWithTimeout(`${BASE_URL}/incidents/${id}/peer-reviews`, {}).then(safeJson),
+  getPeerReviewSummary: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/peer-review-summary`, {}).then(safeJson),
+
+  // F5: geo heat trend
+  getGeoHeatTrend: () =>
+    fetchWithTimeout(`${BASE_URL}/public/geo-heat-trend`, {}).then(safeJson),
+
+  // F7: cost estimate
+  getCostEstimate: () =>
+    fetchWithTimeout(`${BASE_URL}/incidents/cost-estimate`, {}).then(safeJson),
+
+  // F8: batch import
+  batchImport: (file: File) => {
+    const formData = new FormData();
+    formData.append('file', file);
+    return fetchWithTimeout(`${BASE_URL}/admin/batch-import`, {
+      method: 'POST', body: formData
+    }).then(safeJson);
+  },
+
+  // F10: zone transfer
+  transferZone: (officerId: string, newZone: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/officers/${officerId}/zone`, {
+      method: 'PATCH', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ new_zone: newZone })
+    }).then(safeJson),
+
+  // F13: alert config
+  getAlertConfigs: () =>
+    fetchWithTimeout(`${BASE_URL}/executive/alert-config`, {}).then(safeJson),
+  setAlertConfig: (alertType: string, enabled: boolean, threshold?: number) =>
+    fetchWithTimeout(`${BASE_URL}/executive/alert-config`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ alert_type: alertType, enabled, threshold })
+    }).then(safeJson),
+
+  // F14: language stats
+  getLanguageStats: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/language-stats`, {}).then(safeJson),
+
+  // F15: response templates
+  createResponseTemplate: (title: string, message: string) =>
+    fetchWithTimeout(`${BASE_URL}/officer/response-templates`, {
+      method: 'POST', headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ title, message })
+    }).then(safeJson),
+  listResponseTemplates: () =>
+    fetchWithTimeout(`${BASE_URL}/officer/response-templates`, {}).then(safeJson),
+  deleteResponseTemplate: (templateId: string) =>
+    fetchWithTimeout(`${BASE_URL}/officer/response-templates/${templateId}`, { method: 'DELETE' }).then(safeJson),
+
+  // F18: councillor performance
+  getCouncillorPerformance: () =>
+    fetchWithTimeout(`${BASE_URL}/executive/councillor-performance`, {}).then(safeJson),
 };

@@ -17,7 +17,7 @@ import uuid
 from datetime import datetime, timedelta
 from typing import Optional
 
-from sqlalchemy import and_, or_
+from sqlalchemy import and_, or_, func
 from sqlalchemy.orm import Session
 
 from database import SessionLocal, Complaint, Incident, PriorityHistory, Geofence, User, AuditLog
@@ -172,6 +172,8 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
             merge_reason = "New incident created."
 
         priority_scorer = PriorityScorer()
+        db_user = db.query(User).filter(User.id == user_id).first() if user_id else None
+        trust_score = getattr(db_user, 'trust_score', None) if db_user else None
         priority_res = await priority_scorer.calculate(
             PriorityRequest(
                 incident_id=incident.id,
@@ -182,6 +184,7 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                 location_hints=[data.get("location", "")],
                 incident_latitude=data.get("lat"),
                 incident_longitude=data.get("lon"),
+                trust_score=trust_score,
             )
         )
 
@@ -212,6 +215,40 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                 incident.priority_label = "CRITICAL"
             elif incident.priority_score >= 50:
                 incident.priority_label = "HIGH"
+
+        # F11: Predict resolution time based on category historical avg + department backlog
+        cat_avg = db.query(func.avg(Incident.days_open)).filter(
+            Incident.category == category,
+            Incident.status == "resolved"
+        ).scalar() or 30.0
+        dept_backlog = db.query(Incident).filter(
+            Incident.category == category,
+            Incident.status.in_(["open", "in-progress"])
+        ).count()
+        complaint.predicted_resolution_days = round(cat_avg * (1 + dept_backlog * 0.05), 1)
+
+        # F17: Auto-tag complaint based on content analysis
+        auto_tags = set()
+        full_text = f"{complaint.title} {complaint.description}".lower()
+        flood_kw = ["flood", "rain", "water logging", "drainage", "sewage"]
+        if any(k in full_text for k in flood_kw):
+            auto_tags.add("monsoon")
+        landmarks = ["school", "temple", "church", "mosque", "hospital", "market", "park", "bus stand", "railway station"]
+        for lm in landmarks:
+            if lm in full_text:
+                auto_tags.add(f"near-{lm.replace(' ', '-')}")
+        if incident.cluster_size > 10:
+            auto_tags.add("high-impact")
+        if incident.days_open > 30:
+            auto_tags.add("chronic")
+        existing_tags = set()
+        if complaint.tags:
+            try:
+                existing_tags = set(json.loads(complaint.tags))
+            except (json.JSONDecodeError, TypeError):
+                existing_tags = set(t.strip() for t in complaint.tags.split(",") if t.strip())
+        all_tags = list(existing_tags | auto_tags)[:5]
+        complaint.tags = json.dumps(all_tags)
 
         # Create notification for the citizen when complaint is processed
         if user_id:

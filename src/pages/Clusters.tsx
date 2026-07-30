@@ -384,6 +384,39 @@ const Clusters = () => {
     }
   };
 
+  const renderNetworkGraph = (incident: any) => {
+    if (!incident?.complaints || incident.complaints.length < 2) return null;
+    const nodes = incident.complaints;
+    const width = 400;
+    const height = 250;
+    const cx = width / 2;
+    const cy = height / 2;
+    const radius = Math.min(width, height) / 3;
+    const nodePositions = nodes.map((_: any, i: number) => {
+      const angle = (2 * Math.PI * i) / nodes.length - Math.PI / 2;
+      return { x: cx + radius * Math.cos(angle), y: cy + radius * Math.sin(angle) };
+    });
+    return (
+      <div style={{ marginTop: '1rem', background: '#0f172a', borderRadius: '8px', padding: '1rem' }}>
+        <h4>{t('clusters.duplicateNetwork')}</h4>
+        <svg width={width} height={height} style={{ display: 'block', margin: '0 auto' }}>
+          {nodePositions.map((p: any, i: number) => (
+            <g key={i}>
+              <line x1={cx} y1={cy} x2={p.x} y2={p.y} stroke="#334155" strokeWidth={1} strokeDasharray="4,2" />
+              <circle cx={p.x} cy={p.y} r={18} fill="#1e293b" stroke={nodes[i].similarity_score && nodes[i].similarity_score > 0.8 ? '#22c55e' : '#f59e0b'} strokeWidth={2} />
+              <text x={p.x} y={p.y + 1} textAnchor="middle" fill="#e2e8f0" fontSize={8}>{(nodes[i].similarity_score * 100 || 0).toFixed(0)}%</text>
+            </g>
+          ))}
+          <circle cx={cx} cy={cy} r={24} fill="#3b82f6" opacity={0.8} />
+          <text x={cx} y={cy + 1} textAnchor="middle" fill="#fff" fontSize={10} fontWeight={600}>{nodes.length}</text>
+        </svg>
+        <p style={{ fontSize: '0.75rem', color: '#64748b', textAlign: 'center', marginTop: '0.5rem' }}>
+          {t('clusters.nodesCount', { count: nodes.length })} — {t('clusters.centerLabel')}
+        </p>
+      </div>
+    );
+  };
+
   const renderInvestigationCard = (inc: Incident) => {
     const color = getPriorityColor(inc.priority_label);
     return (
@@ -793,6 +826,7 @@ const Clusters = () => {
                         ))}
                       </div>
                     )}
+                    {renderNetworkGraph(selectedIncident)}
                   </SectionCard>
 
                   {/* Knowledge Insights */}

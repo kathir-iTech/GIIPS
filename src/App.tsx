@@ -41,6 +41,9 @@ const OversightDashboard = lazy(() => import('./pages/OversightDashboard'));
 const Notifications = lazy(() => import('./pages/Notifications'));
 const ApiDocs = lazy(() => import('./pages/ApiDocs'));
 const ResolvedGallery = lazy(() => import('./pages/ResolvedGallery'));
+const ComplaintMap = lazy(() => import('./pages/ComplaintMap'));
+const CouncillorPerformance = lazy(() => import('./pages/CouncillorPerformance'));
+const CitizenImpactReport = lazy(() => import('./pages/CitizenImpactReport'));
 
 function LoadingScreen() {
   return (
@@ -54,7 +57,7 @@ function LoadingScreen() {
   );
 }
 
-const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency', '/categories', '/api-docs', '/resolved-gallery'];
+const PUBLIC_NO_SIDEBAR = ['/', '/login', '/register', '/citizen-services', '/government-portal', '/track', '/transparency', '/categories', '/api-docs', '/resolved-gallery', '/complaint-map'];
 
 function AppLayout() {
   const { user } = useAuth();
@@ -103,6 +106,7 @@ function AnimatedRoutes() {
         <Route path="/categories" element={<CategoryGuide />} />
         <Route path="/api-docs" element={<ApiDocs />} />
         <Route path="/resolved-gallery" element={<ResolvedGallery />} />
+        <Route path="/complaint-map" element={<ComplaintMap />} />
         
         <Route path="/citizen" element={
           
@@ -136,6 +140,13 @@ function AnimatedRoutes() {
           
             <RoleGuard allowedRoles={['Citizen']}>
               <CitizenAnalytics />
+            </RoleGuard>
+          
+        } />
+        <Route path="/citizen/impact-report" element={
+          
+            <RoleGuard allowedRoles={['Citizen']}>
+              <CitizenImpactReport />
             </RoleGuard>
           
         } />
@@ -235,6 +246,13 @@ function AnimatedRoutes() {
           
             <RoleGuard allowedRoles={['Executive']}>
               <DepartmentKPIs />
+            </RoleGuard>
+          
+        } />
+        <Route path="/executive/councillor-performance" element={
+          
+            <RoleGuard allowedRoles={['Executive']}>
+              <CouncillorPerformance />
             </RoleGuard>
           
         } />

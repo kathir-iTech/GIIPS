@@ -168,6 +168,7 @@ class PriorityService:
             location_hints=request.location_hints,
             incident_latitude=request.incident_latitude,
             incident_longitude=request.incident_longitude,
+            trust_score=request.trust_score,
         )
         return PriorityResponse(incident_id=result.incident_id, priority_score=result.priority_score, priority_label=result.priority_label, factors=[], explanation=result.explanation)
 

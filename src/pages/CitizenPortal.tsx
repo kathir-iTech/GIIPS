@@ -155,6 +155,8 @@ const CitizenPortal = () => {
   const [catSuggestAccepted, setCatSuggestAccepted] = useState(false);
   const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
+  const [chatQuery, setChatQuery] = useState('');
+  const [chatAnswers, setChatAnswers] = useState<any[]>([]);
   const classifyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const pollingRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -357,6 +359,40 @@ const CitizenPortal = () => {
     left: `${(i / 24) * 100}%`, delay: `${i * 0.05}s`, color: confettiColors[i % confettiColors.length],
     size: 6 + (i % 3) * 2,
   }));
+
+  const FAQ_DATA = [
+    { q: "How do I track my complaint?", a: "Enter your complaint ID on the Track Complaint page or log in to see all your complaints under My Complaints." },
+    { q: "What does Pending Verification mean?", a: "Your complaint has been marked resolved. You need to verify the resolution using the 6-digit code sent to you." },
+    { q: "How do I reopen a resolved complaint?", a: "Open the complaint detail page and click Reopen if you're not satisfied." },
+    { q: "How do I submit a complaint?", a: "Fill in the details on this page, add a location, optional photo, and submit. AI processes it automatically." },
+    { q: "How do I rate a resolved complaint?", a: "After verifying the resolution, rate it using the star rating on the complaint detail page." },
+    { q: "What happens after I submit?", a: "AI classifies, groups related complaints, assigns priority. You get a tracking ID and status updates." },
+    { q: "How long does resolution take?", a: "Resolution time varies by category and department. Check your complaint for estimated time." },
+    { q: "Can I edit my complaint?", a: "You can edit the description and location from the complaint detail page." },
+    { q: "What is an incident?", a: "An incident groups multiple similar complaints together for efficient handling." },
+    { q: "How is priority decided?", a: "Priority is based on cluster size, age, category severity, location, and trust score." },
+    { q: "What is verification code?", a: "A 6-digit code sent via notification to confirm your issue has been resolved." },
+    { q: "Can I submit anonymously?", a: "Authentication is required to submit complaints so you can track and verify them." },
+    { q: "What languages are supported?", a: "English, Tamil, and Tanglish — our AI can understand all three." },
+    { q: "What photo formats?", a: "JPG, PNG, and WebP are supported. Maximum size is 5MB." },
+    { q: "How to contact support?", a: "Use the Help widget (bottom-right) for FAQs. For urgent issues, contact your ward councillor." },
+    { q: "What is SLA?", a: "Service Level Agreement — target time for resolving different types of complaints." },
+    { q: "Can I submit for another ward?", a: "Yes, select the correct ward when submitting your complaint." },
+    { q: "What are tags?", a: "Tags help categorize complaints. They may be added automatically or by officers." },
+    { q: "How to delete account?", a: "Contact your Executive to delete your account." },
+    { q: "Is my data secure?", a: "Yes, all data is encrypted and handled according to Tamil Nadu data protection guidelines." },
+  ];
+
+  const handleChatQuery = () => {
+    const q = chatQuery.toLowerCase().trim();
+    if (!q) return;
+    const keywords = q.split(/\s+/);
+    const scored = FAQ_DATA.map(item => {
+      const score = keywords.reduce((s, kw) => s + (item.q.toLowerCase().includes(kw) || item.a.toLowerCase().includes(kw) ? 1 : 0), 0);
+      return { ...item, score };
+    }).sort((a, b) => b.score - a.score).slice(0, 3).filter(item => item.score > 0);
+    setChatAnswers(scored.length > 0 ? scored : [{ q: "No match found", a: "Please try rephrasing or check the Help widget for more options." }]);
+  };
 
   if (result && !isProcessing) {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
@@ -678,6 +714,33 @@ const CitizenPortal = () => {
           <button disabled={step === 1} onClick={() => setStep(s => s - 1)}><ChevronLeft /> {t('citizenPortal.backButton')}</button>
           <button disabled={step >= steps.length} onClick={() => setStep(s => s + 1)}>{t('citizenPortal.nextButton')} <ChevronRight /></button>
         </div>
+      </div>
+      {/* F6: FAQ Chatbot */}
+      <div className="faq-chatbot" style={{ marginTop: '2rem', background: '#1e293b', borderRadius: '12px', padding: '1.5rem', border: '1px solid #334155' }}>
+        <h4>{t('citizenPortal.faqBotTitle')}</h4>
+        <p style={{ fontSize: '0.8rem', color: '#94a3b8', marginBottom: '0.75rem' }}>{t('citizenPortal.faqBotSubtitle')}</p>
+        <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+          <input
+            type="text"
+            value={chatQuery}
+            onChange={(e) => setChatQuery(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleChatQuery(); }}
+            placeholder={t('citizenPortal.faqPlaceholder')}
+            style={{ flex: 1, padding: '0.6rem 1rem', borderRadius: '8px', border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0' }}
+          />
+          <button onClick={handleChatQuery} className="btn btn-primary">{t('citizenPortal.faqAsk')}</button>
+        </div>
+        {chatAnswers.length > 0 && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            {chatAnswers.map((a: any, i: number) => (
+              <div key={i} style={{ background: '#0f172a', borderRadius: '8px', padding: '0.75rem 1rem' }}>
+                <p style={{ fontWeight: 600, fontSize: '0.85rem', color: '#60a5fa' }}>Q: {a.question}</p>
+                <p style={{ fontSize: '0.85rem', color: '#cbd5e1' }}>{a.answer}</p>
+              </div>
+            ))}
+            <p style={{ fontSize: '0.75rem', color: '#64748b', marginTop: '0.25rem' }}>{t('citizenPortal.faqDisclaimer')}</p>
+          </div>
+        )}
       </div>
       <HelpWidget />
     </div>

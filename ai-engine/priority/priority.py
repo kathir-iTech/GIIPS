@@ -179,7 +179,8 @@ class PriorityEngine:
         location_hints: List[str],
         incident_latitude: Optional[float] = None,
         incident_longitude: Optional[float] = None,
-        max_cluster_size: int = 100
+        max_cluster_size: int = 100,
+        trust_score: Optional[float] = None,
     ) -> PriorityResult:
         factors = []
 
@@ -213,6 +214,28 @@ class PriorityEngine:
         # Compute weighted score
         total_score = sum(f.contribution for f in factors)
         normalized_score = min(max(total_score * 100, 0), 100)
+
+        # F4: Trust score bonus/penalty
+        if trust_score is not None:
+            if trust_score > 80:
+                trust_bonus = 3
+                trust_desc = f"High-trust citizen (+{trust_bonus})"
+            elif trust_score < 30:
+                trust_bonus = -3
+                trust_desc = f"Low-trust citizen ({trust_bonus})"
+            else:
+                trust_bonus = 0
+                trust_desc = None
+            if trust_bonus != 0:
+                normalized_score = min(max(normalized_score + trust_bonus, 0), 100)
+                factors.append(PriorityFactor(
+                    name='trust_score',
+                    raw_value=trust_score,
+                    normalized_value=trust_score / 100,
+                    weight=0.0,
+                    contribution=trust_bonus,
+                    description=trust_desc or "Trust score neutral"
+                ))
 
         # Determine label
         label = self._get_priority_label(normalized_score)
@@ -475,7 +498,8 @@ class PriorityEngine:
                 location_hints=incident.get('location_hints', []),
                 incident_latitude=incident.get('latitude'),
                 incident_longitude=incident.get('longitude'),
-                max_cluster_size=max_cluster_size
+                max_cluster_size=max_cluster_size,
+                trust_score=incident.get('trust_score'),
             )
             results.append(result)
 

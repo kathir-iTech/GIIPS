@@ -1,7 +1,10 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import Plot from 'react-plotly.js';
+import { MapContainer, TileLayer, CircleMarker, Popup } from 'react-leaflet';
+import L from 'leaflet';
+import 'leaflet/dist/leaflet.css';
 import { api } from '../services/api';
 import { ArrowLeft, AlertCircle, Loader2, Star, Clock, Building2, MapPin, Search, Phone } from 'lucide-react';
 import { COUNCILLORS } from '../data/councillors';
@@ -83,6 +86,11 @@ const Transparency = () => {
   const [satisfactionData, setSatisfactionData] = useState<any[]>([]);
   const [wordCloud, setWordCloud] = useState<any[]>([]);
   const [councillorSearch, setCouncillorSearch] = useState('');
+  const [geoData, setGeoData] = useState<any[]>([]);
+  const [geoLoading, setGeoLoading] = useState(false);
+  const [activeWeek, setActiveWeek] = useState(0);
+  const mapRef2 = useRef<HTMLDivElement>(null);
+  const activeWeekData = geoData[activeWeek];
 
   useEffect(() => {
     let cancelled = false;
@@ -91,8 +99,9 @@ const Transparency = () => {
       api.getSuccessStories(),
       api.get('/public/satisfaction-trend').then(r => r.json()).catch(() => []),
       api.get('/public/word-cloud').then(r => r.json()).catch(() => []),
-    ]).then(([stats, successStories, satData, wcData]) => {
-      if (!cancelled) { setData(stats); setStories(successStories); setSatisfactionData(satData); setWordCloud(wcData); }
+      api.getGeoHeatTrend().catch(() => []),
+    ]).then(([stats, successStories, satData, wcData, geo]) => {
+      if (!cancelled) { setData(stats); setStories(successStories); setSatisfactionData(satData); setWordCloud(wcData); setGeoData(geo); }
     }).catch(e => {
       if (!cancelled) setError(e.message);
     }).finally(() => {
@@ -478,6 +487,31 @@ const Transparency = () => {
             );
           })()}
         </div>
+        {geoData.length > 0 && activeWeekData && (
+          <div className="chart-card">
+            <h3>{t('transparency.geoHeatTrend')}</h3>
+            <p style={{ fontSize: '0.85rem', color: '#94a3b8', marginBottom: '1rem' }}>{t('transparency.geoHeatDesc')}</p>
+            <div style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem', flexWrap: 'wrap' }}>
+              {geoData.map((w: any, i: number) => (
+                <button key={i} className={`btn ${activeWeek === i ? 'btn-primary' : 'btn-secondary'}`} onClick={() => setActiveWeek(i)}>
+                  {w.label}
+                </button>
+              ))}
+            </div>
+            <div ref={mapRef2} style={{ height: '400px', borderRadius: '8px', border: '1px solid #334155' }}>
+              <MapContainer center={[11.1271, 78.6569]} zoom={7} style={{ height: '100%', width: '100%', borderRadius: '8px' }} key={activeWeek}>
+                <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+                {(activeWeekData.points || []).map((p: any, i: number) => (
+                  <CircleMarker key={i} center={[p.lat, p.lon]} radius={Math.max(4, Math.min(20, (p.count || 1) * 2))} pathOptions={{ color: p.count > 10 ? '#ef4444' : p.count > 5 ? '#f59e0b' : '#22c55e', fillOpacity: 0.5 }}>
+                    <Popup>
+                      {p.label || `Count: ${p.count}`}
+                    </Popup>
+                  </CircleMarker>
+                ))}
+              </MapContainer>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

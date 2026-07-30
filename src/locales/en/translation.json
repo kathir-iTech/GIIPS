@@ -169,7 +169,9 @@
       "affected": "affected",
       "costReduction": "cost reduction",
       "faster": "faster"
-    }
+    },
+    "days": "days",
+    "hours": "hours"
   },
 
   "landing": {
@@ -431,7 +433,12 @@
     "offlineQueueMessagePlural": "{{count}} complaints pending — will submit when connected",
     "analyzingDescription": "Analyzing description...",
     "quickStart": "Quick Start — Pick a Template",
-    "pickTemplate": "Choose a template below to pre-fill the form, then edit as needed."
+    "pickTemplate": "Choose a template below to pre-fill the form, then edit as needed.",
+    "faqBotTitle": "FAQ Bot \u2014 not AI",
+    "faqBotSubtitle": "Keyword-matched answers from our FAQ database",
+    "faqPlaceholder": "Type your question...",
+    "faqAsk": "Ask",
+    "faqDisclaimer": "FAQ Bot uses keyword matching \u2014 not artificial intelligence"
   },
 
   "overview": {
@@ -566,7 +573,8 @@
     "escalationEscalated": "Escalated",
     "downloadCertificate": "Download Certificate",
     "fieldWard": "Ward:",
-    "fieldDate": "Date:"
+    "fieldDate": "Date:",
+    "estimatedCost": "Estimated Remediation Cost:"
   },
 
   "myComplaints": {
@@ -603,7 +611,13 @@
     "csvHeaders": "ID,Title,Category,Ward,Status,Date Filed,Date Resolved,Resolution Note",
     "followUp": "Follow up?",
     "followUpSending": "Sending...",
-    "followUpSent": "Follow-up sent"
+    "followUpSent": "Follow-up sent",
+    "compare": "Compare",
+    "compareExit": "Exit Compare",
+    "compareTitle": "Complaint Comparison",
+    "compareSelectTwo": "Select two complaints to compare",
+    "compareDaysFaster": "Resolved {{days}} days faster",
+    "compareDaysSlower": "Resolved {{days}} days slower"
   },
 
   "incidents": {
@@ -682,6 +696,9 @@
     "slaHours": "h",
     "slaMins": "m",
     "wardPrefix": "Ward {{ward}}",
+    "useTemplate": "Use template...",
+    "nodesCount": "{{count}} linked complaints",
+    "centerLabel": "center (this incident)",
     "catch": {
       "mergeFailed": "Failed to merge incidents",
       "splitFailed": "Failed to split complaint"
@@ -772,7 +789,8 @@
       "knowledgeSubtitle": "Related information and historical context",
       "decisions": "Decision Recommendations",
       "decisionsSubtitle": "Suggested actions based on cluster analysis"
-    }
+    },
+    "duplicateNetwork": "Duplicate Network Graph"
   },
 
   "executive": {
@@ -938,6 +956,8 @@
     },
     "exportCsv": "Export CSV",
     "agingLabel": "Aging >30d",
+    "estimatedCost": "Estimated Pending Remediation Cost",
+    "pendingRemediation": "Total estimated cost across all open incidents",
     "footer": {
       "title": "GIIPS Executive Decision Intelligence v2.1",
       "dataRefreshed": "Data refreshed"
@@ -981,7 +1001,13 @@
     "today": "Today",
     "yesterday": "Yesterday",
     "daysAgo": "{{count}} days ago",
-    "never": "Never"
+    "never": "Never",
+    "colZone": "Zone",
+    "transferZone": "Transfer Zone",
+    "zoneDialogTitle": "Transfer Officer Zone",
+    "zoneDialogDesc": "Enter the new zone for this officer. Open incidents in the old zone remain assigned.",
+    "zoneNewLabel": "New Zone",
+    "zoneTransferSuccess": "Zone transferred successfully"
   },
 
   "departmentManagement": {
@@ -1168,7 +1194,12 @@
     "fresh": "Fresh (0-7d)",
     "developing": "Developing (7-30d)",
     "chronic": "Chronic (30-90d)",
-    "criticalBacklog": "Critical Backlog (90d+)"
+    "criticalBacklog": "Critical Backlog (90d+)",
+    "sentimentTrend": "Complaint Urgency Trend",
+    "highUrgency": "HIGH",
+    "mediumUrgency": "MEDIUM",
+    "lowUrgency": "LOW",
+    "languageStats": "Complaint Language Distribution"
   },
 
   "la": {
@@ -1368,7 +1399,9 @@
     "storiesTitle": "Success Stories",
     "storiesSubtitle": "Resolved complaints with high citizen satisfaction",
     "storiesWard": "Ward {{ward}}",
-    "storiesResolvedIn": "Resolved in {{days}}d"
+    "storiesResolvedIn": "Resolved in {{days}}d",
+    "geoHeatTrend": "Geographic Heat Trend",
+    "geoHeatDesc": "Click a week to see which wards were hottest"
   },
 
   "sla": {
@@ -1564,5 +1597,31 @@
     "resolutionRate": "Resolved %",
     "avgRating": "Avg Rating",
     "wardPrefix": "Ward {{ward}}"
+  },
+
+  "complaintMap": {
+    "title": "Complaint Map",
+    "subtitle": "Anonymous view of all open complaints in your area"
+  },
+
+  "councillorPerformance": {
+    "title": "Councillor Performance Dashboard",
+    "subtitle": "Ward-level performance metrics for all councillors",
+    "empty": "No councillor data available yet.",
+    "name": "Councillor",
+    "ward": "Ward",
+    "open": "Open",
+    "resolved": "Resolved",
+    "rate": "Resolution %",
+    "rating": "Avg Rating"
+  },
+
+  "citizenImpact": {
+    "title": "Your Impact Report",
+    "subtitle": "Your collective contribution to civic governance",
+    "empty": "Submit complaints to see your impact.",
+    "totalFiled": "Total Complaints Filed",
+    "peopleHelped": "People Helped (est.)",
+    "economicValue": "Economic Value Saved (est.)"
   }
 }

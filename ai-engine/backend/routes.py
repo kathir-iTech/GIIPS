@@ -22,7 +22,7 @@ from cryptography.fernet import Fernet
 from base64 import urlsafe_b64encode
 import hashlib
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory, PeerReview, AlertConfig, ResponseTemplate
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -51,6 +51,10 @@ from models import (
     WithdrawRequest,
     CategoryCorrectRequest,
     WebhookRegister,
+    PeerReviewRequest,
+    ZoneTransferRequest,
+    AlertConfigRequest,
+    ResponseTemplateRequest,
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status, get_pool
@@ -641,6 +645,49 @@ def get_budget(department: str = None, db: Session = Depends(get_db), db_user: U
         q = q.filter(KpiBudget.department == department)
     rows = q.order_by(KpiBudget.year.desc(), KpiBudget.month.desc()).limit(50).all()
     return [{"id": r.id, "department": r.department, "month": r.month, "year": r.year, "budget_allocated": r.budget_allocated, "budget_spent": r.budget_spent, "created_by": r.created_by} for r in rows]
+
+
+@executive_router.get("/alert-config")
+def get_alert_configs(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    configs = db.query(AlertConfig).filter(AlertConfig.exec_user_id == db_user.id).all()
+    return [{"id": c.id, "exec_user_id": c.exec_user_id, "alert_type": c.alert_type, "enabled": c.enabled, "threshold": c.threshold, "created_at": c.created_at.isoformat() if c.created_at else None} for c in configs]
+
+
+@executive_router.post("/alert-config")
+def set_alert_config(body: AlertConfigRequest, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    existing = db.query(AlertConfig).filter(AlertConfig.exec_user_id == db_user.id, AlertConfig.alert_type == body.alert_type).first()
+    if existing:
+        existing.enabled = body.enabled
+        existing.threshold = body.threshold
+    else:
+        config = AlertConfig(id=str(uuid.uuid4()), exec_user_id=db_user.id, alert_type=body.alert_type, enabled=body.enabled, threshold=body.threshold)
+        db.add(config)
+    db.commit()
+    return {"message": f"Alert config for {body.alert_type} set to enabled={body.enabled}"}
+
+
+@executive_router.get("/councillor-performance")
+def get_councillor_performance(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    councillors = db.query(User).filter(User.role == "Councillor").all()
+    result = []
+    for c in councillors:
+        ward = c.ward
+        incidents = db.query(Incident).filter(Incident.ward == ward).all()
+        total = len(incidents)
+        resolved = sum(1 for i in incidents if i.status == "resolved")
+        res_rate = round(resolved / total * 100, 1) if total > 0 else 0
+        complaints = db.query(Complaint).filter(Complaint.ward == ward, Complaint.citizen_rating.isnot(None)).all()
+        avg_rating = round(sum(cmp.citizen_rating for cmp in complaints) / len(complaints), 1) if complaints else 0
+        result.append({
+            "councillor_name": c.full_name,
+            "ward": ward,
+            "open_incidents": total - resolved,
+            "resolved_incidents": resolved,
+            "resolution_rate": res_rate,
+            "avg_citizen_rating": avg_rating,
+            "sla_compliance": 0,
+        })
+    return result
 
 
 classify_router = APIRouter(prefix="/classify", tags=["Classification"])
@@ -1837,7 +1884,7 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
     ward_cutoff = now - timedelta(hours=SLA_WARD_HOURS)
     zone_cutoff = now - timedelta(hours=SLA_ZONE_HOURS)
 
-    results = {"ward_escalated": 0, "zone_escalated": 0, "errors": []}
+    results = {"ward_escalated": 0, "zone_escalated": 0, "exec_escalated": 0, "errors": []}
 
     try:
         # ── Ward-level escalations (not yet escalated, status stale > 48h) ──
@@ -1936,6 +1983,20 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
             except Exception as e:
                 results["errors"].append(f"incident {inc.id}: {e}")
 
+        # F3: Executive escalation after 72h of being escalated
+        for inc in db.query(Incident).filter(
+            Incident.escalated == True,
+            Incident.status.in_(["open", "in-progress"]),
+            Incident.escalation_reason.notlike("%Executive auto-escalation%"),
+        ).all():
+            if inc.status_changed_at and (now - inc.status_changed_at).total_seconds() > 259200:
+                inc.priority_score = min(100, (inc.priority_score or 0) + 10)
+                inc.priority_label = _label_for_score(inc.priority_score)
+                inc.escalation_reason = (inc.escalation_reason or "") + " | Executive auto-escalation (72h threshold)"
+                _write_audit_log(db, None, None, "system", "executive_auto_escalate", inc.id, "success", f"72h SLA breach, priority +10")
+                _create_notification(db, None, "sla_breach", complaint_id=None, data={"incident_number": inc.incident_number, "incident_id": inc.id, "message": f"Incident escalated to Executive level after 72h"})
+                results["exec_escalated"] += 1
+
         db.commit()
 
         total = results["ward_escalated"] + results["zone_escalated"]
@@ -1943,7 +2004,8 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
             return {
                 "message": f"Auto-escalated {total} incidents "
                            f"({results['ward_escalated']} ward-level, "
-                           f"{results['zone_escalated']} zone-level)",
+                           f"{results['zone_escalated']} zone-level, "
+                           f"{results['exec_escalated']} executive-level)",
                 **results,
             }
         return {"message": "No incidents exceed SLA thresholds", **results}
@@ -2938,6 +3000,83 @@ async def appeal_incident(incident_id: str, body: AppealRequest, request: Reques
     return {"message": "Appeal filed successfully. Your complaint has been reopened and escalated.", "incident_id": incident.id, "status": "open", "appealed": True}
 
 
+@incident_router.post("/{id}/peer-review")
+def submit_peer_review(id: str, body: PeerReviewRequest, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role not in ("Officer", "Executive"):
+        raise HTTPException(status_code=403, detail="Officer/Executive only")
+    incident = db.query(Incident).filter(Incident.id == id).first()
+    if not incident:
+        raise HTTPException(status_code=404, detail="Incident not found")
+    if incident.accepted_by == db_user.id:
+        raise HTTPException(status_code=400, detail="Cannot review your own resolution")
+    if db_user.zone and incident.ward:
+        from coimbatore_wards import ZONE_BY_WARD
+        inc_zone = ZONE_BY_WARD.get(int(incident.ward), "")
+        if db_user.zone != inc_zone:
+            raise HTTPException(status_code=400, detail="Can only review incidents in your zone")
+    existing = db.query(PeerReview).filter(PeerReview.incident_id == id, PeerReview.reviewer_id == db_user.id).first()
+    if existing:
+        raise HTTPException(status_code=400, detail="Already reviewed this incident")
+    review = PeerReview(
+        id=str(uuid.uuid4()),
+        incident_id=id,
+        reviewer_id=db_user.id,
+        reviewee_id=incident.accepted_by or "",
+        rating=body.rating,
+        comment=body.comment,
+    )
+    db.add(review)
+    db.commit()
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "peer_review", id, f"Rating: {body.rating}", "success")
+    return {"message": "Peer review submitted", "id": review.id}
+
+
+@incident_router.get("/{id}/peer-reviews")
+def get_peer_reviews(id: str, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    reviews = db.query(PeerReview).filter(PeerReview.incident_id == id).all()
+    result = []
+    for r in reviews:
+        reviewer = db.query(User).filter(User.id == r.reviewer_id).first()
+        result.append({
+            "id": r.id,
+            "incident_id": r.incident_id,
+            "reviewer_name": reviewer.full_name if reviewer else "Unknown",
+            "rating": r.rating,
+            "comment": r.comment,
+            "created_at": r.created_at.isoformat() if r.created_at else None,
+        })
+    return result
+
+
+@incident_router.get("/cost-estimate")
+def get_cost_estimate(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    categories = db.query(Incident.category, func.sum(Incident.cluster_size)).filter(
+        Incident.status.in_(["open", "in-progress"])
+    ).group_by(Incident.category).all()
+    COST_MAP = {
+        "Road Infrastructure": (15000, 2000),
+        "Water Supply": (8000, 1500),
+        "Sanitation": (5000, 1000),
+        "Waste Management": (4000, 800),
+        "Street Lighting": (3000, 600),
+        "Public Works": (6000, 1200),
+        "Noise nuisance": (2000, 400),
+        "Illegal Parking": (1500, 300),
+        "Blocked Driveway": (2000, 400),
+        "Damaged Tree": (3000, 500),
+        "Street Sign Missing": (1000, 200),
+        "General Construction": (5000, 1000),
+    }
+    total_cost = 0
+    breakdown = []
+    for cat, total_complaints in categories:
+        base, per = COST_MAP.get(cat, (5000, 1000))
+        cost = base + per * total_complaints
+        total_cost += cost
+        breakdown.append({"category": cat, "base_cost": base, "per_complaint_cost": per, "complaints": total_complaints, "estimated_total": cost})
+    return {"total_estimated_cost": total_cost, "breakdown": breakdown}
+
+
 @complaint_router.get("/ward/{ward}")
 async def get_ward_complaints(ward: str, db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
     """Get complaints for a specific ward. Councillor sees only their assigned ward;
@@ -3422,6 +3561,18 @@ async def enable_officer(officer_id: str, db_user: User = Depends(get_executive_
     _write_audit_log(db, db_user.id, db_user.email, db_user.role, "officer_enable", officer_id, "success")
     return {"message": "Officer enabled"}
 
+@admin_router.patch("/officers/{officer_id}/zone")
+def transfer_officer_zone(officer_id: str, body: ZoneTransferRequest, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    officer = db.query(User).filter(User.id == officer_id).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail="Officer not found")
+    old_zone = officer.zone
+    officer.zone = body.new_zone
+    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "zone_transfer", officer_id, f"Zone changed: {old_zone} -> {body.new_zone}", "success")
+    _create_notification(db, officer.id, "zone_transferred", complaint_id=None, data={"old_zone": old_zone, "new_zone": body.new_zone})
+    db.commit()
+    return {"message": f"Officer transferred from {old_zone} to {body.new_zone}", "old_zone": old_zone, "new_zone": body.new_zone}
+
 @admin_router.patch("/officers/{officer_id}")
 async def update_officer(officer_id: str, body: OfficerUpdate, db_user: User = Depends(get_executive_user), db: Session = Depends(get_db)):
     """Update officer details (department, district, full_name)."""
@@ -3738,6 +3889,73 @@ async def get_audit_logs(db_user: User = Depends(get_executive_user), db: Sessio
     """Get audit logs."""
     logs = db.query(AuditLog).order_by(AuditLog.timestamp.desc()).limit(100).all()
     return [{"id": l.id, "timestamp": l.timestamp.isoformat() if l.timestamp else None, "user": l.user_email, "role": l.role, "action": l.action, "target": l.target, "status": l.status} for l in logs]
+
+
+@admin_router.get("/sentiment-trend")
+def get_sentiment_trend(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    weeks = []
+    now = datetime.utcnow()
+    for i in range(8):
+        week_end = now - timedelta(days=i * 7)
+        week_start = week_end - timedelta(days=6)
+        complaints = db.query(Complaint).filter(Complaint.created_at.between(week_start, week_end)).all()
+        total = len(complaints)
+        high = sum(1 for c in complaints if c.urgency_flag == "HIGH")
+        medium = sum(1 for c in complaints if c.urgency_flag == "MEDIUM")
+        low = sum(1 for c in complaints if c.urgency_flag == "LOW")
+        weeks.append({
+            "week": f"Week {8 - i}",
+            "start": week_start.strftime("%Y-%m-%d"),
+            "end": week_end.strftime("%Y-%m-%d"),
+            "total": total,
+            "high": high,
+            "medium": medium,
+            "low": low,
+        })
+    return list(reversed(weeks))
+
+
+@admin_router.get("/language-stats")
+def get_language_stats(db: Session = Depends(get_db), current_user: User = Depends(get_current_user)):
+    now = datetime.utcnow()
+    weeks = []
+    for i in range(8):
+        week_end = now - timedelta(days=i * 7)
+        week_start = week_end - timedelta(days=6)
+        counts = db.query(Complaint.complaint_language, func.count(Complaint.id)).filter(
+            Complaint.created_at.between(week_start, week_end)
+        ).group_by(Complaint.complaint_language).all()
+        lang_map = {"english": 0, "tamil": 0, "tanglish": 0, "unknown": 0}
+        for lang, cnt in counts:
+            key = (lang or "unknown").lower()
+            if key in lang_map:
+                lang_map[key] = cnt
+        weeks.append({"week": f"Week {8 - i}", **lang_map})
+    return list(reversed(weeks))
+
+
+@admin_router.get("/peer-review-summary")
+def get_peer_review_summary(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    officers = db.query(User).filter(User.role == "Officer").all()
+    result = []
+    for o in officers:
+        reviews = db.query(PeerReview).filter(PeerReview.reviewee_id == o.id).all()
+        if reviews:
+            avg_peer = round(sum(r.rating for r in reviews) / len(reviews), 1)
+        else:
+            avg_peer = 0.0
+        resolved = db.query(Incident).filter(Incident.accepted_by == o.id, Incident.status == "resolved").all()
+        ratings = [i.resolution_quality_score for i in resolved if i.resolution_quality_score is not None]
+        citizen_avg = round(sum(ratings) / len(ratings), 1) if ratings else None
+        result.append({
+            "officer_id": o.id,
+            "officer_name": o.full_name,
+            "avg_peer_rating": avg_peer,
+            "review_count": len(reviews),
+            "citizen_avg_rating": citizen_avg,
+        })
+    return result
+
 
 prediction_router = APIRouter(prefix="/predictions", tags=["Predictions"])
 
@@ -4439,6 +4657,35 @@ async def officer_self_performance(db_user: User = Depends(get_current_user), db
     }
 
 
+@officer_router.post("/response-templates")
+def create_response_template(body: ResponseTemplateRequest, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    if db_user.role != "Officer":
+        raise HTTPException(status_code=403, detail="Officer only")
+    count = db.query(ResponseTemplate).filter(ResponseTemplate.officer_id == db_user.id).count()
+    if count >= 10:
+        raise HTTPException(status_code=400, detail="Max 10 templates per officer")
+    template = ResponseTemplate(id=str(uuid.uuid4()), officer_id=db_user.id, title=body.title, message=body.message)
+    db.add(template)
+    db.commit()
+    return {"id": template.id, "title": template.title, "message": template.message}
+
+
+@officer_router.get("/response-templates")
+def list_response_templates(db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    templates = db.query(ResponseTemplate).filter(ResponseTemplate.officer_id == db_user.id).order_by(ResponseTemplate.created_at.desc()).all()
+    return [{"id": t.id, "officer_id": t.officer_id, "title": t.title, "message": t.message, "created_at": t.created_at.isoformat() if t.created_at else None} for t in templates]
+
+
+@officer_router.delete("/response-templates/{template_id}")
+def delete_response_template(template_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_current_user)):
+    template = db.query(ResponseTemplate).filter(ResponseTemplate.id == template_id, ResponseTemplate.officer_id == db_user.id).first()
+    if not template:
+        raise HTTPException(status_code=404, detail="Template not found or not yours")
+    db.delete(template)
+    db.commit()
+    return {"message": "Template deleted"}
+
+
 class ReassignRequest(BaseModel):
     new_department: Optional[str] = None
     new_officer: Optional[str] = None
@@ -4674,6 +4921,56 @@ def save_risk_snapshot(data: dict, db: Session = Depends(get_db), db_user: User 
         db.add(wh)
     db.commit()
     return {"message": "Snapshot saved"}
+
+
+@admin_router.post("/batch-import")
+async def batch_import_csv(file: UploadFile = File(...), db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    import csv, io
+    content = await file.read()
+    text = content.decode("utf-8-sig")
+    reader = csv.DictReader(io.StringIO(text))
+    rows = list(reader)
+    if len(rows) > 100:
+        raise HTTPException(status_code=400, detail="Max 100 rows per batch")
+    imported = 0
+    duplicates = 0
+    failed = 0
+    errors = []
+    for row in rows:
+        try:
+            title = row.get("title", "").strip()
+            description = row.get("description", "").strip()
+            ward = row.get("ward", "").strip()
+            category = row.get("category", "").strip()
+            lat = float(row.get("lat", 0) or 0)
+            lng = float(row.get("lng", 0) or 0)
+            if not title or not description:
+                failed += 1
+                errors.append(f"Row missing title/description: {title}")
+                continue
+            complaint = Complaint(
+                id=str(uuid.uuid4()),
+                title=title,
+                description=description,
+                location=row.get("location", "").strip(),
+                ward=ward,
+                predicted_category=category,
+                created_at=datetime.utcnow(),
+                latitude=lat if lat else None,
+                longitude=lng if lng else None,
+                user_id=db_user.id,
+            )
+            db.add(complaint)
+            db.flush()
+            from pipeline import process_complaint_pipeline
+            import asyncio
+            asyncio.create_task(process_complaint_pipeline(complaint.id, db_user.id))
+            imported += 1
+        except Exception as e:
+            failed += 1
+            errors.append(str(e))
+    db.commit()
+    return {"imported": imported, "duplicates": duplicates, "failed": failed, "errors": errors[:5]}
 
 
 @complaint_router.get("/trust-score")
@@ -4921,6 +5218,36 @@ async def councillor_briefing(ward: str, db: Session = Depends(get_db)):
         "sla_breach_count": sla_breach_count,
         "total_open_count": total_open_count,
     }
+
+
+@public_router.get("/public/geo-heat-trend")
+def get_geo_heat_trend(db: Session = Depends(get_db)):
+    now = datetime.utcnow()
+    weeks = []
+    for i in range(4):
+        week_end = now - timedelta(days=i * 7)
+        week_start = week_end - timedelta(days=6)
+        ward_counts = db.query(Complaint.ward, func.count(Complaint.id)).filter(
+            Complaint.created_at.between(week_start, week_end)
+        ).group_by(Complaint.ward).order_by(func.count(Complaint.id).desc()).limit(3).all()
+        hotspots = []
+        for ward, count in ward_counts:
+            from coimbatore_wards import AREAS_BY_WARD
+            lat_lng = {"North": (11.052, 76.96), "South": (10.975, 76.94), "East": (11.025, 77.02), "West": (11.015, 76.88), "Central": (11.000, 76.96)}
+            from coimbatore_wards import ZONE_BY_WARD
+            zone = ZONE_BY_WARD.get(int(ward), "Central")
+            base_lat, base_lng = lat_lng.get(zone, (11.0, 76.96))
+            import random
+            hotspots.append({
+                "ward": ward,
+                "zone": zone,
+                "count": count,
+                "lat": round(base_lat + random.uniform(-0.03, 0.03), 6),
+                "lng": round(base_lng + random.uniform(-0.03, 0.03), 6),
+                "label": f"Ward {ward}",
+            })
+        weeks.append({"week": i + 1, "label": f"Week {4 - i}", "hotspots": hotspots})
+    return list(reversed(weeks))
 
 
 @public_router.get("/track/{complaint_id}", response_model=TrackComplaintResponse)

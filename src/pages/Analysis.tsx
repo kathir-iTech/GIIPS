@@ -52,6 +52,8 @@ const Analysis = () => {
   const [qualityData, setQualityData] = useState<QualityItem[] | null>(null);
   const [dailyVolume, setDailyVolume] = useState<any>(null);
   const [ageDistribution, setAgeDistribution] = useState<any>(null);
+  const [sentimentData, setSentimentData] = useState<any>(null);
+  const [languageData, setLanguageData] = useState<any>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -89,6 +91,16 @@ const Analysis = () => {
               }).reduce((s, i) => s + (typeof i.count === 'number' ? i.count : 0), 0)
             })));
           }
+        } catch {}
+        // F1: sentiment trend
+        try {
+          const st = await api.getSentimentTrend();
+          if (Array.isArray(st)) setSentimentData(st);
+        } catch {}
+        // F14: language stats
+        try {
+          const ls = await api.getLanguageStats();
+          if (Array.isArray(ls)) setLanguageData(ls);
         } catch {}
       } catch (e) {
         if (!cancelled) setError((e as any)?.message || 'Unknown error');
@@ -406,6 +418,37 @@ const Analysis = () => {
         </div>
       )}
 
+      {/* F1: Sentiment Trend */}
+      {sentimentData && sentimentData.length > 0 && (
+        <div className="chart-card">
+          <h3>{t('analysis.sentimentTrend')}</h3>
+          <Plot
+            data={[
+              { type: 'scatter', mode: 'lines', stackgroup: 'one', name: t('analysis.highUrgency'), x: sentimentData.map((d: any) => d.week), y: sentimentData.map((d: any) => d.high), line: { color: '#ef4444' } },
+              { type: 'scatter', mode: 'lines', stackgroup: 'one', name: t('analysis.mediumUrgency'), x: sentimentData.map((d: any) => d.week), y: sentimentData.map((d: any) => d.medium), line: { color: '#f59e0b' } },
+              { type: 'scatter', mode: 'lines', stackgroup: 'one', name: t('analysis.lowUrgency'), x: sentimentData.map((d: any) => d.week), y: sentimentData.map((d: any) => d.low), line: { color: '#22c55e' } },
+            ]}
+            layout={{ height: 300, margin: { t: 20, r: 20, b: 40, l: 40 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#e2e8f0' }, legend: { orientation: 'h', y: -0.2 } }}
+            config={{ responsive: true, displayModeBar: false }}
+          />
+        </div>
+      )}
+      {/* F14: Language Stats */}
+      {languageData && languageData.length > 0 && (
+        <div className="chart-card">
+          <h3>{t('analysis.languageStats')}</h3>
+          <Plot
+            data={[
+              { type: 'bar', name: 'English', x: languageData.map((d: any) => d.week), y: languageData.map((d: any) => d.english), marker: { color: '#3b82f6' } },
+              { type: 'bar', name: 'Tamil', x: languageData.map((d: any) => d.week), y: languageData.map((d: any) => d.tamil), marker: { color: '#8b5cf6' } },
+              { type: 'bar', name: 'Tanglish', x: languageData.map((d: any) => d.week), y: languageData.map((d: any) => d.tanglish), marker: { color: '#ec4899' } },
+              { type: 'bar', name: 'Unknown', x: languageData.map((d: any) => d.week), y: languageData.map((d: any) => d.unknown), marker: { color: '#64748b' } },
+            ]}
+            layout={{ barmode: 'stack', height: 300, margin: { t: 20, r: 20, b: 40, l: 40 }, paper_bgcolor: 'transparent', plot_bgcolor: 'transparent', font: { color: '#e2e8f0' }, legend: { orientation: 'h', y: -0.2 } }}
+            config={{ responsive: true, displayModeBar: false }}
+          />
+        </div>
+      )}
       </div>
     </div>
   );

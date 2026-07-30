@@ -54,6 +54,8 @@ const IncidentFeed = () => {
   const [commentInput, setCommentInput] = useState<Record<string, string>>({});
   const [commentLoading, setCommentLoading] = useState<Record<string, boolean>>({});
   const [showMap, setShowMap] = useState(false);
+  const [responseTemplates, setResponseTemplates] = useState<any[]>([]);
+  const [selectedTemplate, setSelectedTemplate] = useState('');
 
   const handlePostUpdate = useCallback(async (incidentId: string) => {
     if (!updateMessage.trim()) return;
@@ -164,6 +166,10 @@ const IncidentFeed = () => {
     try {
       const data = await api.getIncidents(sortField, 2000);
       setAllIncidents(data || []);
+      try {
+        const tpls = await api.listResponseTemplates();
+        if (Array.isArray(tpls)) setResponseTemplates(tpls);
+      } catch {}
       setError(null);
     } catch (e) {
       if (showLoader) {
@@ -477,6 +483,27 @@ const IncidentFeed = () => {
                         </div>
                         <div className="detail-block update-block">
                           <h4>{t('incidents.citizenUpdate')}</h4>
+                          {/* F15: Response templates */}
+                          {responseTemplates.length > 0 && (
+                            <div style={{ marginBottom: '0.5rem' }}>
+                              <select
+                                value={selectedTemplate}
+                                onChange={(e) => {
+                                  setSelectedTemplate(e.target.value);
+                                  if (e.target.value) {
+                                    const tpl = responseTemplates.find((t: any) => t.id === e.target.value);
+                                    if (tpl) setUpdateMessage(tpl.message);
+                                  }
+                                }}
+                                style={{ width: '100%', padding: '0.5rem', borderRadius: '6px', border: '1px solid #475569', background: '#0f172a', color: '#e2e8f0', fontSize: '0.85rem' }}
+                              >
+                                <option value="">{t('incidents.useTemplate')}</option>
+                                {responseTemplates.map((t: any) => (
+                                  <option key={t.id} value={t.id}>{t.title}</option>
+                                ))}
+                              </select>
+                            </div>
+                          )}
                           {updateIncidentId === incident.id ? (
                             <div className="update-form">
                               <textarea

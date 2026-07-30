@@ -68,6 +68,7 @@ class PriorityRequest(BaseModel):
     location_hints: List[str] = []
     incident_latitude: Optional[float] = None
     incident_longitude: Optional[float] = None
+    trust_score: Optional[float] = None
 
 
 class PriorityFactor(BaseModel):
@@ -316,3 +317,107 @@ class CategoryCorrectRequest(BaseModel):
 class WebhookRegister(BaseModel):
     url: str
     events: List[str]
+
+# FEATURE 2: peer review
+class PeerReviewRequest(BaseModel):
+    rating: int = Field(..., ge=1, le=5, description="Peer rating 1-5")
+    comment: Optional[str] = Field(None, max_length=2000)
+
+class PeerReviewResponse(BaseModel):
+    id: str
+    incident_id: str
+    reviewer_name: str
+    rating: int
+    comment: Optional[str]
+    created_at: str
+
+class PeerReviewSummaryItem(BaseModel):
+    officer_id: str
+    officer_name: str
+    avg_peer_rating: float
+    review_count: int
+    citizen_avg_rating: Optional[float]
+
+# FEATURE 5: geo heat trend
+class GeoHeatTrendItem(BaseModel):
+    week: int
+    label: str
+    hotspots: List[dict]
+
+# FEATURE 6: FAQ chatbot
+class ChatbotMessage(BaseModel):
+    question: str
+
+class ChatbotAnswer(BaseModel):
+    question: str
+    answer: str
+
+# FEATURE 7: incident cost
+class CostEstimate(BaseModel):
+    category: str
+    base_cost: float
+    per_complaint_cost: float
+    cluster_size: int
+    estimated_total: float
+
+# FEATURE 8: batch import
+class BatchImportResult(BaseModel):
+    imported: int
+    duplicates: int
+    failed: int
+    errors: List[str]
+
+# FEATURE 10: zone transfer
+class ZoneTransferRequest(BaseModel):
+    new_zone: str = Field(..., min_length=1)
+
+# FEATURE 11: response time prediction
+class ResolutionEstimate(BaseModel):
+    category: str
+    avg_resolution_days: float
+    department_backlog: int
+    estimated_days: float
+
+# FEATURE 13: alert config
+class AlertConfigItem(BaseModel):
+    id: str
+    exec_user_id: str
+    alert_type: str
+    enabled: bool
+    threshold: Optional[float]
+    created_at: str
+
+class AlertConfigRequest(BaseModel):
+    alert_type: str
+    enabled: bool = True
+    threshold: Optional[float] = None
+
+# FEATURE 14: language stats
+class LanguageStatItem(BaseModel):
+    week: str
+    english: int
+    tamil: int
+    tanglish: int
+    unknown: int
+
+# FEATURE 15: response template
+class ResponseTemplateItem(BaseModel):
+    id: str
+    officer_id: str
+    title: str
+    message: str
+    created_at: str
+
+class ResponseTemplateRequest(BaseModel):
+    title: str = Field(..., min_length=1, max_length=100)
+    message: str = Field(..., min_length=1, max_length=2000)
+
+# FEATURE 18: councillor performance
+class CouncillorPerformanceItem(BaseModel):
+    councillor_name: str
+    ward: str
+    open_incidents: int
+    resolved_incidents: int
+    resolution_rate: float
+    avg_citizen_rating: float
+    sla_compliance: float

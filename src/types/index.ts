@@ -134,6 +134,7 @@ export interface CitizenComplaint {
     cluster_size: number | null;
     recommended_action: string | null;
     summary: string | null;
+    estimated_cost?: number | null;
     resolution_note?: string | null;
     days_open?: number | null;
     original_category?: string | null;

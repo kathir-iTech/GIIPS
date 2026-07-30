@@ -677,6 +677,15 @@ const ExecutiveDashboard = () => {
         ))}
       </SectionCard>
 
+      {/* F7: Cost estimate */}
+      {execSummary && (
+        <div className="chart-card">
+          <h3>{t('executive.estimatedCost')}</h3>
+          <p style={{ fontSize: '1.5rem', fontWeight: 700, color: '#f59e0b' }}>₹{execSummary.total_estimated_cost?.toLocaleString() || '0'}</p>
+          <p style={{ fontSize: '0.8rem', color: '#94a3b8' }}>{t('executive.pendingRemediation')}</p>
+        </div>
+      )}
+
       {/* 2. AI Executive Brief */}
       <SectionCard title={t('executive.brief.title')} subtitle={t('executive.brief.subtitle')} icon={<Brain size={18} />} badge={t('common.preview')}>
         <div className="executive-brief">

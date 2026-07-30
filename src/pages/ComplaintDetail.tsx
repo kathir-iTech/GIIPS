@@ -478,6 +478,9 @@ const ComplaintDetailPage = () => {
                       <p className="resolution-note-text">{data.incident.resolution_note}</p>
                     </div>
                   )}
+                  {data.incident.estimated_cost && (
+                    <p><strong>{t('complaintDetail.estimatedCost')}</strong> ₹{data.incident.estimated_cost.toLocaleString()}</p>
+                  )}
                 </div>
 
                 {data?.incident?.status === 'resolved' && (

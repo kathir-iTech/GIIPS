@@ -49,6 +49,8 @@ const MyComplaints = () => {
   const [photoUrls, setPhotoUrls] = useState<Record<string, string>>({});
   const [followUpLoading, setFollowUpLoading] = useState<Record<string, boolean>>({});
   const [followUpSent, setFollowUpSent] = useState<Record<string, boolean>>({});
+  const [compareMode, setCompareMode] = useState(false);
+  const [selectedForCompare, setSelectedForCompare] = useState<any[]>([]);
 
   const handleFollowUp = async (complaint: CitizenComplaint) => {
     const key = `follow_up_${complaint.id}`;
@@ -276,6 +278,9 @@ const MyComplaints = () => {
               <Download size={16} /> {t('myComplaints.exportCSV')}
             </button>
           )}
+          <button className="btn btn-secondary" onClick={() => { setCompareMode(!compareMode); setSelectedForCompare([]); }}>
+            {compareMode ? t('myComplaints.compareExit') : t('myComplaints.compare')}
+          </button>
         </div>
 
         {searchResults !== null && (
@@ -334,11 +339,46 @@ const MyComplaints = () => {
             <p>{t('myComplaints.emptyBody')}</p>
           </div>
         ) : (
+          <>
+          {compareMode && selectedForCompare.length === 2 && (
+            <div className="compare-panel" style={{ background: '#1e293b', borderRadius: '12px', padding: '1.5rem', marginBottom: '1.5rem', border: '1px solid #334155' }}>
+              <h3 style={{ marginBottom: '1rem' }}>{t('myComplaints.compareTitle')}</h3>
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem' }}>
+                {selectedForCompare.map((sc, si) => (
+                  <div key={si} style={{ background: '#0f172a', borderRadius: '8px', padding: '1rem' }}>
+                    <p><strong>ID:</strong> {sc.id}</p>
+                    <p><strong>{t('myComplaints.compareTitleField')}:</strong> {sc.title || t('common.untitled')}</p>
+                    <p><strong>{t('myComplaints.compareCategory')}:</strong> {sc.predicted_category || t('common.uncategorized')}</p>
+                    <p><strong>{t('myComplaints.compareStatus')}:</strong> {t(STATUS_KEY[sc.incident?.status || 'open'])}</p>
+                    <p><strong>{t('myComplaints.compareWard')}:</strong> {sc.ward || t('common.na')}</p>
+                    <p><strong>{t('myComplaints.compareDate')}:</strong> {sc.date_received ? new Date(sc.date_received).toLocaleDateString('en-IN') : t('common.na')}</p>
+                    <p><strong>{t('myComplaints.compareDesc')}:</strong> {sc.description?.slice(0, 200)}{sc.description?.length > 200 ? '…' : ''}</p>
+                    {sc.incident?.days_open != null && <p><strong>{t('myComplaints.compareDaysOpen')}:</strong> {sc.incident.days_open}d</p>}
+                    <p><strong>{t('myComplaints.compareConfidence')}:</strong> {getConfidenceLabel(sc.confidence, t)}</p>
+                  </div>
+                ))}
+              </div>
+              <button className="btn btn-secondary" style={{ marginTop: '1rem' }} onClick={() => setSelectedForCompare([])}>{t('myComplaints.compareClear')}</button>
+            </div>
+          )}
           <div className="complaints-list">
             {filtered.map(c => {
               const incidentStatus = c.incident?.status || 'open';
+              const isSelected = selectedForCompare.find(s => s.id === c.id);
               return (
-                  <div key={c.id} className="complaint-card" onClick={() => navigate(`/complaint/${c.id}`)}>
+                  <div key={c.id} className="complaint-card" onClick={() => { if (compareMode) return; navigate(`/complaint/${c.id}`); }}
+                    style={compareMode && isSelected ? { borderColor: '#3b82f6' } : {}}>
+                    {compareMode && (
+                      <div style={{ position: 'absolute', top: '8px', left: '8px', zIndex: 2 }}>
+                        <input type="checkbox" checked={!!isSelected} onChange={() => {
+                          if (isSelected) {
+                            setSelectedForCompare(prev => prev.filter(s => s.id !== c.id));
+                          } else if (selectedForCompare.length < 2) {
+                            setSelectedForCompare(prev => [...prev, c]);
+                          }
+                        }} style={{ width: '20px', height: '20px', cursor: 'pointer' }} />
+                      </div>
+                    )}
                     <div className="complaint-photo-thumb">
                       {photoUrls[c.id] ? (
                         <img src={photoUrls[c.id]} alt="" className="complaint-thumb-img" />
@@ -402,7 +442,7 @@ const MyComplaints = () => {
               );
             })}
           </div>
-        )}
+        </>)}
       </div>
       <HelpWidget />
     </div>

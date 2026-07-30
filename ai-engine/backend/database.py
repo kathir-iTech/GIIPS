@@ -304,6 +304,9 @@ class User(Base):
     login_streak = Column(Integer, default=0, nullable=False)
     show_on_leaderboard = Column(Boolean, default=False, nullable=False)
 
+    # FEATURE 4: citizen trust score
+    trust_score = Column(Float, default=50.0, nullable=False)
+
 class Incident(Base):
     """ORM model representing an aggregated Incident of multiple grouped complaints."""
     __tablename__ = "incidents"
@@ -365,6 +368,9 @@ class Incident(Base):
     economic_impact = Column(Float, nullable=True)
     beneficiaries = Column(Integer, nullable=True)
 
+    # FEATURE 7: estimated remediation cost
+    estimated_cost = Column(Float, nullable=True)
+
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
     priority_history = relationship("PriorityHistory", backref="incident")
@@ -421,6 +427,9 @@ class Complaint(Base):
 
     # FEATURE 8: multi-photo
     photo_paths = Column(Text, nullable=True)
+
+    # FEATURE 11: predicted resolution time
+    predicted_resolution_days = Column(Float, nullable=True)
 
     # FEATURE 10: resubmission
     resubmission_of = Column(String, nullable=True)
@@ -619,6 +628,38 @@ class WardRiskHistory(Base):
     ward = Column(String, nullable=False, index=True)
     risk_score = Column(Float, nullable=False)
     snapshot_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 2: peer reviews
+class PeerReview(Base):
+    __tablename__ = "peer_reviews"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    incident_id = Column(String, nullable=False, index=True)
+    reviewer_id = Column(String, nullable=False)
+    reviewee_id = Column(String, nullable=False)
+    rating = Column(Integer, nullable=False)
+    comment = Column(Text, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 7: incident cost estimation — uses column on Incident (no new table)
+# FEATURE 11: predicted resolution days — uses column on Complaint (no new table)
+# FEATURE 13: alert configuration
+class AlertConfig(Base):
+    __tablename__ = "alert_configs"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    exec_user_id = Column(String, nullable=False, index=True)
+    alert_type = Column(String, nullable=False)
+    enabled = Column(Boolean, nullable=False, default=True)
+    threshold = Column(Float, nullable=True)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# FEATURE 15: response templates
+class ResponseTemplate(Base):
+    __tablename__ = "response_templates"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    officer_id = Column(String, nullable=False, index=True)
+    title = Column(String, nullable=False)
+    message = Column(Text, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Seed demo users
 def seed_demo_users():
