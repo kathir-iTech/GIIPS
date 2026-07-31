@@ -8,14 +8,9 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /opt/ai-engine
 
 COPY ai-engine/backend/requirements.txt ./backend/
-COPY ai-engine/backend/requirements-ai.txt ./backend/
 
 RUN pip install --no-cache-dir --prefix=/install \
     -r ./backend/requirements.txt
-
-# Optional: uncomment to include AI deps in the runtime image
-# RUN pip install --no-cache-dir --prefix=/install \
-#     -r ./backend/requirements-ai.txt
 
 
 # Stage 2: Runtime — strip everything except what's needed to serve

@@ -23,7 +23,7 @@ from classification.train import ComplaintClassifier
 from classification.tamil_fallback import is_tamil_text, tamil_keyword_classify
 from clustering.cluster import ComplaintClusterer
 from priority.priority import PriorityEngine
-from duplicate_detection.engine import DuplicateDetector
+from duplicate_detection.engine import DuplicateDetector, DUP_CONF_THRESHOLD
 _AI_DEPS_AVAILABLE = True
 try:
     import sentence_transformers  # noqa: F401
@@ -430,7 +430,7 @@ class ComplaintService:
                         )
                     )
                     .order_by(Complaint.created_at.desc())
-                    .limit(1000)
+                    .limit(200)
                     .all()
                 )
                 formatted_existing = [{
@@ -440,7 +440,7 @@ class ComplaintService:
                     'incident_id': c.incident_id
                 } for c in existing_complaints]
                 incident_id, dup_conf = self.duplicate_detector.detect_duplicates(complaint_data, formatted_existing)
-                is_duplicate = dup_conf > 0.8
+                is_duplicate = dup_conf > DUP_CONF_THRESHOLD
             except Exception as exc:
                 logger.warning("Duplicate detection failed: %s. Continuing without duplicate detection.", exc)
 

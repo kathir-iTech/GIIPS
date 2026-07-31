@@ -1,35 +1,63 @@
 """
 AI Duplicate Detection Engine.
 
-Uses Sentence Transformers and scikit-learn NearestNeighbors for efficient semantic similarity.
-Falls back to a lightweight keyword-overlap strategy when heavy ML dependencies are unavailable.
-Supports a Tanglish-specific path via Morgan-Tanglish-v7 for Romanised Tamil-English code-mixed text.
+Default path: ONNX semantic encoder (paraphrase-style MiniLM family via fastembed)
+- Tiny memory footprint (~100-150 MB framework + model on Linux, no torch)
+- Runs on Render free tier (512 MB) with no extra requirements file
+
+Routing order:
+1. Tanglish path (if GIIPS_TANGLISH_MODEL=1 + Tanglish text detected) -> Morgan-Tanglish-v7
+2. ONNX semantic path (fastembed) -> all-MiniLM-L6-v2 (DEFAULT)
+3. Legacy ML path (if sentence-transformers available) -> all-MiniLM-L6-v2 + NearestNeighbors
+4. Fallback -> Jaccard keyword overlap (only if neither fastembed nor sentence-transformers installable)
+
+Benchmark (50-pair Tanglish civic benchmark, see benchmark_minilm_onnx.py):
+- Jaccard (old default):     F1 = 0.485  (best-possible threshold)
+- all-MiniLM-L6-v2 ONNX:     F1 = 0.898  @ 0.71 (60/30/10 weighting)
+- paraphrase-MiniLM-L3-v2:   F1 = 0.857  @ 0.69 (torch; model not in fastembed registry)
 """
 
 import logging
 import os
 import re
+import threading
 import numpy as np
 from typing import List, Dict, Any, Tuple, Optional
 from geopy.distance import geodesic
 
 logger = logging.getLogger(__name__)
 
+# Production decision threshold (benchmark-optimal for 60/30/10 weighting on
+# the 50-pair benchmark; used by pipeline.py / services.py).
+DUP_CONF_THRESHOLD = 0.71
+
+# fastembed model id (its registry name equals the sentence-transformers id)
+DEFAULT_ONNX_MODEL = "sentence-transformers/all-MiniLM-L6-v2"
+
 _SENTENCE_TRANSFORMERS_AVAILABLE = False
 _SKLEARN_AVAILABLE = False
 _TANGLISH_MODEL_AVAILABLE = False
+_FASTEMBED_AVAILABLE = False
 
 try:
     from sentence_transformers import SentenceTransformer
     _SENTENCE_TRANSFORMERS_AVAILABLE = True
 except ImportError:
-    logger.warning("sentence-transformers not available. Duplicate detection will use lightweight fallback.")
+    logger.info("sentence-transformers not available. Skipping legacy ML path.")
 
 try:
     from sklearn.neighbors import NearestNeighbors
     _SKLEARN_AVAILABLE = True
 except ImportError:
     logger.warning("scikit-learn not available. Duplicate detection will use lightweight fallback.")
+
+# fastembed is imported lazily inside _SemanticDuplicateDetector to keep
+# startup fast; only the availability probe happens here.
+try:
+    import importlib.util
+    _FASTEMBED_AVAILABLE = importlib.util.find_spec("fastembed") is not None
+except ImportError:
+    _FASTEMBED_AVAILABLE = False
 
 # Tanglish detection — common Romanised Tamil particles and patterns
 _TANGLISH_PARTICLES = {
@@ -68,6 +96,72 @@ def _is_tanglish_text(text: str) -> bool:
     word_hits = sum(1 for t in tokens if t in _TANGLISH_WORDS)
     # If >10% of tokens are Tanglish particles or any known Tanglish word present
     return particle_hits >= 1 or word_hits >= 1
+
+
+def _weighted_confidence(new_complaint: Dict, match: Dict, text_sim: float) -> float:
+    """Weighted confidence: text 0.6 / location 0.3 / category 0.1."""
+    weights = {'text': 0.6, 'location': 0.3, 'category': 0.1}
+    loc1 = (new_complaint.get('lat', 0), new_complaint.get('lon', 0))
+    loc2 = (match.get('lat', 0), match.get('lon', 0))
+    dist = geodesic(loc1, loc2).meters
+    loc_sim = max(0, 1 - (dist / 1000))
+    cat_sim = 1.0 if new_complaint.get('category') == match.get('category') else 0.0
+    return text_sim * weights['text'] + loc_sim * weights['location'] + cat_sim * weights['category']
+
+
+class _SemanticDuplicateDetector:
+    """ONNX semantic duplicate detector (fastembed, no torch).
+
+    Lazy-loads the embedding model on first use (module-level singleton) so
+    DuplicateDetector() can be instantiated per-request cheaply.
+    """
+
+    _model = None
+    _lock = threading.Lock()
+
+    @classmethod
+    def get_model(cls):
+        if cls._model is None:
+            with cls._lock:
+                if cls._model is None:
+                    from fastembed import TextEmbedding  # deferred import
+                    cls._model = TextEmbedding(
+                        model_name=DEFAULT_ONNX_MODEL,
+                        threads=2,
+                    )
+                    logger.info(
+                        "Semantic duplicate detector initialised with ONNX model '%s'.",
+                        DEFAULT_ONNX_MODEL,
+                    )
+        return cls._model
+
+    def detect_duplicates(self, new_complaint: Dict, existing_complaints: List[Dict]) -> Tuple[Optional[str], float]:
+        if not existing_complaints:
+            return None, 0.0
+
+        model = self.get_model()
+        if model is None:
+            return None, -1.0
+
+        new_text = f"{new_complaint.get('title', '')} {new_complaint.get('description', '')}"
+        existing_texts = [
+            f"{c.get('title', '')} {c.get('description', '')}" for c in existing_complaints
+        ]
+
+        from sklearn.metrics.pairwise import cosine_similarity
+
+        new_vecs = list(model.embed([new_text]))
+        new_vec = np.asarray(new_vecs[0], dtype=np.float32).reshape(1, -1)
+        existing_vecs = list(model.embed(existing_texts))
+        existing_mat = np.vstack([np.asarray(e, dtype=np.float32) for e in existing_vecs])
+
+        sims = cosine_similarity(new_vec, existing_mat)[0]
+        best_idx = int(np.argmax(sims))
+        best_sim = float(sims[best_idx])
+        best_match = existing_complaints[best_idx]
+
+        conf = _weighted_confidence(new_complaint, best_match, best_sim)
+        return best_match.get('incident_id'), conf
 
 
 class _TanglishDuplicateDetector:
@@ -171,7 +265,12 @@ class DuplicateDetector:
         self.existing_data = []
         self._en_tanglish = _TanglishDuplicateDetector() if _TANGLISH_ENABLED else None
 
-        if _SENTENCE_TRANSFORMERS_AVAILABLE and _SKLEARN_AVAILABLE:
+        if _FASTEMBED_AVAILABLE:
+            # Default path: ONNX semantic encoder (no torch, free-tier friendly)
+            self._backend = _SemanticDuplicateDetector()
+            logger.info("DuplicateDetector initialised with fastembed ONNX backend.")
+        elif _SENTENCE_TRANSFORMERS_AVAILABLE and _SKLEARN_AVAILABLE:
+            # Legacy ML path for environments with sentence-transformers installed
             try:
                 self.model = SentenceTransformer(model_name)
                 self.nn = NearestNeighbors(n_neighbors=5, metric='cosine')
@@ -183,7 +282,7 @@ class DuplicateDetector:
                 self.nn = None
                 self._backend = _FallbackDuplicateDetector()
         else:
-            logger.info("ML dependencies unavailable. Using lightweight fallback duplicate detector.")
+            logger.info("Embedding dependencies unavailable. Using lightweight fallback duplicate detector.")
             self.model = None
             self.nn = None
             self._backend = _FallbackDuplicateDetector()
@@ -206,12 +305,13 @@ class DuplicateDetector:
         self.is_fitted = True
 
     def detect_duplicates(self, new_complaint: Dict, existing_complaints: List[Dict]) -> Tuple[Optional[str], float]:
-        """Detect best match using vector search or keyword fallback.
+        """Detect best match using ONNX semantic search or keyword fallback.
 
         Routing order:
         1. Tanglish path (if enabled + Tanglish text detected) → Morgan-Tanglish-v7
-        2. ML path (if SBERT available) → all-MiniLM-L6-v2 + NearestNeighbors
-        3. Fallback → Jaccard keyword overlap
+        2. ONNX semantic path (default) → all-MiniLM-L6-v2 via fastembed
+        3. Legacy ML path (if SBERT available) → all-MiniLM-L6-v2 + NearestNeighbors
+        4. Fallback → Jaccard keyword overlap
         """
         if not existing_complaints:
             return None, 0.0
@@ -235,7 +335,11 @@ class DuplicateDetector:
                     return incident_id, conf
                 # conf == -1 means model failed to load — fall through
 
-        # Phase 2: Standard ML path
+        # Phase 2: ONNX semantic path (default)
+        if isinstance(self._backend, _SemanticDuplicateDetector):
+            return self._backend.detect_duplicates(new_complaint, existing_complaints)
+
+        # Phase 3: Legacy ML path
         if self._backend == 'ml':
             self._fit(existing_complaints)
             text = f"{new_complaint.get('title', '')} {new_complaint.get('description', '')}"
@@ -246,17 +350,8 @@ class DuplicateDetector:
             distances, indices = self.nn.kneighbors(query_emb)
             best_idx = indices[0][0]
             best_match = existing_complaints[best_idx]
-            conf = self._compute_confidence(new_complaint, best_match, 1 - distances[0][0])
+            conf = _weighted_confidence(new_complaint, best_match, 1 - distances[0][0])
             return best_match.get('incident_id'), conf
 
-        # Phase 3: Lightweight fallback
+        # Phase 4: Lightweight fallback
         return self._backend.detect_duplicates(new_complaint, existing_complaints)
-
-    def _compute_confidence(self, comp1: Dict, comp2: Dict, text_sim: float) -> float:
-        weights = {'text': 0.6, 'location': 0.3, 'category': 0.1}
-        loc1 = (comp1.get('lat', 0), comp1.get('lon', 0))
-        loc2 = (comp2.get('lat', 0), comp2.get('lon', 0))
-        dist = geodesic(loc1, loc2).meters
-        loc_sim = max(0, 1 - (dist / 1000))
-        cat_sim = 1.0 if comp1.get('category') == comp2.get('category') else 0.0
-        return text_sim * weights['text'] + loc_sim * weights['location'] + cat_sim * weights['category']

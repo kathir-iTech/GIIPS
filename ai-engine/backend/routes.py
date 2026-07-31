@@ -2,6 +2,8 @@
 API route definitions for GIIPS backend.
 """
 
+from __future__ import annotations
+
 import os
 import asyncio
 import json

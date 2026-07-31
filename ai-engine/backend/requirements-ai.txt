@@ -1,6 +1,0 @@
-# Optional AI/ML dependencies for enhanced duplicate detection.
-# Install manually when needed:
-#   pip install -r requirements-ai.txt
-# Not needed for Render deployment — a lightweight keyword-overlap fallback is used automatically.
-sentence-transformers>=3.0.1
-torch>=2.3.0

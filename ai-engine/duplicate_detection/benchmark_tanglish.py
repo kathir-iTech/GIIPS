@@ -10,7 +10,6 @@ from pathlib import Path
 
 sys.path.insert(0, str(Path(__file__).parent.parent / 'backend'))
 sys.path.insert(0, str(Path(__file__).parent.parent))
-os.environ['GIIPS_TANGLISH_MODEL'] = '1'
 
 # ── 50 realistic Tanglish civic complaint pairs ──────────────────────
 # (title_a, title_b, is_duplicate, category, same_location)
@@ -360,150 +359,155 @@ WEIGHT_SCHEMES = [
 
 # ── Main benchmark ──────────────────────────────────────────────────
 
-print("=" * 72)
-print("TANGLISH DUPLICATE DETECTION BENCHMARK")
-print("50 realistic Tanglish civic complaint pairs")
-print("=" * 72)
+def main():
+    os.environ['GIIPS_TANGLISH_MODEL'] = '1'
+    print("=" * 72)
+    print("TANGLISH DUPLICATE DETECTION BENCHMARK")
+    print("50 realistic Tanglish civic complaint pairs")
+    print("=" * 72)
 
-# Load Tanglish model
-print("\n[1/4] Loading Morgan-Tanglish-v7...")
-from sentence_transformers import SentenceTransformer
-t0 = time.time()
-model = SentenceTransformer("vishnu-n/Morgan-Tanglish-v7")
-print(f"  Loaded in {time.time() - t0:.1f}s  (dim={model.get_embedding_dimension()})")
+    # Load Tanglish model
+    print("\n[1/4] Loading Morgan-Tanglish-v7...")
+    from sentence_transformers import SentenceTransformer
+    t0 = time.time()
+    model = SentenceTransformer("vishnu-n/Morgan-Tanglish-v7")
+    print(f"  Loaded in {time.time() - t0:.1f}s  (dim={model.get_embedding_dimension()})")
 
-# Build complaint dicts once
-print("\n[2/4] Building complaint data and embeddings...")
-import numpy as np
-all_texts = []
-complaint_pairs = []
-for title_a, title_b, is_dup, cat, same_loc in PAIRS:
-    lat_a = lat_b = 11.0168
-    lon_a = lon_b = 76.9558
-    if not same_loc:
-        lat_b = 11.0200
-        lon_b = 76.9600
-    a = {"title": title_a, "description": "", "lat": lat_a, "lon": lon_a, "category": cat}
-    b = {"title": title_b, "description": "", "lat": lat_b, "lon": lon_b, "category": cat}
-    complaint_pairs.append((a, b, is_dup))
-    all_texts.append(title_a)
-    all_texts.append(title_b)
+    # Build complaint dicts once
+    print("\n[2/4] Building complaint data and embeddings...")
+    import numpy as np
+    all_texts = []
+    complaint_pairs = []
+    for title_a, title_b, is_dup, cat, same_loc in PAIRS:
+        lat_a = lat_b = 11.0168
+        lon_a = lon_b = 76.9558
+        if not same_loc:
+            lat_b = 11.0200
+            lon_b = 76.9600
+        a = {"title": title_a, "description": "", "lat": lat_a, "lon": lon_a, "category": cat}
+        b = {"title": title_b, "description": "", "lat": lat_b, "lon": lon_b, "category": cat}
+        complaint_pairs.append((a, b, is_dup))
+        all_texts.append(title_a)
+        all_texts.append(title_b)
 
-# Compute all embeddings in one batch call (100 texts)
-print(f"  Encoding {len(all_texts)} texts in one batch...")
-embeddings = model.encode(all_texts, show_progress_bar=False)
-embeddings = np.array(embeddings)
+    # Compute all embeddings in one batch call (100 texts)
+    print(f"  Encoding {len(all_texts)} texts in one batch...")
+    embeddings = model.encode(all_texts, show_progress_bar=False)
+    embeddings = np.array(embeddings)
 
-from sklearn.metrics.pairwise import cosine_similarity
+    from sklearn.metrics.pairwise import cosine_similarity
 
-# Score with Jaccard
-jaccard_results = []
-for a, b, is_dup in complaint_pairs:
-    j_score = jaccard_detect_dup(a, b)
-    jaccard_results.append((is_dup, j_score, None))
+    # Score with Jaccard
+    jaccard_results = []
+    for a, b, is_dup in complaint_pairs:
+        j_score = jaccard_detect_dup(a, b)
+        jaccard_results.append((is_dup, j_score, None))
 
-# Score with Tanglish (all weight schemes from precomputed embeddings)
-print("  Computing similarity for all weight schemes...")
-scheme_results = {}
-for name, w_text, w_loc, w_cat in WEIGHT_SCHEMES:
-    scores = []
+    # Score with Tanglish (all weight schemes from precomputed embeddings)
+    print("  Computing similarity for all weight schemes...")
+    scheme_results = {}
+    for name, w_text, w_loc, w_cat in WEIGHT_SCHEMES:
+        scores = []
+        for idx, (a, b, is_dup) in enumerate(complaint_pairs):
+            emb_a = embeddings[idx * 2].reshape(1, -1)
+            emb_b = embeddings[idx * 2 + 1].reshape(1, -1)
+            text_sim = float(cosine_similarity(emb_a, emb_b)[0][0])
+
+            from geopy.distance import geodesic
+            loc1 = (a['lat'], a['lon'])
+            loc2 = (b['lat'], b['lon'])
+            dist = geodesic(loc1, loc2).meters
+            loc_sim = max(0, 1 - (dist / 1000))
+            cat_sim = 1.0 if a['category'] == b['category'] else 0.0
+
+            s = text_sim * w_text + loc_sim * w_loc + cat_sim * w_cat
+            scores.append((is_dup, s, None))
+        scheme_results[name] = scores
+
+    # Tanglish text-only variant (always useful to show)
+    tanglish_text_results = []
     for idx, (a, b, is_dup) in enumerate(complaint_pairs):
         emb_a = embeddings[idx * 2].reshape(1, -1)
         emb_b = embeddings[idx * 2 + 1].reshape(1, -1)
         text_sim = float(cosine_similarity(emb_a, emb_b)[0][0])
+        tanglish_text_results.append((is_dup, text_sim, None))
 
-        from geopy.distance import geodesic
-        loc1 = (a['lat'], a['lon'])
-        loc2 = (b['lat'], b['lon'])
-        dist = geodesic(loc1, loc2).meters
-        loc_sim = max(0, 1 - (dist / 1000))
-        cat_sim = 1.0 if a['category'] == b['category'] else 0.0
+    # ── Threshold sweep ──────────────────────────────────────────────────
+    print("\n[3/4] Sweeping thresholds (0.50–0.85 step 0.01) across all weight schemes...")
+    THRESHOLDS = [x / 100 for x in range(50, 86)]
 
-        s = text_sim * w_text + loc_sim * w_loc + cat_sim * w_cat
-        scores.append((is_dup, s, None))
-    scheme_results[name] = scores
+    best_overall = None  # (name, threshold, metrics)
 
-# Tanglish text-only variant (always useful to show)
-tanglish_text_results = []
-for idx, (a, b, is_dup) in enumerate(complaint_pairs):
-    emb_a = embeddings[idx * 2].reshape(1, -1)
-    emb_b = embeddings[idx * 2 + 1].reshape(1, -1)
-    text_sim = float(cosine_similarity(emb_a, emb_b)[0][0])
-    tanglish_text_results.append((is_dup, text_sim, None))
+    for name, scores in sorted(scheme_results.items()):
+        best_for_scheme = None
+        for t in THRESHOLDS:
+            m = compute_metrics(scores, t)
+            if best_for_scheme is None or m['f1'] > best_for_scheme['f1']:
+                best_for_scheme = m
+        scheme_name_short = name.split("(")[0].strip()
+        if best_overall is None or best_for_scheme['f1'] > best_overall[2]['f1']:
+            best_overall = (name, best_for_scheme['threshold'], best_for_scheme)
 
-# ── Threshold sweep ──────────────────────────────────────────────────
-print("\n[3/4] Sweeping thresholds (0.50–0.85 step 0.01) across all weight schemes...")
-THRESHOLDS = [x / 100 for x in range(50, 86)]
+    print("\n  Best result per weighting scheme:")
+    print(f"  {'Scheme':<22} {'Thresh':<7} {'Prec':<7} {'Recall':<7} {'F1':<7} {'Acc':<7} {'TP':<4} {'FP':<4} {'FN':<4} {'TN':<4}")
+    print(f"  {'-'*22} {'-'*7} {'-'*7} {'-'*7} {'-'*7} {'-'*7} {'-'*4} {'-'*4} {'-'*4} {'-'*4}")
+    for name, scores in sorted(scheme_results.items()):
+        best_for_scheme = None
+        for t in THRESHOLDS:
+            m = compute_metrics(scores, t)
+            if best_for_scheme is None or m['f1'] > best_for_scheme['f1']:
+                best_for_scheme = m
+        m = best_for_scheme
+        highlight = " <<<" if name == best_overall[0] else ""
+        print(f"  {name:<22} {m['threshold']:<7.2f} {m['precision']:<7.3f} {m['recall']:<7.3f} {m['f1']:<7.3f} {m['accuracy']:<7.3f} {m['tp']:<4} {m['fp']:<4} {m['fn']:<4} {m['tn']:<4}{highlight}")
 
-best_overall = None  # (name, threshold, metrics)
-
-for name, scores in sorted(scheme_results.items()):
-    best_for_scheme = None
+    print(f"\n  Text-only (TanglishText, 100/0/0) best:")
+    m_txt = compute_metrics(tanglish_text_results, best_overall[1])
     for t in THRESHOLDS:
-        m = compute_metrics(scores, t)
-        if best_for_scheme is None or m['f1'] > best_for_scheme['f1']:
-            best_for_scheme = m
-    scheme_name_short = name.split("(")[0].strip()
-    if best_overall is None or best_for_scheme['f1'] > best_overall[2]['f1']:
-        best_overall = (name, best_for_scheme['threshold'], best_for_scheme)
+        mt = compute_metrics(tanglish_text_results, t)
+        if mt['f1'] > m_txt['f1']:
+            m_txt = mt
+    print(f"  {'Text-only':<22} {m_txt['threshold']:<7.2f} {m_txt['precision']:<7.3f} {m_txt['recall']:<7.3f} {m_txt['f1']:<7.3f} {m_txt['accuracy']:<7.3f} {m_txt['tp']:<4} {m_txt['fp']:<4} {m_txt['fn']:<4} {m_txt['tn']:<4}")
 
-print("\n  Best result per weighting scheme:")
-print(f"  {'Scheme':<22} {'Thresh':<7} {'Prec':<7} {'Recall':<7} {'F1':<7} {'Acc':<7} {'TP':<4} {'FP':<4} {'FN':<4} {'TN':<4}")
-print(f"  {'-'*22} {'-'*7} {'-'*7} {'-'*7} {'-'*7} {'-'*7} {'-'*4} {'-'*4} {'-'*4} {'-'*4}")
-for name, scores in sorted(scheme_results.items()):
-    best_for_scheme = None
-    for t in THRESHOLDS:
-        m = compute_metrics(scores, t)
-        if best_for_scheme is None or m['f1'] > best_for_scheme['f1']:
-            best_for_scheme = m
-    m = best_for_scheme
-    highlight = " <<<" if name == best_overall[0] else ""
-    print(f"  {name:<22} {m['threshold']:<7.2f} {m['precision']:<7.3f} {m['recall']:<7.3f} {m['f1']:<7.3f} {m['accuracy']:<7.3f} {m['tp']:<4} {m['fp']:<4} {m['fn']:<4} {m['tn']:<4}{highlight}")
+    # Jaccard baseline
+    j_best = compute_metrics(jaccard_results, 0.3)
+    print(f"\n  Jaccard (current baseline @0.30):  Acc={j_best['accuracy']:.1%}  F1={j_best['f1']:.3f}  Prec={j_best['precision']:.1%}  Recall={j_best['recall']:.1%}")
 
-print(f"\n  Text-only (TanglishText, 100/0/0) best:")
-m_txt = compute_metrics(tanglish_text_results, best_overall[1])
-for t in THRESHOLDS:
-    mt = compute_metrics(tanglish_text_results, t)
-    if mt['f1'] > m_txt['f1']:
-        m_txt = mt
-print(f"  {'Text-only':<22} {m_txt['threshold']:<7.2f} {m_txt['precision']:<7.3f} {m_txt['recall']:<7.3f} {m_txt['f1']:<7.3f} {m_txt['accuracy']:<7.3f} {m_txt['tp']:<4} {m_txt['fp']:<4} {m_txt['fn']:<4} {m_txt['tn']:<4}")
+    # ── Per-pair comparison for best config ──────────────────────────────
+    print(f"\n[4/4] Per-pair: {best_overall[0]} @ threshold {best_overall[1]:.2f}")
+    best_scores = scheme_results[best_overall[0]]
+    best_thresh = best_overall[1]
+    print(f"  {'#':<3} {'GT':<5} {'Jaccard':<8} {'TangWgt':<8} {'J_OK':<5} {'W_OK':<5}  Notes")
+    print(f"  {'-'*3} {'-'*5} {'-'*8} {'-'*8} {'-'*5} {'-'*5}  {'-'*40}")
+    for i, (title_a, title_b, is_dup, cat, same_loc) in enumerate(PAIRS):
+        j_score = jaccard_results[i][1]
+        w_score = best_scores[i][1]
+        j_ok = (j_score > 0.3) == is_dup
+        w_ok = (w_score >= best_thresh) == is_dup
+        gt = "DUP" if is_dup else "DIST"
+        notes = []
+        if j_ok and not w_ok: notes.append("Jaccard better")
+        if w_ok and not j_ok: notes.append("Tanglish better")
+        if not j_ok and not w_ok: notes.append("Both wrong")
+        if j_ok and w_ok: notes.append("Both correct")
+        print(f"  {i:<3} {gt:<5} {j_score:<8.3f} {w_score:<8.3f} {'P' if j_ok else 'F':<5} {'P' if w_ok else 'F':<5}  {', '.join(notes)}")
 
-# Jaccard baseline
-j_best = compute_metrics(jaccard_results, 0.3)
-print(f"\n  Jaccard (current baseline @0.30):  Acc={j_best['accuracy']:.1%}  F1={j_best['f1']:.3f}  Prec={j_best['precision']:.1%}  Recall={j_best['recall']:.1%}")
+    # ── Summary ──────────────────────────────────────────────────────────
+    print("\n" + "=" * 72)
+    print("RECOMMENDATION")
+    print("=" * 72)
+    print(f"  Best config:  {best_overall[0]}")
+    print(f"  Threshold:    {best_overall[1]:.2f}")
+    best_metrics = best_overall[2]
+    print(f"  F1:           {best_metrics['f1']:.3f}  (vs Jaccard {j_best['f1']:.3f})")
+    print(f"  Accuracy:     {best_metrics['accuracy']:.1%}  (vs Jaccard {j_best['accuracy']:.1%})")
+    print(f"  Precision:    {best_metrics['precision']:.1%}  (vs Jaccard {j_best['precision']:.1%})")
+    print(f"  Recall:       {best_metrics['recall']:.1%}  (vs Jaccard {j_best['recall']:.1%})")
+    print(f"  TP/FP/FN/TN:  {best_metrics['tp']}/{best_metrics['fp']}/{best_metrics['fn']}/{best_metrics['tn']}")
+    print(f"\n  Text-only also strong: F1={m_txt['f1']:.3f} @ {m_txt['threshold']:.2f} "
+          f"(Prec={m_txt['precision']:.1%} Recall={m_txt['recall']:.1%})")
+    print(f"\n  Memory: ~724 MB RSS (Render $7/mo or local)")
+    print("=" * 72)
 
-# ── Per-pair comparison for best config ──────────────────────────────
-print(f"\n[4/4] Per-pair: {best_overall[0]} @ threshold {best_overall[1]:.2f}")
-best_scores = scheme_results[best_overall[0]]
-best_thresh = best_overall[1]
-print(f"  {'#':<3} {'GT':<5} {'Jaccard':<8} {'TangWgt':<8} {'J_OK':<5} {'W_OK':<5}  Notes")
-print(f"  {'-'*3} {'-'*5} {'-'*8} {'-'*8} {'-'*5} {'-'*5}  {'-'*40}")
-for i, (title_a, title_b, is_dup, cat, same_loc) in enumerate(PAIRS):
-    j_score = jaccard_results[i][1]
-    w_score = best_scores[i][1]
-    j_ok = (j_score > 0.3) == is_dup
-    w_ok = (w_score >= best_thresh) == is_dup
-    gt = "DUP" if is_dup else "DIST"
-    notes = []
-    if j_ok and not w_ok: notes.append("Jaccard better")
-    if w_ok and not j_ok: notes.append("Tanglish better")
-    if not j_ok and not w_ok: notes.append("Both wrong")
-    if j_ok and w_ok: notes.append("Both correct")
-    print(f"  {i:<3} {gt:<5} {j_score:<8.3f} {w_score:<8.3f} {'P' if j_ok else 'F':<5} {'P' if w_ok else 'F':<5}  {', '.join(notes)}")
-
-# ── Summary ──────────────────────────────────────────────────────────
-print("\n" + "=" * 72)
-print("RECOMMENDATION")
-print("=" * 72)
-print(f"  Best config:  {best_overall[0]}")
-print(f"  Threshold:    {best_overall[1]:.2f}")
-best_metrics = best_overall[2]
-print(f"  F1:           {best_metrics['f1']:.3f}  (vs Jaccard {j_best['f1']:.3f})")
-print(f"  Accuracy:     {best_metrics['accuracy']:.1%}  (vs Jaccard {j_best['accuracy']:.1%})")
-print(f"  Precision:    {best_metrics['precision']:.1%}  (vs Jaccard {j_best['precision']:.1%})")
-print(f"  Recall:       {best_metrics['recall']:.1%}  (vs Jaccard {j_best['recall']:.1%})")
-print(f"  TP/FP/FN/TN:  {best_metrics['tp']}/{best_metrics['fp']}/{best_metrics['fn']}/{best_metrics['tn']}")
-print(f"\n  Text-only also strong: F1={m_txt['f1']:.3f} @ {m_txt['threshold']:.2f} "
-      f"(Prec={m_txt['precision']:.1%} Recall={m_txt['recall']:.1%})")
-print(f"\n  Memory: ~724 MB RSS (Render $7/mo or local)")
-print("=" * 72)
+if __name__ == "__main__":
+    main()

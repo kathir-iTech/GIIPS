@@ -24,7 +24,7 @@ from sqlalchemy.orm import Session
 from database import SessionLocal, Complaint, Incident, PriorityHistory, Geofence, User, AuditLog
 from job_queue import get_pool
 from models import ClassifyRequest, PriorityRequest
-from services import ClassificationService, DuplicateDetector, PriorityService as PriorityScorer
+from services import ClassificationService, DuplicateDetector, DUP_CONF_THRESHOLD, PriorityService as PriorityScorer
 from department_map import get_department
 
 logger = logging.getLogger(__name__)
@@ -123,12 +123,12 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
                         )
                     )
                     .order_by(Complaint.created_at.desc())
-                    .limit(1000)
+                    .limit(200)
                     .all()
                 )
                 formatted = [_format_existing(c) for c in existing]
                 incident_id, dup_conf = duplicate_detector.detect_duplicates(data, formatted)
-                is_duplicate = dup_conf > 0.8
+                is_duplicate = dup_conf > DUP_CONF_THRESHOLD
             except Exception as exc:
                 logger.warning("Duplicate detection failed: %s", exc)
 

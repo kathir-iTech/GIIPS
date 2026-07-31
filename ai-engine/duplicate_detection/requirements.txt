@@ -1,22 +1,14 @@
 # Duplicate Detection Module Requirements
 # ========================================
 # GIIPS AI Engine - Duplicate Detection
+#
+# Runtime dependencies come from ai-engine/backend/requirements.txt
+# (fastembed provides the ONNX semantic encoder — no torch needed).
+# This file is informational; install with:
+#   pip install fastembed
 
-# Sentence Transformers for embeddings
-sentence-transformers>=2.2.0
+# ONNX semantic embeddings (default duplicate-detection path)
+fastembed>=0.8.0
 
-# PyTorch (sentence-transformers dependency)
-torch>=2.0.0
-
-# FAISS for fast similarity search (CPU version)
-faiss-cpu>=1.7.4
-# For GPU support, replace with: faiss-gpu>=1.7.4
-
-# Data processing
+# Numerical processing
 numpy>=1.24.0
-pandas>=2.0.0
-
-# Progress bars
-tqdm>=4.65.0
-
-# Python 3.13 compatible

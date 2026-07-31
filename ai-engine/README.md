@@ -7,7 +7,7 @@ Governance Incident Intelligence & Prioritization System - AI Backend
 The GIIPS AI Engine provides machine learning capabilities for:
 
 1. **Complaint Classification** - Categorize incoming complaints using TF-IDF + Logistic Regression
-2. **Duplicate Detection** - Cluster similar complaints using SentenceTransformer embeddings + DBSCAN
+2. **Duplicate Detection** - Semantic duplicate detection via all-MiniLM-L6-v2 (ONNX, fastembed) with Jaccard fallback
 3. **Priority Scoring** - Calculate explainable priority scores for incidents
 
 ## Installation
