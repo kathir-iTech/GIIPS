@@ -40,3 +40,23 @@
   .kpi-value { font-size: 28px; }
   .chart-card { padding: 16px; }
 }
+
+.sla-table-wrapper { overflow-x: auto; }
+.sla-category-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+.sla-category-table th { padding: 10px 14px; text-align: left; font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: 0.5px; color: var(--text-muted); border-bottom: 2px solid var(--border-default); white-space: nowrap; }
+.sla-category-table td { padding: 10px 14px; border-bottom: 1px solid var(--border-subtle); color: var(--text-primary); }
+.sla-category-table tr:last-child td { border-bottom: none; }
+.sla-category-table tbody tr:hover { background: rgba(99, 102, 241, 0.04); }
+.sla-category-table .sla-cat-name { font-weight: 500; }
+.sla-green-text { color: #16a34a; font-weight: 600; }
+.sla-red-text { color: #dc2626; font-weight: 600; }
+.benchmark-badge { display: inline-block; padding: 2px 10px; border-radius: 12px; font-size: 0.75rem; font-weight: 600; }
+.benchmark-good { background: rgba(22, 163, 74, 0.15); color: #16a34a; }
+.benchmark-bad { background: rgba(220, 38, 38, 0.15); color: #dc2626; }
+
+.funnel-bars { display: flex; flex-direction: column; gap: 12px; }
+.funnel-row { display: flex; align-items: center; gap: 14px; }
+.funnel-label { width: 120px; font-size: 12px; color: var(--text-secondary); text-align: right; flex-shrink: 0; font-weight: 500; }
+.funnel-track { flex: 1; height: 24px; background: rgba(255,255,255,0.03); border-radius: 4px; overflow: hidden; }
+.funnel-fill { height: 100%; border-radius: 4px; transition: width 0.8s ease; min-width: 2px; }
+.funnel-count { width: 60px; font-size: 12px; color: var(--text-muted); text-align: right; flex-shrink: 0; font-variant-numeric: tabular-nums; font-weight: 600; }

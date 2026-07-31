@@ -198,20 +198,37 @@ const Transparency = () => {
           </div>
         )}
 
-        {satisfactionData.length > 0 && (
-          <div className="chart-card" style={{ marginTop: '1.5rem' }}>
-            <div className="chart-hdr">
-              <h3>{t('transparency.satisfactionTrendTitle')}</h3>
-              <span className="chart-desc">{t('transparency.satisfactionTrendDesc')}</span>
+        {satisfactionData.length > 0 && (() => {
+          const ratings = satisfactionData.map((d: any) => d.avg_rating).filter((v: any) => v != null);
+          const cityAvg = ratings.length > 0 ? ratings.reduce((a: number, b: number) => a + b, 0) / ratings.length : 0;
+          const aboveCount = ratings.filter((v: number) => v > cityAvg).length;
+          const good = aboveCount >= ratings.length / 2;
+          return (
+            <div className="chart-card" style={{ marginTop: '1.5rem' }}>
+              <div className="chart-hdr">
+                <h3>{t('transparency.satisfactionBenchmarkTitle')}</h3>
+                <span className="chart-desc">{t('transparency.satisfactionBenchmarkDesc')}</span>
+              </div>
+              <Plot
+                data={[
+                  {x: satisfactionData.map((d: any) => d.week), y: satisfactionData.map((d: any) => d.avg_rating), type: 'scatter', mode: 'lines+markers', name: t('transparency.satisfactionTrendTitle'), marker: { color: '#16a34a' }},
+                  {x: satisfactionData.map((d: any) => d.week), y: satisfactionData.map(() => cityAvg), type: 'scatter', mode: 'lines', name: t('transparency.benchmarkCityAvg', { value: cityAvg.toFixed(2) }), line: { color: '#f59e0b', dash: 'dash', width: 2 }},
+                ]}
+                layout={{title:'', width: null, height: 300, autosize: true, paper_bgcolor:'transparent', plot_bgcolor:'transparent', font:{color:'var(--text-primary)'}, margin:{t:10,b:40,l:40,r:10}, xaxis:{gridcolor:'rgba(255,255,255,0.05)'}, yaxis:{gridcolor:'rgba(255,255,255,0.05)',range:[1,5]}, legend:{orientation:'h', y:-0.25}}}
+                config={{ displayModeBar: false, responsive: true }}
+                style={{ width: '100%' }}
+              />
+              <div className="benchmark-legend" style={{ display: 'flex', alignItems: 'center', gap: 12, marginTop: 8 }}>
+                <span className="benchmark-badge" style={{ padding: '3px 10px', borderRadius: 12, fontSize: '0.75rem', fontWeight: 600, background: good ? 'rgba(22,163,74,0.15)' : 'rgba(220,38,38,0.15)', color: good ? '#16a34a' : '#dc2626' }}>
+                  {good ? t('transparency.benchmarkAbove') : t('transparency.benchmarkBelow')}
+                </span>
+                <span className="benchmark-city-avg" style={{ fontSize: '0.8rem', color: '#f59e0b' }}>
+                  {t('transparency.benchmarkCityAvg', { value: cityAvg.toFixed(2) })}
+                </span>
+              </div>
             </div>
-            <Plot
-              data={[{x: satisfactionData.map(d=>d.week), y: satisfactionData.map(d=>d.avg_rating), type:'scatter', mode:'lines+markers', marker:{color:'#16a34a'}}]}
-              layout={{title:'', width: null, height: 300, autosize: true, paper_bgcolor:'transparent', plot_bgcolor:'transparent', font:{color:'var(--text-primary)'}, margin:{t:10,b:40,l:40,r:10}, xaxis:{gridcolor:'rgba(255,255,255,0.05)'}, yaxis:{gridcolor:'rgba(255,255,255,0.05)',range:[1,5]}}}
-              config={{ displayModeBar: false, responsive: true }}
-              style={{ width: '100%' }}
-            />
-          </div>
-        )}
+          );
+        })()}
 
         <div className="ward-lookup-section">
           <h2><MapPin size={20} /> {t('transparency.wordLookupTitle')}</h2>

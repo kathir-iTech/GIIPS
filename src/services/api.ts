@@ -939,4 +939,36 @@ export const api = {
     if (!response.ok) throw new Error(await getErrorMessage(response));
     return response.json();
   },
+
+  // F1: high public impact incidents
+  getHighImpactIncidents: () =>
+    fetchWithTimeout(`${BASE_URL}/executive/high-impact-incidents`, {}).then(safeJson),
+
+  // F2: SLA compliance by category
+  getSlaByCategory: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/sla-by-category`, {}).then(safeJson),
+
+  // F3: officer performance trend
+  getOfficerPerformanceTrend: (officerName: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/officer-performance-trend/${encodeURIComponent(officerName)}`, {}).then(safeJson),
+
+  // F9: migrate complaints between categories
+  migrateCategory: (oldCategory: string, newCategory: string) =>
+    fetchWithTimeout(`${BASE_URL}/admin/migrate-category`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ old_category: oldCategory, new_category: newCategory })
+    }).then(safeJson),
+
+  // F10: citizen referral stats
+  getReferralStats: () =>
+    fetchWithTimeout(`${BASE_URL}/citizen/referral-stats`, {}).then(safeJson),
+
+  // F12: processing analytics (funnel)
+  getProcessingAnalytics: () =>
+    fetchWithTimeout(`${BASE_URL}/admin/processing-analytics`, {}).then(safeJson),
+
+  // F14: public complaint trend
+  getComplaintTrend: () =>
+    fetchWithTimeout(`${BASE_URL}/public/complaint-trend`, {}).then(safeJson),
 };

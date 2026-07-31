@@ -49,6 +49,9 @@ const DepartmentManagement = () => {
   const [selectedDept, setSelectedDept] = useState('');
   const [heatmapDepts, setHeatmapDepts] = useState<string[]>([]);
   const [histogram, setHistogram] = useState<any[]>([]);
+  const [trendOfficer, setTrendOfficer] = useState<string | null>(null);
+  const [trendData, setTrendData] = useState<any[]>([]);
+  const [trendLoading, setTrendLoading] = useState(false);
 
   useEffect(() => {
     fetchDepartments();
@@ -123,6 +126,20 @@ const DepartmentManagement = () => {
   });
 
   const avgAll = departments.reduce((s, d) => s + d.avg_resolution_time, 0) / departments.length;
+
+  const openOfficerTrend = async (name: string) => {
+    setTrendOfficer(name);
+    setTrendData([]);
+    setTrendLoading(true);
+    try {
+      const data = await api.getOfficerPerformanceTrend(name);
+      if (Array.isArray(data)) setTrendData(data);
+    } catch {
+      setTrendData([]);
+    } finally {
+      setTrendLoading(false);
+    }
+  };
 
   const sortIcon = (key: SortKey) => {
     if (sortKey !== key) return null;
@@ -224,6 +241,7 @@ const DepartmentManagement = () => {
                 <th onClick={() => handleSort('avg_resolution_time')} className={sortKey === 'avg_resolution_time' ? 'active' : ''}>
                   {t('departmentManagement.columnAvgResolution')} {sortIcon('avg_resolution_time')}
                 </th>
+                <th>{t('departmentManagement.benchmarkTitle')}</th>
                 <th onClick={() => handleSort('avg_citizen_rating')} className={sortKey === 'avg_citizen_rating' ? 'active' : ''}>
                   {t('departmentManagement.columnAvgRating')} {sortIcon('avg_citizen_rating')}
                 </th>
@@ -237,11 +255,12 @@ const DepartmentManagement = () => {
                 <tr key={dept.department}>
                   <td className="dept-name">{t(getDeptI18nKey(dept.department))}</td>
                   <td>{dept.open_incidents}</td>
-                  <td>{(dept.avg_resolution_time ?? 0).toFixed(1)}d
-                    <span className={`benchmark-badge ${dept.avg_resolution_time <= avgAll ? 'benchmark-good' : 'benchmark-bad'}`}>
-                      {dept.avg_resolution_time <= avgAll ? '-' : '+'}{(Math.abs(dept.avg_resolution_time - avgAll)).toFixed(1)}
-                    </span>
-                  </td>
+                  <td>{(dept.avg_resolution_time ?? 0).toFixed(1)}d</td>
+                  <td>{(() => {
+                    const diff = (dept.avg_resolution_time ?? 0) - avgAll;
+                    const label = Math.abs(diff) < 0.05 ? t('departmentManagement.benchmarkSame') : diff < 0 ? t('departmentManagement.benchmarkFaster') : t('departmentManagement.benchmarkSlower');
+                    return <span className={`benchmark-badge ${diff <= 0 ? 'benchmark-good' : 'benchmark-bad'}`}>{label}</span>;
+                  })()}</td>
                   <td>{dept.avg_citizen_rating != null ? dept.avg_citizen_rating.toFixed(1) : '—'}</td>
                   <td className={dept.aging_count > 0 ? 'aging-warn' : ''}>{dept.aging_count}</td>
                 </tr>
@@ -276,7 +295,7 @@ const DepartmentManagement = () => {
                 {officerPerf.map((o, i) => (
                   <tr key={o.officer_name}>
                     <td className="rank-cell">{i + 1}</td>
-                    <td className="dept-name">{o.officer_name}</td>
+                    <td className="dept-name" style={{ cursor: 'pointer', color: '#818cf8' }} onClick={() => openOfficerTrend(o.officer_name)}>{o.officer_name}</td>
                     <td>{t(getDeptI18nKey(o.department))}</td>
                     <td>{(o.skills ? JSON.parse(o.skills) : []).map((s: string) => <span key={s} className="skill-badge">{s}</span>)}</td>
                     <td className={o.avg_days_to_resolve <= 7 ? 'perf-good' : o.avg_days_to_resolve <= 14 ? 'perf-ok' : 'perf-slow'}>
@@ -362,6 +381,57 @@ const DepartmentManagement = () => {
           </div>
         )}
       </div>
+
+      {trendOfficer && (
+        <div className="dialog-overlay" onClick={() => setTrendOfficer(null)}>
+          <div className="dialog" onClick={e => e.stopPropagation()} style={{ minWidth: 560 }}>
+            <h3>{t('departmentManagement.officerTrendTitle')}</h3>
+            <p style={{ fontSize: 13, color: 'var(--text-secondary)', margin: '0 0 16px' }}>
+              {t('departmentManagement.officerTrendSubtitle', { name: trendOfficer })}
+            </p>
+            {trendLoading ? (
+              <div className="loading">{t('departmentManagement.loading')}</div>
+            ) : trendData.length === 0 ? (
+              <div className="empty">{t('departmentManagement.officerTrendEmpty')}</div>
+            ) : (
+              <Plot
+                data={[
+                  {
+                    x: trendData.map((d: any) => d.week),
+                    y: trendData.map((d: any) => d.avg_days_to_resolve ?? 0),
+                    type: 'scatter', mode: 'lines+markers',
+                    name: t('departmentManagement.officerTrendAvgDays'),
+                    line: { color: '#3b82f6', width: 2 },
+                    marker: { size: 6 },
+                  },
+                  {
+                    x: trendData.map((d: any) => d.week),
+                    y: trendData.map((d: any) => d.total_resolved ?? 0),
+                    type: 'bar',
+                    name: t('departmentManagement.officerTrendResolved'),
+                    marker: { color: 'rgba(139,92,246,0.35)' },
+                    yaxis: 'y2',
+                  },
+                ]}
+                layout={{
+                  title: '', height: 280, autosize: true,
+                  paper_bgcolor: 'transparent', plot_bgcolor: 'transparent',
+                  font: { color: 'var(--text-primary)' },
+                  margin: { t: 10, b: 40, l: 40, r: 40 },
+                  legend: { orientation: 'h', y: -0.2 },
+                  yaxis: { gridcolor: 'rgba(255,255,255,0.05)', title: '' },
+                  yaxis2: { overlaying: 'y', side: 'right', showgrid: false, title: '' },
+                }}
+                config={{ displayModeBar: false, responsive: true }}
+                style={{ width: '100%' }}
+              />
+            )}
+            <div className="dialog-actions">
+              <button onClick={() => setTrendOfficer(null)}>{t('departmentManagement.officerTrendClose')}</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

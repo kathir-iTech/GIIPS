@@ -456,7 +456,10 @@
     "submitAnyway": "Submit Anyway",
     "compressingImage": "Compressing image...",
     "addMoreDetails": "Add more details",
-    "detailHint": "Add more details like: exact location, how long this has been a problem, how many people are affected."
+    "detailHint": "Add more details like: exact location, how long this has been a problem, how many people are affected.",
+    "recentAddressesTitle": "Recent Addresses",
+    "recentAddressesEmpty": "No recent addresses yet",
+    "clearRecentAddresses": "Clear"
   },
 
   "overview": {
@@ -607,7 +610,17 @@
     "moderateConfidence": "Moderate (40-70%)",
     "lowConfidence": "Low (<40%) — officer review recommended",
     "whyThisCategory": "Why this category?",
-    "topKeywords": "Top Keywords"
+    "topKeywords": "Top Keywords",
+    "impactSectionTitle": "Community Impact",
+    "impactSectionDesc": "Estimated impact of resolving this complaint",
+    "impactPeople": "People Helped (est.)",
+    "impactDaysSaved": "Days Saved (est.)",
+    "impactValue": "Community Value (est.)",
+    "impactNotAvailable": "Impact estimate not available yet",
+    "photoTimelineTitle": "Photo Timeline",
+    "photoTimelineSubmitted": "Submitted",
+    "photoTimelineResolved": "Resolution",
+    "photoTimelineEmpty": "No photos available yet."
   },
 
   "myComplaints": {
@@ -994,6 +1007,15 @@
     "agingLabel": "Aging >30d",
     "estimatedCost": "Estimated Pending Remediation Cost",
     "pendingRemediation": "Total estimated cost across all open incidents",
+    "highImpact": {
+      "title": "High Public Impact",
+      "subtitle": "Incidents with the highest community impact requiring priority attention",
+      "affected": "affected",
+      "daysOpen": "days open",
+      "critical": "critical",
+      "empty": "No high-impact incidents detected",
+      "loading": "Loading high-impact incidents..."
+    },
     "footer": {
       "title": "GIIPS Executive Decision Intelligence v2.1",
       "dataRefreshed": "Data refreshed"
@@ -1046,6 +1068,20 @@
     "zoneTransferSuccess": "Zone transferred successfully"
   },
 
+  "adminTools": {
+    "title": "Category Migration Tool",
+    "subtitle": "Reclassify complaints from one category to another. Affected incidents are re-clustered on the next analysis run.",
+    "selectOld": "Current Category",
+    "selectNew": "Target Category",
+    "migrateButton": "Run Migration",
+    "migrating": "Migrating...",
+    "sameCategoryError": "Please choose a different target category",
+    "migrateSuccess": "Migration complete",
+    "migrateError": "Migration failed. Check the logs and try again.",
+    "resultCount": "Reclassified {{count}} complaint(s)",
+    "backToAdmin": "Back to Admin"
+  },
+
   "departmentManagement": {
     "loadError": "Failed to load departments",
     "header": {
@@ -1090,7 +1126,17 @@
     "slaColumnOpen": "Open",
     "slaColumnWithin": "Within SLA",
     "slaColumnBreached": "Breached SLA",
-    "slaColumnAvgBreach": "Avg Breach (days)"
+    "slaColumnAvgBreach": "Avg Breach (days)",
+    "benchmarkTitle": "Benchmark",
+    "benchmarkFaster": "faster than dept avg",
+    "benchmarkSlower": "slower than dept avg",
+    "benchmarkSame": "at dept average",
+    "officerTrendTitle": "Officer Performance Trend",
+    "officerTrendSubtitle": "Weekly resolution time for {{name}} over the last 8 weeks",
+    "officerTrendAvgDays": "Avg Days to Resolve",
+    "officerTrendResolved": "Resolved",
+    "officerTrendClose": "Close",
+    "officerTrendEmpty": "No trend data available for this officer."
   },
 
   "systemHealth": {
@@ -1197,7 +1243,18 @@
     "skillsSection": "Skills",
     "addSkillPlaceholder": "Add skill...",
     "notifUpdateError": "Failed to update notification preference",
-    "wardPrefix": "Ward {{ward}}"
+    "wardPrefix": "Ward {{ward}}",
+    "referralSection": "Referral Program",
+    "referralDesc": "Invite friends and neighbors to report civic issues and build your community impact score",
+    "referralCode": "Your Referral Code",
+    "referralStats": "Referral Stats",
+    "referralTotal": "Total Invites",
+    "referralRegistered": "Registered",
+    "referralActive": "Active Reporters",
+    "referralCopy": "Copy Link",
+    "referralCopied": "Copied!",
+    "referralShare": "Share",
+    "referralUnavailable": "Referral stats unavailable"
   },
 
   "analysis": {
@@ -1241,7 +1298,20 @@
     "highUrgency": "HIGH",
     "mediumUrgency": "MEDIUM",
     "lowUrgency": "LOW",
-    "languageStats": "Complaint Language Distribution"
+    "languageStats": "Complaint Language Distribution",
+    "slaByCategoryTitle": "SLA Compliance by Category",
+    "slaByCategorySubtitle": "Complaints resolved within SLA, per category",
+    "slaColumnCategory": "Category",
+    "slaColumnTotal": "Total",
+    "slaColumnWithin": "Within SLA",
+    "slaColumnBreached": "Breached",
+    "slaColumnCompliance": "Compliance",
+    "processingAnalyticsTitle": "Processing Analytics",
+    "processingAnalyticsSubtitle": "Complaint journey from submission to resolution",
+    "stageSubmitted": "Submitted",
+    "stageClassified": "Classified",
+    "stageRouted": "Routed",
+    "stageResolved": "Resolved"
   },
 
   "la": {
@@ -1445,7 +1515,12 @@
     "storiesWard": "Ward {{ward}}",
     "storiesResolvedIn": "Resolved in {{days}}d",
     "geoHeatTrend": "Geographic Heat Trend",
-    "geoHeatDesc": "Click a week to see which wards were hottest"
+    "geoHeatDesc": "Click a week to see which wards were hottest",
+    "satisfactionBenchmarkTitle": "Satisfaction vs Citywide Average",
+    "satisfactionBenchmarkDesc": "Weekly average rating compared to the citywide benchmark",
+    "benchmarkAbove": "Above city avg",
+    "benchmarkBelow": "Below city avg",
+    "benchmarkCityAvg": "Citywide avg: {{value}}"
   },
 
   "sla": {
@@ -1550,7 +1625,8 @@
     "descStories": "Resolved complaints with positive citizen ratings.",
     "descWordCloud": "Top 30 most frequent words in complaint descriptions.",
     "descSatisfaction": "Weekly average citizen rating over the last 8 weeks.",
-    "descWardStats": "Complaint statistics for a specific ward."
+    "descWardStats": "Complaint statistics for a specific ward.",
+    "descComplaintTrend": "Weekly complaint volume trend. Rate-limited to 30 requests per minute per IP."
   },
 
   "categoryGuide": {

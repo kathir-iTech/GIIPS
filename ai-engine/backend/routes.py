@@ -22,7 +22,7 @@ from cryptography.fernet import Fernet
 from base64 import urlsafe_b64encode
 import hashlib
 
-from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory, PeerReview, AlertConfig, ResponseTemplate, Watchlist, IncidentReassignmentRequest, ComplaintSubscription
+from database import get_db, User, Incident, Complaint, AuditLog, DepartmentMetrics, Notification, PriorityHistory, IncidentUpdate, IncidentComment, KpiTarget, Geofence, ComplaintDraft, PushSubscription, ZONE_BY_WARD, TrainingFeedback, IncidentDependency, KpiBudget, MergeSuggestion, OfficerLeave, Webhook, WardRiskHistory, PeerReview, AlertConfig, ResponseTemplate, Watchlist, IncidentReassignmentRequest, ComplaintSubscription, Referral, ReportSchedule
 from models import (
     ClassifyRequest, ClassifyResponse,
     ClusterRequest, ClusterResponse, ClusterAssignment,
@@ -63,7 +63,7 @@ from models import (
 )
 from schemas import ComplaintCreate, ComplaintSubmissionResponse, SubmissionAcceptedResponse, ComplaintProcessingStatus, EscalateRequest, AppealRequest, VerifyResolutionRequest, TrackComplaintResponse, PublicStatsResponse, TimelineEvent, ZoneStat, CategoryStat, HourStat, DayStat, FunnelStage
 from job_queue import get_complaint_status, get_pool
-from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit, check_appeal_rate_limit, check_reopen_rate_limit, check_search_rate_limit, check_copilot_rate_limit, check_public_stats_rate_limit, check_track_public_rate_limit
+from rate_limiter import check_auth_rate_limit, check_complaint_rate_limit, check_verify_rate_limit, check_track_rate_limit, check_appeal_rate_limit, check_reopen_rate_limit, check_search_rate_limit, check_copilot_rate_limit, check_public_stats_rate_limit, check_track_public_rate_limit, check_trend_rate_limit
 from constants import AGING_WARNING_DAYS, AGING_CRITICAL_DAYS, SLA_PRIORITY_BUMP
 from department_map import (
     get_department, get_department_slug, get_slug_for_department,
@@ -168,6 +168,21 @@ def _create_notification(db: Session, user_id: str, notification_type: str, comp
         if not user or not user.notify_status_updates:
             return
 
+        # F7: Smart notification grouping — same type + same complaint_id within
+        # the last hour are grouped into the lead notification (group_count++).
+        one_hour_ago = datetime.utcnow() - timedelta(hours=1)
+        existing_group = db.query(Notification).filter(
+            Notification.user_id == user_id,
+            Notification.type == notification_type,
+            Notification.complaint_id == complaint_id,
+            Notification.is_read == False,
+            Notification.created_at >= one_hour_ago,
+        ).order_by(Notification.created_at.asc()).first()
+        if existing_group:
+            existing_group.group_count = (existing_group.group_count or 1) + 1
+            existing_group.group_id = existing_group.group_id or existing_group.id
+            return
+
         # Smart batching check — only for non-officer notifications (citizen-facing)
         five_min_ago = datetime.utcnow() - timedelta(minutes=5)
         recent_unread = db.query(Notification).filter(
@@ -207,7 +222,10 @@ def _create_notification(db: Session, user_id: str, notification_type: str, comp
             type=notification_type,
             data=json.dumps(data) if data else None,
             is_read=False,
+            group_id=None,
+            group_count=1,
         )
+        notif.group_id = notif.id
         db.add(notif)
         db.flush()
         try:
@@ -341,12 +359,69 @@ async def get_risk(db: Session = Depends(get_db)):
 async def simulate(additional_teams: int, db: Session = Depends(get_db)):
     return await SpatialService().simulate_resources(db, additional_teams)
 
+# F8: Ward complaint density map — complaints per km² per ward (last 90 days)
+@spatial_router.get("/density")
+def get_ward_density(db: Session = Depends(get_db)):
+    from coimbatore_wards import WARD_AREA_KM2, ALL_WARD_NUMBERS
+    ninety_days_ago = datetime.utcnow() - timedelta(days=90)
+    rows = db.query(
+        Complaint.ward,
+        func.count(Complaint.id).label("cnt"),
+    ).filter(
+        Complaint.created_at >= ninety_days_ago,
+        Complaint.ward.isnot(None),
+        Complaint.ward != "",
+    ).group_by(Complaint.ward).all()
+    counts = {w: c for w, c in rows}
+
+    result = []
+    for wn in ALL_WARD_NUMBERS:
+        ward_str = str(wn)
+        count = counts.get(ward_str, 0)
+        area = WARD_AREA_KM2.get(wn, 6.5)
+        density = round(count / area, 2) if area > 0 else 0.0
+        result.append({
+            "ward": ward_str,
+            "complaint_count": count,
+            "area_km2": area,
+            "density_per_km2": density,
+        })
+    return result
+
 executive_router = APIRouter(prefix="/executive", tags=["Executive"])
 
 def get_executive_user(db_user: User = Depends(get_current_user)):
     if db_user.role != "Executive":
         raise HTTPException(status_code=403, detail="Executive access required")
     return db_user
+
+# F1: Severity auto-escalation to media — incidents flagged for public attention
+@executive_router.get("/high-impact-incidents")
+def get_high_impact_incidents(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    """List incidents flagged for public/media attention (public_attention_flag)."""
+    incidents = db.query(Incident).filter(
+        Incident.public_attention_flag == True
+    ).order_by(Incident.priority_score.desc()).all()
+    return {
+        "incidents": [
+            {
+                "id": inc.id,
+                "incident_number": inc.incident_number,
+                "category": inc.category,
+                "ward": inc.ward,
+                "cluster_size": inc.cluster_size,
+                "priority_score": inc.priority_score,
+                "priority_label": inc.priority_label,
+                "status": inc.status,
+                "summary": inc.summary,
+                "days_open": inc.days_open,
+                "public_attention_flag": inc.public_attention_flag,
+                "created_at": inc.created_at.isoformat() if inc.created_at else None,
+            }
+            for inc in incidents
+        ],
+        "total": len(incidents),
+    }
 
 @executive_router.get("/summary")
 async def get_executive_summary(db: Session = Depends(get_db)):
@@ -669,6 +744,103 @@ def set_alert_config(body: AlertConfigRequest, db: Session = Depends(get_db), db
         db.add(config)
     db.commit()
     return {"message": f"Alert config for {body.alert_type} set to enabled={body.enabled}"}
+
+
+# F18: Report scheduler — schedule configuration for executives
+class ReportScheduleCreate(BaseModel):
+    report_type: str
+    frequency: str
+
+
+def _generate_report_summary(db: Session, report_type: str) -> dict:
+    """Build a report summary payload for the report scheduler background task."""
+    now = datetime.utcnow()
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0)
+    summary = {"report_type": report_type, "generated_at": now.isoformat()}
+
+    if report_type == "daily_briefing":
+        summary["data"] = {
+            "new_complaints_today": db.query(func.count(Complaint.id)).filter(
+                Complaint.created_at >= today_start
+            ).scalar() or 0,
+            "resolved_today": db.query(func.count(Incident.id)).filter(
+                Incident.status_changed_at >= today_start,
+                Incident.status.in_(["resolved", "closed"]),
+            ).scalar() or 0,
+            "sla_breaches_today": db.query(func.count(Incident.id)).filter(
+                Incident.days_open > 7,
+                ~Incident.status.in_(["resolved", "closed"]),
+            ).scalar() or 0,
+            "open_incidents": db.query(func.count(Incident.id)).filter(
+                Incident.status.in_(["open", "in-progress"]),
+            ).scalar() or 0,
+        }
+    elif report_type == "ward_performance":
+        rows = db.query(
+            Complaint.ward,
+            func.count(Complaint.id).label("cnt"),
+        ).filter(
+            Complaint.ward.isnot(None),
+            Complaint.ward != "",
+        ).group_by(Complaint.ward).order_by(func.count(Complaint.id).desc()).limit(10).all()
+        summary["data"] = {"top_wards": [{"ward": w, "complaints": c} for w, c in rows]}
+    elif report_type == "department_sla":
+        summary["data"] = {"sla_by_category": _sla_by_category_data(db)}
+    else:
+        summary["data"] = {"message": f"No summary logic for report type '{report_type}'"}
+    return summary
+
+
+@executive_router.get("/report-schedules")
+def get_report_schedules(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    schedules = db.query(ReportSchedule).filter(
+        ReportSchedule.exec_user_id == db_user.id
+    ).order_by(ReportSchedule.created_at.desc()).all()
+    return [
+        {
+            "id": s.id,
+            "report_type": s.report_type,
+            "frequency": s.frequency,
+            "last_generated_at": s.last_generated_at.isoformat() if s.last_generated_at else None,
+            "created_at": s.created_at.isoformat() if s.created_at else None,
+        }
+        for s in schedules
+    ]
+
+
+@executive_router.post("/report-schedules")
+def create_report_schedule(body: ReportScheduleCreate, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    if body.frequency not in ("daily", "weekly", "monthly"):
+        raise HTTPException(status_code=400, detail="frequency must be one of: daily, weekly, monthly")
+    schedule = ReportSchedule(
+        id=str(uuid.uuid4()),
+        exec_user_id=db_user.id,
+        report_type=body.report_type,
+        frequency=body.frequency,
+    )
+    db.add(schedule)
+    db.commit()
+    db.refresh(schedule)
+    return {
+        "id": schedule.id,
+        "report_type": schedule.report_type,
+        "frequency": schedule.frequency,
+        "last_generated_at": schedule.last_generated_at.isoformat() if schedule.last_generated_at else None,
+        "created_at": schedule.created_at.isoformat() if schedule.created_at else None,
+    }
+
+
+@executive_router.delete("/report-schedules/{schedule_id}")
+def delete_report_schedule(schedule_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    schedule = db.query(ReportSchedule).filter(
+        ReportSchedule.id == schedule_id,
+        ReportSchedule.exec_user_id == db_user.id,
+    ).first()
+    if not schedule:
+        raise HTTPException(status_code=404, detail="Schedule not found")
+    db.delete(schedule)
+    db.commit()
+    return {"message": "Schedule deleted"}
 
 
 @executive_router.get("/councillor-performance")
@@ -2087,6 +2259,27 @@ async def auto_escalate_aging_incidents(db: Session = Depends(get_db)):
                 _create_notification(db, None, "sla_breach", complaint_id=None, data={"incident_number": inc.incident_number, "incident_id": inc.id, "message": f"Incident escalated to Executive level after 72h"})
                 results["exec_escalated"] += 1
 
+        # F1: Severity auto-escalation to media — flag high-impact incidents
+        # (cluster_size > 50, priority_score > 85, days_open > 14) for public attention.
+        media_targets = db.query(Incident).filter(
+            Incident.cluster_size > 50,
+            Incident.priority_score > 85,
+            Incident.days_open > 14,
+            Incident.public_attention_flag == False,
+        ).all()
+        for inc in media_targets:
+            try:
+                inc.public_attention_flag = True
+                _write_audit_log(
+                    db, None, "system", "system",
+                    "public_attention_flag", inc.id, "success",
+                    f"High-impact incident flagged for public attention "
+                    f"(cluster_size={inc.cluster_size}, priority_score={inc.priority_score}, days_open={inc.days_open})"
+                )
+                results["media_flagged"] = results.get("media_flagged", 0) + 1
+            except Exception as e:
+                results["errors"].append(f"media flag {inc.id}: {e}")
+
         db.commit()
 
         total = results["ward_escalated"] + results["zone_escalated"]
@@ -3312,6 +3505,8 @@ async def get_notifications(db_user: User = Depends(get_current_user), db: Sessi
             type=n.type,
             data=json.loads(n.data) if n.data else None,
             is_read=n.is_read,
+            group_id=n.group_id,
+            group_count=n.group_count,
             created_at=n.created_at.isoformat() if n.created_at else "",
         )
         for n in notifs
@@ -3418,6 +3613,33 @@ def _send_push_notification(user_id: str, title: str, body: str, url: str = "/",
         logger.warning("Push notification lookup failed for user %s", user_id)
 
 
+# === Citizen Routes ===
+
+citizen_router = APIRouter(prefix="/citizen", tags=["Citizen"])
+
+# F10: Citizen referral stats — referral code + referred citizens list
+@citizen_router.get("/referral-stats")
+def get_referral_stats(db_user: User = Depends(get_current_user), db: Session = Depends(get_db)):
+    if db_user.role != "Citizen":
+        raise HTTPException(status_code=403, detail="Only citizens can view referral stats")
+    code = hashlib.sha1(db_user.id.encode()).hexdigest()[:8].upper()
+    referrals = db.query(Referral).filter(
+        Referral.referrer_user_id == db_user.id
+    ).order_by(Referral.created_at.desc()).all()
+    referred_citizens = [
+        {
+            "email": r.referred_email,
+            "registered_at": r.created_at.isoformat() if r.created_at else None,
+        }
+        for r in referrals
+    ]
+    return {
+        "referral_code": code,
+        "referral_count": len(referred_citizens),
+        "referred_citizens": referred_citizens,
+    }
+
+
 # === Incident Intelligence Routes ===
 # ... (existing intelligence_router)
 
@@ -3445,6 +3667,19 @@ async def register(user: UserRegister, request: Request, _: None = Depends(check
     if db.query(User).filter(User.email == user.email).first():
         raise HTTPException(status_code=400, detail="Email already registered")
     hashed_pw = hash_password(user.password)
+
+    # F10: citizen referral — match referral code (sha1(user.id) first 8 chars) to a referrer
+    referrer = None
+    referral_code = getattr(user, "referral_code", None)
+    if referral_code:
+        code_norm = referral_code.strip().upper()
+        for u in db.query(User).all():
+            if hashlib.sha1(u.id.encode()).hexdigest()[:8].upper() == code_norm:
+                referrer = u
+                break
+        if referrer is None:
+            raise HTTPException(status_code=400, detail="Invalid referral code")
+
     # FEATURE 14: email verification
     verification_code = f"{random.randint(100000, 999999)}"
     new_user = User(
@@ -3460,6 +3695,9 @@ async def register(user: UserRegister, request: Request, _: None = Depends(check
         email_verified=False,
     )
     db.add(new_user)
+    db.flush()
+    if referrer:
+        db.add(Referral(referrer_user_id=referrer.id, referred_email=user.email))
     db.commit()
     return {"message": "User registered successfully", "user_id": new_user.id, "role": new_user.role, "verification_code": verification_code}
 
@@ -4001,6 +4239,183 @@ async def get_officer_performance(db_user: User = Depends(get_executive_user), d
     return result
 
 
+# F2: SLA by category — SLA = resolved within 48 hours of creation
+SLA_CATEGORIES = ["Roads", "Water Supply", "Waste Management", "Sanitation", "Street Lighting", "Electricity", "Public Health"]
+SLA_RESOLUTION_HOURS = 48
+
+
+def _sla_by_category_data(db: Session) -> list:
+    """Compute SLA compliance per category for resolved incidents.
+    Shared by the /admin/sla-by-category endpoint and the report scheduler."""
+    resolved = db.query(Incident).filter(
+        Incident.status == "resolved",
+        Incident.status_changed_at.isnot(None),
+    ).all()
+
+    result = []
+    for cat in SLA_CATEGORIES:
+        total = 0
+        resolved_within = 0
+        total_hours = 0.0
+        breaches = 0
+        for inc in resolved:
+            if inc.category != cat:
+                continue
+            if not inc.created_at:
+                continue
+            total += 1
+            hours = (inc.status_changed_at - inc.created_at).total_seconds() / 3600.0
+            total_hours += hours
+            if hours <= SLA_RESOLUTION_HOURS:
+                resolved_within += 1
+            else:
+                breaches += 1
+        result.append({
+            "category": cat,
+            "sla_compliance_rate": round(resolved_within / total * 100, 1) if total else 0.0,
+            "avg_resolution_hours": round(total_hours / total, 1) if total else 0.0,
+            "breach_count": breaches,
+        })
+    return result
+
+
+@admin_router.get("/sla-by-category")
+def get_sla_by_category(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    return _sla_by_category_data(db)
+
+
+# F3: Officer performance trend — weekly resolved counts for the last 8 weeks
+@admin_router.get("/officer-performance-trend/{officer_name}")
+def get_officer_performance_trend(officer_name: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    officer = db.query(User).filter(
+        User.full_name == officer_name,
+        User.role == "Officer",
+    ).first()
+    if not officer:
+        raise HTTPException(status_code=404, detail="Officer not found")
+
+    eight_weeks_ago = datetime.utcnow() - timedelta(weeks=8)
+    resolved_incs = db.query(Incident).filter(
+        Incident.accepted_by == officer.id,
+        Incident.status == "resolved",
+        Incident.status_changed_at.isnot(None),
+        Incident.status_changed_at >= eight_weeks_ago,
+    ).all()
+
+    now = datetime.utcnow()
+    weeks = []
+    for w in range(8):
+        week_end = now - timedelta(weeks=w)
+        week_start = week_end - timedelta(days=week_end.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_end_dt = week_start + timedelta(days=7)
+        resolved = sum(
+            1 for i in resolved_incs
+            if week_start <= i.status_changed_at < week_end_dt
+        )
+        weeks.append({"week_start": week_start.date().isoformat(), "resolved": resolved})
+    weeks.reverse()
+    return {"officer_name": officer.full_name, "weeks": weeks}
+
+
+# F9: Category migration tool — bulk-renames a category across complaints + incidents
+class MigrateCategoryRequest(BaseModel):
+    old_category: str
+    new_category: str
+
+
+@admin_router.post("/migrate-category")
+def migrate_category(body: MigrateCategoryRequest, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    if not body.old_category or not body.new_category:
+        raise HTTPException(status_code=400, detail="old_category and new_category are required")
+    complaints_updated = db.query(Complaint).filter(
+        Complaint.predicted_category == body.old_category
+    ).update({"predicted_category": body.new_category}, synchronize_session=False)
+    incidents_updated = db.query(Incident).filter(
+        Incident.category == body.old_category
+    ).update({"category": body.new_category}, synchronize_session=False)
+    db.commit()
+    _write_audit_log(
+        db, db_user.id, db_user.email, db_user.role,
+        "category_migrate", f"{body.old_category} -> {body.new_category}", "success",
+        f"Complaints updated: {complaints_updated}, Incidents updated: {incidents_updated}",
+    )
+    return {
+        "message": f"Category '{body.old_category}' migrated to '{body.new_category}'",
+        "complaints_updated": complaints_updated,
+        "incidents_updated": incidents_updated,
+    }
+
+
+# F12: Processing analytics — average hours per pipeline stage
+@admin_router.get("/processing-analytics")
+def get_processing_analytics(db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
+    def _avg_hours(diffs):
+        valid = [d for d in diffs if d is not None]
+        if not valid:
+            return 0.0
+        return round(sum(d.total_seconds() for d in valid) / 3600.0 / len(valid), 1)
+
+    # submission -> classification: incident.created_at - min(complaint.created_at) per incident
+    linked = db.query(Complaint).filter(Complaint.incident_id.isnot(None)).all()
+    incident_ids = list({c.incident_id for c in linked})
+    incidents = db.query(Incident).filter(Incident.id.in_(incident_ids)).all() if incident_ids else []
+    inc_by_id = {i.id: i for i in incidents}
+
+    submit_to_classify = None
+    classify_to_incident = []
+    for c in linked:
+        inc = inc_by_id.get(c.incident_id)
+        if not inc or not inc.created_at or not c.created_at:
+            continue
+        classify_to_incident.append(inc.created_at - c.created_at)
+    per_incident_min = {}
+    for c in linked:
+        inc = inc_by_id.get(c.incident_id)
+        if not inc or not inc.created_at or not c.created_at:
+            continue
+        diff = inc.created_at - c.created_at
+        if per_incident_min.get(inc.id) is None or diff < per_incident_min[inc.id]:
+            per_incident_min[inc.id] = diff
+    submit_to_classify = list(per_incident_min.values())
+
+    # incident creation -> assignment
+    creation_to_assignment = []
+    for i in incidents:
+        if i.accepted_at and i.created_at:
+            creation_to_assignment.append(i.accepted_at - i.created_at)
+
+    # assignment -> first status update (first IncidentUpdate.created_at)
+    assignment_to_first_update = []
+    for i in incidents:
+        if not i.accepted_at:
+            continue
+        updates = [u for u in (i.updates or []) if u.created_at]
+        if updates:
+            first_update = min(u.created_at for u in updates)
+            assignment_to_first_update.append(first_update - i.accepted_at)
+
+    # first update -> resolution (status_changed_at for resolved)
+    first_update_to_resolution = []
+    for i in incidents:
+        if i.status != "resolved" or not i.status_changed_at:
+            continue
+        updates = [u for u in (i.updates or []) if u.created_at]
+        if updates:
+            first_update = min(u.created_at for u in updates)
+            first_update_to_resolution.append(i.status_changed_at - first_update)
+
+    stages = [
+        {"stage": "submission_to_classification", "avg_hours": _avg_hours(submit_to_classify)},
+        {"stage": "classification_to_incident_creation", "avg_hours": _avg_hours(classify_to_incident)},
+        {"stage": "incident_creation_to_assignment", "avg_hours": _avg_hours(creation_to_assignment)},
+        {"stage": "assignment_to_first_status_update", "avg_hours": _avg_hours(assignment_to_first_update)},
+        {"stage": "first_update_to_resolution", "avg_hours": _avg_hours(first_update_to_resolution)},
+    ]
+    total_avg_hours = round(sum(s["avg_hours"] for s in stages), 1)
+    return {"stages": stages, "total_avg_hours": total_avg_hours}
+
+
 @admin_router.get("/departments/list")
 async def get_department_list(db_user: User = Depends(get_executive_user)):
     """Get the authoritative list of all departments with slugs and i18n keys."""
@@ -4287,7 +4702,7 @@ async def get_knowledge_summary(db: Session = Depends(get_db)):
         if worst_ward_name:
             worst_inc = db.query(Incident).filter(Incident.ward == worst_ward_name).order_by(Incident.created_at.desc()).first()
             if worst_inc:
-                root_cause_result = engine.get_root_cause(worst_inc.id)
+                root_cause_result = engine.get_root_cause(worst_inc.id, db=db)
                 root_causes = root_cause_result.get("top_root_causes", [])
                 cascade_chains = engine.analyze_cascade_impact(worst_inc.id)
 
@@ -5122,8 +5537,65 @@ async def get_department_capacity(db_user: User = Depends(get_executive_user), d
 def add_officer_leave(officer_id: str, body: dict, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
     leave = OfficerLeave(officer_id=officer_id, date=body["date"], reason=body.get("reason", ""))
     db.add(leave)
+    db.flush()
+
+    # F13: Officer leave redistribution — reassign open/in-progress incidents
+    # to the least-loaded available officer in the same department.
+    officer = db.query(User).filter(User.id == officer_id).first()
+    if officer:
+        leave_date = body["date"]
+        incidents = db.query(Incident).filter(
+            Incident.accepted_by == officer_id,
+            Incident.status.in_(["open", "in-progress"]),
+        ).all()
+        same_dept_officers = db.query(User).filter(
+            User.role == "Officer",
+            User.department == officer.department,
+            User.availability == "available",
+            User.status == "active",
+            User.id != officer_id,
+        ).all()
+        available = [
+            o for o in same_dept_officers
+            if not db.query(OfficerLeave).filter(
+                OfficerLeave.officer_id == o.id,
+                OfficerLeave.date == leave_date,
+            ).first()
+        ]
+        reassigned = 0
+        for inc in incidents:
+            if not available:
+                break
+            def _load_key(o):
+                return db.query(Incident).filter(
+                    Incident.accepted_by == o.id,
+                    Incident.status.in_(["open", "in-progress"]),
+                ).count()
+            best = min(available, key=_load_key)
+            inc.accepted_by = best.id
+            inc.accepted_at = datetime.utcnow()
+            _write_audit_log(
+                db, db_user.id, db_user.email, db_user.role,
+                "incident_reassigned_leave", inc.id, "success",
+                f"Auto-reassigned due to leave: {officer.full_name} → {best.full_name}"
+            )
+            _create_notification(
+                db, best.id, "incident_reassigned",
+                complaint_id=None,
+                data={
+                    "incident_id": inc.id,
+                    "incident_number": inc.incident_number,
+                    "category": inc.category,
+                    "ward": inc.ward,
+                    "message": f"Auto-reassigned due to leave: {officer.full_name} → {best.full_name}",
+                },
+            )
+            reassigned += 1
+        if reassigned:
+            logger.info("F13: Reassigned %d incident(s) from officer %s due to leave on %s", reassigned, officer_id, leave_date)
+
     db.commit()
-    return {"message": "Leave added"}
+    return {"message": "Leave added", "reassigned": reassigned if 'reassigned' in locals() else 0}
 
 @admin_router.get("/officers/{officer_id}/leave")
 def get_officer_leave(officer_id: str, db: Session = Depends(get_db), db_user: User = Depends(get_executive_user)):
@@ -5397,6 +5869,77 @@ def get_ward_improvement(db: Session = Depends(get_db)):
 def get_ward_risk_history(ward: str, db: Session = Depends(get_db)):
     rows = db.query(WardRiskHistory).filter(WardRiskHistory.ward == ward).order_by(WardRiskHistory.snapshot_at.desc()).limit(30).all()
     return [{"risk_score": r.risk_score, "snapshot_at": r.snapshot_at.isoformat()} for r in rows]
+
+
+# F14: Public complaint trend — citywide + per-category totals for the last 12 weeks
+@public_router.get("/public/complaint-trend")
+async def public_complaint_trend(request: Request, _: None = Depends(check_trend_rate_limit), db: Session = Depends(get_db)):
+    twelve_weeks_ago = datetime.utcnow() - timedelta(weeks=12)
+    complaints = db.query(Complaint).filter(Complaint.created_at >= twelve_weeks_ago).all()
+
+    now = datetime.utcnow()
+    weeks = []
+    for w in range(11, -1, -1):
+        week_end = now - timedelta(weeks=w)
+        week_start = week_end - timedelta(days=week_end.weekday())
+        week_start = week_start.replace(hour=0, minute=0, second=0, microsecond=0)
+        week_end_dt = week_start + timedelta(days=7)
+        week_complaints = [
+            c for c in complaints
+            if week_start <= c.created_at < week_end_dt
+        ]
+        by_category = {}
+        for c in week_complaints:
+            cat = c.predicted_category or "Uncategorized"
+            by_category[cat] = by_category.get(cat, 0) + 1
+        weeks.append({
+            "week_start": week_start.date().isoformat(),
+            "total": len(week_complaints),
+            "by_category": by_category,
+        })
+    return {"weeks": weeks}
+
+
+# F17: Geographic trend — this month vs last month complaint counts per ward
+@public_router.get("/public/geographic-trend")
+def get_geographic_trend(db: Session = Depends(get_db)):
+    from coimbatore_wards import ALL_WARD_NUMBERS
+    now = datetime.utcnow()
+    this_month_start = now.replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+    last_month_start = (this_month_start - timedelta(days=1)).replace(day=1, hour=0, minute=0, second=0, microsecond=0)
+
+    rows = db.query(
+        Complaint.ward,
+        func.count(Complaint.id).label("cnt"),
+    ).filter(
+        Complaint.created_at >= last_month_start,
+        Complaint.ward.isnot(None),
+        Complaint.ward != "",
+    ).group_by(Complaint.ward).all()
+    counts = {w: c for w, c in rows}
+
+    result = []
+    for wn in ALL_WARD_NUMBERS:
+        ward_str = str(wn)
+        this_month = db.query(func.count(Complaint.id)).filter(
+            Complaint.ward == ward_str,
+            Complaint.created_at >= this_month_start,
+        ).scalar() or 0
+        last_month = db.query(func.count(Complaint.id)).filter(
+            Complaint.ward == ward_str,
+            Complaint.created_at >= last_month_start,
+            Complaint.created_at < this_month_start,
+        ).scalar() or 0
+        change = this_month - last_month
+        direction = "worsening" if change > 0 else "improving" if change < 0 else "stable"
+        result.append({
+            "ward": ward_str,
+            "this_month": this_month,
+            "last_month": last_month,
+            "change": change,
+            "direction": direction,
+        })
+    return result
 
 
 # === Public Endpoints (no auth required) ===

@@ -136,6 +136,7 @@ const ExecutiveDashboard = () => {
   const [copilotLoading, setCopilotLoading] = useState(false);
 
   const [selectedZone, setSelectedZone] = useState<string | null>(null);
+  const [highImpact, setHighImpact] = useState<any[]>([]);
 
   const exportCSV = useCallback(() => {
     const rows: string[][] = [];
@@ -206,6 +207,7 @@ const ExecutiveDashboard = () => {
         api.getSystemHealth().catch(() => ({})),
         api.get('/executive/kpi-targets').then(r => r.json()).catch(() => []),
         fetch(`${import.meta.env.VITE_API_BASE_URL}/dashboard/trend`).then(r => r.json()).catch(() => ({ labels: [], complaints: [], incidents: [] })),
+        api.getHighImpactIncidents().catch(() => []),
       ]);
       const feedErrors: string[] = [];
       const checkFeed = (r: any, name: string) => {
@@ -231,6 +233,7 @@ const ExecutiveDashboard = () => {
         setTrendLabels(trendRaw.labels || []);
         setTrendComplaints(trendRaw.complaints || []);
       }
+      setHighImpact(checkFeed(results[12], 'highImpact') || []);
       const zoneDist = checkFeed(results[11], 'zoneAge');
       if (zoneDist) setZoneAgeDist(zoneDist);
       if (feedErrors.length > 0) {
@@ -1006,6 +1009,34 @@ const ExecutiveDashboard = () => {
             </div>
           )}
         </div>
+      </SectionCard>
+
+      {/* F1: High Public Impact */}
+      <SectionCard title={t('executive.highImpact.title')} subtitle={t('executive.highImpact.subtitle')} icon={<Users2 size={18} />}>
+        {highImpact.length === 0 ? (
+          <div className="empty-state">
+            <CheckCircle2 size={32} />
+            <p>{t('executive.highImpact.empty')}</p>
+          </div>
+        ) : (
+          <div className="high-impact-grid">
+            {highImpact.slice(0, 6).map((inc: any, idx: number) => (
+              <div key={inc.id || idx} className="high-impact-card">
+                <div className="hi-top">
+                  <span className="inc-number">{inc.incident_number || inc.id}</span>
+                  <PriorityBadge priority={inc.priority_label || inc.priority || 'Medium'} />
+                </div>
+                <p className="hi-summary">{inc.summary || inc.title || ''}</p>
+                <div className="hi-meta">
+                  <span className="hi-metric"><Users2 size={12} /> {(inc.affected_population ?? inc.cluster_size ?? 1).toLocaleString()} {t('executive.highImpact.affected')}</span>
+                  <span className="hi-metric"><Clock size={12} /> {inc.days_open ?? 0} {t('executive.highImpact.daysOpen')}</span>
+                  <span className="hi-metric"><MapPin size={12} /> {inc.ward || '—'}</span>
+                </div>
+                {inc.impact_reason && <p className="hi-reason">{inc.impact_reason}</p>}
+              </div>
+            ))}
+          </div>
+        )}
       </SectionCard>
 
       {/* Zone Age Distribution */}

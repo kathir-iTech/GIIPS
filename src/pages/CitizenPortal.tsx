@@ -13,6 +13,26 @@ import './CitizenPortal.css';
 
 const DRAFT_KEY = 'giips_complaint_wizard_draft';
 
+const RECENT_ADDRESSES_KEY = 'giips_recent_addresses';
+
+const getRecentAddresses = (): any[] => {
+  try {
+    const raw = localStorage.getItem(RECENT_ADDRESSES_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return Array.isArray(parsed) ? parsed : [];
+  } catch {
+    return [];
+  }
+};
+
+const saveRecentAddress = (addr: any) => {
+  try {
+    const recents = getRecentAddresses().filter((r: any) => r.address !== addr.address);
+    recents.unshift(addr);
+    localStorage.setItem(RECENT_ADDRESSES_KEY, JSON.stringify(recents.slice(0, 5)));
+  } catch {}
+};
+
 const COMPLAINT_TEMPLATES = [
   { category: 'Roads', title: 'Pothole on my street needs repair', description: 'There is a large pothole on our road that has been causing issues for vehicles and pedestrians. It is located near the main junction and gets worse every time it rains. Please repair it as soon as possible.' },
   { category: 'Water Supply', title: 'No water supply in our area', description: 'We have not received water supply for the past few days. The entire street is affected and residents are struggling to get water for daily needs. Please restore water supply urgently.' },
@@ -407,6 +427,9 @@ const CitizenPortal = () => {
 
   if (result && !isProcessing) {
     try { localStorage.removeItem(DRAFT_KEY); } catch {}
+    if (formData.address || formData.location) {
+      saveRecentAddress({ address: formData.address || formData.location, lat: formData.latitude, lon: formData.longitude, ward: formData.ward || '' });
+    }
     if (result.offline) {
       return (
         <div className="portal-container success">
@@ -648,6 +671,39 @@ const CitizenPortal = () => {
                   {t('citizenPortal.locationPinned')}
                 </small>
               )}
+              {(() => {
+                const recents = getRecentAddresses();
+                if (recents.length === 0) return null;
+                return (
+                  <div className="recent-addresses">
+                    <span className="recent-addresses-label">{t('citizenPortal.recentAddressesTitle')}</span>
+                    {recents.map((r: any, i: number) => (
+                      <button
+                        key={i}
+                        type="button"
+                        className="recent-address-chip"
+                        onClick={() => setFormData(prev => ({
+                          ...prev,
+                          location: r.address || prev.location,
+                          address: r.address || prev.address,
+                          latitude: r.lat ?? prev.latitude,
+                          longitude: r.lon ?? prev.longitude,
+                          ward: r.ward || prev.ward || '',
+                        }))}
+                      >
+                        <MapPin size={12} /> {r.address}
+                      </button>
+                    ))}
+                    <button
+                      type="button"
+                      className="recent-address-clear"
+                      onClick={() => { try { localStorage.removeItem(RECENT_ADDRESSES_KEY); } catch {} }}
+                    >
+                      {t('citizenPortal.clearRecentAddresses')}
+                    </button>
+                  </div>
+                );
+              })()}
             </div>
           )}
           {step === 4 && (

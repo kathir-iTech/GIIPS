@@ -13,6 +13,7 @@ if a future scale-up needs a dedicated worker process).
 import json
 import logging
 import math
+import re
 import uuid
 from datetime import datetime, timedelta
 from typing import Optional
@@ -90,6 +91,13 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
         urgency_keywords = ["fire", "flood", "collapse", "accident", "gas leak", "electrocution", "medical", "emergency", "blast", "building collapse"]
         complaint_full_text = f"{data['title']} {data.get('description', '')}"
         complaint.urgency_flag = "HIGH" if any(kw in complaint_full_text.lower() for kw in urgency_keywords) else "LOW"
+
+        # F19: complexity label (mirrors POST /classify logic) — used for senior-officer routing
+        desc_len_score = min(len(data.get("description", "")) / 500, 1.0) * 0.3
+        sent_count_score = min(len(re.split("[.!?]", data.get("description", ""))) / 10, 1.0) * 0.25
+        category_weights = {"Roads": 0.25, "Water Supply": 0.3, "Waste Management": 0.2, "Public Health": 0.35, "Street Lighting": 0.2, "Electricity": 0.3, "Sanitation": 0.25}
+        complexity_total = desc_len_score + sent_count_score + category_weights.get(category, 0.2)
+        complaint.complexity_label = "simple" if complexity_total < 0.4 else "moderate" if complexity_total < 0.7 else "complex"
 
         incident_id = None
         dup_conf = 0.0
@@ -313,6 +321,20 @@ async def process_complaint_pipeline(complaint_id: str, user_id: Optional[str] =
             User.availability == "available",
             User.status == "active",
         ).all()
+        # F19: Complexity-based assignment — complex complaints go to senior officers
+        # (those who have resolved > 50 incidents). Falls back to the normal pool
+        # if no senior officer exists.
+        if complaint.complexity_label == "Complex" and available_officers:
+            senior_officers = [
+                o for o in available_officers
+                if db.query(Incident).filter(
+                    Incident.accepted_by == o.id,
+                    Incident.status == "resolved",
+                ).count() > 50
+            ]
+            if senior_officers:
+                available_officers = senior_officers
+                logger.info("F19: restricted pool to %d senior officer(s) for complex complaint %s", len(senior_officers), complaint.id)
         if available_officers:
             current_hour = datetime.utcnow().hour
             if 6 <= current_hour < 14:

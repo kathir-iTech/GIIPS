@@ -171,6 +171,7 @@ class UserRegister(BaseModel):
     phone: Optional[str] = None
     district: Optional[str] = None
     ward: Optional[str] = None
+    referral_code: Optional[str] = None  # F10: citizen referral system
 
 class ProfileUpdate(BaseModel):
     full_name: Optional[str] = None
@@ -266,6 +267,8 @@ class NotificationResponse(BaseModel):
     type: str
     data: Optional[Dict[str, Any]] = None
     is_read: bool
+    group_id: Optional[str] = None  # F7: smart notification grouping
+    group_count: Optional[int] = 1  # F7: smart notification grouping
     created_at: str
 
 class UpdateStatusRequest(BaseModel):

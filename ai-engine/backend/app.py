@@ -210,6 +210,13 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[BACKFILL] status_changed_at backfill skipped: %s", exc)
 
+        # F1/F7/F10/F18: add new columns/tables for existing deployments
+        try:
+            from database import add_new_feature_columns
+            add_new_feature_columns()
+        except Exception as exc:
+            logger.warning("[MIGRATION] New feature columns skipped: %s", exc)
+
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
 
@@ -369,16 +376,64 @@ async def lifespan(app: FastAPI):
     task3 = asyncio.create_task(_auto_close_loop())
     logger.info("[STARTUP] Auto-close background task started (interval: 24h)")
 
+    # F18: Report scheduler — generates due reports and notifies executives (runs hourly)
+    async def _report_scheduler_loop():
+        """Periodically generate scheduled reports for executives."""
+        while True:
+            try:
+                import uuid as _uuid
+                from database import SessionLocal, ReportSchedule, User, Notification
+                from routes import _generate_report_summary
+                db = SessionLocal()
+                try:
+                    now = datetime.utcnow()
+                    intervals = {"daily": 24 * 3600, "weekly": 7 * 24 * 3600, "monthly": 30 * 24 * 3600}
+                    schedules = db.query(ReportSchedule).all()
+                    for s in schedules:
+                        interval = intervals.get(s.frequency)
+                        if not interval:
+                            continue
+                        if s.last_generated_at and (now - s.last_generated_at).total_seconds() < interval:
+                            continue
+                        exec_user = db.query(User).filter(User.id == s.exec_user_id).first()
+                        if not exec_user:
+                            continue
+                        summary = _generate_report_summary(db, s.report_type)
+                        notif = Notification(
+                            id=str(_uuid.uuid4()),
+                            user_id=s.exec_user_id,
+                            type="report_generated",
+                            data=json.dumps(summary),
+                            is_read=False,
+                            group_id=None,
+                            group_count=1,
+                        )
+                        notif.group_id = notif.id
+                        db.add(notif)
+                        s.last_generated_at = now
+                        logger.info("[REPORT-SCHEDULER] Generated %s report for user %s", s.report_type, s.exec_user_id)
+                    db.commit()
+                finally:
+                    db.close()
+            except Exception as exc:
+                logger.warning("[REPORT-SCHEDULER] Cycle failed: %s", exc)
+            await asyncio.sleep(3600)
+
+    task4 = asyncio.create_task(_report_scheduler_loop())
+    logger.info("[STARTUP] Report scheduler background task started (interval: 1h)")
+
     yield
 
     # Cleanup: cancel the background tasks on shutdown
     task.cancel()
     task2.cancel()
     task3.cancel()
+    task4.cancel()
     try:
         await task
         await task2
         await task3
+        await task4
     except asyncio.CancelledError:
         pass
 
@@ -470,7 +525,7 @@ async def csrf_origin_check(request: Request, call_next):
     return await call_next(request)
 
 
-from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router, ws_router, search_router, officer_router
+from routes import classify_router, cluster_router, priority_router, dashboard_router, incident_router, complaint_router, executive_router, spatial_router, auth_router, admin_router, prediction_router, knowledge_router, decision_router, copilot_router, notifications_router, debug_router, public_router, ws_router, search_router, officer_router, citizen_router
 
 app.include_router(classify_router)
 app.include_router(cluster_router)
@@ -492,6 +547,7 @@ app.include_router(public_router)
 app.include_router(ws_router)
 app.include_router(search_router)
 app.include_router(officer_router)
+app.include_router(citizen_router)
 
 
 # === Request/Response Models removed: now centralized in models.py and routes.py ===

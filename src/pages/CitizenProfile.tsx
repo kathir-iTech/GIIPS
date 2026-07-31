@@ -3,7 +3,7 @@ import { useTranslation } from 'react-i18next';
 import { api } from '../services/api';
 import { useAuth } from '../context/AuthContext';
 import Header from '../components/Header';
-import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2, BarChart3, Activity } from 'lucide-react';
+import { User, Mail, Phone, MapPin, Shield, Edit3, Save, X, Bell, BellOff, Building2, BarChart3, Activity, Users, Copy, Check, Share2 } from 'lucide-react';
 import { getCouncillorByWard } from '../data/councillors';
 import './CitizenProfile.css';
 
@@ -30,6 +30,8 @@ const CitizenProfile = () => {
   const [impactScore, setImpactScore] = useState(0);
   const [impactLabel, setImpactLabel] = useState('Low');
   const [complaints, setComplaints] = useState<any[]>([]);
+  const [referralStats, setReferralStats] = useState<any>(null);
+  const [referralCopied, setReferralCopied] = useState(false);
 
   useEffect(() => {
     setLoading(true);
@@ -61,6 +63,7 @@ const CitizenProfile = () => {
       setImpactScore(score);
       setImpactLabel(score >= 70 ? t('citizenProfile.impactHigh') : score >= 40 ? t('citizenProfile.impactMedium') : t('citizenProfile.impactLow'));
     }).catch(() => {});
+    api.getReferralStats().then(setReferralStats).catch(() => setReferralStats(null));
   }, []);
 
   const handleSave = async () => {
@@ -92,6 +95,17 @@ const CitizenProfile = () => {
   };
 
   const roleLabel = (role?: string) => t(ROLE_KEYS[role || ''] || role || '');
+
+  const referralCode = ((profile as any)?.referral_code || (user as any)?.referral_code || `GIIPS-${((user as any)?.phone || (user as any)?.user_id || 'CITIZEN').toString().toUpperCase().slice(0, 8)}`);
+  const referralMessage = `${t('citizenProfile.referralShare')} — GIIPS: ${referralCode}`;
+
+  const handleCopyReferral = async () => {
+    try {
+      await navigator.clipboard.writeText(referralCode);
+      setReferralCopied(true);
+      setTimeout(() => setReferralCopied(false), 2000);
+    } catch {}
+  };
 
   if (loading) return <div className="page-loading"><div className="spinner"></div><span>{t('profile.loading')}</span></div>;
   if (error) return <div className="page-error">{t('common.error')}: {error}</div>;
@@ -343,6 +357,37 @@ const CitizenProfile = () => {
             </div>
           </div>
         )}
+
+        <div className="profile-card glass-card">
+          <div className="profile-header">
+            <Users size={20} />
+            <div className="profile-title">
+              <h2>{t('citizenProfile.referralSection')}</h2>
+            </div>
+          </div>
+          <p className="referral-desc">{t('citizenProfile.referralDesc')}</p>
+          <div className="referral-code-row">
+            <code className="referral-code">{referralCode}</code>
+            <button className="referral-copy-btn" onClick={handleCopyReferral}>
+              {referralCopied ? <Check size={14} /> : <Copy size={14} />} {referralCopied ? t('citizenProfile.referralCopied') : t('citizenProfile.referralCopy')}
+            </button>
+            <a className="referral-share-btn" href={`https://wa.me/?text=${encodeURIComponent(referralMessage)}`} target="_blank" rel="noopener noreferrer">
+              <Share2 size={14} /> {t('citizenProfile.referralShare')}
+            </a>
+          </div>
+          <div className="referral-stats">
+            <span className="referral-stat-label">{t('citizenProfile.referralStats')}</span>
+            {referralStats ? (
+              <div className="referral-stat-grid">
+                <div className="referral-stat-item"><span className="referral-stat-value">{referralStats.total_invites ?? 0}</span><span className="referral-stat-name">{t('citizenProfile.referralTotal')}</span></div>
+                <div className="referral-stat-item"><span className="referral-stat-value">{referralStats.registered ?? 0}</span><span className="referral-stat-name">{t('citizenProfile.referralRegistered')}</span></div>
+                <div className="referral-stat-item"><span className="referral-stat-value">{referralStats.active_reporters ?? 0}</span><span className="referral-stat-name">{t('citizenProfile.referralActive')}</span></div>
+              </div>
+            ) : (
+              <p className="referral-unavailable">{t('citizenProfile.referralUnavailable')}</p>
+            )}
+          </div>
+        </div>
 
         <div className="info-card glass-card">
           <h3>{t('profile.aboutTitle')}</h3>

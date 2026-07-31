@@ -453,7 +453,10 @@
     "submitAnyway": "எப்படியும் சமர்ப்பிக்கவும்",
     "compressingImage": "படம் சுருக்கப்படுகிறது...",
     "addMoreDetails": "மேலும் விவரங்களைச் சேர்க்கவும்",
-    "detailHint": "மேலும் விவரங்களைச் சேர்க்கவும்: சரியான இடம், இந்த பிரச்சனை எவ்வளவு காலமாக உள்ளது, எத்தனை பேர் பாதிக்கப்பட்டுள்ளனர்."
+    "detailHint": "மேலும் விவரங்களைச் சேர்க்கவும்: சரியான இடம், இந்த பிரச்சனை எவ்வளவு காலமாக உள்ளது, எத்தனை பேர் பாதிக்கப்பட்டுள்ளனர்.",
+    "recentAddressesTitle": "சமீபத்திய முகவரிகள்",
+    "recentAddressesEmpty": "சமீபத்திய முகவரிகள் இல்லை",
+    "clearRecentAddresses": "அழி"
   },
 
     "overview": {
@@ -603,7 +606,17 @@
     "moderateConfidence": "மிதமான (40-70%)",
     "lowConfidence": "குறைந்த (<40%) — அலுவலர் மதிப்பாய்வு பரிந்துரைக்கப்படுகிறது",
     "whyThisCategory": "ஏன் இந்த வகை?",
-    "topKeywords": "முக்கிய வார்த்தைகள்"
+    "topKeywords": "முக்கிய வார்த்தைகள்",
+    "impactSectionTitle": "சமூக தாக்கம்",
+    "impactSectionDesc": "இந்த புகாரை தீர்ப்பதால் ஏற்படும் மதிப்பிடப்பட்ட தாக்கம்",
+    "impactPeople": "உதவியடைந்த மக்கள் (மதிப்பீடு)",
+    "impactDaysSaved": "சேமிக்கப்பட்ட நாட்கள் (மதிப்பீடு)",
+    "impactValue": "சமூக மதிப்பு (மதிப்பீடு)",
+    "impactNotAvailable": "தாக்க மதிப்பீடு இன்னும் கிடைக்கவில்லை",
+    "photoTimelineTitle": "புகைப்பட காலவரிசை",
+    "photoTimelineSubmitted": "சமர்ப்பிக்கப்பட்டது",
+    "photoTimelineResolved": "தீர்வு",
+    "photoTimelineEmpty": "இன்னும் புகைப்படங்கள் எதுவும் இல்லை."
   },
 
   "myComplaints": {
@@ -979,6 +992,15 @@
     "agingLabel": "முதுமை >30நா",
     "estimatedCost": "மதிப்பிடப்பட்ட நிலுவை செலவு",
     "pendingRemediation": "அனைத்து திறந்த சம்பவங்களிலும் மொத்த மதிப்பிடப்பட்ட செலவு",
+    "highImpact": {
+      "title": "அதிக பொது தாக்கம்",
+      "subtitle": "அதிக சமூக தாக்கத்தை ஏற்படுத்தும், உடனடி கவனம் தேவைப்படும் சம்பவங்கள்",
+      "affected": "பாதிக்கப்பட்டவர்கள்",
+      "daysOpen": "நாட்கள் திறந்தது",
+      "critical": "முக்கியமானது",
+      "empty": "அதிக தாக்கம் கொண்ட சம்பவங்கள் எதுவும் கண்டறியப்படவில்லை",
+      "loading": "அதிக தாக்க சம்பவங்கள் ஏற்றப்படுகின்றன..."
+    },
     "footer": {
       "title": "GIIPS நிர்வாக முடிவு நுண்ணறிவு v2.1",
       "dataRefreshed": "தரவு புதுப்பிக்கப்பட்டது"
@@ -1029,6 +1051,20 @@
     "zoneDialogDesc": "இந்த அதிகாரிக்கு புதிய மண்டலத்தை உள்ளிடவும். பழைய மண்டலத்தில் திறந்த சம்பவங்கள் அப்படியே ஒதுக்கப்பட்டிருக்கும்.",
     "zoneNewLabel": "புதிய மண்டலம்",
     "zoneTransferSuccess": "மண்டலம் வெற்றிகரமாக மாற்றப்பட்டது"
+  },
+
+  "adminTools": {
+    "title": "வகை மாற்றக் கருவி",
+    "subtitle": "முறைப்பாடுகளை ஒரு வகையிலிருந்து மற்றொரு வகைக்கு மறுவகைப்படுத்தவும். பாதிக்கப்பட்ட சம்பவங்கள் அடுத்த பகுப்பாய்வு ஓட்டத்தில் மீண்டும் குழுவாக்கப்படும்.",
+    "selectOld": "தற்போதைய வகை",
+    "selectNew": "இலக்கு வகை",
+    "migrateButton": "மாற்றத்தை இயக்கு",
+    "migrating": "மாற்றப்படுகிறது...",
+    "sameCategoryError": "வேறு இலக்கு வகையைத் தேர்ந்தெடுக்கவும்",
+    "migrateSuccess": "மாற்றம் முடிந்தது",
+    "migrateError": "மாற்றம் தோல்வியடைந்தது. பதிவுகளைச் சரிபார்த்து மீண்டும் முயற்சிக்கவும்.",
+    "resultCount": "{{count}} முறைப்பாடு(கள்) மறுவகைப்படுத்தப்பட்டது",
+    "backToAdmin": "நிர்வாகத்திற்குத் திரும்பு"
   },
 
   "department": {
@@ -1082,7 +1118,17 @@
     "slaColumnOpen": "திறந்த",
     "slaColumnWithin": "SLA-க்குள்",
     "slaColumnBreached": "SLA மீறப்பட்டது",
-    "slaColumnAvgBreach": "சராசரி மீறல் (நாட்கள்)"
+    "slaColumnAvgBreach": "சராசரி மீறல் (நாட்கள்)",
+    "benchmarkTitle": "அடிப்படை ஒப்பீடு",
+    "benchmarkFaster": "துறை சராசரியை விட வேகம்",
+    "benchmarkSlower": "துறை சராசரியை விட தாமதம்",
+    "benchmarkSame": "துறை சராசரியில்",
+    "officerTrendTitle": "அலுவலர் செயல்திறன் போக்கு",
+    "officerTrendSubtitle": "கடந்த 8 வாரங்களில் {{name}} அவர்களின் வாராந்திர தீர்வு நேரம்",
+    "officerTrendAvgDays": "சராசரி தீர்வு நாட்கள்",
+    "officerTrendResolved": "தீர்க்கப்பட்டது",
+    "officerTrendClose": "மூடு",
+    "officerTrendEmpty": "இந்த அலுவலருக்கு போக்கு தரவு இல்லை."
   },
 
   "systemHealth": {
@@ -1189,7 +1235,18 @@
     "skillsSection": "திறன்கள்",
     "addSkillPlaceholder": "திறனைச் சேர்க்கவும்...",
     "notifUpdateError": "அறிவிப்பு விருப்பத்தைப் புதுப்பிக்க முடியவில்லை",
-    "wardPrefix": "வார்டு {{ward}}"
+    "wardPrefix": "வார்டு {{ward}}",
+    "referralSection": "பரிந்துரை திட்டம்",
+    "referralDesc": "நண்பர்களையும் அண்டை வீட்டாரையும் குடிமை பிரச்சினைகளைப் புகாரளிக்க அழைத்து உங்கள் சமூக தாக்க மதிப்பெண்ணை உயர்த்துங்கள்",
+    "referralCode": "உங்கள் பரிந்துரை குறியீடு",
+    "referralStats": "பரிந்துரை புள்ளிவிவரங்கள்",
+    "referralTotal": "மொத்த அழைப்புகள்",
+    "referralRegistered": "பதிவு செய்தவர்கள்",
+    "referralActive": "செயலில் உள்ள புகாரளிப்பவர்கள்",
+    "referralCopy": "இணைப்பை நகலெடு",
+    "referralCopied": "நகலெடுக்கப்பட்டது!",
+    "referralShare": "பகிர்",
+    "referralUnavailable": "பரிந்துரை புள்ளிவிவரங்கள் கிடைக்கவில்லை"
   },
 
   "analysis": {
@@ -1233,7 +1290,20 @@
     "highUrgency": "அதிக",
     "mediumUrgency": "மத்திய",
     "lowUrgency": "குறைந்தது",
-    "languageStats": "புகார் மொழி விநியோகம்"
+    "languageStats": "புகார் மொழி விநியோகம்",
+    "slaByCategoryTitle": "வகை வாரியாக SLA இணக்கம்",
+    "slaByCategorySubtitle": "ஒவ்வொரு வகையிலும் SLA க்குள் தீர்க்கப்பட்ட புகார்கள்",
+    "slaColumnCategory": "வகை",
+    "slaColumnTotal": "மொத்தம்",
+    "slaColumnWithin": "SLA க்குள்",
+    "slaColumnBreached": "மீறப்பட்டது",
+    "slaColumnCompliance": "இணக்கம்",
+    "processingAnalyticsTitle": "செயலாக்க பகுப்பாய்வு",
+    "processingAnalyticsSubtitle": "சமர்ப்பிப்பு முதல் தீர்வு வரை புகாரின் பயணம்",
+    "stageSubmitted": "சமர்ப்பிக்கப்பட்டது",
+    "stageClassified": "வகைப்படுத்தப்பட்டது",
+    "stageRouted": "அனுப்பப்பட்டது",
+    "stageResolved": "தீர்க்கப்பட்டது"
   },
 
   "la": {
@@ -1428,7 +1498,12 @@
     "storiesWard": "வார்டு {{ward}}",
     "storiesResolvedIn": "{{days}} நாட்களில் தீர்க்கப்பட்டது",
     "geoHeatTrend": "பூகோள வெப்பம் போக்கு",
-    "geoHeatDesc": "எந்த வார்டுகள் அதிக செயல்பாட்டுடன் இருந்தது என்பதைக் காண ஒரு வாரத்தைக் கிளிக் செய்யவும்"
+    "geoHeatDesc": "எந்த வார்டுகள் அதிக செயல்பாட்டுடன் இருந்தது என்பதைக் காண ஒரு வாரத்தைக் கிளிக் செய்யவும்",
+    "satisfactionBenchmarkTitle": "திருப்தி vs நகர சராசரி",
+    "satisfactionBenchmarkDesc": "வாராந்திர சராசரி மதிப்பீடு நகர சராசரியுடன் ஒப்பிடப்பட்டது",
+    "benchmarkAbove": "நகர சராசரிக்கு மேல்",
+    "benchmarkBelow": "நகர சராசரிக்கு கீழ்",
+    "benchmarkCityAvg": "நகர சராசரி: {{value}}"
   },
 
   "sla": {
@@ -1533,7 +1608,8 @@
     "descStories": "நேர்மறை குடிமக்கள் மதிப்பீடுகளுடன் தீர்க்கப்பட்ட புகார்கள்.",
     "descWordCloud": "புகார் விளக்கங்களில் முதல் 30 அடிக்கடி வரும் வார்த்தைகள்.",
     "descSatisfaction": "கடந்த 8 வாரங்களில் வாராந்திர சராசரி குடிமக்கள் மதிப்பீடு.",
-    "descWardStats": "ஒரு குறிப்பிட்ட வார்டுக்கான புகார் புள்ளிவிவரங்கள்."
+    "descWardStats": "ஒரு குறிப்பிட்ட வார்டுக்கான புகார் புள்ளிவிவரங்கள்.",
+    "descComplaintTrend": "வாராந்திர புகார் அளவு போக்கு. ஒரு நிமிடத்திற்கு ஒரு IP க்கு 30 கோரிக்கைகள் வரை வரம்பு."
   },
 
   "categoryGuide": {

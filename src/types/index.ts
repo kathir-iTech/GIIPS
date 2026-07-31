@@ -140,12 +140,17 @@ export interface CitizenComplaint {
     original_category?: string | null;
     status_changed_at?: string | null;
     accepted_by?: string | null;
+    resolved_at?: string | null;
+    resolution_photo_path?: string | null;
+    impact_score?: number | null;
     complaints?: Array<{
       id: string;
       complaint_number: string;
       date_received: string;
       ward?: string;
       status?: string;
+      image_path?: string | null;
+      created_at?: string | null;
     }>;
     priority_history: Array<{
       id: string;
@@ -160,6 +165,13 @@ export interface CitizenComplaint {
 export interface ComplaintDetail extends CitizenComplaint {
   progress?: number;
   categories_kw?: string[];
+  complaints?: Array<{
+    id: string;
+    image_path?: string | null;
+    date_received?: string | null;
+    created_at?: string | null;
+  }>;
+  resolution_photo_path?: string | null;
 }
 
 export type UserRole = 'Citizen' | 'Officer' | 'Executive' | 'Councillor' | 'Commissioner' | 'MLA' | 'Collector' | 'Zone Commander';

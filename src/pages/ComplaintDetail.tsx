@@ -9,7 +9,7 @@ import HelpWidget from '../components/HelpWidget';
 import { getDeptI18nKey } from '../data/departments';
 import { getSLAStatus, getSLAStatusLabel } from '../utils/sla';
 import type { ComplaintDetail } from '../types';
-import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown, TrendingUp, TrendingDown, Send, QrCode } from 'lucide-react';
+import { ArrowLeft, MapPin, Calendar, Tag, AlertTriangle, CheckCircle, Clock, Link as LinkIcon, ThumbsUp, XCircle, Building2, Phone, User, Activity, Star, Edit3, Save, X, Download, ChevronDown, TrendingUp, TrendingDown, Send, QrCode, Users, IndianRupee, Camera } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { StatusTimeline, useStatusStages } from '../components/StatusTimeline';
 import './ComplaintDetail.css';
@@ -46,6 +46,7 @@ const ComplaintDetailPage = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [lightboxUrl, setLightboxUrl] = useState<string | null>(null);
   const [verifyCode, setVerifyCode] = useState('');
   const [verifyLoading, setVerifyLoading] = useState(false);
   const [verifyResult, setVerifyResult] = useState<{ success: boolean; message: string } | null>(null);
@@ -334,19 +335,45 @@ const ComplaintDetailPage = () => {
             )}
 
             {photoUrl && (
-              <div className="detail-photo" onClick={() => setLightboxOpen(true)}>
+              <div className="detail-photo" onClick={() => { setLightboxUrl(photoUrl); setLightboxOpen(true); }}>
                 <img src={photoUrl} alt={t('complaintDetail.imageAlt')} className="photo-img" />
               </div>
             )}
-            {lightboxOpen && photoUrl && (
+            {lightboxOpen && (lightboxUrl || photoUrl) && (
               <div className="lightbox-overlay" onClick={() => setLightboxOpen(false)}>
                 <div className="lightbox-content" onClick={e => e.stopPropagation()}>
                   <button className="lightbox-close-btn" onClick={() => setLightboxOpen(false)}><X size={20} /></button>
-                  <a className="lightbox-download-btn" href={photoUrl} download target="_blank" rel="noopener noreferrer"><Download size={16} /> {t('complaintDetail.downloadLink')}</a>
-                  <img src={photoUrl} alt={t('complaintDetail.imageAlt')} className="lightbox-image" />
+                  <a className="lightbox-download-btn" href={lightboxUrl || photoUrl || undefined} download target="_blank" rel="noopener noreferrer"><Download size={16} /> {t('complaintDetail.downloadLink')}</a>
+                  <img src={lightboxUrl || photoUrl || undefined} alt={t('complaintDetail.imageAlt')} className="lightbox-image" />
                 </div>
               </div>
             )}
+
+            {(() => {
+              const shots: any[] = [];
+              if (photoUrl) shots.push({ src: photoUrl, caption: t('complaintDetail.photoTimelineSubmitted'), date: data.date_received });
+              (data.complaints || []).forEach((c: any) => {
+                if (c.image_path && c.image_path !== photoUrl) shots.push({ src: c.image_path, caption: t('complaintDetail.photoTimelineSubmitted'), date: c.date_received || c.created_at });
+              });
+              const resPhoto = data.resolution_photo_path || data.incident?.resolution_photo_path;
+              if (resPhoto) shots.push({ src: resPhoto, caption: t('complaintDetail.photoTimelineResolved'), date: data.incident?.status_changed_at || data.incident?.resolved_at });
+              if (shots.length < 2) return null;
+              return (
+                <div className="photo-timeline">
+                  <h3 className="photo-timeline-title"><Camera size={15} /> {t('complaintDetail.photoTimelineTitle')}</h3>
+                  <div className="photo-timeline-track">
+                    {shots.map((s, i) => (
+                      <div key={i} className="photo-timeline-item">
+                        <span className="photo-timeline-dot" />
+                        <img src={s.src} alt={s.caption} className="photo-timeline-img" onClick={() => { setLightboxUrl(s.src); setLightboxOpen(true); }} />
+                        <span className="photo-timeline-caption">{s.caption}</span>
+                        {s.date && <span className="photo-timeline-date">{new Date(s.date).toLocaleDateString()}</span>}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              );
+            })()}
 
             {qrModalOpen && (
               <div className="lightbox-overlay" onClick={() => setQrModalOpen(false)}>
@@ -366,6 +393,26 @@ const ComplaintDetailPage = () => {
               <div className="meta-item"><AlertTriangle size={16} /> <span>{data.predicted_category || t('common.uncategorized')}</span></div>
               {data.department && <div className="meta-item"><Building2 size={16} /> <span>{t(getDeptI18nKey(data.department))}</span></div>}
             </div>
+
+            {(() => {
+              const cluster = data.incident?.cluster_size || 0;
+              const impactScore = data.incident?.impact_score ?? 50;
+              if (!cluster && !data.incident?.estimated_cost) return null;
+              const people = Math.round((impactScore / 100) * cluster * 4);
+              const daysSaved = Math.round((impactScore / 100) * 3 * cluster);
+              const value = data.incident?.estimated_cost || people * 50;
+              return (
+                <div className="impact-section">
+                  <h3 className="impact-section-title"><Users size={15} /> {t('complaintDetail.impactSectionTitle')}</h3>
+                  <p className="impact-section-desc">{t('complaintDetail.impactSectionDesc')}</p>
+                  <div className="impact-grid">
+                    <div className="impact-item"><Users size={16} /><span className="impact-item-value">{people.toLocaleString()}</span><span className="impact-item-label">{t('complaintDetail.impactPeople')}</span></div>
+                    <div className="impact-item"><Clock size={16} /><span className="impact-item-value">{daysSaved}</span><span className="impact-item-label">{t('complaintDetail.impactDaysSaved')}</span></div>
+                    <div className="impact-item"><IndianRupee size={16} /><span className="impact-item-value">₹{value.toLocaleString()}</span><span className="impact-item-label">{t('complaintDetail.impactValue')}</span></div>
+                  </div>
+                </div>
+              );
+            })()}
 
             {data.tags && data.tags.length > 0 && (
               <div className="detail-tags">

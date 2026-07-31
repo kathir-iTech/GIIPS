@@ -54,6 +54,8 @@ const Analysis = () => {
   const [ageDistribution, setAgeDistribution] = useState<any>(null);
   const [sentimentData, setSentimentData] = useState<any>(null);
   const [languageData, setLanguageData] = useState<any>(null);
+  const [slaByCategory, setSlaByCategory] = useState<any[]>([]);
+  const [processingAnalytics, setProcessingAnalytics] = useState<any>(null);
 
   useEffect(() => {
     let cancelled = false;
@@ -101,6 +103,16 @@ const Analysis = () => {
         try {
           const ls = await api.getLanguageStats();
           if (Array.isArray(ls)) setLanguageData(ls);
+        } catch {}
+        // F2: SLA by category
+        try {
+          const sla = await api.getSlaByCategory();
+          if (Array.isArray(sla)) setSlaByCategory(sla);
+        } catch {}
+        // F12: processing analytics
+        try {
+          const pa = await api.getProcessingAnalytics();
+          if (pa && typeof pa === 'object') setProcessingAnalytics(pa);
         } catch {}
       } catch (e) {
         if (!cancelled) setError((e as any)?.message || 'Unknown error');
@@ -449,6 +461,86 @@ const Analysis = () => {
           />
         </div>
       )}
+
+      {/* F2: SLA Compliance by Category */}
+      {slaByCategory.length > 0 && (
+        <div className="chart-card">
+          <h3>{t('analysis.slaByCategoryTitle')}</h3>
+          <p className="chart-subtitle">{t('analysis.slaByCategorySubtitle')}</p>
+          <div className="sla-table-wrapper">
+            <table className="sla-category-table">
+              <thead>
+                <tr>
+                  <th>{t('analysis.slaColumnCategory')}</th>
+                  <th>{t('analysis.slaColumnTotal')}</th>
+                  <th>{t('analysis.slaColumnWithin')}</th>
+                  <th>{t('analysis.slaColumnBreached')}</th>
+                  <th>{t('analysis.slaColumnCompliance')}</th>
+                </tr>
+              </thead>
+              <tbody>
+                {slaByCategory.map((s: any) => {
+                  const total = s.total ?? 0;
+                  const within = s.within_sla ?? 0;
+                  const breached = s.breached_sla ?? 0;
+                  const compliance = s.compliance_pct != null ? Number(s.compliance_pct) : total > 0 ? (within / total) * 100 : 0;
+                  return (
+                    <tr key={s.category}>
+                      <td className="sla-cat-name">{s.category}</td>
+                      <td>{total}</td>
+                      <td className="sla-green-text">{within}</td>
+                      <td className={breached > 0 ? 'sla-red-text' : ''}>{breached}</td>
+                      <td>
+                        <span className={`benchmark-badge ${compliance >= 80 ? 'benchmark-good' : 'benchmark-bad'}`}>{compliance.toFixed(1)}%</span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* F12: Processing Analytics Funnel */}
+      {processingAnalytics && (() => {
+        const stages = Array.isArray(processingAnalytics.stages)
+          ? processingAnalytics.stages
+          : Array.isArray(processingAnalytics)
+            ? processingAnalytics
+            : processingAnalytics.funnel || [];
+        if (stages.length === 0) return null;
+        const stageLabels: Record<string, string> = {
+          submitted: t('analysis.stageSubmitted'),
+          classified: t('analysis.stageClassified'),
+          routed: t('analysis.stageRouted'),
+          resolved: t('analysis.stageResolved'),
+        };
+        const maxCount = Math.max(...stages.map((s: any) => s.count ?? s.total ?? 0), 1);
+        const FUNNEL_COLORS = ['#60a5fa', '#3b82f6', '#f59e0b', '#10b981', '#34d399'];
+        return (
+          <div className="chart-card">
+            <h3>{t('analysis.processingAnalyticsTitle')}</h3>
+            <p className="chart-subtitle">{t('analysis.processingAnalyticsSubtitle')}</p>
+            <div className="funnel-bars">
+              {stages.map((s: any, i: number) => {
+                const label = stageLabels[s.stage] || s.stage || s.label || '';
+                const count = s.count ?? s.total ?? 0;
+                const pct = count > 0 ? (count / maxCount) * 100 : 0;
+                return (
+                  <div key={i} className="funnel-row">
+                    <span className="funnel-label">{label}</span>
+                    <div className="funnel-track">
+                      <div className="funnel-fill" style={{ width: `${pct}%`, background: FUNNEL_COLORS[i % FUNNEL_COLORS.length] }} />
+                    </div>
+                    <span className="funnel-count">{count.toLocaleString()}</span>
+                  </div>
+                );
+              })}
+            </div>
+          </div>
+        );
+      })()}
       </div>
     </div>
   );

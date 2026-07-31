@@ -109,3 +109,11 @@ async def check_public_stats_rate_limit(request: Request) -> None:
 async def check_track_public_rate_limit(request: Request) -> None:
     """60 req/min per IP on public tracking."""
     await _check_rate_limit(request, "track_public", TRACK_PUBLIC_RATE_LIMIT_MAX)
+
+
+TREND_RATE_LIMIT_MAX = 30
+
+
+async def check_trend_rate_limit(request: Request) -> None:
+    """30 req/min per IP on public complaint trend."""
+    await _check_rate_limit(request, "trend", TREND_RATE_LIMIT_MAX)

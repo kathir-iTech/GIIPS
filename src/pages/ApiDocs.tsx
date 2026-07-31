@@ -10,6 +10,7 @@ const ENDPOINTS = [
   { method: 'GET', path: '/public/success-stories', auth: 'No', params: '?ward=', descKey: 'apiDocs.descStories' },
   { method: 'GET', path: '/public/word-cloud', auth: 'No', descKey: 'apiDocs.descWordCloud' },
   { method: 'GET', path: '/public/satisfaction-trend', auth: 'No', descKey: 'apiDocs.descSatisfaction' },
+  { method: 'GET', path: '/public/complaint-trend', auth: 'No', descKey: 'apiDocs.descComplaintTrend' },
   { method: 'GET', path: '/public/ward-stats/{ward}', auth: 'No', descKey: 'apiDocs.descWardStats' },
 ];
 
@@ -20,6 +21,7 @@ const exampleResponses: Record<string, string> = {
   '/public/success-stories': JSON.stringify([{ complaint_id: 'COMP-000010', title: 'Road pothole fixed', rating: 5, resolved_at: '2026-07-24T09:00:00Z' }], null, 2),
   '/public/word-cloud': JSON.stringify({ words: [{ text: 'pothole', count: 89 }, { text: 'water', count: 72 }] }, null, 2),
   '/public/satisfaction-trend': JSON.stringify({ weeks: ['2026-06-07', '2026-06-14'], avgRating: [4.2, 4.5] }, null, 2),
+  '/public/complaint-trend': JSON.stringify({ weeks: ['2026-07-05', '2026-07-12', '2026-07-19'], counts: [86, 102, 95], rate_limit: '30 req/min per IP' }, null, 2),
   '/public/ward-stats/{ward}': JSON.stringify({ ward: '27', totalComplaints: 45, openIncidents: 12, topCategory: 'Roads' }, null, 2),
 };
 

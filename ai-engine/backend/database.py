@@ -11,7 +11,7 @@ import os
 import random
 from datetime import timedelta
 from pathlib import Path
-from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey, Boolean, or_, func
+from sqlalchemy import create_engine, Column, String, Integer, Float, Text, DateTime, ForeignKey, Boolean, or_, func, text
 from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.orm import sessionmaker, relationship
 
@@ -371,6 +371,9 @@ class Incident(Base):
     # FEATURE 7: estimated remediation cost
     estimated_cost = Column(Float, nullable=True)
 
+    # F1: severity auto-escalation to media — high-impact incidents flagged for public attention
+    public_attention_flag = Column(Boolean, default=False, nullable=False)
+
     # Relationship to linked complaints
     complaints = relationship("Complaint", back_populates="incident")
     priority_history = relationship("PriorityHistory", backref="incident")
@@ -491,6 +494,11 @@ class Notification(Base):
     data = Column(Text, nullable=True)
     is_read = Column(Boolean, default=False, nullable=False)
     batched = Column(Boolean, default=False, nullable=False)
+
+    # F7: smart notification grouping — group_id points at the group's lead notification
+    group_id = Column(String, nullable=True, index=True)
+    group_count = Column(Integer, default=1, nullable=False)
+
     created_at = Column(DateTime, default=datetime.datetime.utcnow, nullable=False)
 
 class IncidentUpdate(Base):
@@ -688,6 +696,24 @@ class ComplaintSubscription(Base):
     id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
     user_id = Column(String, nullable=False, index=True)
     complaint_id = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# F10: citizen referral system
+class Referral(Base):
+    __tablename__ = "referrals"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    referrer_user_id = Column(String, nullable=False, index=True)
+    referred_email = Column(String, nullable=False)
+    created_at = Column(DateTime, default=datetime.datetime.utcnow)
+
+# F18: report scheduler
+class ReportSchedule(Base):
+    __tablename__ = "report_schedules"
+    id = Column(String, primary_key=True, default=lambda: str(uuid.uuid4()))
+    exec_user_id = Column(String, nullable=False, index=True)
+    report_type = Column(String, nullable=False)
+    frequency = Column(String, nullable=False)
+    last_generated_at = Column(DateTime, nullable=True)
     created_at = Column(DateTime, default=datetime.datetime.utcnow)
 
 # Seed demo users
@@ -1219,3 +1245,40 @@ def backfill_officer_departments():
 # NOTE: All runtime initialization moved to app.py lifespan to avoid
 # import-time side effects. database.py must remain side-effect free
 # so that routes.py can safely import models at module load time.
+
+
+def add_new_feature_columns():
+    """Idempotent migration for the F1/F7/F10/F18 feature columns.
+
+    Base.metadata.create_all() creates NEW tables but never adds columns
+    to EXISTING tables, so existing deployments need explicit ALTER TABLEs.
+    Follows the same convention as add_last_login_column() above.
+    """
+    db = SessionLocal()
+    try:
+        from sqlalchemy import inspect
+        inspector = inspect(engine)
+        existing_tables = set(inspector.get_table_names())
+
+        if "incidents" in existing_tables:
+            inc_cols = {c["name"] for c in inspector.get_columns("incidents")}
+            if "public_attention_flag" not in inc_cols:
+                db.execute(text("ALTER TABLE incidents ADD COLUMN public_attention_flag BOOLEAN NOT NULL DEFAULT FALSE"))
+                print("[MIGRATION] Added public_attention_flag column to incidents table")
+
+        if "notifications" in existing_tables:
+            notif_cols = {c["name"] for c in inspector.get_columns("notifications")}
+            if "group_id" not in notif_cols:
+                db.execute(text("ALTER TABLE notifications ADD COLUMN group_id VARCHAR"))
+                print("[MIGRATION] Added group_id column to notifications table")
+            if "group_count" not in notif_cols:
+                db.execute(text("ALTER TABLE notifications ADD COLUMN group_count INTEGER NOT NULL DEFAULT 1"))
+                print("[MIGRATION] Added group_count column to notifications table")
+
+        db.commit()
+        print("[MIGRATION] New feature columns verified")
+    except Exception as e:
+        db.rollback()
+        print(f"[MIGRATION] New feature columns skipped: {e}")
+    finally:
+        db.close()

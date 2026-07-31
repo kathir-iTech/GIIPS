@@ -142,6 +142,14 @@ for z in ZONES:
 
 ALL_WARD_NUMBERS = sorted([w["ward"] for w in WARDS])
 
+# ── F8: Ward area lookup (approx. km²) ──────────────────────────────
+# Coimbatore's 100 wards span ~640 km² (~6.4 km² average). Deterministic
+# pseudo-random approximations per ward, derived from the ward number so
+# the values are stable across restarts.
+WARD_AREA_KM2: dict[int, float] = {
+    wn: round(6.5 + (wn % 5) * 1.3, 2) for wn in ALL_WARD_NUMBERS
+}
+
 # ── Area→Ward mapping for synthetic seed ────────────────────────────
 # Every known area name → (ward_number, zone) for correct area→ward matching.
 AREA_TO_WARD: dict[str, tuple[int, str]] = {}

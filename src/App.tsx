@@ -46,6 +46,7 @@ const ResolvedGallery = lazy(() => import('./pages/ResolvedGallery'));
 const ComplaintMap = lazy(() => import('./pages/ComplaintMap'));
 const CouncillorPerformance = lazy(() => import('./pages/CouncillorPerformance'));
 const CitizenImpactReport = lazy(() => import('./pages/CitizenImpactReport'));
+const AdminTools = lazy(() => import('./pages/AdminTools'));
 
 function LoadingScreen() {
   return (
@@ -283,6 +284,13 @@ function AnimatedRoutes() {
 
             <RoleGuard allowedRoles={['Executive']}>
               <EscalationMatrix />
+            </RoleGuard>
+
+        } />
+        <Route path="/executive/admin-tools" element={
+
+            <RoleGuard allowedRoles={['Executive']}>
+              <AdminTools />
             </RoleGuard>
 
         } />
