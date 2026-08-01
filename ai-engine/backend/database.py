@@ -1247,13 +1247,46 @@ def backfill_officer_departments():
 # so that routes.py can safely import models at module load time.
 
 
+# Safe DEFAULT values for NOT NULL columns that may be missing from existing
+# deployments. Keyed by column name. If a NOT NULL model column is missing and
+# has no entry here, it is skipped with a loud log instead of failing the boot.
+_NOT_NULL_DEFAULTS = {
+    "email_verified": "FALSE",
+    "batched": "FALSE",
+    "show_on_leaderboard": "FALSE",
+    "public_attention_flag": "FALSE",
+    "login_streak": "0",
+    "follow_up_count": "0",
+    "group_count": "1",
+    "trust_score": "50.0",
+}
+
+
+def _column_ddl(col):
+    """Compile a safe ADD COLUMN definition for a model column."""
+    try:
+        type_sql = col.type.compile(dialect=engine.dialect)
+    except Exception as e:
+        print(f"[MIGRATION] Cannot compile type for {col.name}: {e}")
+        return None
+    if col.nullable:
+        return f"{col.name} {type_sql}"
+    default = _NOT_NULL_DEFAULTS.get(col.name)
+    if default is None:
+        print(f"[MIGRATION] SKIPPED {col.table.name}.{col.name}: NOT NULL with no known DEFAULT")
+        return None
+    return f"{col.name} {type_sql} NOT NULL DEFAULT {default}"
+
+
 def add_new_feature_columns():
-    """Idempotent migration for the F1/F7/F10/F18 feature columns.
+    """Idempotent schema-drift repair for existing deployments.
 
     Base.metadata.create_all() creates NEW tables but never adds columns
-    to EXISTING tables, so existing deployments need explicit ALTER TABLEs.
-    Each ALTER runs in its own transaction: a failure on one column is
-    logged loudly and never blocks the remaining columns.
+    to EXISTING tables. The ALTER plan below is generated from the ORM
+    models themselves, so any column added to a model in the future is
+    automatically migrated on the next boot. Each ALTER runs in its own
+    transaction: a failure on one column is logged loudly and never
+    blocks the remaining columns.
     """
     from sqlalchemy import inspect
 
@@ -1264,46 +1297,25 @@ def add_new_feature_columns():
         print(f"[MIGRATION] Schema inspection failed: {e}")
         return
 
+    model_tables = {
+        "users": User,
+        "incidents": Incident,
+        "complaints": Complaint,
+        "notifications": Notification,
+    }
+
     alter_plan = []
-
-    if "users" in existing_tables:
-        cols = {c["name"] for c in inspector.get_columns("users")}
-        for col, ddl in (
-            ("login_streak", "ALTER TABLE users ADD COLUMN login_streak INTEGER NOT NULL DEFAULT 0"),
-            ("show_on_leaderboard", "ALTER TABLE users ADD COLUMN show_on_leaderboard BOOLEAN NOT NULL DEFAULT FALSE"),
-            ("trust_score", "ALTER TABLE users ADD COLUMN trust_score FLOAT NOT NULL DEFAULT 50.0"),
-        ):
-            if col not in cols:
-                alter_plan.append(("users", col, ddl))
-
-    if "incidents" in existing_tables:
-        cols = {c["name"] for c in inspector.get_columns("incidents")}
-        for col, ddl in (
-            ("public_attention_flag", "ALTER TABLE incidents ADD COLUMN public_attention_flag BOOLEAN NOT NULL DEFAULT FALSE"),
-            ("estimated_cost", "ALTER TABLE incidents ADD COLUMN estimated_cost FLOAT"),
-        ):
-            if col not in cols:
-                alter_plan.append(("incidents", col, ddl))
-
-    if "complaints" in existing_tables:
-        cols = {c["name"] for c in inspector.get_columns("complaints")}
-        for col, ddl in (
-            ("photo_paths", "ALTER TABLE complaints ADD COLUMN photo_paths TEXT"),
-            ("resubmission_of", "ALTER TABLE complaints ADD COLUMN resubmission_of VARCHAR"),
-            ("predicted_resolution_days", "ALTER TABLE complaints ADD COLUMN predicted_resolution_days FLOAT"),
-            ("follow_up_count", "ALTER TABLE complaints ADD COLUMN follow_up_count INTEGER NOT NULL DEFAULT 0"),
-        ):
-            if col not in cols:
-                alter_plan.append(("complaints", col, ddl))
-
-    if "notifications" in existing_tables:
-        cols = {c["name"] for c in inspector.get_columns("notifications")}
-        for col, ddl in (
-            ("group_id", "ALTER TABLE notifications ADD COLUMN group_id VARCHAR"),
-            ("group_count", "ALTER TABLE notifications ADD COLUMN group_count INTEGER NOT NULL DEFAULT 1"),
-        ):
-            if col not in cols:
-                alter_plan.append(("notifications", col, ddl))
+    for table_name, model in model_tables.items():
+        if table_name not in existing_tables:
+            continue
+        db_cols = {c["name"] for c in inspector.get_columns(table_name)}
+        for col in model.__table__.columns:
+            if col.name in db_cols:
+                continue
+            ddl = _column_ddl(col)
+            if ddl is None:
+                continue
+            alter_plan.append((table_name, col.name, f"ALTER TABLE {table_name} ADD COLUMN {ddl}"))
 
     if not alter_plan:
         print("[MIGRATION] New feature columns verified (none missing)")
