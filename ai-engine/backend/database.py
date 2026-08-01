@@ -1252,63 +1252,80 @@ def add_new_feature_columns():
 
     Base.metadata.create_all() creates NEW tables but never adds columns
     to EXISTING tables, so existing deployments need explicit ALTER TABLEs.
-    Follows the same convention as add_last_login_column() above.
+    Each ALTER runs in its own transaction: a failure on one column is
+    logged loudly and never blocks the remaining columns.
     """
-    db = SessionLocal()
+    from sqlalchemy import inspect
+
     try:
-        from sqlalchemy import inspect
         inspector = inspect(engine)
         existing_tables = set(inspector.get_table_names())
-
-        if "users" in existing_tables:
-            user_cols = {c["name"] for c in inspector.get_columns("users")}
-            if "login_streak" not in user_cols:
-                db.execute(text("ALTER TABLE users ADD COLUMN login_streak INTEGER NOT NULL DEFAULT 0"))
-                print("[MIGRATION] Added login_streak column to users table")
-            if "show_on_leaderboard" not in user_cols:
-                db.execute(text("ALTER TABLE users ADD COLUMN show_on_leaderboard BOOLEAN NOT NULL DEFAULT FALSE"))
-                print("[MIGRATION] Added show_on_leaderboard column to users table")
-            if "trust_score" not in user_cols:
-                db.execute(text("ALTER TABLE users ADD COLUMN trust_score FLOAT NOT NULL DEFAULT 50.0"))
-                print("[MIGRATION] Added trust_score column to users table")
-
-        if "incidents" in existing_tables:
-            inc_cols = {c["name"] for c in inspector.get_columns("incidents")}
-            if "public_attention_flag" not in inc_cols:
-                db.execute(text("ALTER TABLE incidents ADD COLUMN public_attention_flag BOOLEAN NOT NULL DEFAULT FALSE"))
-                print("[MIGRATION] Added public_attention_flag column to incidents table")
-            if "estimated_cost" not in inc_cols:
-                db.execute(text("ALTER TABLE incidents ADD COLUMN estimated_cost FLOAT"))
-                print("[MIGRATION] Added estimated_cost column to incidents table")
-
-        if "complaints" in existing_tables:
-            comp_cols = {c["name"] for c in inspector.get_columns("complaints")}
-            if "photo_paths" not in comp_cols:
-                db.execute(text("ALTER TABLE complaints ADD COLUMN photo_paths TEXT"))
-                print("[MIGRATION] Added photo_paths column to complaints table")
-            if "resubmission_of" not in comp_cols:
-                db.execute(text("ALTER TABLE complaints ADD COLUMN resubmission_of VARCHAR"))
-                print("[MIGRATION] Added resubmission_of column to complaints table")
-            if "predicted_resolution_days" not in comp_cols:
-                db.execute(text("ALTER TABLE complaints ADD COLUMN predicted_resolution_days FLOAT"))
-                print("[MIGRATION] Added predicted_resolution_days column to complaints table")
-            if "follow_up_count" not in comp_cols:
-                db.execute(text("ALTER TABLE complaints ADD COLUMN follow_up_count INTEGER NOT NULL DEFAULT 0"))
-                print("[MIGRATION] Added follow_up_count column to complaints table")
-
-        if "notifications" in existing_tables:
-            notif_cols = {c["name"] for c in inspector.get_columns("notifications")}
-            if "group_id" not in notif_cols:
-                db.execute(text("ALTER TABLE notifications ADD COLUMN group_id VARCHAR"))
-                print("[MIGRATION] Added group_id column to notifications table")
-            if "group_count" not in notif_cols:
-                db.execute(text("ALTER TABLE notifications ADD COLUMN group_count INTEGER NOT NULL DEFAULT 1"))
-                print("[MIGRATION] Added group_count column to notifications table")
-
-        db.commit()
-        print("[MIGRATION] New feature columns verified")
     except Exception as e:
-        db.rollback()
-        print(f"[MIGRATION] New feature columns skipped: {e}")
-    finally:
-        db.close()
+        print(f"[MIGRATION] Schema inspection failed: {e}")
+        return
+
+    alter_plan = []
+
+    if "users" in existing_tables:
+        cols = {c["name"] for c in inspector.get_columns("users")}
+        for col, ddl in (
+            ("login_streak", "ALTER TABLE users ADD COLUMN login_streak INTEGER NOT NULL DEFAULT 0"),
+            ("show_on_leaderboard", "ALTER TABLE users ADD COLUMN show_on_leaderboard BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("trust_score", "ALTER TABLE users ADD COLUMN trust_score FLOAT NOT NULL DEFAULT 50.0"),
+        ):
+            if col not in cols:
+                alter_plan.append(("users", col, ddl))
+
+    if "incidents" in existing_tables:
+        cols = {c["name"] for c in inspector.get_columns("incidents")}
+        for col, ddl in (
+            ("public_attention_flag", "ALTER TABLE incidents ADD COLUMN public_attention_flag BOOLEAN NOT NULL DEFAULT FALSE"),
+            ("estimated_cost", "ALTER TABLE incidents ADD COLUMN estimated_cost FLOAT"),
+        ):
+            if col not in cols:
+                alter_plan.append(("incidents", col, ddl))
+
+    if "complaints" in existing_tables:
+        cols = {c["name"] for c in inspector.get_columns("complaints")}
+        for col, ddl in (
+            ("photo_paths", "ALTER TABLE complaints ADD COLUMN photo_paths TEXT"),
+            ("resubmission_of", "ALTER TABLE complaints ADD COLUMN resubmission_of VARCHAR"),
+            ("predicted_resolution_days", "ALTER TABLE complaints ADD COLUMN predicted_resolution_days FLOAT"),
+            ("follow_up_count", "ALTER TABLE complaints ADD COLUMN follow_up_count INTEGER NOT NULL DEFAULT 0"),
+        ):
+            if col not in cols:
+                alter_plan.append(("complaints", col, ddl))
+
+    if "notifications" in existing_tables:
+        cols = {c["name"] for c in inspector.get_columns("notifications")}
+        for col, ddl in (
+            ("group_id", "ALTER TABLE notifications ADD COLUMN group_id VARCHAR"),
+            ("group_count", "ALTER TABLE notifications ADD COLUMN group_count INTEGER NOT NULL DEFAULT 1"),
+        ):
+            if col not in cols:
+                alter_plan.append(("notifications", col, ddl))
+
+    if not alter_plan:
+        print("[MIGRATION] New feature columns verified (none missing)")
+        return
+
+    for table, col, ddl in alter_plan:
+        db = SessionLocal()
+        try:
+            db.execute(text(ddl))
+            db.commit()
+            print(f"[MIGRATION] Added {table}.{col}")
+        except Exception as e:
+            db.rollback()
+            exists = False
+            try:
+                exists = col in {c["name"] for c in inspect(engine).get_columns(table)}
+            except Exception:
+                pass
+            if exists:
+                print(f"[MIGRATION] {table}.{col} already exists (concurrent add) - OK")
+            else:
+                print(f"[MIGRATION] FAILED to add {table}.{col}: {e}")
+                print(f"[MIGRATION]   SQL: {ddl}")
+        finally:
+            db.close()
