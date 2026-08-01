@@ -773,6 +773,7 @@ def seed_demo_users():
                 department=user.get("department"),
                 ward=user.get("ward"),
                 district=user.get("district"),
+                email_verified=True,
             )
             db.add(new_user)
     db.commit()
@@ -1341,3 +1342,30 @@ def add_new_feature_columns():
                 print(f"[MIGRATION]   SQL: {ddl}")
         finally:
             db.close()
+
+
+def grandfather_email_verification():
+    """One-time migration: citizen accounts created before the email-verification
+    feature existed (commit 60e0cb3, 2026-07-30) are grandfathered in as verified.
+
+    Idempotent UPDATE — safe to run on every boot. Accounts registered after the
+    feature landed keep email_verified=False until they verify their email.
+    """
+    db = SessionLocal()
+    try:
+        cutoff = datetime.datetime(2026, 7, 30)
+        n = db.query(User).filter(
+            User.role == "Citizen",
+            User.email_verified.is_(False),
+            User.created_at < cutoff,
+        ).update({User.email_verified: True}, synchronize_session=False)
+        db.commit()
+        if n:
+            print(f"[MIGRATION] Grandfathered {n} pre-verification citizen accounts as email-verified")
+        else:
+            print("[MIGRATION] Email-verification grandfathering: no accounts to update")
+    except Exception as e:
+        db.rollback()
+        print(f"[MIGRATION] Email-verification grandfathering skipped: {e}")
+    finally:
+        db.close()

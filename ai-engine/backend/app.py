@@ -218,6 +218,13 @@ async def lifespan(app: FastAPI):
         except Exception as exc:
             logger.warning("[MIGRATION] New feature columns skipped: %s", exc)
 
+        # FEATURE 14: grandfather pre-verification citizen accounts as verified
+        try:
+            from database import grandfather_email_verification
+            grandfather_email_verification()
+        except Exception as exc:
+            logger.warning("[MIGRATION] Email-verification grandfathering skipped: %s", exc)
+
     except Exception as e:
         logger.error("[STARTUP] Database initialization failed: %s", e)
 

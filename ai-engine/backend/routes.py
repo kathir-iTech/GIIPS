@@ -1666,27 +1666,31 @@ def resubmit_complaint(id: str, body: dict, db: Session = Depends(get_db), db_us
 @classify_router.post("", response_model=ClassifyResponse)
 async def classify_single(request: ClassifyRequest):
     """Classify a single complaint into a category with complexity and language detection."""
-    import re
-    from duplicate_detection.engine import _is_tanglish_text
-    service = ClassificationService()
-    result = await service.classify(request)
-    description = request.text or ""
+    try:
+        import re
+        from duplicate_detection.engine import _is_tanglish_text
+        service = ClassificationService()
+        result = await service.classify(request)
+        description = request.text or ""
 
-    desc_len_score = min(len(description) / 500, 1.0) * 0.3
-    sent_count_score = min(len(re.split('[.!?]', description)) / 10, 1.0) * 0.25
-    category_weights = {"Roads": 0.25, "Water Supply": 0.3, "Waste Management": 0.2, "Public Health": 0.35, "Street Lighting": 0.2, "Electricity": 0.3, "Sanitation": 0.25}
-    total = desc_len_score + sent_count_score + category_weights.get(result.predicted_category, 0.2)
-    result.complexity_label = "simple" if total < 0.4 else "moderate" if total < 0.7 else "complex"
-    result.complexity_score = round(total, 4)
+        desc_len_score = min(len(description) / 500, 1.0) * 0.3
+        sent_count_score = min(len(re.split('[.!?]', description)) / 10, 1.0) * 0.25
+        category_weights = {"Roads": 0.25, "Water Supply": 0.3, "Waste Management": 0.2, "Public Health": 0.35, "Street Lighting": 0.2, "Electricity": 0.3, "Sanitation": 0.25}
+        total = desc_len_score + sent_count_score + category_weights.get(result.predicted_category, 0.2)
+        result.complexity_label = "simple" if total < 0.4 else "moderate" if total < 0.7 else "complex"
+        result.complexity_score = round(total, 4)
 
-    if any('\u0B80' <= c <= '\u0BFF' for c in description):
-        result.complaint_language = "tamil"
-    elif _is_tanglish_text(description):
-        result.complaint_language = "tamil"
-    else:
-        result.complaint_language = "english"
+        if any('\u0B80' <= c <= '\u0BFF' for c in description):
+            result.complaint_language = "tamil"
+        elif _is_tanglish_text(description):
+            result.complaint_language = "tamil"
+        else:
+            result.complaint_language = "english"
 
-    return result
+        return result
+    except Exception:
+        logger.error("[CLASSIFY] Unexpected error for text=%r", getattr(request, "text", None), exc_info=True)
+        raise
 
 
 @classify_router.post("/batch")
