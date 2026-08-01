@@ -1,0 +1,11 @@
+{
+  "$schema": "https://opencode.ai",
+  "model": "openrouter/qwen/qwen-3.6-flash:free",
+  "provider": {
+    "openrouter": {
+      "options": {
+        "max_tokens": 4000
+      }
+    }
+  }
+}

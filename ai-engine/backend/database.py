@@ -1260,11 +1260,41 @@ def add_new_feature_columns():
         inspector = inspect(engine)
         existing_tables = set(inspector.get_table_names())
 
+        if "users" in existing_tables:
+            user_cols = {c["name"] for c in inspector.get_columns("users")}
+            if "login_streak" not in user_cols:
+                db.execute(text("ALTER TABLE users ADD COLUMN login_streak INTEGER NOT NULL DEFAULT 0"))
+                print("[MIGRATION] Added login_streak column to users table")
+            if "show_on_leaderboard" not in user_cols:
+                db.execute(text("ALTER TABLE users ADD COLUMN show_on_leaderboard BOOLEAN NOT NULL DEFAULT FALSE"))
+                print("[MIGRATION] Added show_on_leaderboard column to users table")
+            if "trust_score" not in user_cols:
+                db.execute(text("ALTER TABLE users ADD COLUMN trust_score FLOAT NOT NULL DEFAULT 50.0"))
+                print("[MIGRATION] Added trust_score column to users table")
+
         if "incidents" in existing_tables:
             inc_cols = {c["name"] for c in inspector.get_columns("incidents")}
             if "public_attention_flag" not in inc_cols:
                 db.execute(text("ALTER TABLE incidents ADD COLUMN public_attention_flag BOOLEAN NOT NULL DEFAULT FALSE"))
                 print("[MIGRATION] Added public_attention_flag column to incidents table")
+            if "estimated_cost" not in inc_cols:
+                db.execute(text("ALTER TABLE incidents ADD COLUMN estimated_cost FLOAT"))
+                print("[MIGRATION] Added estimated_cost column to incidents table")
+
+        if "complaints" in existing_tables:
+            comp_cols = {c["name"] for c in inspector.get_columns("complaints")}
+            if "photo_paths" not in comp_cols:
+                db.execute(text("ALTER TABLE complaints ADD COLUMN photo_paths TEXT"))
+                print("[MIGRATION] Added photo_paths column to complaints table")
+            if "resubmission_of" not in comp_cols:
+                db.execute(text("ALTER TABLE complaints ADD COLUMN resubmission_of VARCHAR"))
+                print("[MIGRATION] Added resubmission_of column to complaints table")
+            if "predicted_resolution_days" not in comp_cols:
+                db.execute(text("ALTER TABLE complaints ADD COLUMN predicted_resolution_days FLOAT"))
+                print("[MIGRATION] Added predicted_resolution_days column to complaints table")
+            if "follow_up_count" not in comp_cols:
+                db.execute(text("ALTER TABLE complaints ADD COLUMN follow_up_count INTEGER NOT NULL DEFAULT 0"))
+                print("[MIGRATION] Added follow_up_count column to complaints table")
 
         if "notifications" in existing_tables:
             notif_cols = {c["name"] for c in inspector.get_columns("notifications")}
