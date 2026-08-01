@@ -3719,33 +3719,37 @@ async def verify_email(body: VerifyEmailRequest, db_user: User = Depends(get_cur
 @auth_router.post("/login")
 async def login(user: UserLogin, request: Request, response: Response, _: None = Depends(check_auth_rate_limit), db: Session = Depends(get_db)):  # FEATURE 2: previously rate-limited
     """Authenticate user and return JWT token as httpOnly cookie."""
-    db_user = db.query(User).filter(User.email == user.email).first()
-    if not db_user or not verify_password(user.password, db_user.password_hash):
-        _write_audit_log(db, None, user.email, None, "login", "auth", "failure", "Invalid credentials")
-        raise HTTPException(status_code=401, detail="Invalid credentials")
-    db_user.last_login = datetime.utcnow()
-    # FEATURE 2: login streak
-    last = db_user.last_login
-    today = datetime.utcnow().date()
-    if last:
-        if last.date() == today - timedelta(days=1):
-            db_user.login_streak = (db_user.login_streak or 0) + 1
-        elif last.date() < today - timedelta(days=1):
+    try:
+        db_user = db.query(User).filter(User.email == user.email).first()
+        if not db_user or not verify_password(user.password, db_user.password_hash):
+            _write_audit_log(db, None, user.email, None, "login", "auth", "failure", "Invalid credentials")
+            raise HTTPException(status_code=401, detail="Invalid credentials")
+        db_user.last_login = datetime.utcnow()
+        # FEATURE 2: login streak
+        last = db_user.last_login
+        today = datetime.utcnow().date()
+        if last:
+            if last.date() == today - timedelta(days=1):
+                db_user.login_streak = (db_user.login_streak or 0) + 1
+            elif last.date() < today - timedelta(days=1):
+                db_user.login_streak = 1
+        else:
             db_user.login_streak = 1
-    else:
-        db_user.login_streak = 1
-    db.commit()
-    token = create_access_token({"sub": db_user.email, "role": db_user.role})
-    set_auth_cookie(response, token)
-    _write_audit_log(db, db_user.id, db_user.email, db_user.role, "login", "auth", "success")
-    return {
-        "role": db_user.role,
-        "user_id": db_user.id,
-        "full_name": db_user.full_name,
-        "ward": db_user.ward,
-        "district": db_user.district,
-        "department": db_user.department,
-    }
+        db.commit()
+        token = create_access_token({"sub": db_user.email, "role": db_user.role})
+        set_auth_cookie(response, token)
+        _write_audit_log(db, db_user.id, db_user.email, db_user.role, "login", "auth", "success")
+        return {
+            "role": db_user.role,
+            "user_id": db_user.id,
+            "full_name": db_user.full_name,
+            "ward": db_user.ward,
+            "district": db_user.district,
+            "department": db_user.department,
+        }
+    except Exception:
+        logger.error("[LOGIN] Unexpected error for %s", user.email, exc_info=True)
+        raise
 
 @auth_router.post("/logout")
 async def logout(response: Response):
@@ -4794,6 +4798,26 @@ from fastapi import APIRouter, Depends
 from sqlalchemy import func
 
 debug_router = APIRouter(prefix="/debug", tags=["Debug"])
+
+
+@debug_router.get("/columns")
+async def debug_columns():
+    """Temporary diagnostic: dump actual production schema columns (no auth)."""
+    from sqlalchemy import text
+    from database import engine
+    tables = ["users", "incidents", "complaints", "notifications", "audit_logs"]
+    out = {}
+    with engine.connect() as conn:
+        for t in tables:
+            try:
+                rows = conn.execute(
+                    text("SELECT column_name FROM information_schema.columns WHERE table_name = :t ORDER BY ordinal_position"),
+                    {"t": t}
+                ).fetchall()
+                out[t] = [r[0] for r in rows]
+            except Exception as e:
+                out[t] = f"ERROR: {e}"
+    return out
 
 
 @debug_router.post("/migrate")
